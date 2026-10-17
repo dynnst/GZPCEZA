@@ -2376,6 +2376,7 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
   int _visaFeeEnabled = 1;
   String _auhCurrency = 'USD';
   int _tkodIndex = 0;
+  int _tkodPaidType = 1;
 
   final _ruleDay = TextEditingController();
   final _oneTime = TextEditingController();
@@ -2487,6 +2488,7 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
     _tkodStart.text = rule.start.toString();
     _tkodFinish.text = rule.finish.toString();
     _tkodIdariCode.text = rule.idariCode;
+    _tkodPaidType = rule.paidType;
   }
 
   void _saveCountryRule({bool notify = true}) {
@@ -2506,7 +2508,96 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
         row.passportType == _passport &&
         row.visaStatus == _visa);
     index < 0 ? _draft.uvr.add(rule) : _draft.uvr[index] = rule;
-    if (notify) _message('\u00dclke kural\u0131 tasla\u011fa uyguland\u0131.');
+    if (notify) _message('Ülke vize rejimi kuralı kaydedildi / güncellendi.');
+  }
+
+  Future<void> _deleteCountryRule() async {
+    final index = _draft.uvr.indexWhere((row) =>
+        row.country == _country &&
+        row.calculateType == _calculateType &&
+        row.passportType == _passport &&
+        row.visaStatus == _visa);
+    if (index < 0) {
+      _message('Seçili kriterlere uygun silinecek vize rejimi kuralı bulunamadı.');
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Vize Rejimi Kuralını Sil'),
+        content: Text(
+            '$_country için seçili vize rejimi kuralını silmek istediğinize emin misiniz?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Vazgeç'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Sil'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      setState(() {
+        _draft.uvr.removeAt(index);
+        _loadUvrFields();
+      });
+      _message('Vize rejimi kuralı başarıyla silindi.');
+    }
+  }
+
+  Future<void> _addNewCountryRuleDialog() async {
+    final countryController = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Yeni Ülke / Vize Kuralı Ekle'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: countryController,
+              decoration: const InputDecoration(
+                labelText: 'Ülke Adı',
+                hintText: 'Yeni eklenecek ülkenin adını yazın',
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Ülke eklendikten sonra kalış sürelerini ve vize parametrelerini bu ekrandan belirleyebilirsiniz.',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Vazgeç'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Ekle'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && countryController.text.trim().isNotEmpty) {
+      final newName = countryController.text.trim();
+      setState(() {
+        if (!_draft.countries.contains(newName)) {
+          _draft.countries.add(newName);
+          _draft.countries.sort();
+        }
+        _country = newName;
+        _saveCountryRule(notify: true);
+      });
+    }
   }
 
   void _saveAuhRule({bool notify = true}) {
@@ -2520,21 +2611,264 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
     );
     final index = _draft.auh.indexWhere((row) => row.country == _country);
     index < 0 ? _draft.auh.add(rule) : _draft.auh[index] = rule;
-    if (notify) _message('Ceza tutarlar\u0131 tasla\u011fa uyguland\u0131.');
+    if (notify) _message('Aylık ülke harç tarifesi güncellendi.');
+  }
+
+  Future<void> _deleteAuhRule() async {
+    final index = _draft.auh.indexWhere((row) => row.country == _country);
+    if (index < 0) {
+      _message('$_country için tanımlı aylık harç kuralı bulunamadı.');
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Aylık Ülke Harcını Sil'),
+        content: Text(
+            '$_country ülkesine ait aylık ceza harç tarifesini silmek istediğinize emin misiniz?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Vazgeç'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Sil'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      setState(() {
+        _draft.auh.removeAt(index);
+        _loadAuhFields();
+      });
+      _message('Aylık ülke harç kuralı silindi.');
+    }
+  }
+
+  Future<void> _addNewAuhRuleDialog() async {
+    final countryController = TextEditingController();
+    final firstMonthController = TextEditingController(text: '0');
+    final monthStepController = TextEditingController(text: '0');
+    final dayStartController = TextEditingController(text: '0');
+    final dayStepController = TextEditingController(text: '0');
+    String currency = 'USD';
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Yeni Aylık Ülke Harcı Ekle'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: countryController,
+                  decoration: const InputDecoration(labelText: 'Ülke Adı'),
+                ),
+                const SizedBox(height: 8),
+                _two(
+                  _number('İlk Ay Ceza Tutarı', firstMonthController),
+                  _number('Sonraki Ay Artış', monthStepController),
+                ),
+                const SizedBox(height: 8),
+                _two(
+                  _number('Gün Başlangıç', dayStartController),
+                  _number('Gün Artış', dayStepController),
+                ),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  initialValue: currency,
+                  decoration: const InputDecoration(labelText: 'Para Birimi'),
+                  items: const ['TRY', 'USD', 'EUR', 'GBP']
+                      .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                      .toList(),
+                  onChanged: (val) {
+                    setDialogState(() => currency = val ?? 'USD');
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Vazgeç'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Ekle'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed == true && countryController.text.trim().isNotEmpty) {
+      final newCountry = countryController.text.trim();
+      final newRule = AuhRule(
+        country: newCountry,
+        firstMonth: readDouble(firstMonthController),
+        monthStep: readDouble(monthStepController),
+        dayStart: readDouble(dayStartController),
+        dayStep: readDouble(dayStepController),
+        currency: currency,
+      );
+
+      setState(() {
+        if (!_draft.countries.contains(newCountry)) {
+          _draft.countries.add(newCountry);
+          _draft.countries.sort();
+        }
+        final existingIndex =
+            _draft.auh.indexWhere((r) => r.country == newCountry);
+        if (existingIndex < 0) {
+          _draft.auh.add(newRule);
+        } else {
+          _draft.auh[existingIndex] = newRule;
+        }
+        _country = newCountry;
+        _loadAuhFields();
+      });
+      _message('$newCountry için aylık harç kuralı eklendi.');
+    }
   }
 
   void _saveTkodRule({bool notify = true}) {
     if (_draft.tkod.isEmpty) return;
-    final old = _draft.tkod[_tkodIndex];
     _draft.tkod[_tkodIndex] = TkodRule(
       code: _tkodCode.text.trim(),
       penaltyTime: readInt(_tkodPenaltyTime),
       start: readInt(_tkodStart),
       finish: readInt(_tkodFinish),
       idariCode: _tkodIdariCode.text.trim(),
-      paidType: old.paidType,
+      paidType: _tkodPaidType,
     );
-    if (notify) _message('Tahdit kural\u0131 tasla\u011fa uyguland\u0131.');
+    if (notify) _message('Tahdit kuralı güncellendi.');
+  }
+
+  Future<void> _deleteTkodRule() async {
+    if (_draft.tkod.isEmpty) return;
+    final rule = _draft.tkod[_tkodIndex];
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Tahdit Kodunu Sil'),
+        content: Text(
+            '${rule.code} (${rule.start}-${rule.finish} gün) tahdit kuralını silmek istediğinize emin misiniz?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Vazgeç'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Sil'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      setState(() {
+        _draft.tkod.removeAt(_tkodIndex);
+        if (_tkodIndex >= _draft.tkod.length) {
+          _tkodIndex = _draft.tkod.isNotEmpty ? _draft.tkod.length - 1 : 0;
+        }
+        _loadTkodFields();
+      });
+      _message('Tahdit kodu kuralı silindi.');
+    }
+  }
+
+  Future<void> _addNewTkodRuleDialog() async {
+    final codeController = TextEditingController(text: 'Ç-');
+    final startController = TextEditingController(text: '1');
+    final finishController = TextEditingController(text: '90');
+    final penaltyTimeController = TextEditingController(text: '90');
+    final idariCodeController = TextEditingController(text: '6458/54');
+    int paidType = 1;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Yeni Tahdit Kodu Ekle'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: codeController,
+                  decoration: const InputDecoration(
+                      labelText: 'Tahdit Kodu (örn. Ç-113, V-84)'),
+                ),
+                const SizedBox(height: 8),
+                _two(
+                  _number('Başlangıç Günü', startController),
+                  _number('Bitiş Günü', finishController),
+                ),
+                const SizedBox(height: 8),
+                _number('Tahdit Süresi (Gün)', penaltyTimeController),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: idariCodeController,
+                  decoration: const InputDecoration(labelText: 'İdari Kod'),
+                ),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<int>(
+                  initialValue: paidType,
+                  decoration: const InputDecoration(labelText: 'Ödeme Tipi'),
+                  items: const [
+                    DropdownMenuItem(value: 1, child: Text('Ceza Ödeyen')),
+                    DropdownMenuItem(
+                        value: 0, child: Text('Ceza Ödemeyen / İdari')),
+                  ],
+                  onChanged: (val) {
+                    setDialogState(() => paidType = val ?? 1);
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Vazgeç'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Ekle'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed == true && codeController.text.trim().isNotEmpty) {
+      final newRule = TkodRule(
+        code: codeController.text.trim(),
+        start: readInt(startController),
+        finish: readInt(finishController),
+        penaltyTime: readInt(penaltyTimeController),
+        idariCode: idariCodeController.text.trim(),
+        paidType: paidType,
+      );
+
+      setState(() {
+        _draft.tkod.add(newRule);
+        _tkodIndex = _draft.tkod.length - 1;
+        _loadTkodFields();
+      });
+      _message('${newRule.code} tahdit kuralı başarıyla eklendi.');
+    }
   }
 
   bool _isSyncing = false;
@@ -2628,6 +2962,89 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
       }
     } catch (e) {
       _message('Sunucuya kaydedilemedi, yerel taslak güncellendi.');
+    } finally {
+      if (mounted) setState(() => _isSyncing = false);
+    }
+  }
+
+  Future<void> _uploadAllDataToServer() async {
+    final url = widget.apiBaseUrl;
+    final token = widget.authToken;
+
+    if (!widget.isAdmin ||
+        token == null ||
+        token == 'local-admin' ||
+        url == null) {
+      _message('Tüm veriler yerel hafızaya kaydedildi (Çevrimdışı mod).');
+      return;
+    }
+
+    setState(() => _isSyncing = true);
+    try {
+      final data = _buildData();
+      final body = jsonEncode(data.toJson());
+
+      final response = await http
+          .post(
+            Uri.parse('$url/system-settings/data'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+            body: body,
+          )
+          .timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        _message('Tüm sistem verileri (UVR, AUH, Tahdit) sunucuya başarıyla yüklendi!');
+      } else if (response.statusCode == 403) {
+        _message('Yetkisiz işlem: Sadece admin sistem verilerini güncelleyebilir.');
+      } else {
+        _message('Sunucu hatası: HTTP ${response.statusCode}');
+      }
+    } catch (e) {
+      _message('Sunucuya yüklenemedi: $e');
+    } finally {
+      if (mounted) setState(() => _isSyncing = false);
+    }
+  }
+
+  Future<void> _downloadAllDataFromServer() async {
+    final url = widget.apiBaseUrl;
+    if (url == null || url.isEmpty) {
+      _message('Sunucu API adresi tanımsız.');
+      return;
+    }
+
+    setState(() => _isSyncing = true);
+    try {
+      final response = await http
+          .get(Uri.parse('$url/system-settings/data'), headers: {
+            'Content-Type': 'application/json',
+            if (widget.authToken != null)
+              'Authorization': 'Bearer ${widget.authToken}',
+          })
+          .timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body) as Map<String, dynamic>;
+        final incoming = CezamData.fromJson(json);
+        setState(() {
+          _draft = incoming;
+          if (_country.isEmpty || !_draft.countries.contains(_country)) {
+            _country = _draft.countries.isNotEmpty ? _draft.countries.first : '';
+          }
+          if (_tkodIndex >= _draft.tkod.length) {
+            _tkodIndex = _draft.tkod.isNotEmpty ? 0 : 0;
+          }
+          _loadAllFields();
+        });
+        _message('Sunucudaki güncel sistem verileri (UVR, AUH, Tahdit) başarıyla indirildi!');
+      } else {
+        _message('Sunucudan veriler alınamadı (HTTP ${response.statusCode}).');
+      }
+    } catch (e) {
+      _message('Sunucuya bağlanılamadı: $e');
     } finally {
       if (mounted) setState(() => _isSyncing = false);
     }
@@ -2799,132 +3216,212 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
         }),
       );
 
-  Widget _countryRuleTab() => ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _countryPicker(afterChange: () {
-            _loadUvrFields();
-            _loadAuhFields();
-          }),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<int>(
-            key: ValueKey('passport-$_passport'),
-            initialValue: _passport,
-            decoration: const InputDecoration(labelText: 'Pasaport'),
-            items: const [
-              DropdownMenuItem(value: 1, child: Text('Umuma Mahsus')),
-              DropdownMenuItem(value: 2, child: Text('Diplomatik')),
-              DropdownMenuItem(value: 3, child: Text('Servis')),
-              DropdownMenuItem(value: 4, child: Text('Hizmet')),
-              DropdownMenuItem(value: 5, child: Text('Haymatlos')),
-              DropdownMenuItem(value: 6, child: Text('Gemi Adam\u0131')),
-            ],
-            onChanged: (value) => setState(() {
-              _passport = value ?? 1;
-              _loadUvrFields();
-            }),
-          ),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<int>(
-            key: ValueKey('calculate-$_calculateType'),
-            initialValue: _calculateType,
-            decoration: const InputDecoration(labelText: 'Hesaplama Tipi'),
-            items: const [
-              DropdownMenuItem(value: 1, child: Text('Normal Hesaplama')),
-              DropdownMenuItem(
-                  value: 2, child: Text('180 G\u00fcn Uygulamas\u0131')),
-              DropdownMenuItem(
-                  value: 3, child: Text('30 G\u00fcnl\u00fck Uygulama')),
-              DropdownMenuItem(
-                  value: 4, child: Text('G\u00fcn\u00fcbirlik Ceza')),
-              DropdownMenuItem(value: 5, child: Text('Beyaz Rusya 30/90')),
-            ],
-            onChanged: (value) => setState(() {
-              _calculateType = value ?? 1;
-              _loadUvrFields();
-            }),
-          ),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<int>(
-            key: ValueKey('visa-$_visa'),
-            initialValue: _visa,
-            decoration: const InputDecoration(labelText: 'Vize Durumu'),
-            items: const [
-              DropdownMenuItem(value: 1, child: Text('Vizeli')),
-              DropdownMenuItem(value: 2, child: Text('Vizesiz')),
-              DropdownMenuItem(
-                  value: 3, child: Text('Konsolosluk / Ka\u015fe Vize')),
-              DropdownMenuItem(value: 4, child: Text('\u0130kamet Teskereli')),
-              DropdownMenuItem(
-                  value: 5, child: Text("T\u00fcrkiye'de Do\u011fan")),
-              DropdownMenuItem(
-                  value: 7, child: Text('V-84 \u015eartl\u0131 Giri\u015f')),
-              DropdownMenuItem(
-                  value: 8, child: Text('\u00c7al\u0131\u015fma \u0130zni')),
-              DropdownMenuItem(value: 9, child: Text('V-157')),
-              DropdownMenuItem(value: 10, child: Text('V-69')),
-              DropdownMenuItem(value: 11, child: Text('V-137 S\u00fcresiz')),
-              DropdownMenuItem(value: 12, child: Text('V-88')),
-              DropdownMenuItem(value: 13, child: Text('V-137 S\u00fcreli')),
-              DropdownMenuItem(
-                  value: 14, child: Text('\u0130kamet Teskereli V-157')),
-              DropdownMenuItem(
-                  value: 15,
-                  child: Text('V-69 Tebli\u011f \u0130\u00e7indeki')),
-            ],
-            onChanged: (value) => setState(() {
-              _visa = value ?? 2;
-              _loadUvrFields();
-            }),
-          ),
-          const SizedBox(height: 16),
-          _two(_number('Kural periyodu (g\u00fcn)', _ruleDay),
-              _number('Bir seferde kal\u0131\u015f (g\u00fcn)', _oneTime)),
-          const SizedBox(height: 12),
-          _number('Toplam kal\u0131\u015f (g\u00fcn)', _longStay),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text('Vize harc\u0131 uygulans\u0131n'),
-            value: _visaFeeEnabled == 1,
-            onChanged: (value) =>
-                setState(() => _visaFeeEnabled = value ? 1 : 0),
-          ),
-          const SizedBox(height: 12),
-          FilledButton.icon(
-              onPressed: _saveCountryRule,
-              icon: const Icon(Icons.check),
-              label: const Text('Bu Kural\u0131 Uygula')),
-        ],
-      );
+  Widget _countryRuleTab() {
+    final existingIndex = _draft.uvr.indexWhere(
+      (r) =>
+          r.country == _country &&
+          r.passportType == _passport &&
+          r.visaStatus == _visa &&
+          r.calculateType == _calculateType,
+    );
+    final hasExistingRule = existingIndex >= 0;
 
-  Widget _auhTab() => ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _countryPicker(afterChange: _loadAuhFields),
-          const SizedBox(height: 16),
-          _two(_number('\u0130lk ay', _firstMonth),
-              _number('Sonraki ay', _monthStep)),
-          const SizedBox(height: 12),
-          _two(_number('G\u00fcn ba\u015flang\u0131\u00e7', _dayStart),
-              _number('G\u00fcn art\u0131\u015f', _dayStep)),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
-            key: ValueKey('currency-$_auhCurrency'),
-            initialValue: _auhCurrency,
-            decoration: const InputDecoration(labelText: 'Para Birimi'),
-            items: const ['TRY', 'USD', 'EUR', 'GBP']
-                .map((value) =>
-                    DropdownMenuItem(value: value, child: Text(value)))
-                .toList(),
-            onChanged: (value) => setState(() => _auhCurrency = value ?? 'USD'),
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        if (widget.isAdmin) ...[
+          FilledButton.tonalIcon(
+            onPressed: _addNewCountryRuleDialog,
+            icon: const Icon(Icons.add_circle_outline),
+            label: const Text('Yeni Ülke / Kural Ekle'),
           ),
-          const SizedBox(height: 20),
-          FilledButton.icon(
-              onPressed: _saveAuhRule,
-              icon: const Icon(Icons.check),
-              label: const Text('Tutarlar\u0131 Uygula')),
+          const SizedBox(height: 12),
         ],
-      );
+        _countryPicker(afterChange: () {
+          _loadUvrFields();
+          _loadAuhFields();
+        }),
+        const SizedBox(height: 12),
+        DropdownButtonFormField<int>(
+          key: ValueKey('passport-$_passport'),
+          initialValue: _passport,
+          decoration: const InputDecoration(labelText: 'Pasaport'),
+          items: const [
+            DropdownMenuItem(value: 1, child: Text('Umuma Mahsus')),
+            DropdownMenuItem(value: 2, child: Text('Diplomatik')),
+            DropdownMenuItem(value: 3, child: Text('Servis')),
+            DropdownMenuItem(value: 4, child: Text('Hizmet')),
+            DropdownMenuItem(value: 5, child: Text('Haymatlos')),
+            DropdownMenuItem(value: 6, child: Text('Gemi Adamı')),
+          ],
+          onChanged: (value) => setState(() {
+            _passport = value ?? 1;
+            _loadUvrFields();
+          }),
+        ),
+        const SizedBox(height: 12),
+        DropdownButtonFormField<int>(
+          key: ValueKey('calculate-$_calculateType'),
+          initialValue: _calculateType,
+          decoration: const InputDecoration(labelText: 'Hesaplama Tipi'),
+          items: const [
+            DropdownMenuItem(value: 1, child: Text('Normal Hesaplama')),
+            DropdownMenuItem(
+                value: 2, child: Text('180 Gün Uygulaması')),
+            DropdownMenuItem(
+                value: 3, child: Text('30 Günlük Uygulama')),
+            DropdownMenuItem(
+                value: 4, child: Text('Günübirlik Ceza')),
+            DropdownMenuItem(value: 5, child: Text('Beyaz Rusya 30/90')),
+          ],
+          onChanged: (value) => setState(() {
+            _calculateType = value ?? 1;
+            _loadUvrFields();
+          }),
+        ),
+        const SizedBox(height: 12),
+        DropdownButtonFormField<int>(
+          key: ValueKey('visa-$_visa'),
+          initialValue: _visa,
+          decoration: const InputDecoration(labelText: 'Vize Durumu'),
+          items: const [
+            DropdownMenuItem(value: 1, child: Text('Vizeli')),
+            DropdownMenuItem(value: 2, child: Text('Vizesiz')),
+            DropdownMenuItem(
+                value: 3, child: Text('Konsolosluk / Kaşe Vize')),
+            DropdownMenuItem(value: 4, child: Text('İkamet Teskereli')),
+            DropdownMenuItem(
+                value: 5, child: Text("Türkiye'de Doğan")),
+            DropdownMenuItem(
+                value: 7, child: Text('V-84 Şartlı Giriş')),
+            DropdownMenuItem(
+                value: 8, child: Text('Çalışma İzni')),
+            DropdownMenuItem(value: 9, child: Text('V-157')),
+            DropdownMenuItem(value: 10, child: Text('V-69')),
+            DropdownMenuItem(value: 11, child: Text('V-137 Süresiz')),
+            DropdownMenuItem(value: 12, child: Text('V-88')),
+            DropdownMenuItem(value: 13, child: Text('V-137 Süreli')),
+            DropdownMenuItem(
+                value: 14, child: Text('İkamet Teskereli V-157')),
+            DropdownMenuItem(
+                value: 15,
+                child: Text('V-69 Tebliğ İçindeki')),
+          ],
+          onChanged: (value) => setState(() {
+            _visa = value ?? 2;
+            _loadUvrFields();
+          }),
+        ),
+        const SizedBox(height: 16),
+        _two(_number('Kural periyodu (gün)', _ruleDay),
+            _number('Bir seferde kalış (gün)', _oneTime)),
+        const SizedBox(height: 12),
+        _number('Toplam kalış (gün)', _longStay),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Vize harcı uygulansın'),
+          value: _visaFeeEnabled == 1,
+          onChanged: (value) =>
+              setState(() => _visaFeeEnabled = value ? 1 : 0),
+        ),
+        const SizedBox(height: 16),
+        if (widget.isAdmin)
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: _saveCountryRule,
+                  icon: const Icon(Icons.save),
+                  label: const Text('Kuralı Güncelle'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.red,
+                  side: const BorderSide(color: Colors.red),
+                ),
+                onPressed: hasExistingRule ? _deleteCountryRule : null,
+                icon: const Icon(Icons.delete_outline),
+                label: const Text('Kuralı Sil'),
+              ),
+            ],
+          )
+        else
+          FilledButton.icon(
+            onPressed: _saveCountryRule,
+            icon: const Icon(Icons.check),
+            label: const Text('Bu Kuralı Uygula'),
+          ),
+      ],
+    );
+  }
+
+  Widget _auhTab() {
+    final existingIndex = _draft.auh.indexWhere((r) => r.country == _country);
+    final hasExistingRule = existingIndex >= 0;
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        if (widget.isAdmin) ...[
+          FilledButton.tonalIcon(
+            onPressed: _addNewAuhRuleDialog,
+            icon: const Icon(Icons.add_circle_outline),
+            label: const Text('Yeni Ülke Harç Tarifesi Ekle'),
+          ),
+          const SizedBox(height: 12),
+        ],
+        _countryPicker(afterChange: _loadAuhFields),
+        const SizedBox(height: 16),
+        _two(_number('İlk ay', _firstMonth),
+            _number('Sonraki ay', _monthStep)),
+        const SizedBox(height: 12),
+        _two(_number('Gün başlangıç', _dayStart),
+            _number('Gün artış', _dayStep)),
+        const SizedBox(height: 12),
+        DropdownButtonFormField<String>(
+          key: ValueKey('currency-$_auhCurrency'),
+          initialValue: _auhCurrency,
+          decoration: const InputDecoration(labelText: 'Para Birimi'),
+          items: const ['TRY', 'USD', 'EUR', 'GBP']
+              .map((value) =>
+                  DropdownMenuItem(value: value, child: Text(value)))
+              .toList(),
+          onChanged: (value) => setState(() => _auhCurrency = value ?? 'USD'),
+        ),
+        const SizedBox(height: 20),
+        if (widget.isAdmin)
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: _saveAuhRule,
+                  icon: const Icon(Icons.save),
+                  label: const Text('Tarifeyi Güncelle'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.red,
+                  side: const BorderSide(color: Colors.red),
+                ),
+                onPressed: hasExistingRule ? _deleteAuhRule : null,
+                icon: const Icon(Icons.delete_outline),
+                label: const Text('Tarifeyi Sil'),
+              ),
+            ],
+          )
+        else
+          FilledButton.icon(
+            onPressed: _saveAuhRule,
+            icon: const Icon(Icons.check),
+            label: const Text('Tutarları Uygula'),
+          ),
+      ],
+    );
+  }
 
   Widget _generalTab() => ListView(
         padding: const EdgeInsets.all(16),
@@ -3010,6 +3507,48 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
               label: const Text('Sunucudaki Güncel Değerleri Çek'),
             ),
             const SizedBox(height: 16),
+            Card(
+              elevation: 2,
+              margin: const EdgeInsets.only(bottom: 16),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.sync_alt, color: Color(0xff0a7cff)),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Tüm Sistem Kuralları (UVR, AUH, Tahdit)',
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Ülke vize rejimleri, aylık harç tarifeleri ve tahdit kodlarını sunucu ile çift yönlü eşitleyin.',
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 12),
+                    FilledButton.tonalIcon(
+                      onPressed: _isSyncing ? null : _uploadAllDataToServer,
+                      icon: const Icon(Icons.cloud_upload_outlined),
+                      label: const Text('Tüm Verileri Sunucuya Yükle'),
+                    ),
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: _isSyncing ? null : _downloadAllDataFromServer,
+                      icon: const Icon(Icons.cloud_download_outlined),
+                      label: const Text('Sunucudaki Tüm Verileri İndir / Eşitle'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ],
           Text('Veri oluşturulma tarihi: ${_draft.generatedAt ?? '-'}'),
           Text(
@@ -3021,24 +3560,24 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
         padding: const EdgeInsets.all(16),
         children: [
           const Text(
-            'Bu de\u011ferler yaln\u0131zca ana veride uygun kural veya ceza tutar\u0131 bulunamad\u0131\u011f\u0131nda admin hesab\u0131yla yap\u0131lan hesaplamalarda kullan\u0131l\u0131r.',
+            'Bu değerler yalnızca ana veride uygun kural veya ceza tutarı bulunamadığında admin hesabıyla yapılan hesaplamalarda kullanılır.',
           ),
           const SizedBox(height: 16),
           _two(
-            _number('Bir seferde kal\u0131\u015f (g\u00fcn)', _manualOneTime),
-            _number('Toplam kal\u0131\u015f (g\u00fcn)', _manualLongStay),
+            _number('Bir seferde kalış (gün)', _manualOneTime),
+            _number('Toplam kalış (gün)', _manualLongStay),
           ),
           const SizedBox(height: 20),
-          const Text('Manuel Ceza Tutar\u0131'),
+          const Text('Manuel Ceza Tutarı'),
           const SizedBox(height: 12),
           _two(
-            _number('\u0130lk ay', _manualFirstMonth),
+            _number('İlk ay', _manualFirstMonth),
             _number('Sonraki ay', _manualMonthStep),
           ),
           const SizedBox(height: 12),
           _two(
-            _number('G\u00fcn ba\u015flang\u0131\u00e7', _manualDayStart),
-            _number('G\u00fcn art\u0131\u015f', _manualDayStep),
+            _number('Gün başlangıç', _manualDayStart),
+            _number('Gün artış', _manualDayStep),
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
@@ -3057,23 +3596,49 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
 
   Widget _tkodTab() {
     if (_draft.tkod.isEmpty) {
-      return const Center(child: Text('Tahdit verisi yok.'));
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Tahdit verisi bulunmuyor.'),
+              const SizedBox(height: 16),
+              if (widget.isAdmin)
+                FilledButton.icon(
+                  onPressed: _addNewTkodRuleDialog,
+                  icon: const Icon(Icons.add_circle_outline),
+                  label: const Text('Yeni Tahdit Kodu Ekle'),
+                ),
+            ],
+          ),
+        ),
+      );
     }
-    final paidType = _draft.tkod[_tkodIndex].paidType;
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        if (widget.isAdmin) ...[
+          FilledButton.tonalIcon(
+            onPressed: _addNewTkodRuleDialog,
+            icon: const Icon(Icons.add_circle_outline),
+            label: const Text('Yeni Tahdit Kodu Ekle'),
+          ),
+          const SizedBox(height: 12),
+        ],
         DropdownButtonFormField<int>(
           key: ValueKey('tkod-$_tkodIndex'),
           initialValue: _tkodIndex,
           isExpanded: true,
-          decoration: const InputDecoration(labelText: 'Tahdit Kayd\u0131'),
+          decoration: const InputDecoration(labelText: 'Tahdit Kaydı'),
           items: List.generate(_draft.tkod.length, (index) {
             final row = _draft.tkod[index];
+            final payStr = row.paidType == 1 ? 'Ödeyen' : 'Ödemeyen';
             return DropdownMenuItem(
                 value: index,
                 child: Text(
-                    '${row.code} | ${row.start}-${row.finish} | \u00d6deme ${row.paidType}'));
+                    '${row.code} | ${row.start}-${row.finish} gün | $payStr'));
           }),
           onChanged: (value) => setState(() {
             _tkodIndex = value ?? 0;
@@ -3083,24 +3648,58 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
         const SizedBox(height: 16),
         TextField(
             controller: _tkodCode,
-            decoration: const InputDecoration(labelText: 'Tahdit Kodu')),
+            decoration: const InputDecoration(labelText: 'Tahdit Kodu (örn. Ç-113)')),
         const SizedBox(height: 12),
-        _two(_number('Ba\u015flang\u0131\u00e7 g\u00fcn\u00fc', _tkodStart),
-            _number('Biti\u015f g\u00fcn\u00fc', _tkodFinish)),
+        _two(_number('Başlangıç günü', _tkodStart),
+            _number('Bitiş günü', _tkodFinish)),
         const SizedBox(height: 12),
-        _number('Tahdit s\u00fcresi (g\u00fcn)', _tkodPenaltyTime),
+        _number('Tahdit süresi (gün)', _tkodPenaltyTime),
         const SizedBox(height: 12),
         TextField(
             controller: _tkodIdariCode,
-            decoration: const InputDecoration(labelText: '\u0130dari Kod')),
-        const SizedBox(height: 8),
-        Text('\u00d6deme tipi: $paidType',
-            style: Theme.of(context).textTheme.bodySmall),
+            decoration: const InputDecoration(labelText: 'İdari Kod')),
+        const SizedBox(height: 12),
+        DropdownButtonFormField<int>(
+          key: ValueKey('tkod-paid-$_tkodPaidType'),
+          initialValue: _tkodPaidType,
+          decoration: const InputDecoration(
+              labelText: 'Ödeme Durumu (Ceza Ödeyen / Ödemeyen)'),
+          items: const [
+            DropdownMenuItem(value: 1, child: Text('1 - Ceza Ödeyen')),
+            DropdownMenuItem(
+                value: 0, child: Text('0 - Ceza Ödemeyen / İdari')),
+          ],
+          onChanged: (val) => setState(() => _tkodPaidType = val ?? 1),
+        ),
         const SizedBox(height: 20),
-        FilledButton.icon(
+        if (widget.isAdmin)
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: _saveTkodRule,
+                  icon: const Icon(Icons.save),
+                  label: const Text('Kuralı Güncelle'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.red,
+                  side: const BorderSide(color: Colors.red),
+                ),
+                onPressed: _draft.tkod.isNotEmpty ? _deleteTkodRule : null,
+                icon: const Icon(Icons.delete_outline),
+                label: const Text('Kodu Sil'),
+              ),
+            ],
+          )
+        else
+          FilledButton.icon(
             onPressed: _saveTkodRule,
             icon: const Icon(Icons.check),
-            label: const Text('Tahdit Kural\u0131n\u0131 Uygula')),
+            label: const Text('Tahdit Kuralını Uygula'),
+          ),
       ],
     );
   }

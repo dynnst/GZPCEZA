@@ -295,5 +295,112 @@ namespace gzpegm.Controllers
                 return Json(new { success = false, message = "Sistem ayarları güncellenirken hata oluştu: " + ex.Message });
             }
         }
+
+        private string ResolveDataPath()
+        {
+            var appDataPath = Server.MapPath("~/App_Data/cezam_data.json");
+            if (System.IO.File.Exists(appDataPath))
+            {
+                return appDataPath;
+            }
+
+            var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            var fallback = System.IO.Path.GetFullPath(System.IO.Path.Combine(baseDir, "..", "mobile", "cezam_calculator", "assets", "cezam_data.json"));
+            if (System.IO.File.Exists(fallback))
+            {
+                return fallback;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Tüm sistem verilerini (UVR, AUH, Tahdit) JSON formatında döner.
+        /// </summary>
+        [HttpGet]
+        [Route("internal-sync/system-data")]
+        [Route("system-settings/data")]
+        public ActionResult GetSystemData()
+        {
+            try
+            {
+                var targetPath = ResolveDataPath();
+                if (targetPath != null && System.IO.File.Exists(targetPath))
+                {
+                    return File(targetPath, "application/json");
+                }
+
+                return Json(new { success = false, message = "Sistem veri dosyası bulunamadı." }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Veri okunamadı: " + ex.Message }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// Admin yetkisiyle veya senkronizasyon anahtarıyla tüm sistem verilerini günceller ve kaydeder.
+        /// </summary>
+        [HttpPost]
+        [Route("internal-sync/system-data")]
+        [Route("system-settings/data")]
+        public ActionResult UpdateSystemData()
+        {
+            if (!ValidateSecurity())
+            {
+                var role = Session?["Role"]?.ToString();
+                var auth = Session?["UserAuth"]?.ToString();
+                if (Session?["user"] == null || (role != "Admin" && auth != "2"))
+                {
+                    return Json(new { success = false, message = "Yetkisiz işlem. Admin yetkisi gereklidir." });
+                }
+            }
+
+            try
+            {
+                Request.InputStream.Seek(0, System.IO.SeekOrigin.Begin);
+                string json;
+                using (var reader = new System.IO.StreamReader(Request.InputStream))
+                {
+                    json = reader.ReadToEnd();
+                }
+
+                if (string.IsNullOrWhiteSpace(json))
+                {
+                    return Json(new { success = false, message = "Gönderilen veri boş." });
+                }
+
+                var appDataDir = Server.MapPath("~/App_Data");
+                if (!System.IO.Directory.Exists(appDataDir))
+                {
+                    System.IO.Directory.CreateDirectory(appDataDir);
+                }
+
+                var appDataPath = System.IO.Path.Combine(appDataDir, "cezam_data.json");
+                System.IO.File.WriteAllText(appDataPath, json);
+
+                try
+                {
+                    var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                    var fallbackPath = System.IO.Path.GetFullPath(System.IO.Path.Combine(baseDir, "..", "mobile", "cezam_calculator", "assets", "cezam_data.json"));
+                    if (System.IO.File.Exists(fallbackPath))
+                    {
+                        System.IO.File.WriteAllText(fallbackPath, json);
+                    }
+                }
+                catch { }
+
+                return Json(new
+                {
+                    success = true,
+                    message = "Tüm sistem verileri (UVR, AUH, Tahdit) sunucuya başarıyla kaydedildi.",
+                    updatedAt = DateTime.Now.ToString("s")
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Veri kaydedilemedi: " + ex.Message });
+            }
+        }
     }
 }

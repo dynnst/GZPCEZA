@@ -155,6 +155,50 @@ app.MapPost("/system-settings", (HttpRequest httpRequest, SystemSettingsUpdateRe
     return Results.Ok(updated);
 });
 
+app.MapGet("/system-settings/data", (IWebHostEnvironment environment) =>
+{
+    var dataDirectory = Path.Combine(environment.ContentRootPath, "Data");
+    var filePath = Path.Combine(dataDirectory, "cezam_data.json");
+    if (!File.Exists(filePath))
+    {
+        var fallbackPath = Path.Combine(environment.ContentRootPath, "..", "cezam_calculator", "assets", "cezam_data.json");
+        if (File.Exists(fallbackPath))
+        {
+            return Results.File(fallbackPath, "application/json");
+        }
+        return Results.NotFound(new { message = "Sistem verisi henüz yüklenmemiş." });
+    }
+    return Results.File(filePath, "application/json");
+});
+
+app.MapPost("/system-settings/data", async (HttpRequest httpRequest, AuthStore store, IWebHostEnvironment environment) =>
+{
+    var admin = store.GetUserByBearer(httpRequest);
+    if (admin is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    if (admin.Role != "admin")
+    {
+        return Results.Forbid();
+    }
+
+    var dataDirectory = Path.Combine(environment.ContentRootPath, "Data");
+    Directory.CreateDirectory(dataDirectory);
+    var filePath = Path.Combine(dataDirectory, "cezam_data.json");
+
+    using var reader = new StreamReader(httpRequest.Body);
+    var content = await reader.ReadToEndAsync();
+    if (string.IsNullOrWhiteSpace(content))
+    {
+        return Results.BadRequest(new { message = "Veri içeriği boş olamaz." });
+    }
+
+    await File.WriteAllTextAsync(filePath, content);
+    return Results.Ok(new { success = true, message = "Sistem verileri (UVR, AUH, Tahdit) başarıyla kaydedildi.", updatedAt = DateTimeOffset.UtcNow });
+});
+
 app.Run();
 
 sealed class AuthStore
