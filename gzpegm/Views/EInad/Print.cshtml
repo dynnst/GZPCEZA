@@ -1,0 +1,28 @@
+@model gzpegm.Models.E_Inad
+@{
+    Layout = "~/Views/Shared/_Master.cshtml";
+}
+
+<section class="card">
+    <header class="card-header">
+        <h2 class="card-title">Yazdirma Formu Secimi</h2>
+        <p class="card-subtitle">Lutfen yazdirmak istediginiz formu secin.</p>
+    </header>
+    <div class="card-body">
+        <div class="mb-3">
+            <strong>Kayit: </strong> @(Model?.AdSoyad ?? "-") &nbsp; <small>(ID: @Model?.InadId)</small>
+        </div>
+
+        <div class="btn-group-vertical" role="group" aria-label="Yazdirma secenekleri">
+            <a class="btn btn-outline-primary" target="_blank" rel="noopener noreferrer" href="@Url.Action("PrintForm1", "EInad", new { id = Model?.InadId })">Form 1 - Kabul Edilemez Yolcu Bilgi Formu</a>
+            <a class="btn btn-outline-primary" target="_blank" rel="noopener noreferrer" href="@Url.Action("PrintForm2", "EInad", new { id = Model?.InadId })">Form 2 - Kabul Edilemez Yolcu Formu</a>
+            <a class="btn btn-outline-primary" target="_blank" rel="noopener noreferrer" href="@Url.Action("PrintForm3", "EInad", new { id = Model?.InadId })">Form 3 - Takip Formu</a>
+            <a class="btn btn-outline-primary" target="_blank" rel="noopener noreferrer" href="@Url.Action("PrintForm4", "EInad", new { id = Model?.InadId })">Form 4 - Tutanak</a>
+            <a class="btn btn-outline-primary" target="_blank" rel="noopener noreferrer" href="@Url.Action("PrintForm5", "EInad", new { id = Model?.InadId })">Form 5 - Teslim Tesellum</a>
+            <a class="btn btn-outline-primary" target="_blank" rel="noopener noreferrer" href="@Url.Action("PrintForm6", "EInad", new { id = Model?.InadId })">Form 6 - Ust Arama Tutanagi</a>
+        </div>
+
+        <hr />
+        <a class="btn btn-secondary" href="@Url.Action("Index", "EInad")">Geri</a>
+    </div>
+</section>

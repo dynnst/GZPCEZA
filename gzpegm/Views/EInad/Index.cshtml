@@ -1,0 +1,542 @@
+﻿@model IEnumerable<gzpegm.Models.E_Inad>
+@using System.Web
+@{
+    Layout = "~/Views/Shared/_Master.cshtml";
+    ViewBag.UseDataTables = true;
+    var totalRecords = Model == null ? 0 : Model.Count();
+    var fromVal = ViewBag.From != null ? ((DateTime)ViewBag.From).ToString("yyyy-MM-dd") : "";
+    var toVal = ViewBag.To != null ? ((DateTime)ViewBag.To).ToString("yyyy-MM-dd") : "";
+    var searchText = ViewBag.SearchText as string ?? "";
+    var selectedBorder = ViewBag.SelectedBorder as string ?? "";
+    var selectedUser = ViewBag.SelectedUser as string ?? "";
+    var isAdmin = ViewBag.IsAdmin is bool && (bool)ViewBag.IsAdmin;
+    var baseUrl = Url.Action("Index", "EInad");
+    var currentParams = "";
+    if (!string.IsNullOrEmpty(fromVal)) { currentParams += (currentParams == "" ? "?" : "&") + "from=" + fromVal; }
+    if (!string.IsNullOrEmpty(toVal)) { currentParams += (currentParams == "" ? "?" : "&") + "to=" + toVal; }
+    if (!string.IsNullOrEmpty(searchText)) { currentParams += (currentParams == "" ? "?" : "&") + "q=" + HttpUtility.UrlEncode(searchText); }
+    if (!string.IsNullOrEmpty(selectedBorder)) { currentParams += (currentParams == "" ? "?" : "&") + "border=" + HttpUtility.UrlEncode(selectedBorder); }
+    if (!string.IsNullOrEmpty(selectedUser)) { currentParams += (currentParams == "" ? "?" : "&") + "userCode=" + HttpUtility.UrlEncode(selectedUser); }
+    var exportPdfUrl = baseUrl + currentParams + (currentParams == "" ? "?" : "&") + "export=pdf";
+    var exportXlsUrl = baseUrl + currentParams + (currentParams == "" ? "?" : "&") + "export=excel";
+}
+
+@section Styles {
+    <link href="@Url.Content("~/css/einad-index.css")?v=1.0" rel="stylesheet" />
+}
+
+<section class="card">
+    <header class="card-header">
+        <h2 class="card-title">İNAD Kayıtları</h2>
+        <p class="card-subtitle">Yeni kayıt, düzenleme, silme ve yazdırma işlemleri kapalı ağda yerel kaynaklarla çalışır.</p>
+    </header>
+    <div class="card-body">
+        @if (TempData["msgSuccess"] != null)
+        {
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i> @TempData["msgSuccess"]
+            </div>
+        }
+        @if (TempData["msgError"] != null)
+        {
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle"></i> @TempData["msgError"]
+            </div>
+        }
+        <div id="einadStatus" class="alert einad-status" role="status" aria-live="polite"></div>
+
+        <div class="einad-toolbar">
+            <button class="btn btn-primary" onclick="openAdd()">
+                <i class="fas fa-plus"></i> Yeni Kayıt Ekle
+            </button>
+            <span class="einad-note">
+                <i class="fas fa-info-circle"></i>
+                Listede yalnızca yetkiniz dahilindeki @totalRecords kayıt gösterilir.
+            </span>
+        </div>
+
+        <form method="get" action="@baseUrl" class="mb-3 einad-filter-form">
+            <div class="row">
+                <div class="col-md-3 mb-2">
+                    <input type="text" name="q" value="@searchText" class="form-control" placeholder="Ad, uyruk, pasaport, kapı ara" />
+                </div>
+                <div class="col-md-3 mb-2">
+                    <select name="border" class="form-control">
+                        <option value="">Tüm Kapılar</option>
+                        @foreach (var item in (ViewBag.BorderList as List<string> ?? new List<string>()))
+                        {
+                            <option value="@item" @(selectedBorder == item ? "selected" : "")>@item</option>
+                        }
+                    </select>
+                </div>
+                @if (isAdmin)
+                {
+                    <div class="col-md-3 mb-2">
+                        <select name="userCode" class="form-control">
+                            <option value="">Tüm Kullanıcılar</option>
+                            @foreach (var item in (ViewBag.UserList as List<string> ?? new List<string>()))
+                            {
+                                <option value="@item" @(selectedUser == item ? "selected" : "")>@item</option>
+                            }
+                        </select>
+                    </div>
+                }
+                <div class="col-md-3 mb-2">
+                    <input type="date" name="from" value="@fromVal" class="form-control" />
+                </div>
+                <div class="col-md-3 mb-2">
+                    <input type="date" name="to" value="@toVal" class="form-control" />
+                </div>
+                <div class="col-md-9 mb-2 text-right">
+                    <button type="submit" class="btn btn-primary">Filtrele</button>
+                    <a href="@baseUrl" class="btn btn-default">Temizle</a>
+                    <a href="@exportPdfUrl" class="btn btn-outline-secondary">PDF</a>
+                    <a href="@exportXlsUrl" class="btn btn-outline-secondary">Excel</a>
+                </div>
+            </div>
+        </form>
+
+        <div class="text-muted small mb-2">@(ViewBag.ResultInfo ?? "Son kayıtlar gösteriliyor.")</div>
+
+        <table class="table table-bordered table-striped mb-0" id="inad-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>TarihSaat</th>
+                    <th>Ad Soyad</th>
+                    <th>Uyruk</th>
+                    <th>PasaportNo</th>
+                    <th>Kapı</th>
+                    <th>Durum</th>
+                    <th>Sicil</th>
+                    <th>Eylemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{ var i = 1; }
+                @foreach (var r in Model ?? Enumerable.Empty<gzpegm.Models.E_Inad>())
+                {
+                    <tr data-inad-id="@r.InadId">
+                        <td>@(i++)</td>
+                        <td>@(r.TarihSaat.HasValue ? r.TarihSaat.Value.ToString("dd.MM.yyyy HH:mm") : "")</td>
+                        <td>@r.AdSoyad</td>
+                        <td>@r.Uyruk</td>
+                        <td>@r.PasaportNo</td>
+                        <td>@r.Kapi</td>
+
+                        <td>
+                            @if (r.Durum == "İnad Edildi")
+                            {
+                                <button type="button"
+                                        class="inad-status-btn status-edildi"
+                                        data-inad-id="@r.InadId"
+                                        data-next-status="İnad Odasına Alındı"
+                                        aria-label="Durumu 'İnad Odasına Alındı' yapmak için tıklayın"
+                                        title="Durumu 'İnad Odasına Alındı' yapmak için tıklayın">
+                                    <i class="fas fa-check-circle"></i> @r.Durum
+                                </button>
+                            }
+                            else if (r.Durum == "İnad Odasına Alındı")
+                            {
+                                <button type="button"
+                                        class="inad-status-btn status-odada blink"
+                                        data-inad-id="@r.InadId"
+                                        data-next-status="İnad Edildi"
+                                        aria-label="Durumu 'İnad Edildi' yapmak için tıklayın"
+                                        title="Durumu 'İnad Edildi' yapmak için tıklayın">
+                                    <i class="fas fa-exclamation-circle"></i> @r.Durum
+                                </button>
+                            }
+                            else
+                            {
+                                <span class="inad-status-btn status-diger">
+                                    @r.Durum
+                                </span>
+                            }
+                        </td>
+
+                        <td>@r.Sicil</td>
+                        <td class="actions">
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <i class="fas fa-print"></i> Yazdır
+                                </button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" target="_blank" href="@Url.Action("PrintForm1","EInad", new { id = r.InadId })">Kabul Edilemez Yolcu Bilgi Formu</a>
+                                    <a class="dropdown-item" target="_blank" href="@Url.Action("PrintForm2","EInad", new { id = r.InadId })">Kabul Edilemez Yolcu Formu</a>
+                                    <a class="dropdown-item" target="_blank" href="@Url.Action("PrintForm3","EInad", new { id = r.InadId })">Takip Formu</a>
+                                    <a class="dropdown-item" target="_blank" href="@Url.Action("PrintForm4","EInad", new { id = r.InadId })">Tutanak</a>
+                                    <a class="dropdown-item" target="_blank" href="@Url.Action("PrintForm5","EInad", new { id = r.InadId })">Teslim Tesellüm</a>
+                                    <a class="dropdown-item" target="_blank" href="@Url.Action("PrintForm6","EInad", new { id = r.InadId })">Üst Arama Tutanağı</a>
+                                </div>
+                            </div>
+
+                            <a class="btn btn-default" onclick="openEdit(@r.InadId)"><i class="fas fa-edit"></i></a>
+                            <a class="btn btn-default" href="javascript:void(0)" onclick="deleteRecord(@r.InadId)">
+                                <i class="fas fa-trash-alt"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+    </div>
+</section>
+
+<!-- Add / Edit Modal -->
+<div id="inadModal" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog custom-wide">
+        <div class="modal-content">
+            <form id="inadForm" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title" id="inadModalTitle">Kayıt</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="InadId" name="InadId" value="0" />
+
+                    <div class="accordion" id="inadAccordion">
+                        <!-- 1. Kimlik -->
+                        <div class="card">
+                            <div class="card-header" data-toggle="collapse" data-target="#accKimlik">
+                                <strong>Kimlik Bilgileri</strong>
+                            </div>
+                            <div id="accKimlik" class="collapse show" data-parent="#inadAccordion">
+                                <div class="card-body">
+                                    <div class="form-row">
+                                        <div class="form-group col-md-4">
+                                            <label>Tarih Saat *</label>
+                                            <input type="datetime-local" class="form-control required" id="TarihSaat" name="TarihSaat">
+                                        </div>
+                                        <div class="form-group col-md-4">
+                                            <label>Ad Soyad *</label>
+                                            <input type="text" class="form-control required" id="AdSoyad" name="AdSoyad">
+                                        </div>
+                                        <div class="form-group col-md-4">
+                                            <label>Doğum Tarihi</label>
+                                            <input type="date" class="form-control" id="DogumT" name="DogumT">
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="form-group col-md-3">
+                                            <label>Cinsiyet</label>
+                                            <select class="form-control" id="Cinsiyet" name="Cinsiyet">
+                                                <option value="">-- Seçiniz --</option>
+                                                <option>Bayan</option>
+                                                <option>Erkek</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group col-md-6">
+                                            <label>Uyruk *</label>
+                                            <select class="form-control required" id="Uyruk" name="Uyruk">
+                                                <option value="">-- Seçiniz --</option>
+                                                @foreach (var u in (List<string>)ViewBag.Countries)
+                                                {
+                                                    <option value="@u">@u</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="form-group col-md-3">
+                                            <label>Doğum Yeri</label>
+                                            <input type="text" class="form-control" id="DogumY" name="DogumY">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2. Belge -->
+                        <div class="card">
+                            <div class="card-header" data-toggle="collapse" data-target="#accBelge">
+                                <strong>Belge Bilgileri</strong>
+                            </div>
+                            <div id="accBelge" class="collapse" data-parent="#inadAccordion">
+                                <div class="card-body">
+                                    <div class="form-row">
+                                        <div class="form-group col-md-3">
+                                            <label>Pasaport No *</label>
+                                            <input type="text" class="form-control required" id="PasaportNo" name="PasaportNo">
+                                        </div>
+                                        <div class="form-group col-md-3">
+                                            <label>Belge No</label>
+                                            <input type="text" class="form-control" id="BelgeNo" name="BelgeNo">
+                                        </div>
+                                        <div class="form-group col-md-3">
+                                            <label>Kimlik No</label>
+                                            <input type="text" class="form-control" id="KimlikNo" name="KimlikNo">
+                                        </div>
+                                        <div class="form-group col-md-3">
+                                            <label>Pasaport Türü</label>
+                                            <select class="form-control" id="PasaportTuru" name="PasaportTuru">
+                                                @foreach (var pasaportTuru in (List<string>)ViewBag.PasaportTurleri)
+                                                {
+                                                    if (pasaportTuru == "Umuma Mahsus")
+                                                    {
+                                                        <option selected value="@pasaportTuru">@pasaportTuru</option>
+                                                    }
+                                                    else
+                                                    {
+                                                        <option value="@pasaportTuru">@pasaportTuru</option>
+                                                    }
+                                                }
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group col-md-3">
+                                            <label>Beyan</label>
+                                            <select class="form-control" id="Beyan" name="Beyan">
+                                                <option value="">-- Seçiniz --</option>
+                                                @foreach (var beyan in (List<string>)ViewBag.BeyanTurleri)
+                                                {
+                                                    <option value="@beyan">@beyan</option>
+                                                }
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 3. İNAD -->
+                        <div class="card">
+                            <div class="card-header bg-light" data-toggle="collapse" data-target="#accInad">
+                                <strong>İNAD Bilgileri</strong>
+                            </div>
+                            <div id="accInad" class="collapse" data-parent="#inadAccordion">
+                                <div class="card-body">
+                                    <div class="form-row">
+                                        <div class="form-group col-md-12">
+                                            <label><strong>İNAD Sebepleri *</strong></label>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="InadSebep" value="Geçerli bir seyahat belgesine sahip olmaması">
+                                                <label class="form-check-label">Geçerli bir seyahat belgesine sahip olmaması</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="InadSebep" value="Türkiye'ye girişi sakıncalı görülmesi">
+                                                <label class="form-check-label">Türkiye'ye girişi sakıncalı görülmesi</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="InadSebep" value="Yeterli maddi imkâna sahip olmaması">
+                                                <label class="form-check-label">Yeterli maddi imkâna sahip olmaması</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="InadSebep" value="Hakkında Türkiye'ye giriş yasağı bulunması">
+                                                <label class="form-check-label">Hakkında Türkiye'ye giriş yasağı bulunması</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="InadSebep" value="Giriş vizesinin olmaması">
+                                                <label class="form-check-label">Giriş vizesinin olmaması</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="InadSebep" value="Pasaport süresinin yetersiz olması">
+                                                <label class="form-check-label">Pasaport süresinin yetersiz olması</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="InadSebep" value="Sahte pasaport">
+                                                <label class="form-check-label">Sahte pasaport</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="InadSebep" value="Pasaportta tahrifat yapılmış olması">
+                                                <label class="form-check-label">Pasaportta tahrifat yapılmış olması</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="InadSebep" value="Sahte vize-ikamet">
+                                                <label class="form-check-label">Sahte vize / ikamet</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="InadSebep" value="Çalıntı belge">
+                                                <label class="form-check-label">Çalıntı belge</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="InadSebep" value="180 günde 90 gün uygulamasının ihlali">
+                                                <label class="form-check-label">180 günde 90 gün uygulamasının ihlali</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="InadSebep" value="Türkiye'ye girmek istememesi">
+                                                <label class="form-check-label">Türkiye'ye girmek istememesi</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="InadSebep" value="Diğer Sebepler / Other Reasons">
+                                                <label class="form-check-label">Diğer Sebepler / Other Reasons</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 4. Uçuş & İşlem Bilgileri -->
+                        <div class="card">
+                            <div class="card-header" data-toggle="collapse" data-target="#accUcus">
+                                <strong>Uçuş & İşlem Bilgileri</strong>
+                            </div>
+                            <div id="accUcus" class="collapse" data-parent="#inadAccordion">
+                                <div class="card-body">
+                                    <div class="form-row">
+                                        <div class="form-group col-md-3">
+                                            <label>Gelen Uçuş No</label>
+                                            <input type="text" class="form-control" id="GelenUcusNo" name="GelenUcusNo" placeholder="PC402">
+                                            <small class="datalist-hint">İlk 2 harf havayolu kodudur</small>
+                                        </div>
+                                        <div class="form-group col-md-3">
+                                            <label>Gelen Havayolu</label>
+                                            <input list="airlineList" class="form-control" id="GelenHavayolu" name="GelenHavayolu" placeholder="Listeden seçin veya girin">
+                                            <small class="datalist-hint">Listeden seçin veya manuel girin</small>
+                                        </div>
+                                        <div class="form-group col-md-2">
+                                            <label>Geldiği Yer</label>
+                                            <input type="text" class="form-control" id="GeldigiYer" name="GeldigiYer">
+                                        </div>
+                                        <div class="form-group col-md-2">
+                                            <label>Geldiği Tarih / Saat</label>
+                                            <input type="datetime-local" class="form-control" id="GeldigiTarihSaat" name="GeldigiTarihSaat">
+                                        </div>
+                                    </div>
+
+                                    <hr />
+
+                                    <div class="form-row">
+                                        <div class="form-group col-md-2">
+                                            <label>Giden Havayolu</label>
+                                            <input list="airlineList" class="form-control" id="GidenHavayolu" name="GidenHavayolu" placeholder="Listeden seçin veya girin">
+                                            <small class="datalist-hint">Listeden seçin veya manuel girin</small>
+                                        </div>
+                                        <div class="form-group col-md-2">
+                                            <label>Gidiş Uçuş No</label>
+                                            <input type="text" class="form-control" id="GidisUcusNo" name="GidisUcusNo" placeholder="PC402">
+                                            <small class="datalist-hint">İlk 2 harf havayolu kodudur</small>
+                                        </div>
+                                        <div class="form-group col-md-2">
+                                            <label>Gidiş Yeri</label>
+                                            <input type="text" class="form-control" id="GidisYer" name="GidisYer">
+                                        </div>
+                                        <div class="form-group col-md-2">
+                                            <label>Gidiş Tarih / Saat</label>
+                                            <input type="datetime-local" class="form-control" id="GidisTarihSaat" name="GidisTarihSaat">
+                                        </div>
+                                    </div>
+
+                                    <hr />
+
+                                    <div class="form-row">
+                                        <div class="form-group col-md-4">
+                                            <label>Personel (Otomatik)</label>
+                                            <input type="text" class="form-control" id="Personel" name="Personel" readonly>
+                                        </div>
+                                        <div class="form-group col-md-4">
+                                            <label>Üst Arama Eşya</label>
+                                            <input type="text" class="form-control" id="UstAramaEsya" name="UstAramaEsya" placeholder="Varsa listeleyin">
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="form-group col-md-12">
+                                            <label style="font-weight:bold;">Uçağa Nakil</label>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="UcagaNakil" id="UcagaNakil1" value="Esyalari ve evraklari teslim edildi">
+                                                <label class="form-check-label" for="UcagaNakil1">
+                                                    Şahsın eşyaları ve evrakları havayolu işleticisine / yer hizmetleri kuruluşuna tam ve sağlam olarak teslim edilmiştir.<br />
+                                                    <i>The whole and complete items and documents of this person have been delivered to the airport operator / ground handling service.</i>
+                                                </label>
+                                            </div>
+                                            <div class="form-check mt-2">
+                                                <input class="form-check-input" type="checkbox" name="UcagaNakil" id="UcagaNakil2" value="Refakat edilmesi gerekmektedir">
+                                                <label class="form-check-label" for="UcagaNakil2">
+                                                    Kabul edilemeyen yolcuya seyahati sırasında refakat edilmesi gerekmektedir.<br />
+                                                    <i>The person who is an inadmissible passenger needs to be accompanied during her / his journey.</i>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 5. İdari Bilgiler -->
+                        <div class="card">
+                            <div class="card-header" data-toggle="collapse" data-target="#accIdari">
+                                <strong>İdari Bilgiler</strong>
+                            </div>
+                            <div id="accIdari" class="collapse" data-parent="#inadAccordion">
+                                <div class="card-body">
+                                    <div class="form-row">
+                                        <div class="form-group col-md-4">
+                                            <label>Kapı</label>
+                                            <input type="text" class="form-control" id="Kapi" name="Kapi">
+                                        </div>
+                                        <div class="form-group col-md-4">
+                                            <label>Tespit Eden Personel Sicili</label>
+                                            <input type="text" class="form-control" id="Sicil" name="Sicil" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" placeholder="6 haneli sicil">
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group col-md-6">
+                                            <label>Hudut Kapısının Bulunduğu İl</label>
+                                            <input type="text" class="form-control" id="Valilik" name="Valilik" readonly>
+                                        </div>
+                                        <div class="form-group col-md-6">
+                                            <label>Yolcunun Durumu</label>
+                                            <select class="form-control" id="Durum" name="Durum">
+                                                <option value="">-- Seçiniz --</option>
+                                                @foreach (var durum in (List<string>)ViewBag.YolcuDurumlari)
+                                                {
+                                                    <option value="@durum">@durum</option>
+                                                }
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group col-md-3">
+                                            <label>Öz. Güvenlik</label>
+                                            <input type="text" class="form-control form-control-sm" id="OzelGuvenlik" name="OzelGuvenlik" placeholder="Ad / Birim">
+                                        </div>
+                                        <div class="form-group col-md-3">
+                                            <label>Yer Hiz. Pers.</label>
+                                            <input type="text" class="form-control form-control-sm" id="YerHizmetleriPersonel" name="YerHizmetleriPersonel" placeholder="Ad Soyad">
+                                        </div>
+                                        <div class="form-group col-md-3">
+                                            <label>Yer Hizmetleri</label>
+                                            <input type="text" class="form-control form-control-sm" id="YerHizmetleri" name="YerHizmetleri" placeholder="Firma / Birim">
+                                        </div>
+                                        <div class="form-group col-md-3">
+                                            <label>Refakat</label>
+                                            <input type="text" class="form-control form-control-sm" id="Refakat" name="Refakat" placeholder="Var / Yok">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" id="saveButton" class="btn btn-primary">Kaydet</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Kapat</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ✅ TEK DATALIST (HER İKİ HAVAYOLU İÇİN) -->
+<datalist id="airlineList"></datalist>
+
+@section Scripts {
+        <div id="einad-config"
+         data-url-get-airlines="@Url.Action("GetEuropeanAirlines", "EInad")"
+         data-url-add-airline="@Url.Action("AddUserDefinedAirline", "EInad")"
+         data-url-get-iata="@Url.Action("GetByIataCode", "EInad")"
+         data-url-add-inad="@Url.Action("AddInad", "EInad")"
+         data-url-get-border="@Url.Action("GetMyBorder", "EInad")"
+         data-url-get-inad="@Url.Action("GetInad", "EInad")"
+         data-url-edit-inad="@Url.Action("EditInad", "EInad")"
+         data-url-get-countries="@Url.Action("GetCountries", "EInad")"
+         data-url-delete-inad="@Url.Action("DeleteInad", "EInad")"
+         data-url-update-status="@Url.Action("UpdateStatus", "EInad")"
+         style="display:none;"></div>
+    <script src="@Url.Content("~/js/einad-index.js")?v=1.0"></script>
+}

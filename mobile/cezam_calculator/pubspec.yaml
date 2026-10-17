@@ -1,0 +1,36 @@
+name: cezam_calculator
+description: Offline CEZAM penalty calculator.
+publish_to: "none"
+
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  country_picker: ^2.0.28
+  http: ^1.6.0
+  pdf: ^3.13.0
+  printing: ^5.15.0
+  shared_preferences: ^2.2.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/cezam_data.json
+    - assets/fonts/arial.ttf
+    - assets/fonts/arialbd.ttf
+    - assets/fonts/arialbi.ttf
+    - assets/fonts/ariali.ttf
+    - assets/print_templates/violation_paid.html
+    - assets/print_templates/violation_unpaid.html
+    - assets/print_templates/img/goc.jpg

@@ -1,0 +1,37 @@
+﻿
+@{
+    Layout = null;
+}
+
+
+
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <title>T.C. İçişleri Bakanlığı Emniyet Genel Müdürlüğü</title>
+    <meta name="title" content="T.C. İçişleri Bakanlığı Emniyet Genel Müdürlüğü">
+    <meta name="description" content="T.C. İçişleri Bakanlığı Emniyet Genel Müdürlüğü">
+    <meta name="keywords" content="Polis, Emniyet, Özel harekat, Terör,Asayiş, trafik, narkotik, interpol, suç, hırsızlık, kapkaç, dolandırıcılık, ruhsat, ceza, ihbar, suçlu, güvenlik, göçmen, kaçakçılık, ">
+    <!-- Web Fonts: internet bağımlılığı olmaması için sistem fontları kullanılmaktadır. -->
+
+    <!-- Vendor CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.css">
+
+    <!-- Invoice Print Style -->
+    <link rel="stylesheet" href="/css/invoice-print.css">
+</head>
+<body>
+    <div class="invoice" style="page-break-after:always">
+   @Html.Raw(ViewBag.Form) 
+    </div>
+   
+
+    <script>
+        window.print();
+    </script>
+</body>
+</html>
+
+

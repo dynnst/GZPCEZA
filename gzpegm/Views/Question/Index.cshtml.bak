@@ -1,0 +1,1099 @@
+@model List<gzpegm.Models.ViewModels.QuestionViewModel>
+
+@{
+    ViewBag.Title = "Sorular";
+    Layout = "~/Views/Shared/_Master.cshtml";
+}
+
+<link href="~/js/Egitim/dataTables.bootstrap5.min.css" rel="stylesheet" />
+
+<div class="page-wrapper">
+    <div class="container-fluid p-0">
+        <!-- BAŞLIK BÖLÜMÜ -->
+        <div class="page-heading mb-4 d-flex justify-content-between flex-wrap">
+            <div>
+                <h2 class="page-title">❓ Sorular</h2>
+                <p class="page-subtitle mb-1"><strong>@ViewBag.CourseTitle</strong> / @ViewBag.ExamTitle</p>
+                <small class="text-muted">Bu sınava ait soruları ve medyaları yönetin.</small>
+            </div>
+            <div class="d-flex gap-2 align-items-start">
+                <a href="@Url.Action("Details", "Course", new { id = ViewBag.CourseId })" class="btn btn-outline-secondary btn-sm">
+                    <i class="fa fa-book me-1"></i>Kursa Dön
+                </a>
+                <a href="@Url.Action("Index", "Exam")" class="btn btn-outline-secondary btn-sm">
+                    <i class="fa fa-arrow-left me-1"></i>Sınavlara Dön
+                </a>
+                @if (ViewBag.CourseIsActive == false)
+                {
+                    <a href="@Url.Action("Review", "EducationPackage", new { id = ViewBag.CourseId })" class="btn btn-warning btn-sm">
+                        <i class="fa fa-clipboard-check me-1"></i>Taslak Kontrolüne Dön
+                    </a>
+                }
+                <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createQuestionModal">
+                    <i class="fa fa-plus me-2"></i>Yeni Soru Ekle
+                </button>
+            </div>
+        </div>
+
+        <!-- MESAJLAR -->
+        @if (TempData["msgSuccess"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                <i class="fa fa-check-circle me-2"></i>
+                @TempData["msgSuccess"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        @if (TempData["msgWarning"] != null)
+        {
+            <div class="alert alert-warning alert-dismissible fade show mb-4" role="alert">
+                <i class="fa fa-exclamation-triangle me-2"></i>
+                @TempData["msgWarning"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        @if (TempData["msgError"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                <i class="fa fa-times-circle me-2"></i>
+                @TempData["msgError"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        <!-- SORU TABLOSU -->
+        <div class="card">
+            <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <h4 class="card-title mb-0">📝 Soru Listesi</h4>
+                <p class="card-subtitle mt-1" style="color: rgba(255,255,255,0.8);">Toplam @(Model?.Count ?? 0) soru</p>
+            </div>
+            <div class="card-body p-0">
+                @if (Model != null && Model.Count > 0)
+                {
+                    <div class="table-responsive">
+                        <table id="questionsTable" class="table" style="margin-bottom: 0;">
+                            <thead>
+                                <tr>
+                                    <th style="width: 60px;">Sıra</th>
+                                    <th>Soru</th>
+                                    <th style="width: 100px;">Puan</th>
+                                    <th style="width: 130px;">Tür</th>
+                                    <th style="width: 180px;">Medya</th>
+                                    <th style="width: 100px;">Durum</th>
+                                    <th style="width: 100px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var question in Model)
+                                {
+                                    <tr @(question.IsActive ? "" : "style='opacity: 0.6; background-color: #f5f5f5;'")>
+                                        <td><strong>@question.SortOrder</strong></td>
+                                        <td>
+                                            @question.QuestionText
+                                            @if (!question.IsActive)
+                                            {
+                                                <span class="badge bg-danger ms-2">❌ PASİF</span>
+                                            }
+                                        </td>
+                                        <td><span class="badge bg-info">@question.Points puan</span></td>
+                                        <td>
+                                            @{
+                                                string typeLabel = question.QuestionType;
+                                                if (question.QuestionType == "MultipleChoice")
+                                                {
+                                                    typeLabel = "📋 Çoktan Seçmeli";
+}
+                                                else if (question.QuestionType == "TrueFalse")
+                                                {
+                                                    typeLabel = "✓ Doğru / Yanlış";
+                                                }
+                                                else if (question.QuestionType == "Text")
+                                                {
+                                                    typeLabel = "📄 Klasik";
+                                                }
+                                            }
+                                            <span class="badge bg-success">@typeLabel</span>
+                                        </td>
+
+                                        <!-- 🔥 MEDYA ÖNİZLEME -->
+                                        <td>
+                                            @if (question.MediaFiles != null && question.MediaFiles.Count > 0)
+                                            {
+                                                <div class="d-flex flex-wrap gap-2">
+                                                    @foreach (var media in question.MediaFiles)
+                                                    {
+                                                        if (media.MediaType == 1)
+                                                        {
+                                                            <img src="@media.MediaPath"
+                                                                 class="img-thumbnail"
+                                                                 style="max-width: 70px; max-height: 70px; cursor: pointer;"
+                                                                 data-bs-toggle="tooltip"
+                                                                 title="Resim" />
+                                                        }
+                                                        else if (media.MediaType == 2)
+                                                        {
+                                                            <video muted
+                                                                   style="max-width: 100px; max-height: 70px; cursor: pointer;"
+                                                                   controls
+                                                                   data-bs-toggle="tooltip"
+                                                                   title="Video">
+                                                                <source src="@media.MediaPath" type="video/mp4" />
+                                                            </video>
+                                                        }
+                                                    }
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">—</span>
+                                            }
+                                        </td>
+
+                                        <!-- DURUM BADGE -->
+                                        <td>
+                                            @if (question.IsActive)
+                                            {
+                                                <span class="badge bg-success">✅ Aktif</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">❌ Pasif</span>
+                                            }
+                                        </td>
+
+                                        <!-- İŞLEMLER -->
+                                        <td>
+                                            <div class="action-buttons-inline">
+                                                <!-- Düzenle -->
+                                                <button type="button"
+                                                        class="btn btn-sm btn-warning edit-question-btn"
+                                                        data-questionid="@question.QuestionId"
+                                                        data-bs-toggle="tooltip"
+                                                        title="Düzenle">
+                                                    <i class="fa fa-edit"></i>
+                                                </button>
+
+                                                <!-- Sil/Aktif Yap - Duruma göre değişir -->
+                                                <button type="button"
+                                                        class="btn btn-sm @(question.IsActive ? "btn-danger" : "btn-success") delete-question-btn"
+                                                        data-questionid="@question.QuestionId"
+                                                        data-bs-toggle="tooltip"
+                                                        title="@(question.IsActive ? "Soru Sil/Pasif Yap" : "Soru Aktif Yap")">
+                                                    <i class="fa @(question.IsActive ? "fa-trash" : "fa-redo")"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-5">
+                        <span class="empty-icon">📭</span>
+                        <h5 class="text-muted mt-2">Soru Bulunamadı</h5>
+                        <p class="text-muted">Henüz bu sınava soru eklenmemiş.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== CREATE MODAL ===================== -->
+<div class="modal fade" id="createQuestionModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <form id="createQuestionForm"
+                  method="post"
+                  action="@Url.Action("CreateQuestion","Question")"
+                  enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    <h5 class="modal-title">
+                        <i class="fa fa-plus-circle me-2"></i>Yeni Soru Ekle
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <input type="hidden" name="ExamId" value="@(ViewBag.ExamId ?? Request.QueryString["examId"] ?? "0")" />
+
+                    <div class="mb-3">
+                        <label class="form-label">Soru Metni <span class="text-danger">*</span></label>
+                        <textarea class="form-control" name="QuestionText" rows="3" required placeholder="Soruyu yazınız..."></textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Tür <span class="text-danger">*</span></label>
+                            <select class="form-select" name="QuestionType" required>
+                                <option value="MultipleChoice">Çoktan Seçmeli</option>
+                                <option value="TrueFalse">Doğru / Yanlış</option>
+                                <option value="Text">Klasik</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Puan <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" name="Points" value="1" min="1" required />
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Sıra <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" name="SortOrder" value="1" min="1" required />
+                        </div>
+                    </div>
+
+                    <hr />
+                    <h6 class="mb-3">
+                        <i class="fa fa-list me-2"></i>Şıklar
+                    </h6>
+                    <div id="createOptionsContainer" class="mb-3"></div>
+                    <button type="button" id="createAddOptionBtn" class="btn btn-sm btn-outline-primary mb-3">
+                        <i class="fa fa-plus me-1"></i>Şık Ekle
+                    </button>
+
+                    <hr />
+                    <h6 class="mb-3">
+                        <i class="fa fa-paperclip me-2"></i>Medya Ekle
+                    </h6>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">🖼️ Resimler</label>
+                            <input type="file" class="form-control" name="ImageFiles" accept="image/png,image/jpeg" multiple />
+                            <small class="text-muted">PNG, JPEG formatları desteklenmektedir</small>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">🎥 Videolar</label>
+                            <input type="file" class="form-control" name="VideoFiles" accept="video/mp4" multiple />
+                            <small class="text-muted">MP4 formatı desteklenmektedir</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa fa-save me-1"></i>Kaydet
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fa fa-times me-1"></i>Kapat
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== EDIT MODAL ===================== -->
+<div class="modal fade" id="editQuestionModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+
+            <form id="editQuestionForm"
+                  method="post"
+                  action="@Url.Action("EditQuestion","Question")"
+                  enctype="multipart/form-data">
+
+                @Html.AntiForgeryToken()
+
+                <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    <h5 class="modal-title">
+                        <i class="fa fa-edit me-2"></i>Soru Düzenle
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+
+                    <input type="hidden" id="editQuestionId" name="QuestionId" />
+
+                    <div class="mb-3">
+                        <label class="form-label">Soru Metni <span class="text-danger">*</span></label>
+                        <textarea class="form-control"
+                                  id="editQuestionText"
+                                  name="QuestionText"
+                                  rows="3"
+                                  required
+                                  placeholder="Soruyu yazınız..."></textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Tür <span class="text-danger">*</span></label>
+                            <select class="form-select"
+                                    id="editQuestionType"
+                                    name="QuestionType"
+                                    required>
+                                <option value="MultipleChoice">Çoktan Seçmeli</option>
+                                <option value="TrueFalse">Doğru / Yanlış</option>
+                                <option value="Text">Klasik</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Puan <span class="text-danger">*</span></label>
+                            <input type="number"
+                                   class="form-control"
+                                   id="editPoints"
+                                   name="Points"
+                                   min="1"
+                                   required />
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Sıra <span class="text-danger">*</span></label>
+                            <input type="number"
+                                   class="form-control"
+                                   id="editSortOrder"
+                                   name="SortOrder"
+                                   min="1"
+                                   required />
+                        </div>
+                    </div>
+
+                    <hr />
+                    <h6 class="mb-3">
+                        <i class="fa fa-list me-2"></i>Şıklar
+                    </h6>
+                    <div id="editOptionsContainer" class="mb-3"></div>
+                    <button type="button" id="editAddOptionBtn" class="btn btn-sm btn-outline-primary mb-3">
+                        <i class="fa fa-plus me-1"></i>Şık Ekle
+                    </button>
+
+                    <!-- 🔥 MEVCUT MEDYALAR -->
+                    <hr />
+                    <h6 class="mb-3">
+                        <i class="fa fa-image me-2"></i>Mevcut Medyalar
+                    </h6>
+
+                    <div id="editQuestionMediaContainer"
+                         class="d-flex flex-wrap gap-2 mb-3">
+                    </div>
+
+                    <!-- ➕ YENİ MEDYA -->
+                    <hr />
+                    <h6 class="mb-3">
+                        <i class="fa fa-plus-circle me-2"></i>Yeni Medya Ekle
+                    </h6>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">🖼️ Resimler</label>
+                            <input type="file"
+                                   class="form-control"
+                                   name="ImageFiles"
+                                   accept="image/png,image/jpeg"
+                                   multiple />
+                            <small class="text-muted">PNG, JPEG formatları desteklenmektedir</small>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">🎥 Videolar</label>
+                            <input type="file"
+                                   class="form-control"
+                                   name="VideoFiles"
+                                   accept="video/mp4"
+                                   multiple />
+                            <small class="text-muted">MP4 formatı desteklenmektedir</small>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fa fa-save me-1"></i>Güncelle
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fa fa-times me-1"></i>Kapat
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+</div>
+
+<!-- ===================== SCRIPT ===================== -->
+<script src="~/js/Egitim/bootstrap.bundle.min.js"></script>
+<script src="~/js/Egitim/dataTables.bootstrap5.min.js"></script>
+<script src="~/js/Egitim/jquery.dataTables.min.js"></script>
+
+<script>
+    $(document).ready(function () {
+
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        $('#questionsTable').DataTable({
+            language: { url: "~/js/Egitim/egitim.json" },
+            pageLength: 25,
+            responsive: true
+        });
+
+        /* ================= CREATE/EDIT OPTIONS UI ================= */
+        function createOptionRowHtml(index, text, isCorrect) {
+            var checked = isCorrect ? 'checked' : '';
+            return '<div class="option-row input-group mb-2" data-idx="' + index + '">' +
+                        '<div class="input-group-text">' +
+                            '<input class="form-check-input mt-0" type="checkbox" name="Options[' + index + '].IsCorrect" ' + checked + ' value="true" />' +
+                        '</div>' +
+                        '<input type="text" class="form-control" name="Options[' + index + '].OptionText" value="' + (text || '') + '" placeholder="Şık metni" />' +
+                        '<button type="button" class="btn btn-outline-danger btn-sm remove-option-btn"><i class="fa fa-trash me-1"></i>Sil</button>' +
+                    '</div>';
+        }
+
+        // CREATE modal handlers
+        var createIndex = 0;
+        $('#createAddOptionBtn').on('click', function () {
+            $('#createOptionsContainer').append(createOptionRowHtml(createIndex++, '', false));
+        });
+
+        // add two default options when opening create modal (if none)
+        $('#createQuestionModal').on('show.bs.modal', function () {
+            if ($('#createOptionsContainer .option-row').length === 0) {
+                $('#createAddOptionBtn').trigger('click');
+                $('#createAddOptionBtn').trigger('click');
+            }
+        });
+
+        // Remove option and reindex
+        $(document).on('click', '.remove-option-btn', function () {
+            var $container = $(this).closest('.modal-body').find('.mb-3').first();
+            $(this).closest('.option-row').remove();
+
+            // reindex within that modal
+            $container = $(this).closest('.modal-body');
+            $container.find('.option-row').each(function (i, el) {
+                var $el = $(el);
+                $el.attr('data-idx', i);
+                $el.find('input[type="checkbox"]').attr('name', 'Options[' + i + '].IsCorrect');
+                $el.find('input[type="text"]').attr('name', 'Options[' + i + '].OptionText');
+            });
+
+            // fix createIndex / editIndex
+            createIndex = $('#createOptionsContainer .option-row').length;
+            editIndex = $('#editOptionsContainer .option-row').length;
+        });
+
+        // EDIT modal handlers
+        var editIndex = 0;
+        $(document).on('click', '#editAddOptionBtn', function () {
+            $('#editOptionsContainer').append(createOptionRowHtml(editIndex++, '', false));
+        });
+
+        function populateEditOptions(options) {
+            var $c = $('#editOptionsContainer');
+            $c.html('');
+            var idx = 0;
+            if (options && options.length) {
+                options.forEach(function (opt) {
+                    $c.append(createOptionRowHtml(idx++, opt.OptionText, opt.IsCorrect));
+                });
+            } else {
+                $c.append(createOptionRowHtml(0, '', false));
+                $c.append(createOptionRowHtml(1, '', false));
+                idx = 2;
+            }
+            editIndex = idx;
+        }
+
+        /* ================= SORU SİL/AKTİF YAP ================= */
+        $(document).on('click', '.delete-question-btn', function () {
+
+            var button = $(this);
+            var questionId = button.data('questionid');
+            var row = button.closest('tr');
+
+            // Pasif sorunun status'unu kontrol et
+            var isPassive = row.css('opacity') === '0.6' || row.attr('style')?.includes('opacity: 0.6');
+            var confirmMsg = isPassive
+                ? '✅ Bu pasif soru aktif hale getirilsin mi?'
+                : '❌ Bu soru silinsin/pasif hale getirilsin mi?';
+
+            if (!confirm(confirmMsg)) return;
+
+            $.ajax({
+                url: '@Url.Action("DeleteQuestion","Question")',
+                type: 'POST',
+                data: {
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').first().val(),
+                    questionId: questionId
+                },
+                success: function (res) {
+
+                    if (res.success) {
+                        // Sayfayı yenile
+                        location.reload();
+                    } else {
+                        alert(res.message || 'İşlem başarısız');
+                    }
+                },
+                error: function () {
+                    alert('Sunucu hatası oluştu');
+                }
+            });
+        });
+
+        /* ================= EDIT LOAD ================= */
+        $(document).on('click', '.edit-question-btn', function () {
+
+            var questionId = $(this).data('questionid');
+
+            $.post('@Url.Action("GetQuestionDetails","Question")',
+                {
+                    questionId: questionId,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').first().val()
+                },
+                function (res) {
+
+                    if (!res.success) {
+                        alert('Soru getirilemedi');
+                        return;
+                    }
+
+                    var q = res.question;
+
+                    $('#editQuestionId').val(q.QuestionId);
+                    $('#editQuestionText').val(q.QuestionText);
+                    $('#editQuestionType').val(q.QuestionType);
+                    $('#editPoints').val(q.Points);
+                    $('#editSortOrder').val(q.SortOrder);
+
+                    // populate options
+                    populateEditOptions(q.Options);
+
+                    $('#editQuestionMediaContainer').html('');
+
+                    if (q.MediaFiles && q.MediaFiles.length > 0) {
+                        q.MediaFiles.forEach(function (m) {
+
+                            let html = `
+                                <div class="media-box border rounded p-2 position-relative"
+                                     data-mediaid="${m.MediaId}"
+                                     style="background: #f8f9fa;">
+                                    <button type="button"
+                                            class="btn btn-danger btn-sm position-absolute top-0 end-0 delete-media-btn"
+                                            data-mediaid="${m.MediaId}"
+                                            style="margin: 4px;">
+                                        <i class="fa fa-trash"></i>
+                                    </button>`;
+
+                            if (m.MediaType === 1) {
+                                html += `<img src="${m.MediaPath}"
+                                             class="img-thumbnail"
+                                             style="max-width: 120px; max-height: 100px;">`;
+                            }
+
+                            if (m.MediaType === 2) {
+                                html += `<video controls
+                                             style="max-width: 180px; max-height: 100px;">
+                                            <source src="${m.MediaPath}" type="video/mp4">
+                                         </video>`;
+                            }
+
+                            html += `</div>`;
+                            $('#editQuestionMediaContainer').append(html);
+                        });
+                    }
+
+                    new bootstrap.Modal(document.getElementById('editQuestionModal')).show();
+                });
+        });
+
+        /* ================= MEDYA SİL ================= */
+        $(document).on('click', '.delete-media-btn', function () {
+
+            if (!confirm('Medya silinsin mi?')) return;
+
+            var mediaId = $(this).data('mediaid');
+            var box = $(this).closest('.media-box');
+
+            $.post('@Url.Action("DeleteQuestionMedia","Question")',
+                {
+                    mediaId: mediaId,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').first().val()
+                },
+                function (res) {
+                    if (res.success) {
+                        box.remove();
+                    } else {
+                        alert(res.message || 'Silinemedi');
+                    }
+                });
+        });
+
+        // Alert otomatik kapatma
+        setTimeout(function () {
+            $('.alert').fadeOut('slow', function () {
+                $(this).remove();
+            });
+        }, 5000);
+    });
+</script>
+
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        background: #f5f7fb;
+        font-family: 'Segoe UI', sans-serif;
+        margin: 0;
+    }
+
+    .page-wrapper {
+        padding: 20px;
+        background: #f5f7fb;
+        min-height: 100vh;
+    }
+
+    .container-fluid {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: #333;
+        margin: 0 0 8px;
+    }
+
+    .page-subtitle {
+        font-size: 14px;
+        color: #999;
+    }
+
+    .page-heading {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        background: white;
+        margin-bottom: 24px;
+    }
+
+    .card-header {
+        padding: 20px 25px;
+        border-bottom: 1px solid #eef2f7;
+    }
+
+    .card-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .card-subtitle {
+        font-size: 12px;
+        margin-top: 4px;
+        color: rgba(0, 0, 0, 0.6);
+    }
+
+    .card-body {
+        padding: 0;
+    }
+
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 0;
+    }
+
+        .table thead th {
+            background: #f8f9fa;
+            border-bottom: 2px solid #eef2f7;
+            font-weight: 600;
+            color: #666;
+            font-size: 13px;
+            padding: 15px;
+        }
+
+        .table tbody tr {
+            border-bottom: 1px solid #eef2f7;
+            transition: 0.2s;
+        }
+
+            .table tbody tr:hover {
+                background: #fafbfc;
+            }
+
+        .table tbody td {
+            padding: 15px;
+            vertical-align: middle;
+        }
+
+    .action-buttons-inline {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        font-size: 12px;
+        font-weight: 500;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        text-decoration: none;
+        transition: 0.2s;
+    }
+
+    .btn-sm {
+        padding: 5px 12px;
+        font-size: 12px;
+    }
+
+    .btn-primary {
+        background: #667eea;
+        color: white;
+    }
+
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+    .btn-success {
+        background: #28a745;
+        color: white;
+    }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+    .btn-warning {
+        background: #ffc107;
+        color: #333;
+    }
+
+        .btn-warning:hover {
+            background: #e0a800;
+        }
+
+    .btn-danger {
+        background: #dc3545;
+        color: white;
+    }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+    .btn-outline-primary {
+        border: 1px solid #667eea;
+        color: #667eea;
+        background: white;
+    }
+
+        .btn-outline-primary:hover {
+            background: #667eea;
+            color: white;
+        }
+
+    .btn-outline-danger {
+        border: 1px solid #dc3545;
+        color: #dc3545;
+        background: white;
+    }
+
+        .btn-outline-danger:hover {
+            background: #dc3545;
+            color: white;
+        }
+
+    .btn:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .bg-info {
+        background: #17a2b8;
+        color: white;
+    }
+
+    .bg-success {
+        background: #28a745;
+        color: white;
+    }
+
+    .bg-danger {
+        background: #dc3545;
+        color: white;
+    }
+
+    .bg-secondary {
+        background: #6c757d;
+        color: white;
+    }
+
+    .text-muted {
+        color: #6c757d;
+    }
+
+    .text-danger {
+        color: #dc3545;
+    }
+
+    .empty-icon {
+        font-size: 48px;
+        display: block;
+    }
+
+    .text-center {
+        text-align: center;
+    }
+
+    .py-5 {
+        padding: 3rem 0;
+    }
+
+    .mt-1 {
+        margin-top: 4px;
+    }
+
+    .mt-2 {
+        margin-top: 8px;
+    }
+
+    .mb-0 {
+        margin-bottom: 0;
+    }
+
+    .mb-3 {
+        margin-bottom: 12px;
+    }
+
+    .mb-4 {
+        margin-bottom: 24px;
+    }
+
+    .me-2 {
+        margin-right: 8px;
+    }
+
+    .me-1 {
+        margin-right: 4px;
+    }
+
+    .ms-2 {
+        margin-left: 8px;
+    }
+
+    .p-0 {
+        padding: 0;
+    }
+
+    .p-2 {
+        padding: 8px;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .alert {
+        border-radius: 8px;
+        border: none;
+        padding: 12px 20px;
+    }
+
+    .alert-success {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .alert-warning {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .alert-danger {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .alert-dismissible .btn-close {
+        padding: 0.5rem;
+    }
+
+    /* MODAL STİLLERİ */
+    .modal-content {
+        border: none;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    }
+
+    .modal-header {
+        border: none;
+        padding: 20px 25px;
+    }
+
+        .modal-header .btn-close {
+            opacity: 0.8;
+        }
+
+        .modal-header .btn-close-white:hover {
+            opacity: 1;
+        }
+
+    .modal-title {
+        font-weight: 600;
+        font-size: 18px;
+    }
+
+    .modal-body {
+        padding: 25px;
+        background: #fff;
+    }
+
+    .modal-footer {
+        background: #f8f9fa;
+        border-top: 1px solid #eef2f7;
+        padding: 15px 25px;
+    }
+
+    /* FORM STİLLERİ */
+    .form-label {
+        font-weight: 600;
+        font-size: 13px;
+        margin-bottom: 8px;
+        color: #555;
+    }
+
+    .form-control, .form-select {
+        border-radius: 8px;
+        border: 1px solid #e1e5eb;
+        padding: 10px 12px;
+        transition: all 0.3s ease;
+    }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            outline: none;
+        }
+
+    .media-box {
+        position: relative;
+        border: 1px solid #e1e5eb !important;
+    }
+
+        .media-box img,
+        .media-box video {
+            display: block;
+        }
+
+    .option-row {
+        display: flex;
+        align-items: center;
+    }
+
+        .option-row .form-check-input {
+            cursor: pointer;
+        }
+
+    .d-flex {
+        display: flex;
+    }
+
+    .flex-wrap {
+        flex-wrap: wrap;
+    }
+
+    .gap-2 {
+        gap: 8px;
+    }
+
+    /* RESPONSİVE */
+    @@media (max-width: 768px) {
+        .page-wrapper {
+            padding: 15px;
+        }
+
+        .page-title {
+            font-size: 22px;
+        }
+
+        .page-heading {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .btn-sm {
+            padding: 4px 10px;
+            font-size: 11px;
+        }
+
+        .action-buttons-inline {
+            flex-direction: row;
+        }
+
+        .table-responsive {
+            font-size: 12px;
+        }
+
+        .table tbody td {
+            padding: 10px;
+        }
+
+        .modal-dialog {
+            margin: 0.5rem;
+            width: calc(100% - 1rem);
+            max-width: none;
+        }
+
+        .modal-dialog-scrollable {
+            max-height: calc(100vh - 1rem);
+        }
+    }
+
+    @@media (min-width: 992px) {
+        .modal-dialog {
+            max-width: 800px;
+        }
+    }
+</style>

@@ -1,0 +1,250 @@
+/* ==========================================================================
+   OSHIST Yapılan İşlem Geçmişi Stilleri (oshist.css)
+   ========================================================================== */
+
+/* SAYFA YAPISI */
+.page-wrapper {
+    padding: 20px;
+}
+
+.page-heading {
+    margin-bottom: 20px;
+}
+
+.page-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin: 0;
+}
+
+/* İSTATİSTİK KARTLARI */
+.stat-card {
+    display: flex;
+    align-items: center;
+    padding: 25px;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+    height: 100%;
+    color: #ffffff !important;
+}
+
+.stat-card * {
+    color: #ffffff !important;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+.stat-card-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.stat-card-info {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.stat-card-success {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.stat-card-warning {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    margin-right: 20px;
+    font-size: 28px;
+    flex-shrink: 0;
+}
+
+.stat-content h5 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    font-weight: 600;
+    opacity: 0.9;
+}
+
+.stat-content h2 {
+    margin: 0 0 5px 0;
+    font-size: 32px;
+    font-weight: 700;
+}
+
+.stat-content small {
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+/* KARTLAR */
+.card {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    margin-bottom: 20px;
+    background-color: #fff;
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    padding: 18px 24px;
+    border-bottom: 1px solid #eef2f7;
+    background-color: transparent;
+    border-radius: 16px 16px 0 0;
+}
+
+.card-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #2c3e50;
+}
+
+.card-subtitle {
+    font-size: 13px;
+    color: #7f8c8d;
+    margin-top: 4px;
+}
+
+/* TABLO STİLLERİ */
+.table {
+    margin-bottom: 0;
+}
+
+.table thead th {
+    background-color: #f8fafd;
+    border-bottom: 1px solid #e2e8f0;
+    font-weight: 600;
+    color: #4a5568;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 14px 16px;
+}
+
+.table tbody tr {
+    border-bottom: 1px solid #edf2f7;
+    transition: background-color 0.2s;
+}
+
+.table tbody tr:hover {
+    background-color: #f7fafc;
+}
+
+.table tbody td {
+    padding: 12px 16px;
+    vertical-align: middle;
+    color: #2d3748;
+    font-size: 14px;
+}
+
+/* BUTONLAR */
+.btn-outline-info {
+    border: 1px solid #36b9cc;
+    color: #36b9cc;
+    border-radius: 30px;
+    padding: 5px 14px;
+    font-size: 12px;
+    transition: all 0.2s;
+}
+
+.btn-outline-info:hover {
+    background: linear-gradient(135deg, #36b9cc 0%, #258391 100%);
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* DATATABLE ÖZEL STİLLERİ */
+.dataTables_wrapper .dataTables_length,
+.dataTables_wrapper .dataTables_filter,
+.dataTables_wrapper .dataTables_info,
+.dataTables_wrapper .dataTables_paginate {
+    padding: 12px 20px;
+}
+
+.dataTables_wrapper .dataTables_filter input {
+    border: 1px solid #e2e8f0;
+    border-radius: 30px;
+    padding: 6px 12px;
+    margin-left: 8px;
+}
+
+.dataTables_wrapper .dataTables_length select {
+    border: 1px solid #e2e8f0;
+    border-radius: 30px;
+    padding: 4px 8px;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    border-radius: 30px !important;
+    padding: 6px 12px !important;
+    margin: 0 3px;
+    border: none !important;
+    background: #f1f3f5 !important;
+    color: #4a5568 !important;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.current {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    background: #e2e8f0 !important;
+    transform: translateY(-1px);
+}
+
+/* RESPONSİF */
+@media (max-width: 768px) {
+    .page-wrapper {
+        padding: 15px;
+    }
+
+    .page-title {
+        font-size: 22px;
+    }
+
+    .stat-card {
+        padding: 15px;
+    }
+
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 20px;
+        margin-right: 15px;
+    }
+
+    .stat-content h2 {
+        font-size: 24px;
+    }
+
+    .table-responsive {
+        font-size: 13px;
+    }
+}
+
+.tahdit-code-table-wrap {
+    max-height: 320px;
+    overflow: auto;
+}
+
+.tahdit-code-table-wrap thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}

@@ -1,0 +1,141 @@
+@{
+    Layout = null;
+}
+
+<!doctype html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Polis Havalimanı Giriş Sistemi - CEZAM</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="@Url.Content("~/files/logo/favicon-egm-32.png")" type="image/x-icon">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="@Url.Content("~/vendor/bootstrap/css/bootstrap.css")" />
+    <link rel="stylesheet" href="@Url.Content("~/vendor/font-awesome/css/fontawesome-all.min.css")" />
+    <link rel="stylesheet" href="@Url.Content("~/css/giris-index.css")?v=@DateTime.Now.Ticks" />
+</head>
+<body class="airport-security-theme">
+    <div class="security-vignette-overlay"></div>
+
+    <div class="login-wrapper">
+        <div class="login-stage">
+            
+            <!-- Mobilde Üstte Görünen Rozet (Masaüstünde Arka Plandan Otomatik Gelir) -->
+            <div class="badge-stage-mobile">
+                <img src="@Url.Content("~/files/logo/police-airport-badge.png")" alt="Polis Havalimanı Güvenlik Rozeti" class="mobile-police-badge" />
+            </div>
+
+            <!-- Sağ Alan: Glassmorphic Giriş Kartı -->
+            <div class="glass-login-card">
+                
+                <!-- Başlık Alanı -->
+                <div class="card-titles">
+                    <h1 class="main-title">HUDUT KAPILARI PROJELER SAYFASI</h1>
+                    <h2 class="sub-title">GİRİŞ</h2>
+                </div>
+
+                <!-- Hata Bildirimi (Varsa) -->
+                @if (!string.IsNullOrEmpty(ViewBag.Error as string))
+                {
+                    <div class="cyber-alert" role="alert">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>@ViewBag.Error</span>
+                    </div>
+                }
+
+                <form id="login" action="@Url.Content("~/Login")" method="post" autocomplete="on">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
+
+                    <!-- Kullanıcı Adı / Sicil No -->
+                    <div class="cyber-form-group">
+                        <label for="username" class="cyber-label"> Sicil</label>
+                        <div class="cyber-input-wrapper">
+                            <span class="cyber-input-icon">
+                                <i class="far fa-user"></i>
+                            </span>
+                            <input id="username" name="username" type="text"
+                                   class="cyber-input"
+                                   placeholder="Sicil"
+                                   required autocomplete="username"
+                                   inputmode="numeric" pattern="[0-9]*" maxlength="10"
+                                   autofocus aria-label="Kullanıcı adı veya Sicil No" />
+                        </div>
+                    </div>
+
+                    <!-- Şifre -->
+                    <div class="cyber-form-group">
+                        <label for="pwd" class="cyber-label">Şifre</label>
+                        <div class="cyber-input-wrapper">
+                            <span class="cyber-input-icon">
+                                <i class="fas fa-lock"></i>
+                            </span>
+                            <input id="pwd" name="pwd" type="password"
+                                   class="cyber-input"
+                                   placeholder="Şifre"
+                                   required autocomplete="current-password"
+                                   aria-label="Şifre" />
+                            <button type="button" class="cyber-eye-toggle" onclick="togglePassword()"
+                                    aria-label="Şifreyi göster/gizle" tabindex="-1">
+                                <i id="pwdEye" class="far fa-eye"></i>
+                            </button>
+                        </div>
+                        <div id="capsWarning" class="caps-warning-box" style="display:none;">
+                            <i class="fas fa-exclamation-circle"></i> Caps Lock Açık!
+                        </div>
+                    </div>
+
+                    <!-- Seçenekler: Beni Hatırla & Şifremi Unuttum -->
+                    <div class="cyber-options-row">
+                        <label class="cyber-checkbox-label">
+                            <input type="checkbox" id="rememberMe" name="rememberMe" />
+                            <span class="checkbox-box"></span>
+                            <span class="checkbox-text">Beni Hatırla</span>
+                        </label>
+
+                        <a href="@Url.Action("ResetPasswordPage", "Giris")" class="cyber-forgot-link">
+                            Şifremi Unuttum
+                        </a>
+                    </div>
+
+                    <!-- Kullanım Koşulları Onayı -->
+                    <div class="cyber-terms-row">
+                        <label class="cyber-checkbox-label small">
+                            <input id="AgreeTerms" name="agreeterms" type="checkbox" required checked />
+                            <span class="checkbox-box"></span>
+                            <span class="checkbox-text">
+                                <a href="@Url.Content("~/kosullar")" target="_blank" rel="noopener">Kullanım koşullarını</a> okudum, kabul ediyorum.
+                            </span>
+                        </label>
+                    </div>
+
+                    <!-- Giriş Butonu -->
+                    <button type="submit" class="cyber-btn-submit" id="btnLogin">
+                        GİRİŞ YAP
+                    </button>
+
+                    <!-- Alt Hızlı Linkler -->
+                    <div class="cyber-footer-links">
+                        <a href="@Url.Content("~/kayit")" class="cyber-footer-link">
+                            <i class="fas fa-user-plus"></i> Kayıt Ol
+                        </a>
+                        <span class="cyber-footer-sep">•</span>
+                        <a href="@Url.Action("Index", "Landing")" class="cyber-footer-link">
+                            <i class="fas fa-home"></i> Eğitim Portalı
+                        </a>
+                    </div>
+                </form>
+
+            </div> <!-- glass-login-card sonu -->
+
+        </div> <!-- login-stage sonu -->
+    </div> <!-- login-wrapper sonu -->
+
+    <!-- Scriptler -->
+    <script src="@Url.Content("~/vendor/jquery/jquery.js")"></script>
+    <script src="@Url.Content("~/vendor/bootstrap/js/bootstrap.js")"></script>
+    <script src="@Url.Content("~/js/giris-index.js")?v=@DateTime.Now.Ticks"></script>
+</body>
+</html>

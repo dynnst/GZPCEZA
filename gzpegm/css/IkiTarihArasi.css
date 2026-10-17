@@ -1,0 +1,10 @@
+﻿.custom-btn {
+    min-width: 280px; /* buton uzunluğu */
+    padding: 10px 20px; /* iç boşluk, biraz daha dolgun görünür */
+    font-size: 15px;
+}
+
+.btn-group-custom {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2cm; /* butonlar arasında 2 cm boşluk */

@@ -1,0 +1,224 @@
+@model gzpegm.ViewModels.StudentDashboardViewModel
+@{
+    ViewBag.Title = "Öğrenci Paneli";
+    Layout = "~/Views/Shared/_Master.cshtml";
+
+    int successRate = 0;
+    if (Model.CompletedExamsCount > 0)
+    {
+        successRate = (Model.PassedExamsCount * 100) / Model.CompletedExamsCount;
+    }
+
+    var lastExamText = Model.LastExamAt.HasValue ? Model.LastExamAt.Value.ToString("dd.MM.yyyy HH:mm") : "Henüz sınav yok";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="@Url.Content("~/Content/dashboard-v2.css")" />
+}
+
+<div class="wrapper wrapper-content animated fadeInRight dashboard-v2">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="ibox">
+                <div class="ibox-title">
+                    <span class="label label-primary float-right">Öğrenci</span>
+                    <h5>Öğrenci Paneli</h5>
+                </div>
+                <div class="ibox-content ibox-heading">
+                    <h3><i class="fa fa-user"></i> Hoş geldiniz, @Model.CurrentUserName</h3>
+                    <small>Kurslarınızı, sınav performansınızı ve son sınav geçmişinizi buradan takip edebilirsiniz.</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-3">
+            <div class="ibox">
+                <div class="ibox-title">
+                    <span class="label label-success float-right">Kayıtlı</span>
+                    <h5>Aktif Kurslar</h5>
+                </div>
+                <div class="ibox-content">
+                    <h1 class="no-margins">@Model.EnrolledCoursesCount</h1>
+                    <div class="stat-percent font-bold text-success"><i class="fa fa-book"></i></div>
+                    <small>Kayıtlı olduğunuz kurslar</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3">
+            <div class="ibox">
+                <div class="ibox-title">
+                    <span class="label label-info float-right">Ortalama</span>
+                    <h5>Başarı Oranı</h5>
+                </div>
+                <div class="ibox-content">
+                    <h1 class="no-margins">@Model.AverageScore%</h1>
+                    <div class="stat-percent font-bold text-info"><i class="fa fa-line-chart"></i></div>
+                    <small>Tamamlanan sınav ortalaması</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3">
+            <div class="ibox">
+                <div class="ibox-title">
+                    <span class="label label-primary float-right">@successRate%</span>
+                    <h5>Geçilen Sınavlar</h5>
+                </div>
+                <div class="ibox-content">
+                    <h1 class="no-margins">@Model.PassedExamsCount</h1>
+                    <div class="stat-percent font-bold text-navy"><i class="fa fa-check"></i></div>
+                    <small>@Model.CompletedExamsCount toplam sınav içinden</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3">
+            <div class="ibox">
+                <div class="ibox-title">
+                    <span class="label label-warning float-right">Dakika</span>
+                    <h5>Toplam Süre</h5>
+                </div>
+                <div class="ibox-content">
+                    <h1 class="no-margins">@Model.TotalExamTimeMinutes</h1>
+                    <div class="stat-percent font-bold text-warning"><i class="fa fa-clock-o"></i></div>
+                    <small>Sınavlarda geçirilen toplam süre</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="ibox">
+                <div class="ibox-title">
+                    <h5>Son Sınav Geçmişi</h5>
+                </div>
+                <div class="ibox-content table-responsive">
+                    @if (Model.RecentExams != null && Model.RecentExams.Count > 0)
+                    {
+                        <table class="table table-hover no-margins">
+                            <thead>
+                                <tr>
+                                    <th>Durum</th>
+                                    <th>Tarih</th>
+                                    <th>Sınav</th>
+                                    <th>Kurs</th>
+                                    <th class="text-right">Puan</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var exam in Model.RecentExams)
+                                {
+                                    <tr>
+                                        <td>
+                                            @if (exam.IsPassed)
+                                            {
+                                                <span class="label label-primary">Başarılı</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="label label-danger">Başarısız</span>
+                                            }
+                                        </td>
+                                        <td><i class="fa fa-clock-o"></i> @exam.FinishedAt.ToString("dd.MM.yyyy HH:mm")</td>
+                                        <td><strong>@exam.ExamTitle</strong></td>
+                                        <td>@exam.CourseTitle</td>
+                                        <td class="text-right">
+                                            <span class="label label-info">@exam.Score / @exam.MaxScore</span>
+                                            <small class="text-navy">(@exam.Percentage.ToString("F0")%)</small>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+
+                        if (Model.CompletedExamsCount > 5)
+                        {
+                            <div class="text-center m-t">
+                                <a href="@Url.Action("MyExamResults", "StudentExam")" class="btn btn-white btn-sm">
+                                    <i class="fa fa-list"></i> Tüm Sınav Geçmişi (@Model.CompletedExamsCount)
+                                </a>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="empty-state">
+                            <i class="fa fa-inbox"></i>
+                            <h4>Henüz sınav sonucunuz bulunmamaktadır</h4>
+                            <p class="text-muted">İlk sınavınızı tamamladıktan sonra sonuçlarınız burada görünecek.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="ibox">
+                <div class="ibox-title">
+                    <h5>Performans Özeti</h5>
+                </div>
+                <div class="ibox-content ibox-heading">
+                    <h3><i class="fa fa-bar-chart-o"></i> Genel Durum</h3>
+                    <small>Son sınav: @lastExamText</small>
+                </div>
+                <div class="ibox-content">
+                    <ul class="stat-list">
+                        <li>
+                            <h2 class="no-margins">@successRate%</h2>
+                            <small>Başarıyla geçilen sınav oranı</small>
+                            <div class="stat-percent">@successRate% <i class="fa fa-level-up text-navy"></i></div>
+                            <div class="progress progress-mini">
+                                <div style="width: @successRate%;" class="progress-bar"></div>
+                            </div>
+                        </li>
+                        <li>
+                            <h2 class="no-margins">@Model.AverageExamDurationMinutes dk</h2>
+                            <small>Ortalama sınav süresi</small>
+                            <div class="stat-percent"><i class="fa fa-clock-o text-navy"></i></div>
+                            <div class="progress progress-mini">
+                                <div style="width: @(Model.AverageExamDurationMinutes > 0 ? 50 : 5)%;" class="progress-bar"></div>
+                            </div>
+                        </li>
+                        <li>
+                            <h2 class="no-margins">@Model.CompletedExamsCount</h2>
+                            <small>Tamamlanan toplam sınav</small>
+                            <div class="stat-percent"><i class="fa fa-check text-navy"></i></div>
+                            <div class="progress progress-mini">
+                                <div style="width: @(Model.CompletedExamsCount > 0 ? 75 : 5)%;" class="progress-bar"></div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="ibox">
+                <div class="ibox-title">
+                    <h5>Hızlı Erişim</h5>
+                </div>
+                <div class="ibox-content">
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <a href="@Url.Action("StudentIndex", "Course")" class="btn btn-primary student-action">
+                                <i class="fa fa-book"></i>
+                                Kurslarım
+                            </a>
+                        </div>
+                        <div class="col-sm-12 m-t">
+                            <a href="@Url.Action("AvailableExams", "StudentExam")" class="btn btn-success student-action">
+                                <i class="fa fa-play-circle"></i>
+                                Sınavlara Başla
+                            </a>
+                        </div>
+                        <div class="col-sm-12 m-t">
+                            <a href="@Url.Action("Index", "Profile")" class="btn btn-info student-action">
+                                <i class="fa fa-user"></i>
+                                Profilim
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

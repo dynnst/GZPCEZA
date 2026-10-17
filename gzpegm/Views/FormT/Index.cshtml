@@ -1,0 +1,103 @@
+@model gzpegm.Models.E_Forms
+
+@{
+    Layout = "~/Views/Shared/_Master.cshtml";
+    ViewBag.UseSummernote = true;
+}
+
+<section class="card">
+    <form method="post" action="/UpdateForm">
+        <header class="card-header">
+            <h2 class="card-title">Form Metin İşlemleri</h2>
+        </header>
+        <div class="card-body">
+            <div class="form-row">
+                <div class="form-group col-md-12">
+                    <label for="GBNotPaid">İngilizce Ödenmemiş</label>
+                    <textarea name="GBNotPaid" id="GBNotPaid" class="summernote" data-plugin-summernote data-plugin-options='{ "height": 180, "codemirror": { "theme": "ambiance" } }'>@Model.fldGB</textarea>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-12">
+                    <label for="GBPaid">İngilizce Ödenmiş</label>
+                    <textarea name="GBPaid" id="GBPaid" class="summernote" data-plugin-summernote data-plugin-options='{ "height": 180, "codemirror": { "theme": "ambiance" } }'>@Model.fldGBC</textarea>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-12">
+                    <label for="DENotPaid">Almanca Ödenmemiş</label>
+                    <textarea name="DENotPaid" id="DENotPaid" class="summernote" data-plugin-summernote data-plugin-options='{ "height": 180, "codemirror": { "theme": "ambiance" } }'>@Model.fldDE</textarea>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-12">
+                    <label for="DEPaid">Almanca Ödenmiş</label>
+                    <textarea name="DEPaid" id="DEPaid" class="summernote" data-plugin-summernote data-plugin-options='{ "height": 180, "codemirror": { "theme": "ambiance" } }'>@Model.fldDEC</textarea>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-12">
+                    <label for="RUNotPaid">Rusça Ödenmemiş</label>
+                    <textarea name="RUNotPaid" id="RUNotPaid" class="summernote" data-plugin-summernote data-plugin-options='{ "height": 180, "codemirror": { "theme": "ambiance" } }'>@Model.fldRU</textarea>
+                </div>
+            </div>
+
+            <div style="text-align:center">
+
+            </div>
+
+
+            <div class="form-row">
+                <div class="form-group col-md-12">
+                    <label for="RUPaid">Rusça Ödenmiş</label>
+                    <textarea name="RUPaid" id="RUPaid" class="summernote" data-plugin-summernote data-plugin-options='{ "height": 180, "codemirror": { "theme": "ambiance" } }'>@Model.fldRUC</textarea>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-12">
+                    <label for="IRNotPaid">Farsça Ödenmemiş</label>
+                    <textarea name="IRNotPaid" id="IRNotPaid" class="summernote" data-plugin-summernote data-plugin-options='{ "height": 180, "codemirror": { "theme": "ambiance" } }'>@Model.fldIR</textarea>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-12">
+                    <label for="IRPaid">Farsça Ödenmiş</label>
+                    <textarea name="IRPaid" id="IRPaid" class="summernote" data-plugin-summernote data-plugin-options='{ "height": 180, "codemirror": { "theme": "ambiance" } }'>@Model.fldIRC</textarea>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-12">
+                    <label for="IRKNotPaid">IRAK Ödenmemiş</label>
+                    <textarea name="IRKNotPaid" id="IRKNotPaid" class="summernote" data-plugin-summernote data-plugin-options='{ "height": 180, "codemirror": { "theme": "ambiance" } }'>@Model.fldIRK</textarea>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-12">
+                    <label for="IRKPaid">IRAK Ödenmiş</label>
+                    <textarea name="IRKPaid" id="IRKPaid" class="summernote" data-plugin-summernote data-plugin-options='{ "height": 180, "codemirror": { "theme": "ambiance" } }'>@Model.fldIRKC</textarea>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-12">
+                    <label for="FRNotPaid">Fransızca Ödenmemiş</label>
+                    <textarea name="FRNotPaid" id="FRNotPaid" class="summernote" data-plugin-summernote data-plugin-options='{ "height": 180, "codemirror": { "theme": "ambiance" } }'>@Model.fldFransizcaC</textarea>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-12">
+                    <label for="FRPaid">Fransızca Ödemiş</label>
+                    <textarea name="FRPaid" id="FRPaid" class="summernote" data-plugin-summernote data-plugin-options='{ "height": 180, "codemirror": { "theme": "ambiance" } }'>@Model.fldFransizca</textarea>
+                </div>
+            </div>
+        </div>
+        <footer class="card-footer">
+            <div class="row">
+                <div class="col-md-12 text-right">
+                    <button type="submit" name="submit" value="Submit" class="btn btn-primary">Kaydet</button>
+                </div>
+            </div>
+        </footer>
+    </form>
+</section>
+
+

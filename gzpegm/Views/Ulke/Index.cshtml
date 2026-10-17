@@ -1,0 +1,43 @@
+﻿
+@model List<gzpegm.Models.Ulke>
+
+
+<div class="container mt-4">
+    <h2 class="mb-3">Yurtdışı Teşkilatı</h2>
+    <input type="text" id="aramaKutusu" class="form-control mb-3" placeholder="Ülke ara...">
+    <div class="row" id="ulkeListesi">
+        @foreach(var u in Model)
+        {
+            <div class="col-md-4 mb-3">
+                <div class="card p-2 ulkeKart" style="cursor:pointer;"
+                     onclick="gosterModal('@u.UlkeAdi', '@u.Temsilcilik', '@u.Telefon', '@u.Adres')">
+                    <strong>@u.UlkeAdi</strong>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="ulkeModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Ülke Bilgisi</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <pre id="modalIcerik"></pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Styles {
+    <link href="@Url.Content("~/css/ulke-index.css")?v=1.0" rel="stylesheet" />
+}
+
+@section Scripts {
+    <script src="@Url.Content("~/js/ulke-index.js")?v=1.0"></script>
+}

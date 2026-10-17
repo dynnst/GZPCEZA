@@ -1,0 +1,208 @@
+﻿@model IEnumerable<gzpegm.Models.E_TKOD>
+
+@{
+    string ToT = "",
+        Payment = "",
+        Adult = "",
+        Sahis = "";
+    Layout = "~/Views/Shared/_Master.cshtml";
+}
+<section class="card">
+    <header class="card-header">
+        <div class="card-actions">
+            <a href="#" class="card-action card-action-toggle" data-card-toggle></a>
+        </div>
+        <h2 class="card-title">Tahdit Kodları Listesi</h2>
+        <p class="card-subtitle">Bu bölümde tahdit kodu oluşturma ve düzenleme işlemi yapılabilir.</p>
+    </header>
+    <div class="card-body">
+        <table class="table table-bordered table-striped mb-0" id="datatable-default">
+            <thead>
+                <tr>
+                    <th>Tahdit Kodu</th>
+                    <th>Ceza Süresi</th>
+                    <th>Başlangıç Günü</th>
+                    <th>Bitiş Günü</th>
+                    <th>İdari Tahdit Kodu</th>
+                    <th>Ödeme Durumu</th>
+                    <th>Eylemler</th>
+                </tr>
+            </thead>
+            <tbody>
+
+                @foreach (var data in Model)
+                {
+                    if (data.fldPaid == 0) { Payment = "Ödenmedi"; }
+                    else if (data.fldPaid == 1) { Payment = "Ödendi"; }
+                    else if (data.fldPaid == 2) { Payment = "V-84 Ödeyen"; }
+                    else if (data.fldPaid == 3) { Payment = "V-84 Ödemeyen"; }
+                    else if (data.fldPaid == 4) { Payment = "V-137(3 Aydan Fazla İhlal) Ödeyen"; }
+                    else if (data.fldPaid == 5) { Payment = "V-137 (3 Aydan Fazla İhlal) Ödemeyen"; }
+                    else if (data.fldPaid == 6) { Payment = "V-157 Ödeyen,Tebliğ Tarihi Dışında Gelen"; }
+                    else if (data.fldPaid == 7) { Payment = "V-157 Ödemeyen,Tebliğ Tarihi Dışında Gelen"; }
+                    else if (data.fldPaid == 8) { Payment = "V-69 Ödeyen"; }
+                    else if (data.fldPaid == 9) { Payment = "V-69 Ödemeyen"; }
+                    else if (data.fldPaid == 10) { Payment = "V-88 Ödeyen"; }
+                    else if (data.fldPaid == 11) { Payment = "V-88 Ödemeyen"; }
+                    else if (data.fldPaid == 12) { Payment = "V-137 (3 Aydan Az İhlal) Ödeyen"; }
+                    else if (data.fldPaid == 13) { Payment = "V-137 (3 Aydan Az İhlal) Ödemeyen"; }
+                    else if (data.fldPaid == 14) { Payment = "İkamet Teskereli V-157 Tahditli Ödeyen,Tebliğ Tarihi Dışında Gelen"; }
+                    else if (data.fldPaid == 15) { Payment = "İkamet Teskereli V-157 Tahditli Ödemeyen,Tebliğ Tarihi Dışında Gelen"; }
+
+
+
+                    <tr>
+                        <td>@data.fldCode</td>
+                        <td>@data.fldPTime</td>
+                        <td>@data.fldStart</td>
+                        <td>@data.fldFinish</td>
+                        <td>@data.fldIdariCode</td>
+                        <td>@Payment</td>
+                        <td class="actions">
+                            <a href="#EditTKodmodalForm" onclick="edittkod('@data.fldId','@data.fldCode','@data.fldPTime','@data.fldStart','@data.fldFinish','@data.fldIdariCode',@data.fldPaid);" class="modal-with-form btn btn-default"><i class="fas fa-pencil-alt"></i></a>
+                            <a onclick="deletetkod('@data.fldId')" class="btn btn-default"><i class="fas fa-trash-alt"></i></a>
+                        </td>
+                    </tr>
+                }
+
+            </tbody>
+        </table>
+        <a class="modal-with-form btn btn-default" href="#AddTKODmodalForm"><i class="fas fa-plus"></i>  Yeni Ekle</a>
+
+    </div>
+</section>
+<div id="AddTKODmodalForm" class="modal-block modal-block-primary mfp-hide">
+    <section class="card">
+        <form method="post" action="/AddTKOD">
+            <header class="card-header">
+                <h2 class="card-title">Yeni Tahdit Kodu</h2>
+            </header>
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label for="codeTKOD">Tahdit Kodu</label>
+                        <input type="text" maxlength="50" class="form-control" id="codeTKOD" name="codeTKOD" required>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="sureTKOD">Ceza Süresi</label>
+                        <input type="text" maxlength="50" class="form-control" id="sureTKOD" name="sureTKOD" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label for="startTKOD">Başlangıç</label>
+                        <input type="number" class="form-control" id="startTKOD" name="startTKOD" required>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="finishTKOD">Bitiş</label>
+                        <input type="number" class="form-control" id="finishTKOD" name="finishTKOD" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label for="idariTKOD">İdari Tahdit Kodu</label>
+                        <input type="text" maxlength="50" class="form-control" id="idariTKOD" name="idariTKOD" required>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="paymentTKOD">Ödeme Durumu</label>
+                        <select name="paymentTKOD" id="paymentTKOD" data-plugin-selectTwo class="form-control populate" required>
+                            <option value="">Lütfen Seçiniz</option>
+                            <option value="1">Ödeme Yaparsa</option>
+                            <option value="0">Ödeme Yapmazsa</option>
+                            <option value="2">V-84 Ödeyen</option>
+                            <option value="3">V-84 Ödemeyen</option>
+                            <option value="4">V-137 Ödeyen</option>
+                            <option value="5">V-137 Ödemeyen</option>
+                            <option value="6">V-157 Ödeyen,Tebliğ Tarihi Dışında Gelen</option>
+                            <option value="7">V-157 Ödemeyen,Tebliğ Tarihi Dışında Gelen</option>
+                            <option value="8">V-69 Ödeyen</option>
+                            <option value="9">V-69 Ödemeyen</option>
+                            <option value="10">V-88 Ödeyen</option>
+                            <option value="11">V-88 Ödemeyen</option>
+                            <option value="14">İkamet Teskereli V-157 Tahditli Ödeyen,Tebliğ Tarihi Dışında Gelen</option>
+                            <option value="15">İkamet Teskereli V-157 Tahditli Ödemeyen,Tebliğ Tarihi Dışında Gelen</option>
+
+
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <footer class="card-footer">
+                <div class="row">
+                    <div class="col-md-12 text-right">
+                        <button type="submit" name="submit" value="Submit" class="btn btn-primary">Kaydet</button>
+                        <button class="btn btn-default modal-dismiss">Kapat</button>
+                    </div>
+                </div>
+            </footer>
+        </form>
+    </section>
+</div>
+<div id="EditTKodmodalForm" class="modal-block modal-block-primary mfp-hide">
+    <section class="card">
+        <form method="post" action="/EditTKod">
+            <header class="card-header">
+                <h2 class="card-title">Tahdit Kodu Düzenle</h2>
+            </header>
+            <div class="card-body">
+                <div class="form-row">
+                    <input type="text" class="form-control hidden" id="EditTKodId" name="EditTKodId" required>
+                    <div class="form-group col-md-6">
+                        <label for="editcodeTKOD">Tahdit Kodu</label>
+                        <input type="text" maxlength="50" class="form-control" id="editcodeTKOD" name="editcodeTKOD" required>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="editsureTKOD">Ceza Süresi</label>
+                        <input type="text" maxlength="50" class="form-control" id="editsureTKOD" name="editsureTKOD" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label for="editstartTKOD">Başlangıç</label>
+                        <input type="number" class="form-control" id="editstartTKOD" name="editstartTKOD" required>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="editfinishTKOD">Bitiş</label>
+                        <input type="number" class="form-control" id="editfinishTKOD" name="editfinishTKOD" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label for="editidariTKOD">İdari Tahdit Kodu</label>
+                        <input type="text" maxlength="50" class="form-control" id="editidariTKOD" name="editidariTKOD" required>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="editpaymentTKOD">Ödeme Durumu</label>
+                        <select name="editpaymentTKOD" id="editpaymentTKOD" data-plugin-selectTwo class="form-control populate" required>
+                            <option value="">Lütfen Seçiniz</option>
+                            <option value="1">Ödeme Yaparsa</option>
+                            <option value="0">Ödeme Yapmazsa</option>
+                            <option value="2">V-84 Ödeyen</option>
+                            <option value="3">V-84 Ödemeyen</option>
+                            <option value="4">V-137 Ödeyen</option>
+                            <option value="5">V-137 Ödemeyen</option>
+                            <option value="6">V-157 Ödeyen,Tebliğ Tarihi Dışında Gelen</option>
+                            <option value="7">V-157 Ödemeyen,Tebliğ Tarihi Dışında Gelen</option>
+                            <option value="8">V-69 Ödeyen</option>
+                            <option value="9">V-69 Ödemeyen</option>
+                            <option value="10">V-88 Ödeyen</option>
+                            <option value="11">V-88 Ödemeyen</option>
+                            <option value="14">İkamet Teskereli V-157 Tahditli Ödeyen,Tebliğ Tarihi Dışında Gelen</option>
+                            <option value="15">İkamet Teskereli V-157 Tahditli Ödemeyen,Tebliğ Tarihi Dışında Gelen</option>
+
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <footer class="card-footer">
+                <div class="row">
+                    <div class="col-md-12 text-right">
+                        <button id="submit" type="submit" name="submit" value="Submit" class="btn btn-primary">Kaydet</button>
+                        <button class="btn btn-default modal-dismiss">Kapat</button>
+                    </div>
+                </div>
+            </footer>
+        </form>
+    </section>
+</div>
+

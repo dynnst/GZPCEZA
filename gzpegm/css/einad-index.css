@@ -1,0 +1,211 @@
+﻿/* ==========================================================================
+   E-INAD Yonetim Stilleri (einad-index.css)
+   ========================================================================== */
+
+.required {
+        border-left: 4px solid #ffc107;
+    }
+
+    .is-invalid {
+        border-color: #dc3545 !important;
+        background: #fff5f5;
+    }
+
+    .card-header {
+        cursor: pointer;
+    }
+
+    .modal-dialog.custom-wide {
+        max-width: 1400px;
+        width: 95%;
+        margin: 30px auto;
+    }
+
+    @media (max-width: 768px) {
+        .modal-dialog.custom-wide {
+            max-width: 100%;
+            width: 98%;
+            margin: 10px;
+        }
+    }
+
+    .modal-dialog.custom-wide .modal-body {
+        max-height: calc(100vh - 220px);
+        overflow-y: auto;
+    }
+
+    .datalist-hint {
+        font-size: 11px;
+        color: #6c757d;
+        margin-top: 2px;
+    }
+
+    .einad-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 14px;
+    }
+
+    .einad-note {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: #5d6b79;
+        font-size: 13px;
+    }
+
+    .einad-status {
+        display: none;
+        margin-bottom: 12px;
+        padding: 12px 15px;
+        border-radius: 6px;
+        font-size: 14px;
+        border-left: 5px solid transparent;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+        animation: einadSlideDown 0.25s ease-out;
+    }
+
+    @keyframes einadSlideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-8px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .einad-status.alert-success {
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        border-left-color: #28a745;
+        color: #155724;
+    }
+
+    .einad-status.alert-warning {
+        background-color: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-left-color: #ffc107;
+        color: #856404;
+    }
+
+    .einad-status.alert-danger {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        border-left-color: #dc3545;
+        color: #721c24;
+    }
+
+    .einad-status.alert-info {
+        background-color: #d1ecf1;
+        border: 1px solid #bee5eb;
+        border-left-color: #17a2b8;
+        color: #0c5460;
+    }
+
+    .einad-status i {
+        margin-right: 8px;
+        font-weight: bold;
+    }
+
+    .actions .btn {
+        margin-bottom: 4px;
+    }
+
+    .einad-filter-form .form-control {
+        min-width: 160px;
+    }
+
+    /* =========================================================
+       İNAD DURUM BADGE'İ (TIKLANABİLİR)
+       ========================================================= */
+    .inad-status-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        padding: 7px 14px;
+        border-radius: 20px;
+        border: none;
+        cursor: pointer;
+        user-select: none;
+        transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
+        color: #fff;
+        letter-spacing: 0.2px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+        outline: none;
+    }
+
+        .inad-status-btn:hover {
+            transform: translateY(-1px) scale(1.03);
+            box-shadow: 0 3px 8px rgba(0,0,0,0.22);
+            filter: brightness(1.05);
+        }
+
+        .inad-status-btn:active {
+            transform: translateY(0) scale(0.98);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+
+        .inad-status-btn:focus-visible {
+            outline: 2px solid #0056b3;
+            outline-offset: 2px;
+        }
+
+        .inad-status-btn:disabled {
+            opacity: 0.6;
+            cursor: wait;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Durum renkleri */
+        .inad-status-btn.status-edildi {
+            background: linear-gradient(135deg, #28a745, #218838);
+        }
+
+        .inad-status-btn.status-odada {
+            background: linear-gradient(135deg, #ffc107, #e0a800);
+            color: #212529;
+        }
+
+        .inad-status-btn.status-diger {
+            background: linear-gradient(135deg, #6c757d, #5a6268);
+            cursor: default;
+        }
+
+        /* İnad Odasına Alındı: yumuşak yanıp sönme */
+        .inad-status-btn.status-odada.blink {
+            animation: inadBlink 1.4s ease-in-out infinite;
+        }
+
+    @keyframes inadBlink {
+        0%, 100% {
+            opacity: 1;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+        }
+
+        50% {
+            opacity: 0.7;
+            box-shadow: 0 0 14px rgba(255, 193, 7, 0.85);
+        }
+    }
+
+    /* Yükleniyor durumu: badge içi spinner */
+    .inad-status-btn .fa-spinner {
+        margin-right: 0;
+    }
+
+    /* Responsive küçültme */
+    @media (max-width: 768px) {
+        .inad-status-btn {
+            font-size: 11.5px;
+            padding: 6px 10px;
+        }
+    }

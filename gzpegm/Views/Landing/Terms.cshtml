@@ -1,0 +1,217 @@
+@{
+    ViewBag.Title = "Kullanım Koşulları";
+}
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Kullanım Koşulları - Hudut Kapıları Eğitim Merkezi</title>
+    <link href="/AdminTemplate/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/AdminTemplate/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .navbar {
+            background-color: #2f4050;
+            padding: 15px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .navbar-brand {
+            color: white !important;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .page-header {
+            background: linear-gradient(135deg, #1ab394 0%, #0d8f73 100%);
+            color: white;
+            padding: 40px 0;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+            .page-header h1 {
+                font-weight: 700;
+                margin: 0;
+                font-size: 2.5rem;
+            }
+
+        .content-section {
+            background: #fff;
+            padding: 30px;
+            margin-bottom: 30px;
+            border-radius: 5px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border-left: 4px solid #1ab394;
+        }
+
+            .content-section h2 {
+                color: #2f4050;
+                font-weight: 700;
+                margin-bottom: 15px;
+                font-size: 1.5rem;
+            }
+
+            .content-section h3 {
+                color: #1ab394;
+                font-weight: 600;
+                margin-top: 20px;
+                margin-bottom: 10px;
+            }
+
+        .back-button {
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+            .back-button a {
+                color: #1ab394;
+                text-decoration: none;
+            }
+
+                .back-button a:hover {
+                    text-decoration: underline;
+                }
+
+        footer {
+            background: #2f4050;
+            color: #c7d0d9;
+            padding: 30px 0;
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        .warning-box {
+            background-color: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <span class="navbar-brand"><i class="fa fa-file-text"></i> Hudut Kapıları Eğitim Merkezi</span>
+        </div>
+    </nav>
+
+    <div class="page-header">
+        <div class="container">
+            <h1><i class="fa fa-clipboard"></i> Kullanım Koşulları</h1>
+            <p>Platform'u Kullanırken Uymanız Gereken Koşullar</p>
+        </div>
+    </div>
+
+    <div class="container" style="max-width: 900px;">
+        <div class="back-button">
+            <a href="@Url.Action("Index", "Landing")"><i class="fa fa-arrow-left"></i> Ana Sayfaya Dön</a>
+        </div>
+
+        <div class="content-section">
+            <h2><i class="fa fa-book"></i> 1. Genel Koşullar</h2>
+            <p>
+                Hudut Kapıları Eğitim Merkezi Platform'u ("Platform") kullanırken, aşağıdaki koşulları kabul etmiş sayılırsınız.
+                Platform'u kullanmaya devam ederek, bu koşulları kabul ettiğinizi teyit edersiniz.
+            </p>
+        </div>
+
+        <div class="content-section">
+            <h2><i class="fa fa-user-check"></i> 2. Kullanıcı Hesapları</h2>
+            <h3>Hesap Oluşturma:</h3>
+            <ul>
+                <li>Platform'u kullanmak için hesap oluşturmanız gerekebilir.</li>
+                <li>Sağladığınız bilgiler doğru, güncel ve eksiksiz olmalıdır.</li>
+                <li>Kişisel bilgileriniz için gizlilik sorumluluğu taşırsınız.</li>
+                <li>Hesabınızın başkası tarafından kullanılmamasını sağlamaktan sorumlusunuz.</li>
+            </ul>
+        </div>
+
+        <div class="content-section">
+            <h2><i class="fa fa-ban"></i> 3. Yasaklı Davranışlar</h2>
+            <p>Platform'u kullanırken aşağıdaki davranışlar yasaktır:</p>
+            <ul>
+                <li>Yasadışı içerik yayınlamak</li>
+                <li>Başkasının fikri mülkiyet haklarını ihlal etmek</li>
+                <li>Kötü amaçlı yazılım veya virüs yayınlamak</li>
+                <li>Platform'u baltalamaya çalışmak</li>
+                <li>Başkalarını taciz etmek veya tehdit etmek</li>
+                <li>Yanlış bilgi veya dezenformasyon yayınlamak</li>
+                <li>Başka kullanıcıların gizliliğini ihlal etmek</li>
+                <li>Platform hizmetlerini ticari amaçlar için kötüye kullanmak</li>
+            </ul>
+        </div>
+
+        <div class="content-section">
+            <h2><i class="fa fa-copyright"></i> 4. Fikri Mülkiyet Hakları</h2>
+            <p>
+                Platform'daki tüm içerik, tasarım, kod ve materyaller Hudut Kapıları Eğitim Merkezi'ne veya lisans verenlere aittir.
+                Bu içeriği izin almadan kopyalayamaz, değiştiremez veya dağıtamazsınız.
+            </p>
+            <div class="warning-box">
+                <strong><i class="fa fa-exclamation-triangle"></i> Dikkat:</strong> Telif hakkı ihlallerinin cezaları ciddi olabilir.
+            </div>
+        </div>
+
+        <div class="content-section">
+            <h2><i class="fa fa-gavel"></i> 5. Sorumluluk Sınırlaması</h2>
+            <p>
+                Platform "olduğu gibi" sağlanır. Hudut Kapıları Eğitim Merkezi, Platform'un kesintisiz, hatasız veya
+                virüs barındırmayan olacağını garanti etmez.
+            </p>
+            <p>
+                Makul kapsamda, Platform'un kullanımından kaynaklanabilecek herhangi bir doğrudan, dolaylı, tesadüfi,
+                özel veya sonuçsal hasar için sorumlu değiliz.
+            </p>
+        </div>
+
+        <div class="content-section">
+            <h2><i class="fa fa-link"></i> 6. Dış Bağlantılar</h2>
+            <p>
+                Platform, üçüncü taraf web sitelerine bağlantılar içerebilir. Bu sitelerin içeriğinden sorumlu değiliz.
+                Üçüncü taraf sitelerin koşullarını ve gizlilik politikalarını kontrol etmeniz önerilir.
+            </p>
+        </div>
+
+        <div class="content-section">
+            <h2><i class="fa fa-times"></i> 7. Hesap Sonlandırması</h2>
+            <p>
+                Bu koşulları ihlal ederseniz, hesabınızı askıya alabiliriz veya sonlandırabiliriz.
+                Sonlandırma durumunda, Platform'daki hesapla ilişkili tüm bilgilere erişim sonlandırılır.
+            </p>
+        </div>
+
+        <div class="content-section">
+            <h2><i class="fa fa-pencil"></i> 8. Değişiklikler</h2>
+            <p>
+                Bu koşulları önceden haber verilmeksizin değiştirebiliriz. Değişiklikleri Platform'da yayınlayacağız.
+                Değişikliklerden sonra Platform'u kullanmaya devam ederseniz, yeni koşulları kabul etmiş sayılırsınız.
+            </p>
+        </div>
+
+        <div class="content-section" style="background-color: #f8f9fa; border-left-color: #6c757d;">
+            <p style="margin: 0; color: #6c757d;">
+                <strong>Son Güncelleme:</strong> 2 Şubat 2026<br>
+                Bu koşullar herhangi bir zamanda değişikliğe tabidır.
+            </p>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Hudut Kapıları Eğitim Sistemi. Tüm Hakları Saklıdır.</p>
+        </div>
+    </footer>
+
+    <script src="/AdminTemplate/js/jquery-3.1.1.min.js"></script>
+    <script src="/AdminTemplate/js/bootstrap.js"></script>
+</body>
+</html>

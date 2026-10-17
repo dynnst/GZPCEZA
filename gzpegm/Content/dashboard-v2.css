@@ -1,0 +1,155 @@
+.dashboard-v2 .ibox {
+    clear: both;
+    margin-bottom: 25px;
+    margin-top: 0;
+    padding: 0;
+}
+
+.dashboard-v2 .ibox-title {
+    background-color: #fff;
+    border-color: #e7eaec;
+    border-style: solid solid none;
+    border-width: 3px 0 0;
+    color: inherit;
+    margin-bottom: 0;
+    min-height: 48px;
+    padding: 14px 15px 7px;
+}
+
+.dashboard-v2 .ibox-title h5 {
+    display: inline-block;
+    float: left;
+    font-size: 14px;
+    margin: 0 0 7px;
+    padding: 0;
+    text-overflow: ellipsis;
+}
+
+.dashboard-v2 .ibox-content {
+    background-color: #fff;
+    border-color: #e7eaec;
+    border-style: solid solid none;
+    border-width: 1px 0;
+    color: inherit;
+    padding: 15px 20px 20px;
+}
+
+.dashboard-v2 .ibox-heading {
+    background-color: #f3f6fb;
+    border-bottom: none;
+}
+
+.dashboard-v2 .no-margins {
+    margin: 0 !important;
+}
+
+.dashboard-v2 .font-bold {
+    font-weight: 600;
+}
+
+.dashboard-v2 .text-navy {
+    color: #1ab394 !important;
+}
+
+.dashboard-v2 .label {
+    border-radius: .25em;
+    color: #fff;
+    display: inline;
+    font-size: 75%;
+    font-weight: 700;
+    line-height: 1;
+    padding: .2em .6em .3em;
+    text-align: center;
+    vertical-align: baseline;
+    white-space: nowrap;
+}
+
+.dashboard-v2 .label-primary {
+    background-color: #1ab394;
+}
+
+.dashboard-v2 .label-success {
+    background-color: #1c84c6;
+}
+
+.dashboard-v2 .label-info {
+    background-color: #23c6c8;
+}
+
+.dashboard-v2 .label-warning {
+    background-color: #f8ac59;
+}
+
+.dashboard-v2 .label-danger {
+    background-color: #ed5565;
+}
+
+.dashboard-v2 .stat-percent {
+    float: right;
+}
+
+.dashboard-v2 .stat-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.dashboard-v2 .stat-list li {
+    margin-top: 15px;
+    position: relative;
+}
+
+.dashboard-v2 .stat-list li:first-child {
+    margin-top: 0;
+}
+
+.dashboard-v2 .progress-mini {
+    height: 5px;
+    margin-top: 8px;
+}
+
+.dashboard-v2 .feed-activity-list .feed-element {
+    border-bottom: 1px solid #e7eaec;
+}
+
+.dashboard-v2 .feed-element {
+    padding-bottom: 15px;
+    padding-top: 15px;
+}
+
+.dashboard-v2 .feed-element:first-child {
+    padding-top: 0;
+}
+
+.dashboard-v2 .table.no-margins {
+    margin-bottom: 0;
+}
+
+.dashboard-v2 canvas {
+    min-height: 220px;
+}
+
+.dashboard-v2 .student-action {
+    display: block;
+    min-height: 116px;
+    padding: 20px;
+    text-align: center;
+    text-decoration: none;
+}
+
+.dashboard-v2 .student-action i {
+    display: block;
+    font-size: 28px;
+    margin-bottom: 10px;
+}
+
+.dashboard-v2 .empty-state {
+    padding: 45px 20px;
+    text-align: center;
+}
+
+.dashboard-v2 .empty-state i {
+    color: #c2c7d0;
+    font-size: 48px;
+    margin-bottom: 15px;
+}

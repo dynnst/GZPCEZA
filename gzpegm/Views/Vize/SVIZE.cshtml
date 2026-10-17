@@ -1,0 +1,114 @@
+@model IEnumerable<gzpegm.Models.E_Sartli>
+@{
+    Layout = "~/Views/Shared/_Master.cshtml";
+
+    var fromVal = ViewBag.From != null ? ((DateTime)ViewBag.From).ToString("yyyy-MM-dd") : "";
+    var toVal = ViewBag.To != null ? ((DateTime)ViewBag.To).ToString("yyyy-MM-dd") : "";
+    var searchText = ViewBag.SearchText as string ?? "";
+    var selectedBorder = ViewBag.SelectedBorder as string ?? "";
+    var selectedUser = ViewBag.SelectedUser as string ?? "";
+    var routePath = Request.Path ?? "";
+    var actionName = routePath.IndexOf("/OSVIZE", StringComparison.OrdinalIgnoreCase) >= 0 ? "OSVIZE" : "SVIZE";
+    var baseUrl = actionName == "OSVIZE" ? Url.Content("~/OSVIZE") : Url.Content("~/SVIZE");
+    var currentParams = "";
+
+    if (!string.IsNullOrEmpty(fromVal)) { currentParams += (currentParams == "" ? "?" : "&") + "from=" + fromVal; }
+    if (!string.IsNullOrEmpty(toVal)) { currentParams += (currentParams == "" ? "?" : "&") + "to=" + toVal; }
+    if (!string.IsNullOrEmpty(searchText)) { currentParams += (currentParams == "" ? "?" : "&") + "q=" + HttpUtility.UrlEncode(searchText); }
+    if (!string.IsNullOrEmpty(selectedBorder)) { currentParams += (currentParams == "" ? "?" : "&") + "border=" + HttpUtility.UrlEncode(selectedBorder); }
+    if (!string.IsNullOrEmpty(selectedUser)) { currentParams += (currentParams == "" ? "?" : "&") + "user=" + HttpUtility.UrlEncode(selectedUser); }
+
+    var exportPdfUrl = baseUrl + currentParams + (currentParams == "" ? "?" : "&") + "export=pdf";
+    var exportXlsUrl = baseUrl + currentParams + (currentParams == "" ? "?" : "&") + "export=excel";
+}
+
+<section class="card">
+    <header class="card-header">
+        <div class="card-actions">
+            <a href="#" class="card-action card-action-toggle" data-card-toggle></a>
+        </div>
+        <h2 class="card-title">Şartlı Vize Listesi</h2>
+        <p class="card-subtitle">Bu bölümde yapılan şartlı vize formlarını filtreleyebilir, dışa aktarabilir ve tekrar yazdırabilirsiniz.</p>
+    </header>
+    <div class="card-body">
+        <form method="get" action="@baseUrl" class="mb-3">
+            <div class="row">
+                <div class="col-md-3 mb-2">
+                    <input type="text" name="q" value="@searchText" class="form-control" placeholder="Ad, uyruk, kapı veya personel ara" />
+                </div>
+                <div class="col-md-3 mb-2">
+                    @if (ViewBag.IsAdmin == true)
+                    {
+                        <select name="border" class="form-control populate" data-plugin-selectTwo data-width="100%">
+                            <option value="">Tüm Kapılar</option>
+                            @foreach (var item in (ViewBag.BorderList as List<string> ?? new List<string>()))
+                            {
+                                <option value="@item" @(selectedBorder == item ? "selected" : "")>@item</option>
+                            }
+                        </select>
+                    }
+                    else
+                    {
+                        <select name="border" class="form-control" disabled style="background-color: #f1f5f9; font-weight: 600;">
+                            <option value="@ViewBag.UserBorder" selected>@(!string.IsNullOrEmpty(ViewBag.UserBorder as string) ? ViewBag.UserBorder : "Kapı Yetkisi Yok") (Yetkili Kapınız)</option>
+                        </select>
+                        <input type="hidden" name="border" value="@ViewBag.UserBorder" />
+                    }
+                </div>
+                <div class="col-md-3 mb-2">
+                    <select name="user" class="form-control populate" data-plugin-selectTwo data-width="100%">
+                        <option value="">Tüm Kullanıcılar</option>
+                        @foreach (var item in (ViewBag.UserList as List<string> ?? new List<string>()))
+                        {
+                            <option value="@item" @(selectedUser == item ? "selected" : "")>@item</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <input type="date" name="from" value="@fromVal" class="form-control" />
+                </div>
+                <div class="col-md-3 mb-2">
+                    <input type="date" name="to" value="@toVal" class="form-control" />
+                </div>
+                <div class="col-md-9 mb-2 text-right">
+                    <button type="submit" class="btn btn-primary">Filtrele</button>
+                    <a href="@baseUrl" class="btn btn-default">Temizle</a>
+                    <a href="@exportPdfUrl" class="btn btn-outline-secondary">PDF</a>
+                    <a href="@exportXlsUrl" class="btn btn-outline-secondary">Excel</a>
+                </div>
+            </div>
+        </form>
+
+        <div class="text-muted small mb-2">@(ViewBag.ResultInfo ?? "Son kayıtlar gösteriliyor.")</div>
+
+        <table class="table table-bordered table-striped mb-0" id="datatable-default">
+            <thead>
+                <tr>
+                    <th>İşlem Tarihi</th>
+                    <th>İşlemi Yapan</th>
+                    <th>Kapı</th>
+                    <th>Adı Soyadı</th>
+                    <th>Uyruğu</th>
+                    <th>Doğum Tarihi</th>
+                    <th>Eylemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var data in Model)
+                {
+                    <tr>
+                        <td>@(data.fldDate.HasValue ? data.fldDate.Value.ToString("dd.MM.yyyy HH:mm") : "")</td>
+                        <td>@data.fldBy</td>
+                        <td>@data.fldBorder</td>
+                        <td>@data.fldName</td>
+                        <td>@data.fldOrgin</td>
+                        <td>@(data.fldBdate.HasValue ? data.fldBdate.Value.ToString("dd.MM.yyyy") : "")</td>
+                        <td class="actions">
+                            <a href="/vizeformyazdir/@data.fldId" target="_blank" class="btn btn-default"><i class="fas fa-print"></i></a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>

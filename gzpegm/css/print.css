@@ -1,0 +1,15 @@
+﻿#birnisan {
+    width: 100%;
+    height: 100%;
+    -moz-transform: rotate(90deg);
+    -webkit-transform: rotate(900deg);
+    -ms-transform: rotate(900deg);
+    -o-transform: rotate(900deg);
+    transform: rotate(90deg);
+}
+#Tutanak {
+    width: 100%;
+    height: 100%;
+    
+}
+

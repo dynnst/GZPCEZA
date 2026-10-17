@@ -1,0 +1,378 @@
+﻿@model List<gzpegm.Models.ViewModels.CourseViewModel>
+@using System.Text.RegularExpressions
+@using System.Net
+@{
+    Layout = "~/Views/Shared/_Master.cshtml";
+    ViewBag.Title = ViewBag.InstructorName + " - Kursları";
+}
+
+@functions {
+    private string PlainText(string html, int maxLen = 120)
+    {
+        if (string.IsNullOrWhiteSpace(html)) return string.Empty;
+
+        // <img> etiketlerini tamamen çıkar
+        string withoutImg = Regex.Replace(html, @"<img[^>]*>", string.Empty, RegexOptions.IgnoreCase);
+
+        // Diğer tüm HTML etiketlerini çıkar
+        string withoutTags = Regex.Replace(withoutImg, "<.*?>", string.Empty);
+
+        // HTML entity'leri decode et ve kırp
+        string decoded = WebUtility.HtmlDecode(withoutTags).Trim();
+        if (decoded.Length <= maxLen) return decoded;
+        return decoded.Substring(0, maxLen) + "...";
+    }
+}
+
+<!-- SAYFA YAPISI -->
+<div class="page-wrapper">
+    <div class="container-fluid p-0">
+        <!-- BAŞLIK BÖLÜMÜ -->
+        <div class="page-heading mb-4">
+            <div class="d-flex justify-content-between align-items-center flex-wrap">
+                <div>
+                    <h2 class="page-title">
+                        <i class="fas fa-chalkboard-user me-2"></i>@ViewBag.InstructorName
+                    </h2>
+                    <p class="page-subtitle">Bu eğitmenin oluşturduğu aktif kurslar listeleniyor</p>
+                </div>
+                <div class="table-info">
+                    <span class="badge bg-primary">Toplam: @(Model?.Count ?? 0) Kurs</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- KURSLAR GRİDİ -->
+        <div class="row">
+            @if (Model != null && Model.Count > 0)
+            {
+                foreach (var course in Model)
+                {
+                    var defaultCourseImage = Url.Content("/AdminTemplate/img/landing/avatar1.jpg");
+                    var img = string.IsNullOrEmpty(course.CoverImage) || course.CoverImage.StartsWith("http", System.StringComparison.OrdinalIgnoreCase)
+                        ? defaultCourseImage
+                        : Url.Content("~/files/Egitim/" + course.CoverImage);
+
+                    <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
+                        <div class="course-card">
+                            <div class="course-image" style="background-image: url('@img');">
+                                @if (!string.IsNullOrWhiteSpace(course.CategoryName))
+                                {
+                                    <span class="category-badge">@course.CategoryName</span>
+                                }
+                            </div>
+                            <div class="course-body">
+                                <h5 class="course-title">@course.CourseTitle</h5>
+                                <p class="course-description">
+                                    @(string.IsNullOrEmpty(course.CourseDescription) ? "Açıklama bulunmuyor." : PlainText(course.CourseDescription, 100))
+                                </p>
+                            </div>
+                            <div class="course-footer">
+                                <a class="btn btn-details" href="@Url.Action("Details", "Course", new { id = course.CourseId })">
+                                    <i class="fas fa-arrow-right me-2"></i>Kurs Detayına Git
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="col-12">
+                    <div class="empty-state text-center py-5">
+                        <i class="fas fa-book-open fa-5x text-muted mb-4"></i>
+                        <h4 class="text-muted">Bu eğitmene ait aktif kurs bulunamadı</h4>
+                        <p class="text-muted">Eğitmen henüz herhangi bir kurs oluşturmamış veya kurslar pasif durumda.</p>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- SAYFALANDIRMA -->
+        @if (ViewBag.TotalPages != null && ViewBag.TotalPages > 1)
+        {
+            <div class="row mt-5">
+                <div class="col-12">
+                    <nav aria-label="Sayfa navigasyonu">
+                        <ul class="pagination justify-content-center">
+                            @{
+                                int current = ViewBag.CurrentPage ?? 1;
+                                int totalPages = ViewBag.TotalPages ?? 1;
+                                int startPage = Math.Max(1, current - 2);
+                                int endPage = Math.Min(totalPages, current + 2);
+                                int teacherId = Request.QueryString["teacherId"] != null ? int.Parse(Request.QueryString["teacherId"]) : 0;
+
+                                if (startPage > 1)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="@Url.Action("InstructorCourses", "Course", new { teacherId = teacherId, page = 1 })">
+                                            <i class="fas fa-angle-double-left"></i>
+                                        </a>
+                                    </li>
+                                }
+
+                                if (current > 1)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="@Url.Action("InstructorCourses", "Course", new { teacherId = teacherId, page = current - 1 })">
+                                            <i class="fas fa-angle-left"></i>
+                                        </a>
+                                    </li>
+                                }
+
+                                for (int i = startPage; i <= endPage; i++)
+                                {
+                                    <li class="page-item @(i == current ? "active" : "")">
+                                        <a class="page-link" href="@Url.Action("InstructorCourses", "Course", new { teacherId = teacherId, page = i })">@i</a>
+                                    </li>
+                                }
+
+                                if (current < totalPages)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="@Url.Action("InstructorCourses", "Course", new { teacherId = teacherId, page = current + 1 })">
+                                            <i class="fas fa-angle-right"></i>
+                                        </a>
+                                    </li>
+                                }
+
+                                if (endPage < totalPages)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="@Url.Action("InstructorCourses", "Course", new { teacherId = teacherId, page = totalPages })">
+                                            <i class="fas fa-angle-double-right"></i>
+                                        </a>
+                                    </li>
+                                }
+                            }
+                        </ul>
+                    </nav>
+                    <div class="text-center text-muted small mt-2">
+                        Toplam @totalPages sayfa | @(Model?.Count ?? 0) kurs
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        /* SAYFA YAPISI */
+        .page-wrapper {
+            padding: 20px;
+            background: #f5f7fb;
+            min-height: 100vh;
+        }
+
+        .page-heading {
+            margin-bottom: 30px;
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #333;
+            margin: 0 0 8px 0;
+        }
+
+        .page-subtitle {
+            font-size: 14px;
+            color: #999;
+            margin: 0;
+        }
+
+        /* KURS KARTLARI */
+        .course-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: none;
+        }
+
+            .course-card:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+            }
+
+        .course-image {
+            height: 180px;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+
+        /* KATEGORİ BADGE */
+        .category-badge {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            z-index: 3;
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(8px);
+            color: white;
+            letter-spacing: 0.3px;
+        }
+
+        /* KART İÇERİĞİ */
+        .course-body {
+            padding: 16px;
+            flex: 1;
+        }
+
+        .course-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin: 0 0 10px 0;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            min-height: 48px;
+        }
+
+        .course-description {
+            font-size: 13px;
+            color: #777;
+            line-height: 1.5;
+            margin: 0;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            min-height: 60px;
+        }
+
+        /* KART ALT BÖLÜM */
+        .course-footer {
+            padding: 12px 16px;
+            border-top: 1px solid #eef2f7;
+            background: #fafbfc;
+        }
+
+        .btn-details {
+            display: block;
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+            .btn-details:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+                color: white;
+                text-decoration: none;
+            }
+
+        /* BADGE STİLLERİ */
+        .badge {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .bg-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        /* BOŞ SAYFA STİLİ */
+        .empty-state {
+            background: white;
+            border-radius: 16px;
+            padding: 60px 20px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        /* SAYFALANDIRMA STİLLERİ */
+        .pagination {
+            gap: 5px;
+        }
+
+        .page-item .page-link {
+            border-radius: 8px;
+            padding: 8px 14px;
+            color: #667eea;
+            border: 1px solid #e1e5eb;
+            background: white;
+            transition: all 0.3s ease;
+        }
+
+        .page-item.active .page-link {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #667eea;
+            color: white;
+        }
+
+        .page-item .page-link:hover {
+            background: #f8f9fa;
+            border-color: #667eea;
+            color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .page-item.active .page-link:hover {
+            background: linear-gradient(135deg, #5a67d8 0%, #6b46a0 100%);
+            color: white;
+        }
+
+        /* RESPONSİVE */
+        @@media (max-width: 768px) {
+            .page-wrapper {
+                padding: 15px;
+            }
+
+            .page-title {
+                font-size: 22px;
+            }
+
+            .course-image {
+                height: 160px;
+            }
+
+            .course-title {
+                font-size: 14px;
+                min-height: 40px;
+            }
+
+            .course-description {
+                font-size: 12px;
+                min-height: 54px;
+            }
+
+            .pagination {
+                gap: 3px;
+            }
+
+            .page-item .page-link {
+                padding: 6px 10px;
+                font-size: 13px;
+            }
+        }
+
+        /* TABLET İÇİN */
+        @@media (min-width: 769px) and (max-width: 1024px) {
+            .course-image {
+                height: 170px;
+            }
+        }
+    </style>
+}

@@ -1,0 +1,467 @@
+@model IEnumerable<gzpegm.Models.ViewModels.CourseViewModel>
+
+@functions {
+    // HTML içindeki etiketleri temizleyip düz metne çevirir
+    private string StripTags(string html)
+    {
+        if (string.IsNullOrEmpty(html)) return string.Empty;
+        return System.Text.RegularExpressions.Regex.Replace(html, "<.*?>", string.Empty);
+    }
+}
+
+@{
+    Layout = "~/Views/Shared/_Master.cshtml";
+
+    // ViewBag güvenlik değerleri
+    string categoryName = ViewBag.CategoryName as string ?? "Kategori";
+    int totalPages = ViewBag.TotalPages != null ? (int)ViewBag.TotalPages : 1;
+    int currentPage = ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage : 1;
+    int categoryId = ViewBag.CategoryId != null ? (int)ViewBag.CategoryId : 0;
+    int totalCourses = ViewBag.TotalCourses != null ? (int)ViewBag.TotalCourses : 0;
+
+    var modelSafe = Model ?? Enumerable.Empty<gzpegm.Models.ViewModels.CourseViewModel>();
+
+    ViewBag.Title = categoryName + " Kategorisi Kursları";
+}
+
+<div class="page-wrapper">
+    <!-- BAŞLIK BÖLÜMÜ -->
+    <div class="page-heading mb-4">
+        <div class="d-flex align-items-center justify-content-between flex-wrap">
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-folder-open me-2"></i>@categoryName
+                </h1>
+                <p class="text-muted mb-0">@totalCourses kurs bulundu</p>
+            </div>
+            <div class="mt-2 mt-sm-0">
+                <a href="@Url.Action("Index", "Landing")" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left me-1"></i> Anasayfaya Dön
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- BREADCRUMB -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb custom-breadcrumb">
+            <li class="breadcrumb-item"><a href="@Url.Action("Index", "Landing")">Anasayfa</a></li>
+            <li class="breadcrumb-item active" aria-current="page">@categoryName</li>
+        </ol>
+    </nav>
+
+    <!-- HATA MESAJLARI -->
+    @if (TempData["msgError"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i> @TempData["msgError"]
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
+    <!-- KURS KARTLARI -->
+    <div class="row">
+        @if (modelSafe.Any())
+        {
+            foreach (var course in modelSafe)
+            {
+                <div class="col-xl-4 col-lg-6 col-md-6 mb-4">
+                    <div class="card course-card h-100">
+                        <div class="position-relative">
+                            @if (!string.IsNullOrEmpty(course.CoverImage))
+                            {
+                                <img src="~/files/Egitim/@course.CoverImage"
+                                     class="card-img-top"
+                                     alt="@course.CourseTitle"
+                                     loading="lazy"
+                                     style="height: 220px; object-fit: cover;">
+                            }
+                            else
+                            {
+                                <div class="card-img-top bg-gradient-primary d-flex align-items-center justify-content-center"
+                                     style="height: 220px;">
+                                    <i class="fas fa-graduation-cap fa-4x text-white opacity-50"></i>
+                                </div>
+                            }
+                            <span class="badge-custom badge-primary-custom position-absolute top-0 end-0 m-3">
+                                <i class="fas fa-tag me-1"></i> @categoryName
+                            </span>
+                        </div>
+
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title font-weight-bold">@course.CourseTitle</h5>
+
+                            <p class="card-text text-muted flex-grow-1">
+                                @if (!string.IsNullOrEmpty(course.CourseDescription))
+                                {
+                                    var plain = StripTags(course.CourseDescription);
+                                    var shortDesc = plain.Length > 120
+                                        ? plain.Substring(0, 120) + "..."
+                                        : plain;
+                                    @shortDesc
+                                }
+                                else
+                                {
+                                    <em class="text-muted">Açıklama bulunmuyor.</em>
+                                }
+                            </p>
+
+                            <div class="mt-auto">
+                                <hr class="my-3">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <small class="text-muted">
+                                        <i class="fas fa-chalkboard-teacher me-1"></i>
+                                        @(course.InstructorName ?? "Bilinmeyen Eğitmen")
+                                    </small>
+                                    <small class="text-muted">
+                                        <i class="fas fa-calendar-alt me-1"></i>
+                                        @(course.CreatedDate?.ToString("dd.MM.yyyy") ?? "Tarih yok")
+                                    </small>
+                                </div>
+
+                                <div class="text-center">
+                                    <a href="@Url.Action("Details", "Course", new { id = course.CourseId })" class="btn btn-primary btn-block w-100">
+                                        <i class="fas fa-arrow-right me-1"></i> Kursa Git
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-12">
+                <div class="empty-state text-center py-5">
+                    <div class="empty-state-icon mb-3">
+                        <i class="fas fa-folder-open fa-4x text-muted"></i>
+                    </div>
+                    <h4 class="text-muted">Bu kategoride henüz kurs bulunmuyor</h4>
+                    <p class="text-muted mb-4">@categoryName kategorisinde henüz yayınlanmış bir kurs yok.</p>
+                    <a href="@Url.Action("Index", "Landing")" class="btn btn-primary">
+                        <i class="fas fa-home me-1"></i> Diğer Kursları İncele
+                    </a>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- SAYFALANDIRMA (PAGINATION) -->
+    @if (totalPages > 1)
+    {
+        <div class="row mt-4">
+            <div class="col-12">
+                <nav aria-label="Kurs sayfalandırma">
+                    <ul class="pagination justify-content-center">
+                        @if (currentPage > 1)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" href="@Url.Action("CoursesByCategory", new { categoryId = categoryId, page = currentPage - 1 })">
+                                    <i class="fas fa-chevron-left me-1"></i> Önceki
+                                </a>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="page-item disabled">
+                                <span class="page-link"><i class="fas fa-chevron-left me-1"></i> Önceki</span>
+                            </li>
+                        }
+
+                        @{
+                            int startPage = Math.Max(1, currentPage - 2);
+                            int endPage = Math.Min(totalPages, currentPage + 2);
+                        }
+
+                        @if (startPage > 1)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" href="@Url.Action("CoursesByCategory", new { categoryId = categoryId, page = 1 })">1</a>
+                            </li>
+                            if (startPage > 2)
+                            {
+                                <li class="page-item disabled"><span class="page-link">...</span></li>
+                            }
+                        }
+
+                        @for (int i = startPage; i <= endPage; i++)
+                        {
+                            <li class="page-item @(i == currentPage ? "active" : "")">
+                                <a class="page-link" href="@Url.Action("CoursesByCategory", new { categoryId = categoryId, page = i })">@i</a>
+                            </li>
+                        }
+
+                        @if (endPage < totalPages)
+                        {
+                            if (endPage < totalPages - 1)
+                            {
+                                <li class="page-item disabled"><span class="page-link">...</span></li>
+                            }
+                            <li class="page-item">
+                                <a class="page-link" href="@Url.Action("CoursesByCategory", new { categoryId = categoryId, page = totalPages })">@totalPages</a>
+                            </li>
+                        }
+
+                        @if (currentPage < totalPages)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" href="@Url.Action("CoursesByCategory", new { categoryId = categoryId, page = currentPage + 1 })">
+                                    Sonraki <i class="fas fa-chevron-right ms-1"></i>
+                                </a>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="page-item disabled">
+                                <span class="page-link">Sonraki <i class="fas fa-chevron-right ms-1"></i></span>
+                            </li>
+                        }
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    }
+</div>
+
+@section Styles {
+    <style>
+        /* SAYFA YAPISI */
+        .page-wrapper {
+            padding: 20px;
+        }
+
+        .page-heading {
+            margin-bottom: 20px;
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin: 0;
+        }
+
+        /* BREADCRUMB */
+        .custom-breadcrumb {
+            background-color: transparent;
+            padding: 0;
+            margin: 0;
+        }
+
+            .custom-breadcrumb .breadcrumb-item a {
+                color: #667eea;
+                text-decoration: none;
+            }
+
+                .custom-breadcrumb .breadcrumb-item a:hover {
+                    text-decoration: underline;
+                }
+
+            .custom-breadcrumb .breadcrumb-item.active {
+                color: #7f8c8d;
+            }
+
+        /* KURS KARTLARI */
+        .course-card {
+            border: none;
+            border-radius: 20px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            background-color: #fff;
+        }
+
+            .course-card:hover {
+                transform: translateY(-8px);
+                box-shadow: 0 12px 35px rgba(0, 0, 0, 0.12);
+            }
+
+            .course-card .card-img-top {
+                border-radius: 20px 20px 0 0;
+            }
+
+            .course-card .card-body {
+                padding: 20px;
+            }
+
+            .course-card .card-title {
+                font-size: 18px;
+                font-weight: 700;
+                color: #2c3e50;
+                margin-bottom: 12px;
+                line-height: 1.4;
+            }
+
+            .course-card .card-text {
+                font-size: 14px;
+                line-height: 1.5;
+                color: #6c757d;
+            }
+
+        /* GRADIENT ARKA PLAN */
+        .bg-gradient-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        /* ÖZEL BADGE */
+        .badge-custom {
+            display: inline-block;
+            padding: 6px 14px;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 30px;
+            color: white;
+        }
+
+        .badge-primary-custom {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .position-absolute {
+            position: absolute;
+        }
+
+        .top-0 {
+            top: 0;
+        }
+
+        .end-0 {
+            right: 0;
+        }
+
+        .m-3 {
+            margin: 12px;
+        }
+
+        /* BUTONLAR */
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 30px;
+            padding: 10px 20px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+            .btn-primary:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+                filter: brightness(1.02);
+            }
+
+        .btn-outline-primary {
+            border: 1px solid #667eea;
+            color: #667eea;
+            border-radius: 30px;
+            padding: 8px 20px;
+            transition: all 0.2s;
+        }
+
+            .btn-outline-primary:hover {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                border-color: transparent;
+                transform: translateY(-2px);
+            }
+
+        /* BOŞ DURUM */
+        .empty-state {
+            background-color: #f8fafd;
+            border-radius: 20px;
+            padding: 60px 20px;
+        }
+
+        .empty-state-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 50%;
+        }
+
+        /* SAYFALAMA (PAGINATION) */
+        .pagination {
+            margin: 0;
+            gap: 6px;
+        }
+
+        .page-link {
+            border: none;
+            padding: 8px 16px;
+            margin: 0;
+            border-radius: 30px;
+            color: #4a5568;
+            background-color: #f1f3f5;
+            transition: all 0.2s;
+        }
+
+            .page-link:hover {
+                background-color: #e2e8f0;
+                color: #2d3748;
+                transform: translateY(-1px);
+            }
+
+        .page-item.active .page-link {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .page-item.disabled .page-link {
+            background-color: #f1f3f5;
+            color: #a0aec0;
+            cursor: not-allowed;
+        }
+
+        /* ALERT */
+        .alert {
+            border: none;
+            border-radius: 16px;
+            padding: 15px 20px;
+        }
+
+        .alert-danger {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            color: #dc2626;
+        }
+
+        /* AYIRICI ÇİZGİ */
+        hr {
+            border-top: 1px solid #eef2f7;
+        }
+
+        /* RESPONSİF */
+        @@media (max-width: 768px) {
+            .page-wrapper {
+                padding: 15px;
+            }
+
+            .page-title {
+                font-size: 22px;
+            }
+
+            .course-card .card-title {
+                font-size: 16px;
+            }
+
+            .course-card .card-text {
+                font-size: 13px;
+            }
+
+            .page-link {
+                padding: 6px 12px;
+                font-size: 13px;
+            }
+
+            .badge-custom {
+                padding: 4px 10px;
+                font-size: 10px;
+            }
+        }
+    </style>
+}

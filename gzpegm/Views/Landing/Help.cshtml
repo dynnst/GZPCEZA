@@ -1,0 +1,274 @@
+@{
+    ViewBag.Title = "Yardım Merkezi";
+}
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Yardım Merkezi - Hudut Kapıları Eğitim Merkezi</title>
+    <link href="/AdminTemplate/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/AdminTemplate/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .navbar {
+            background-color: #2f4050;
+            padding: 15px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .navbar-brand {
+            color: white !important;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .page-header {
+            background: linear-gradient(135deg, #1ab394 0%, #0d8f73 100%);
+            color: white;
+            padding: 40px 0;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+            .page-header h1 {
+                font-weight: 700;
+                margin: 0;
+                font-size: 2.5rem;
+            }
+
+        .help-category {
+            background: #fff;
+            padding: 25px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border-left: 4px solid #1ab394;
+        }
+
+            .help-category h3 {
+                color: #1ab394;
+                font-weight: 600;
+                margin-bottom: 15px;
+                font-size: 1.3rem;
+            }
+
+        .help-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+            .help-item:last-child {
+                border-bottom: none;
+            }
+
+            .help-item h4 {
+                color: #2f4050;
+                font-weight: 600;
+                margin-bottom: 5px;
+                cursor: pointer;
+            }
+
+                .help-item h4:hover {
+                    color: #1ab394;
+                }
+
+        .help-answer {
+            color: #666;
+            display: none;
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 3px;
+        }
+
+        .back-button {
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+            .back-button a {
+                color: #1ab394;
+                text-decoration: none;
+            }
+
+                .back-button a:hover {
+                    text-decoration: underline;
+                }
+
+        footer {
+            background: #2f4050;
+            color: #c7d0d9;
+            padding: 30px 0;
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        .contact-box {
+            background-color: #e8f5e9;
+            border: 1px solid #1ab394;
+            border-radius: 4px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <span class="navbar-brand"><i class="fa fa-life-ring"></i> Hudut Kapıları Eğitim Merkezi</span>
+        </div>
+    </nav>
+
+    <div class="page-header">
+        <div class="container">
+            <h1><i class="fa fa-question-circle"></i> Yardım Merkezi</h1>
+            <p>Sık Sorulan Sorular ve Destek Bilgileri</p>
+        </div>
+    </div>
+
+    <div class="container" style="max-width: 900px;">
+        <div class="back-button">
+            <a href="@Url.Action("Index", "Landing")"><i class="fa fa-arrow-left"></i> Ana Sayfaya Dön</a>
+        </div>
+
+        <div class="help-category">
+            <h3><i class="fa fa-user"></i> Hesap ve Giriş</h3>
+
+            <div class="help-item">
+                <h4><i class="fa fa-plus"></i> Nasıl hesap oluşturabilirim?</h4>
+                <div class="help-answer">
+                    Ana sayfanın sağ üst köşesindeki "GİRİŞ YAP" butonuna tıklayın. Orada hesap oluşturma seçeneğini bulacaksınız.
+                    Adınız, soyadınız, e-posta adresiniz ve güçlü bir şifre girerek kayıt olabilirsiniz.
+                </div>
+            </div>
+
+            <div class="help-item">
+                <h4><i class="fa fa-key"></i> Şifremi unuttum, ne yapmalıyım?</h4>
+                <div class="help-answer">
+                    Giriş sayfasında "Şifremi Unuttum" bağlantısına tıklayın. E-posta adresinizi girin ve sıfırlama talimatları
+                    içeren bir e-posta alacaksınız. Linki tıklayarak yeni bir şifre belirleyebilirsiniz.
+                </div>
+            </div>
+
+            <div class="help-item">
+                <h4><i class="fa fa-edit"></i> Profil bilgilerimi nasıl güncellerim?</h4>
+                <div class="help-answer">
+                    Giriş yaptıktan sonra, sağ üst köşedeki profil menüsünden "Profil Ayarları"na gidebilirsiniz.
+                    Adınız, soyadınız, e-posta adresiniz ve profil fotoğrafınızı güncelleyebilirsiniz.
+                </div>
+            </div>
+        </div>
+
+        <div class="help-category">
+            <h3><i class="fa fa-book"></i> Kurslar</h3>
+
+            <div class="help-item">
+                <h4><i class="fa fa-search"></i> Nasıl kurs bulabilirim?</h4>
+                <div class="help-answer">
+                    Ana sayfada "BÜTÜN KURSLAR" sekmesine tıklayın. Kategorilere göre filtreleme yapabilir veya arama çubuğunu kullanabilirsiniz.
+                    İlgilendiğiniz kursu bulup "Detayına Git" butonuna tıklayın.
+                </div>
+            </div>
+
+            <div class="help-item">
+                <h4><i class="fa fa-graduation-cap"></i> Bir kursa nasıl kaydolabilirim?</h4>
+                <div class="help-answer">
+                    Kurs detay sayfasında "Kursa Kaydol" butonuna tıklayın. Kursa kaydolduktan sonra dersleri izleyebilir ve
+                    sınavlara katılabilirsiniz. Dikkat: Bazı kurslar sınırlı kapasiteli olabilir.
+                </div>
+            </div>
+
+            <div class="help-item">
+                <h4><i class="fa fa-certificate"></i> Sertifika nasıl alırım?</h4>
+                <div class="help-answer">
+                    Kursu başarıyla tamamladıktan sonra ve sınavdan minimum %70 puan aldıktan sonra sertifika alabilirsiniz.
+                    Sertifika "Kurslarım" sekmesinden indirebilirsiniz.
+                </div>
+            </div>
+        </div>
+
+        <div class="help-category">
+            <h3><i class="fa fa-pencil"></i> Sınavlar</h3>
+
+            <div class="help-item">
+                <h4><i class="fa fa-clock-o"></i> Sınav süresi ne kadar?</h4>
+                <div class="help-answer">
+                    Sınav süreleri kurslar arasında değişiklik gösterebilir. Her sınav başlamadan önce süre hakkında bilgilendirilirsiniz.
+                    Genellikle sınavlar 30 dakika ile 2 saat arasında sürmektedir.
+                </div>
+            </div>
+
+            <div class="help-item">
+                <h4><i class="fa fa-redo"></i> Sınava tekrar girebilir miyim?</h4>
+                <div class="help-answer">
+                    Sınava katıldıktan sonra, daha sonra tekrar sınava girmek istiyorsanız, kursa geri dönerek "Sınava Gir" butonuna
+                    tıklayabilirsiniz. Ancak, önceki sonuçlarınız kaydedilir ve kaydedilen en yüksek puan dikkate alınır.
+                </div>
+            </div>
+
+            <div class="help-item">
+                <h4><i class="fa fa-calculator"></i> Sınav puanı nasıl hesaplanır?</h4>
+                <div class="help-answer">
+                    Sınav puanınız doğru cevaplarınızın sayısına göre hesaplanır. Her doğru cevap eşit puan değerinde olur.
+                    Sınav sonundaızı hemen görebilir, ayrıntılı rapor alabilirsiniz.
+                </div>
+            </div>
+        </div>
+
+        <div class="help-category">
+            <h3><i class="fa fa-shield"></i> Güvenlik ve Gizlilik</h3>
+
+            <div class="help-item">
+                <h4><i class="fa fa-lock"></i> Verilerim güvenli midir?</h4>
+                <div class="help-answer">
+                    Evet, Platform en yüksek seviye şifreleme ve güvenlik protokolleri kullanır. Kişisel verileriniz
+                    gizlilik politikasında belirtilen amaçlar dışında paylaşılmaz.
+                </div>
+            </div>
+
+            <div class="help-item">
+                <h4><i class="fa fa-trash"></i> Hesabımı nasıl silebilirim?</h4>
+                <div class="help-answer">
+                    Profil ayarlarınızda "Hesabı Sil" seçeneğini bulabilirsiniz. Hesap silinmeden önce onay talep edecektir.
+                    Lütfen dikkat edin: Bu işlem geri alınamaz.
+                </div>
+            </div>
+        </div>
+
+        <div class="contact-box">
+            <h3><i class="fa fa-envelope"></i> Daha Fazla Yardıma İhtiyacınız Var mı?</h3>
+            <p>Cevabını bulamadığınız bir sorunuz varsa, lütfen bizimle iletişime geçin:</p>
+            <p>
+                <strong>E-posta:</strong> <a href="mailto:nasit.dayan@egm.gov.tr">Naşit DAYAN</a><br>
+                <strong>Telefon:</strong> (553) 535-1560<br>
+                <strong>Çalışma Saatleri:</strong> Pazartesi - Cuma, 09:00 - 17:00 (Türkiye saati)
+            </p>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Hudut Kapıları Eğitim Sistemi. Tüm Hakları Saklıdır.</p>
+        </div>
+    </footer>
+
+    <script src="/AdminTemplate/js/jquery-3.1.1.min.js"></script>
+    <script src="/AdminTemplate/js/bootstrap.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('.help-item h4').click(function () {
+                $(this).next('.help-answer').slideToggle(300);
+                $(this).toggleClass('active');
+            });
+        });
+    </script>
+</body>
+</html>

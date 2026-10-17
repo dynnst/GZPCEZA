@@ -1,0 +1,88 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+  <edmx:Designer>
+    <edmx:Diagrams>
+      <edmx:Diagram DiagramId="cbd02f316fe74f569bab59a639bf6436" Name="Diagram1" ZoomLevel="93">
+        <edmx:EntityTypeShape EntityType="CEZAModel.C__MigrationHistory" Width="1.5" PointX="0.75" PointY="0.75" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.Airline" Width="1.5" PointX="2.75" PointY="0.75" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.Answer" Width="1.5" PointX="8.25" PointY="30.125" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.Categories" Width="1.5" PointX="0.75" PointY="16.75" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.Certificate" Width="1.5" PointX="3" PointY="22" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.CertificateRequest" Width="1.5" PointX="4.75" PointY="0.75" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.CourseContents" Width="1.5" PointX="5.25" PointY="14.5" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.CourseEnrollments" Width="1.5" PointX="6" PointY="22.5" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.CourseReviews" Width="1.5" PointX="6" PointY="18.125" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.Courses" Width="1.5" PointX="3" PointY="16.75" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.DocumentTerms" Width="1.5" PointX="0.75" PointY="4.75" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.E_AUH" Width="1.5" PointX="2.75" PointY="4.75" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.E_Border" Width="1.5" PointX="4.75" PointY="4.75" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.E_Defter" Width="1.5" PointX="6.75" PointY="0.75" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.E_Exchange" Width="1.5" PointX="6.75" PointY="3.75" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.E_Forms" Width="1.5" PointX="6.75" PointY="6.75" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.E_History" Width="1.5" PointX="8.75" PointY="0.75" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.E_Inad" Width="1.5" PointX="8.75" PointY="4.75" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.E_IsK" Width="1.5" PointX="2.75" PointY="8.75" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.E_Messages" Width="1.5" PointX="3" PointY="54.125" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.E_Sartli" Width="1.5" PointX="10.75" PointY="0.75" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.E_TGVH" Width="1.5" PointX="10.75" PointY="4.75" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.E_TKOD" Width="1.5" PointX="10.75" PointY="7.75" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.E_Token" Width="1.5" PointX="4.75" PointY="11.75" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.E_User" Width="1.5" PointX="0.75" PointY="20" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.E_UVR" Width="1.5" PointX="10.75" PointY="11.75" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.Exam" Width="1.5" PointX="1.5" PointY="33.25" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.ExamResult" Width="1.5" PointX="0.75" PointY="29.375" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.MeetingAnswers" Width="1.5" PointX="7.5" PointY="35.125" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.MeetingFiles" Width="1.5" PointX="5.25" PointY="35.25" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.MeetingMessages" Width="1.5" PointX="8.25" PointY="38.375" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.MeetingParticipants" Width="1.5" PointX="5.25" PointY="39.125" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.MeetingQuestions" Width="1.5" PointX="5.25" PointY="49.5" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.Meetings" Width="1.5" PointX="3" PointY="49" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.Question" Width="1.5" PointX="3.75" PointY="29.25" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.QuestionMedia" Width="1.5" PointX="6" PointY="28" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.QuestionOption" Width="1.5" PointX="6" PointY="31.125" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.tbl_TempUser" Width="1.5" PointX="12.75" PointY="8.75" />
+        <edmx:AssociationConnector Association="CEZAModel.FK_Answer_ExamResult" />
+        <edmx:AssociationConnector Association="CEZAModel.FK_Answer_Option" />
+        <edmx:AssociationConnector Association="CEZAModel.FK_Answer_Question" />
+        <edmx:AssociationConnector Association="CEZAModel.FK_Courses_Category" />
+        <edmx:AssociationConnector Association="CEZAModel.FK_Certificate_Course" />
+        <edmx:AssociationConnector Association="CEZAModel.FK_Certificate_ExamResult" />
+        <edmx:AssociationConnector Association="CEZAModel.FK_Certificate_User" />
+        <edmx:AssociationConnector Association="CEZAModel.FK_CourseContents_Course" />
+        <edmx:AssociationConnector Association="CEZAModel.FK_CourseEnrollments_Course" />
+        <edmx:AssociationConnector Association="CEZAModel.FK_CourseEnrollments_User" />
+        <edmx:AssociationConnector Association="CEZAModel.FK_CourseReviews_ApprovedBy" />
+        <edmx:AssociationConnector Association="CEZAModel.FK_CourseReviews_Course" />
+        <edmx:AssociationConnector Association="CEZAModel.FK_CourseReviews_User" />
+        <edmx:AssociationConnector Association="CEZAModel.FK_Courses_CreatedBy" />
+        <edmx:AssociationConnector Association="CEZAModel.FK_E_Messages_Parent" />
+        <edmx:AssociationConnector Association="CEZAModel.FK_E_Messages_Recipient" />
+        <edmx:AssociationConnector Association="CEZAModel.FK_E_Messages_Sender" />
+        <edmx:AssociationConnector Association="CEZAModel.FK_MeetingAnswers_E_User" />
+        <edmx:AssociationConnector Association="CEZAModel.FK_MeetingFiles_E_User" />
+        <edmx:AssociationConnector Association="CEZAModel.FK_MeetingMessages_E_User" />
+        <edmx:AssociationConnector Association="CEZAModel.FK_MeetingParticipants_E_User" />
+        <edmx:AssociationConnector Association="CEZAModel.FK_Meetings_E_User" />
+        <edmx:AssociationConnector Association="CEZAModel.FK_ExamResult_Exam" />
+        <edmx:AssociationConnector Association="CEZAModel.FK_Question_Exam" />
+        <edmx:AssociationConnector Association="CEZAModel.FK_MeetingAnswers_MeetingQuestions" />
+        <edmx:AssociationConnector Association="CEZAModel.FK_MeetingFiles_Meetings" />
+        <edmx:AssociationConnector Association="CEZAModel.FK_MeetingMessages_Meetings" />
+        <edmx:AssociationConnector Association="CEZAModel.FK_MeetingParticipants_Meetings" />
+        <edmx:AssociationConnector Association="CEZAModel.FK_MeetingQuestions_Meetings" />
+        <edmx:AssociationConnector Association="CEZAModel.FK_QuestionMedia_Question" />
+        <edmx:AssociationConnector Association="CEZAModel.FK_QuestionOption_Question" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.E_Dilekce" Width="1.5" PointX="7.375" PointY="12.75" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.TahditKod" Width="1.5" PointX="13.375" PointY="12.75" />
+        <edmx:AssociationConnector Association="CEZAModel.FK_E_Messages_ApprovedBy" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.EducationPackageImportLog" Width="1.5" PointX="15.375" PointY="0.75" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.TahditFormLog" Width="1.5" PointX="15.375" PointY="5.75" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.ChatMessages" Width="1.5" PointX="9.75" PointY="15.75" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.ChatOnlineUsers" Width="1.5" PointX="0.75" PointY="13.75" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.SorguCevaplari" Width="1.5" PointX="15.75" PointY="11.75" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.SorguLoglari" Width="1.5" PointX="15.75" PointY="15.75" />
+        <edmx:EntityTypeShape EntityType="CEZAModel.E_UVR_Backup_Before_WorkPermit" Width="1.5" PointX="17.75" PointY="0.75" />
+      </edmx:Diagram>
+    </edmx:Diagrams>
+  </edmx:Designer>
+</edmx:Edmx>

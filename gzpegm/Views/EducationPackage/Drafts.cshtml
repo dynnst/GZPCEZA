@@ -1,0 +1,177 @@
+@model IList<gzpegm.Models.Courses>
+@{
+    ViewBag.Title = "Kontrol Bekleyen Eğitim Taslakları";
+    Layout = "~/Views/Shared/_Master.cshtml";
+}
+
+<style>
+    .drafts-header {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: #ffffff;
+        border-radius: 12px;
+        padding: 24px 28px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 16px rgba(30, 60, 114, 0.12);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+    .drafts-header h1 {
+        font-size: 20px;
+        font-weight: 700;
+        margin: 0;
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .drafts-card {
+        background: #ffffff;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+        padding: 24px;
+    }
+    .drafts-table th {
+        background: #f8fafc;
+        color: #475569;
+        font-weight: 700;
+        font-size: 13px;
+        border-top: none !important;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 12px 16px;
+    }
+    .drafts-table td {
+        padding: 14px 16px;
+        vertical-align: middle !important;
+        font-size: 14px;
+    }
+    .drafts-table tbody tr:hover {
+        background-color: #f1f5f9;
+    }
+    .draft-badge {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 20px;
+        background: #fef3c7;
+        color: #92400e;
+        border: 1px solid #fde68a;
+    }
+</style>
+
+<div class="drafts-header">
+    <div>
+        <h1><i class="fas fa-clipboard-list"></i> Kontrol Bekleyen Taslak Eğitimler</h1>
+        <small style="color: rgba(255,255,255,0.85); font-size: 13px;">
+            Yayınlanmadan önce kurs, içerik modülleri, sınav, soru ve şık bütünlük kontrolü gerektiren eğitimler listelenmektedir.
+        </small>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <span class="badge badge-light px-3 py-2 font-weight-bold" style="font-size: 14px; color: #1e3c72;">
+            Toplam @Model.Count Taslak
+        </span>
+        <a href="@Url.Action("Index")" class="btn btn-outline-light btn-sm ml-2">
+            <i class="fas fa-arrow-left"></i> Hub'a Dön
+        </a>
+    </div>
+</div>
+
+<div class="drafts-card">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div class="input-group" style="max-width: 360px;">
+            <div class="input-group-prepend">
+                <span class="input-group-text bg-light border-right-0"><i class="fas fa-search text-muted"></i></span>
+            </div>
+            <input type="text" id="draftSearch" class="form-control border-left-0" placeholder="Taslak kurs adıyla filtrele..." />
+        </div>
+        <div>
+            <a href="@Url.Action("PradoImport")" class="btn btn-warning btn-sm font-weight-bold mr-1">
+                <i class="fas fa-magic"></i> Yeni Web ZIP'inden Üret
+            </a>
+            <a href="@Url.Action("Import")" class="btn btn-success btn-sm font-weight-bold">
+                <i class="fas fa-upload"></i> Yeni .cezapkg Yükle
+            </a>
+        </div>
+    </div>
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="table-responsive">
+            <table class="table table-hover drafts-table mb-0" id="draftsTable">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;" class="text-center">#</th>
+                        <th>Eğitim Başlığı</th>
+                        <th style="width: 140px;">Durum</th>
+                        <th style="width: 180px;">Oluşturulma Tarihi</th>
+                        <th style="width: 240px;" class="text-right">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{ int index = 1; }
+                    @foreach (var course in Model)
+                    {
+                        <tr>
+                            <td class="text-center font-weight-bold text-muted">@(index++)</td>
+                            <td>
+                                <strong class="text-dark" style="font-size: 15px;">@course.CourseTitle</strong>
+                                <div class="text-muted small">Kurs Kimliği: #@course.CourseId</div>
+                            </td>
+                            <td>
+                                <span class="draft-badge"><i class="fas fa-hourglass-half mr-1"></i> Yayında Değil</span>
+                            </td>
+                            <td>
+                                <i class="far fa-calendar-alt text-muted mr-1"></i>
+                                @(course.CreatedDate.HasValue ? course.CreatedDate.Value.ToString("dd.MM.yyyy HH:mm") : "-")
+                            </td>
+                            <td class="text-right">
+                                <a href="@Url.Action("Details", "Course", new { id = course.CourseId, preview = true })" class="btn btn-outline-secondary btn-sm mr-1" title="Önizle">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="@Url.Action("ManageContents", "Course", new { courseId = course.CourseId })" class="btn btn-outline-info btn-sm mr-1" title="İçerikleri Düzenle">
+                                    <i class="fas fa-folder-open"></i>
+                                </a>
+                                <a href="@Url.Action("Review", new { id = course.CourseId })" class="btn btn-warning btn-sm font-weight-bold text-dark shadow-sm">
+                                    <i class="fas fa-check-double mr-1"></i> Kontrol Et & Yayınla
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5">
+            <div class="mb-3 text-muted">
+                <i class="fas fa-clipboard-check fa-4x" style="color: #cbd5e1;"></i>
+            </div>
+            <h4 class="text-secondary font-weight-bold">Kontrol Bekleyen Taslak Bulunmuyor</h4>
+            <p class="text-muted mb-4">Sistemdeki tüm eğitimler yayında veya henüz yeni bir taslak paket içe aktarılmamış.</p>
+            <a href="@Url.Action("Import")" class="btn btn-primary px-4">
+                <i class="fas fa-upload mr-1"></i> Yeni Paket İçe Aktar
+            </a>
+        </div>
+    }
+</div>
+
+<script>
+    (function () {
+        var searchInput = document.getElementById('draftSearch');
+        if (searchInput) {
+            searchInput.addEventListener('input', function () {
+                var q = this.value.toLowerCase().trim();
+                var rows = document.querySelectorAll('#draftsTable tbody tr');
+                rows.forEach(function (row) {
+                    var title = row.innerText.toLowerCase();
+                    row.style.display = (!q || title.indexOf(q) !== -1) ? '' : 'none';
+                });
+            });
+        }
+    })();
+</script>

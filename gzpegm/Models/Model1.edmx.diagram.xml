@@ -1,0 +1,63 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+ <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <edmx:Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <!-- Diagram content (shape and connector positions) -->
+    <edmx:Diagrams>
+      <Diagram DiagramId="4e0a1b6de415451284ed21b3e5711927" Name="Diagram1" ShowGrid="true" ZoomLevel="74">
+        <EntityTypeShape EntityType="CEZAModel.E_AUH" Width="1.5" PointX="0.75" PointY="0.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="CEZAModel.E_Defter" Width="1.5" PointX="2.75" PointY="0.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="CEZAModel.E_Exchange" Width="1.5" PointX="0.625" PointY="3.625" IsExpanded="true" />
+        <EntityTypeShape EntityType="CEZAModel.E_TKOD" Width="1.5" PointX="4.75" PointY="0.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="CEZAModel.E_Token" Width="1.5" PointX="2.375" PointY="3.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="CEZAModel.E_UVR" Width="1.5" PointX="6.75" PointY="0.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="CEZAModel.E_Border" Width="1.5" PointX="12.625" PointY="0.75" />
+        <EntityTypeShape EntityType="CEZAModel.tbl_TempUser" Width="1.5" PointX="8.75" PointY="0.75" />
+        <EntityTypeShape EntityType="CEZAModel.E_TGVH" Width="1.5" PointX="5.875" PointY="3.875" />
+        <EntityTypeShape EntityType="CEZAModel.E_Announce" Width="1.5" PointX="11.375" PointY="4" />
+        <EntityTypeShape EntityType="CEZAModel.E_Sartli" Width="1.5" PointX="10.75" PointY="0.75" />
+        <EntityTypeShape EntityType="CEZAModel.E_History" Width="1.5" PointX="0.5" PointY="6" />
+        <EntityTypeShape EntityType="CEZAModel.E_IsK" Width="1.5" PointX="7.875" PointY="4" />
+        <EntityTypeShape EntityType="CEZAModel.E_Forms" Width="1.5" PointX="2.5" PointY="6.5" />
+        <EntityTypeShape EntityType="CEZAModel.E_User" Width="1.5" PointX="7.375" PointY="8.75" />
+        <EntityTypeShape EntityType="CEZAModel.E_Messages" Width="1.5" PointX="0.75" PointY="11.75" />
+        <EntityTypeShape EntityType="CEZAModel.C__MigrationHistory" Width="1.5" PointX="11.375" PointY="7.75" />
+        <EntityTypeShape EntityType="CEZAModel.CourseContents" Width="1.5" PointX="11.875" PointY="15.5" />
+        <EntityTypeShape EntityType="CEZAModel.Courses" Width="1.5" PointX="9.625" PointY="13.75" />
+        <AssociationConnector Association="CEZAModel.FK_CourseContents_Course" />
+        <AssociationConnector Association="CEZAModel.FK_Courses_CreatedBy" />
+        <EntityTypeShape EntityType="CEZAModel.Categories" Width="1.5" PointX="13.375" PointY="3.75" />
+        <EntityTypeShape EntityType="CEZAModel.CourseReviews" Width="1.5" PointX="14.875" PointY="12.625" />
+        <AssociationConnector Association="CEZAModel.FK_CourseReviews_Course" />
+        <AssociationConnector Association="CEZAModel.FK_CourseReviews_User" />
+        <AssociationConnector Association="CEZAModel.FK_Courses_Category" />
+        <EntityTypeShape EntityType="CEZAModel.Answer" Width="1.5" PointX="22.5" PointY="3" />
+        <EntityTypeShape EntityType="CEZAModel.Exam" Width="1.5" PointX="15.75" PointY="2.75" />
+        <EntityTypeShape EntityType="CEZAModel.ExamResult" Width="1.5" PointX="18" PointY="1.125" />
+        <EntityTypeShape EntityType="CEZAModel.Question" Width="1.5" PointX="18" PointY="4.625" />
+        <EntityTypeShape EntityType="CEZAModel.QuestionOption" Width="1.5" PointX="20.25" PointY="4.875" />
+        <AssociationConnector Association="CEZAModel.FK_Answer_ExamResult" />
+        <AssociationConnector Association="CEZAModel.FK_Answer_Option" />
+        <AssociationConnector Association="CEZAModel.FK_Answer_Question" />
+        <AssociationConnector Association="CEZAModel.FK_ExamResult_Exam" />
+        <AssociationConnector Association="CEZAModel.FK_Question_Exam" />
+        <AssociationConnector Association="CEZAModel.FK_QuestionOption_Question" />
+        <EntityTypeShape EntityType="CEZAModel.Certificate" Width="1.5" PointX="20.25" PointY="8.75" />
+        <AssociationConnector Association="CEZAModel.FK_Certificate_Course" />
+        <AssociationConnector Association="CEZAModel.FK_Certificate_ExamResult" />
+        <AssociationConnector Association="CEZAModel.FK_Certificate_User" />
+        <EntityTypeShape EntityType="CEZAModel.CourseEnrollments" Width="1.5" PointX="11.875" PointY="12.25" />
+        <AssociationConnector Association="CEZAModel.FK_CourseEnrollments_Course" />
+        <AssociationConnector Association="CEZAModel.FK_CourseEnrollments_User" />
+        <EntityTypeShape EntityType="CEZAModel.QuestionMedia" Width="1.5" PointX="20.25" PointY="0.875" />
+        <AssociationConnector Association="CEZAModel.FK_QuestionMedia_Question" />
+        <EntityTypeShape EntityType="CEZAModel.E_Inad" Width="1.5" PointX="0.75" PointY="15.75" />
+        <EntityTypeShape EntityType="CEZAModel.Airline" Width="1.5" PointX="13.375" PointY="6.75" />
+        <EntityTypeShape EntityType="CEZAModel.TahditGrubu" Width="1.5" PointX="3.375" PointY="16" />
+        <EntityTypeShape EntityType="CEZAModel.TahditKod" Width="1.5" PointX="5.625" PointY="16" />
+        <AssociationConnector Association="CEZAModel.FK_TahditKod_TahditGrubu" />
+        <EntityTypeShape EntityType="CEZAModel.DocumentTerms" Width="1.5" PointX="14.375" PointY="16.75" />
+      </Diagram>
+    </edmx:Diagrams>
+  </edmx:Designer>
+</edmx:Edmx>

@@ -1,0 +1,228 @@
+@model IList<gzpegm.Models.EducationPackageImportLog>
+@{
+    ViewBag.Title = "Paket İçe Aktarım Geçmişi";
+    Layout = "~/Views/Shared/_Master.cshtml";
+    var successCount = Model != null ? Model.Count(x => x.Status == "Success") : 0;
+    var skippedCount = Model != null ? Model.Count(x => x.Status == "Skipped") : 0;
+    var failedCount = Model != null ? Model.Count(x => x.Status != "Success" && x.Status != "Skipped") : 0;
+}
+
+<style>
+    .logs-header {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: #ffffff;
+        border-radius: 12px;
+        padding: 24px 28px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 16px rgba(30, 60, 114, 0.12);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+    .logs-header h1 {
+        font-size: 20px;
+        font-weight: 700;
+        margin: 0;
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .logs-card {
+        background: #ffffff;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+        padding: 24px;
+    }
+    .logs-table th {
+        background: #f8fafc;
+        color: #475569;
+        font-weight: 700;
+        font-size: 13px;
+        border-top: none !important;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 12px 16px;
+    }
+    .logs-table td {
+        padding: 14px 16px;
+        vertical-align: middle !important;
+        font-size: 13px;
+    }
+    .logs-table tbody tr:hover {
+        background-color: #f1f5f9;
+    }
+    .code-tag {
+        font-family: 'Consolas', 'Courier New', monospace;
+        font-size: 12px;
+        font-weight: 700;
+        background: #f1f5f9;
+        color: #0f172a;
+        padding: 2px 6px;
+        border-radius: 4px;
+        border: 1px solid #e2e8f0;
+    }
+</style>
+
+<div class="logs-header">
+    <div>
+        <h1><i class="fas fa-history"></i> Paket İçe Aktarım Geçmişi</h1>
+        <small style="color: rgba(255,255,255,0.85); font-size: 13px;">
+            Sisteme yüklenen tüm .cezapkg arşivlerinin denetim izleri, durumları ve sonuç raporları.
+        </small>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <a href="@Url.Action("Import")" class="btn btn-success btn-sm font-weight-bold mr-1">
+            <i class="fas fa-upload mr-1"></i> Yeni Paket İçe Aktar
+        </a>
+        <a href="@Url.Action("Index")" class="btn btn-outline-light btn-sm">
+            <i class="fas fa-arrow-left"></i> Hub'a Dön
+        </a>
+    </div>
+</div>
+
+<!-- Özet Sayaçlar -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-2">
+        <div class="p-3 bg-white border rounded-lg shadow-sm d-flex justify-content-between align-items-center">
+            <div>
+                <small class="text-muted text-uppercase font-weight-bold">Toplam İşlem</small>
+                <h4 class="font-weight-bold text-dark mb-0">@(Model != null ? Model.Count : 0)</h4>
+            </div>
+            <i class="fas fa-file-invoice fa-2x text-primary"></i>
+        </div>
+    </div>
+    <div class="col-md-3 mb-2">
+        <div class="p-3 bg-white border rounded-lg shadow-sm d-flex justify-content-between align-items-center">
+            <div>
+                <small class="text-muted text-uppercase font-weight-bold">Başarılı</small>
+                <h4 class="font-weight-bold text-success mb-0">@successCount</h4>
+            </div>
+            <i class="fas fa-check-circle fa-2x text-success"></i>
+        </div>
+    </div>
+    <div class="col-md-3 mb-2">
+        <div class="p-3 bg-white border rounded-lg shadow-sm d-flex justify-content-between align-items-center">
+            <div>
+                <small class="text-muted text-uppercase font-weight-bold">Atlanan</small>
+                <h4 class="font-weight-bold text-warning mb-0">@skippedCount</h4>
+            </div>
+            <i class="fas fa-forward fa-2x text-warning"></i>
+        </div>
+    </div>
+    <div class="col-md-3 mb-2">
+        <div class="p-3 bg-white border rounded-lg shadow-sm d-flex justify-content-between align-items-center">
+            <div>
+                <small class="text-muted text-uppercase font-weight-bold">Hatalı / Başarısız</small>
+                <h4 class="font-weight-bold text-danger mb-0">@failedCount</h4>
+            </div>
+            <i class="fas fa-times-circle fa-2x text-danger"></i>
+        </div>
+    </div>
+</div>
+
+<div class="logs-card">
+    <div class="mb-3">
+        <div class="input-group" style="max-width: 360px;">
+            <div class="input-group-prepend">
+                <span class="input-group-text bg-light border-right-0"><i class="fas fa-search text-muted"></i></span>
+            </div>
+            <input type="text" id="logSearch" class="form-control border-left-0" placeholder="Paket kodu, başlık veya dosyayla filtrele..." />
+        </div>
+    </div>
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="table-responsive">
+            <table class="table table-hover logs-table mb-0" id="logsTable">
+                <thead>
+                    <tr>
+                        <th style="width: 140px;">Tarih</th>
+                        <th>Paket Kodu & Başlığı</th>
+                        <th style="width: 90px;">Sürüm</th>
+                        <th>Dosya Adı</th>
+                        <th style="width: 130px;" class="text-center">Kurs / Sınav</th>
+                        <th style="width: 110px;" class="text-center">Durum</th>
+                        <th>Açıklama / Mesaj</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>
+                                <i class="far fa-calendar-alt text-muted mr-1"></i>
+                                @item.ImportedDate.ToString("dd.MM.yyyy HH:mm")
+                            </td>
+                            <td>
+                                <span class="code-tag">@item.PackageCode</span>
+                                <div class="font-weight-bold text-dark mt-1">@item.PackageTitle</div>
+                            </td>
+                            <td><span class="badge badge-light border">v@item.PackageVersion</span></td>
+                            <td><small class="text-muted">@item.FileName</small></td>
+                            <td class="text-center">
+                                @if (item.ImportedCourseId.HasValue)
+                                {
+                                    <a href="@Url.Action("Review", new { id = item.ImportedCourseId.Value })" class="btn btn-sm btn-outline-primary" title="Eğitimi İncele">
+                                        <i class="fas fa-search mr-1"></i> Kurs #@item.ImportedCourseId
+                                    </a>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">-</span>
+                                }
+                            </td>
+                            <td class="text-center">
+                                @if (item.Status == "Success")
+                                {
+                                    <span class="badge badge-success px-2 py-1"><i class="fas fa-check mr-1"></i> Başarılı</span>
+                                }
+                                else if (item.Status == "Skipped")
+                                {
+                                    <span class="badge badge-warning px-2 py-1 text-dark"><i class="fas fa-forward mr-1"></i> Atlandı</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-danger px-2 py-1"><i class="fas fa-times mr-1"></i> Hata</span>
+                                }
+                            </td>
+                            <td><small class="text-dark">@item.Message</small></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5">
+            <div class="mb-3 text-muted">
+                <i class="fas fa-history fa-4x" style="color: #cbd5e1;"></i>
+            </div>
+            <h4 class="text-secondary font-weight-bold">Henüz Aktarım Kaydı Bulunmuyor</h4>
+            <p class="text-muted mb-4">Sisteme henüz herhangi bir .cezapkg paketi içe aktarılmamış.</p>
+            <a href="@Url.Action("Import")" class="btn btn-primary px-4">
+                <i class="fas fa-upload mr-1"></i> İlk Paketi İçe Aktar
+            </a>
+        </div>
+    }
+</div>
+
+<script>
+    (function () {
+        var searchInput = document.getElementById('logSearch');
+        if (searchInput) {
+            searchInput.addEventListener('input', function () {
+                var q = this.value.toLowerCase().trim();
+                var rows = document.querySelectorAll('#logsTable tbody tr');
+                rows.forEach(function (row) {
+                    var text = row.innerText.toLowerCase();
+                    row.style.display = (!q || text.indexOf(q) !== -1) ? '' : 'none';
+                });
+            });
+        }
+    })();
+</script>

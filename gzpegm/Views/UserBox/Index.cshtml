@@ -1,0 +1,265 @@
+﻿@model gzpegm.Models.E_User
+@using System
+@using System.Linq
+@using System.Collections.Generic
+
+@{
+    var authValues = (Model?.fldAuth ?? "")
+        .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+        .Select(x => x.Trim())
+        .Where(x => !string.IsNullOrWhiteSpace(x))
+        .ToList();
+
+    if (!string.IsNullOrWhiteSpace(Model?.Role))
+    {
+        if (string.Equals(Model.Role, "Teacher", StringComparison.OrdinalIgnoreCase) && !authValues.Contains("6"))
+        {
+            authValues.Add("6");
+        }
+        else if (string.Equals(Model.Role, "Admin", StringComparison.OrdinalIgnoreCase) && !authValues.Contains("2"))
+        {
+            authValues.Add("2");
+        }
+    }
+
+    Func<string, bool> hasAuth = code => authValues.Contains(code);
+    Func<bool> canUseCoreApps = () => hasAuth("2") || hasAuth("3");
+    Func<bool> canUseEducation = () => hasAuth("2") || hasAuth("3") || hasAuth("6");
+    Func<bool> canManageEducation = () => hasAuth("2") || hasAuth("6");
+
+    var displayName = ((Model?.fldName ?? "") + " " + (Model?.fldLastName ?? "")).Trim();
+    var displayNameUpper = string.IsNullOrWhiteSpace(displayName) ? "KULLANICI" : displayName.ToUpper(new System.Globalization.CultureInfo("tr-TR"));
+    var title = Model?.fldTitle ?? "";
+    var email = Model?.fldEmail ?? "";
+
+    string pictureUrl;
+    var picture = (Model?.fldPicture ?? "").Trim();
+    if (string.IsNullOrWhiteSpace(picture))
+    {
+        pictureUrl = Url.Content("~/files/user/no-user-image.jpg");
+    }
+    else if (picture.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || picture.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+    {
+        pictureUrl = picture;
+    }
+    else
+    {
+        pictureUrl = Url.Content("~/files/user/" + picture.TrimStart('/', '\\'));
+    }
+}
+
+<header class="header header-nav-menu header-nav-top-line userbox-header">
+    <div class="userbox-shell">
+        <div class="userbox-brand">
+            <a href="@Url.Action("Index", "Home")" class="logo" aria-label="GZP EGM ana sayfa">
+                <img src="@Url.Content("~/files/logo/egm_logo2.png")" height="54" alt="EGM Gazipaşa" />
+            </a>
+
+            @if (Model != null)
+            {
+                <button class="btn header-btn-collapse-nav userbox-menu-toggle d-lg-none" type="button" data-toggle="collapse" data-target="#mainHeaderNav" aria-controls="mainHeaderNav" aria-expanded="false" aria-label="Menüyü aç/kapat">
+                    <i class="fas fa-bars"></i>
+                </button>
+            }
+        </div>
+
+        @if (Model != null)
+        {
+            <div id="mainHeaderNav" class="header-nav collapse">
+                <div class="header-nav-main header-nav-main-effect-1 header-nav-main-sub-effect-1 header-nav-main-square">
+                    <nav aria-label="Ana menü">
+                        <ul class="nav nav-pills" id="mainNav">
+                            @if (canUseCoreApps())
+                            {
+                                <li>
+                                    <a class="nav-link" target="_blank" rel="noopener noreferrer" href="/Hesaplama">
+                                        <i class="fas fa-calculator"></i>
+                                        <span>Ceza Hesaplama</span>
+                                    </a>
+                                </li>
+                            }
+
+                            @if (canUseEducation())
+                            {
+                                <li>
+                                    <a class="nav-link" target="_blank" rel="noopener noreferrer" href="@Url.Action("Index", "Landing")">
+                                        <i class="fas fa-graduation-cap"></i>
+                                        <span>Eğitim Anasayfa</span>
+                                    </a>
+                                </li>
+                            }
+
+                            @if (canUseCoreApps())
+                            {
+                                <li class="dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        <i class="fas fa-th-large"></i>
+                                        <span>Uygulamalar</span>
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        <li class="dropdown-submenu">
+                                            <a class="dropdown-item dropdown-toggle" href="#" data-toggle="dropdown">
+                                                <i class="fas fa-passport"></i>
+                                                Hudut Kapıları
+                                            </a>
+                                            <ul class="dropdown-menu">
+                                                <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="/VIZEV">V-84 Şartlı Vize İşlemleri</a></li>
+                                                <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="@Url.Action("Index", "EInad")">İnad Kayıtları</a></li>
+                                                <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="/GRAFIK">İşlem Grafikleri</a></li>
+                                                <li class="divider"></li>
+                                                <li><a class="dropdown-item" href="@Url.Action("Index", "PublicGlossary")"><i class="fas fa-book"></i> Terimler Sözlüğü</a></li>
+                                            </ul>
+                                        </li>
+                                        <li><a class="dropdown-item" href="@Url.Action("Index", "Tahdit")"><i class="fas fa-list"></i> Tahditler &amp; Yapılacaklar</a></li>
+                                        <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="@Url.Action("Yardimci", "Home")"><i class="fas fa-question-circle"></i> Kullanma Rehberi</a></li>
+                                        <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="/ISTATIK"><i class="fas fa-chart-bar"></i> İstatistik Bilgileri</a></li>
+                                        <li class="dropdown-submenu">
+                                            <a class="dropdown-item dropdown-toggle" href="#" data-toggle="dropdown">
+                                                <i class="fas fa-link"></i>
+                                                Faydalı Linkler
+                                            </a>
+                                            <ul class="dropdown-menu">
+                                                <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="http://10.155.0.193/ULKE_LISTESI.htm">Vize Bilgi Sistemi</a></li>
+                                                <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="http://bilge/Pages/RaporListesi.aspx">Bilge İş Zekası Portalı</a></li>
+                                                <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="/MatbuEvrak">Matbu Tutanaklar İndir</a></li>
+                                                <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="http://10.34.14.239/gazeteler/">Gazete Oku</a></li>
+                                                <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="http://pbsnet/Themes/PBS2/Pages/AnaSayfa.aspx">Personel Bilgi Sistemi</a></li>
+                                                <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="http://10.155.88.30/interpol/AnaMenu.aspx">İnterpol Sorgu</a></li>
+                                                <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="http://gozcu.polnet.intra:8080/">Analiz Merkezi Gözcü</a></li>
+                                                <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="http://10.155.88.30/KayipBelge/YeniLogin.aspx">Kayıp Eşya ve Belge</a></li>
+                                                <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="https://tahdit.egm.gov.tr/Anasayfa.asp">Tahdit Sorgu</a></li>
+                                            </ul>
+                                        </li>
+                                    </ul>
+                                </li>
+                            }
+
+                            <li>
+                                <a class="nav-link" href="@Url.Action("Index", "EskiIslemler")">
+                                    <i class="fas fa-history"></i>
+                                    <span>Eski İşlemler</span>
+                                </a>
+                            </li>
+
+                            @if (hasAuth("2"))
+                            {
+                                <li class="dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        <i class="fas fa-sliders-h"></i>
+                                        <span>Sistem</span>
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="/tgvh">Tek Giriş Vize Harcı</a></li>
+                                        <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="/auh">Aylık Ülke Harçları</a></li>
+                                        <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="/TKod">Tahdit Kodları</a></li>
+                                        <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="/UVR">Ülkeler Vize Rejimi</a></li>
+                                        <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="/Doviz">Döviz Kuru İşlemleri</a></li>
+                                        <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="/FormT">Form Taslakları</a></li>
+                                        <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="/Defter">Defter Bedeli</a></li>
+                                        <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="/KAPI">Sınır Kapısı</a></li>
+                                        <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="/Kullanıcılar">Kullanıcı İşlemleri</a></li>
+                                        <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="@Url.Action("Dashboard", "Health")"><i class="fas fa-heartbeat"></i> Sistem Sağlık Kontrolü</a></li>
+                                        <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="@Url.Action("Index", "ErrorLogs")"><i class="fas fa-bug"></i> Hata Logları</a></li>
+                                       
+                                    </ul>
+                                </li>
+                            }
+
+                            @if (canUseEducation())
+                            {
+                                <li class="dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        <i class="fas fa-envelope"></i>
+                                        <span>Mesajlar</span>
+                                        <span id="unreadBadge" class="badge badge-danger userbox-badge" style="display:none;">0</span>
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="@Url.Action("Inbox", "Mesaj")"><i class="fas fa-inbox"></i> Gelen Kutusu <span id="unreadBadgeInbox" class="badge badge-danger userbox-badge" style="display:none;">0</span></a></li>
+                                        <li><a class="dropdown-item" href="@Url.Action("Sent", "Mesaj")"><i class="fas fa-paper-plane"></i> Gönderilen Mesajlar</a></li>
+                                        <li><a class="dropdown-item" href="@Url.Action("Compose", "Mesaj")"><i class="fas fa-edit"></i> Yeni Mesaj Yaz</a></li>
+                                        @if (hasAuth("2"))
+                                        {
+                                            <li class="divider"></li>
+                                            <li><a class="dropdown-item userbox-highlight" href="@Url.Action("BulkCompose", "Mesaj")"><i class="fas fa-users"></i> Toplu Mesaj Gönder</a></li>
+                                        }
+                                    </ul>
+                                </li>
+
+                                <li class="dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        <i class="fas fa-chalkboard-teacher"></i>
+                                        <span>Eğitim Paneli</span>
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        @if (canManageEducation())
+                                        {
+                                            <li><a class="dropdown-item" href="@Url.Action("Index", "Dashboard")"><i class="fas fa-chart-line"></i> Yönetim Dashboard</a></li>
+                                        }
+                                        <li><a class="dropdown-item" href="@Url.Action("StudentDashboard", "Dashboard")"><i class="fas fa-tachometer-alt"></i> Öğrenci Panelim</a></li>
+                                        <li class="divider"></li>
+                                        @if (canManageEducation())
+                                        {
+                                            <li><a class="dropdown-item" href="@Url.Action("Index", "Category")"><i class="fas fa-folder"></i> Kategori Yönetimi</a></li>
+                                            <li><a class="dropdown-item" href="@Url.Action("Index", "Course")"><i class="fas fa-book"></i> Ders Yönetimi</a></li>
+                                            <li><a class="dropdown-item" href="@Url.Action("Index", "Exam")"><i class="fas fa-file-alt"></i> Sınav Yönetimi</a></li>
+                                            if (hasAuth("2"))
+                                            {
+                                                <li><a class="dropdown-item" href="@Url.Action("Index", "EducationPackage")"><i class="fas fa-box-open"></i> Eğitim Paketleri</a></li>
+                                                <li><a class="dropdown-item" href="@Url.Action("Index", "EducationQuality")"><i class="fas fa-clipboard-check"></i> Eğitim Kalite Raporu</a></li>
+                                            }
+                                            <li class="dropdown-submenu">
+                                                <a class="dropdown-item dropdown-toggle" href="#" data-toggle="dropdown">
+                                                    <i class="fas fa-book-open"></i>
+                                                    Document Terimler
+                                                </a>
+                                                <ul class="dropdown-menu">
+                                                    <li><a class="dropdown-item" href="@Url.Action("Index", "DocumentTerms")"><i class="fas fa-list"></i> Terimler Listesi</a></li>
+                                                    <li><a class="dropdown-item" href="@Url.Action("Create", "DocumentTerms")"><i class="fas fa-plus"></i> Yeni Terim Ekle</a></li>
+                                                </ul>
+                                            </li>
+                                            <li class="divider"></li>
+                                        }
+                                        <li><a class="dropdown-item" href="@Url.Action("StudentIndex", "Course")"><i class="fas fa-book-open"></i> Kurslarım</a></li>
+                                        <li><a class="dropdown-item" href="@Url.Action("AvailableExams", "StudentExam")"><i class="fas fa-clipboard-list"></i> Sınavlarım</a></li>
+                                        <li><a class="dropdown-item" href="@Url.Action("MyExamResults", "StudentExam")"><i class="fas fa-chart-bar"></i> Sınav Sonuçlarım</a></li>
+                                        <li><a class="dropdown-item" href="@Url.Action("AllInstructors", "Course")"><i class="fas fa-users"></i> Eğitmenler</a></li>
+                                    </ul>
+                                </li>
+                            }
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+
+            <div class="header-right userbox-account">
+                <div id="userbox" class="userbox">
+                    <a href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <figure class="profile-picture">
+                            <img src="@pictureUrl"
+                                 alt="@displayName"
+                                 class="rounded-circle"
+                                 data-lock-picture="@Url.Content("~/files/user/no-user-image.jpg")" />
+                        </figure>
+                        <div class="profile-info" data-lock-name="@displayName" data-lock-email="@email">
+                            <span class="name">@displayNameUpper</span>
+                            <span class="role">@title</span>
+                        </div>
+                        <i class="fa custom-caret"></i>
+                    </a>
+
+                    <div class="dropdown-menu dropdown-menu-right">
+                        <ul class="list-unstyled">
+                            <li><a role="menuitem" tabindex="-1" href="@Url.Action("Index", "Profile")"><i class="fas fa-user"></i> Profilim</a></li>
+                            <li><a role="menuitem" tabindex="-1" href="/Cikis"><i class="fas fa-power-off"></i> Çıkış</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</header>
+
+<link rel="stylesheet" href="@Url.Content("~/css/userbox.css")?v=1.0" />
+
+<div id="userbox-config" data-unread-url="@Url.Action("GetUnreadCount", "Mesaj")" style="display:none;"></div>
+<script src="@Url.Content("~/js/userbox.js")?v=1.0"></script>

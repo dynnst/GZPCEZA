@@ -1,0 +1,181 @@
+@model gzpegm.Controllers.ChatRobotManagementViewModel
+
+@{
+    Layout = "~/Views/Shared/_Master.cshtml";
+    ViewBag.Title = "Chat Robot Yönetimi";
+    ViewBag.UseDataTables = true;
+}
+
+<section class="card">
+    <header class="card-header d-flex align-items-center justify-content-between flex-wrap">
+        <div>
+            <h2 class="card-title mb-0"><i class="fas fa-robot"></i> Chat Robot Yönetimi</h2>
+            <p class="card-subtitle">Robot kaynakları, link üretimi, tahdit test araması ve cevap geçmişi.</p>
+        </div>
+        <a class="btn btn-outline-primary mt-2 mt-sm-0" href="@Url.Action("Index", new { tahditSearch = Model.TahditSearch })">
+            <i class="fas fa-sync-alt"></i> Yenile
+        </a>
+    </header>
+    <div class="card-body">
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i>
+            Robot şu anda kural tabanlı çalışır. Kaynaklardan canlı arama yapar; yapay zekâ servisine dış bağlantı göndermez.
+            PublicBaseUrl: <code>@Model.PublicBaseUrl</code>
+        </div>
+
+        <div class="row">
+            @foreach (var source in Model.Sources)
+            {
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100 border">
+                        <div class="card-body">
+                            <h4>@source.Name</h4>
+                            <div class="display-4">@source.Count</div>
+                            <p class="mb-2">@source.Description</p>
+                            <a href="@source.ExampleLink" target="_blank" rel="noopener noreferrer">@source.ExampleLink</a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+<section class="card">
+    <header class="card-header">
+        <h2 class="card-title"><i class="fas fa-cogs"></i> Robot Davranış Kuralları</h2>
+    </header>
+    <div class="card-body">
+        <ul class="mb-0">
+            @foreach (var rule in Model.RobotRules)
+            {
+                <li>@rule</li>
+            }
+        </ul>
+    </div>
+</section>
+
+<section class="card">
+    <header class="card-header">
+        <h2 class="card-title"><i class="fas fa-search"></i> Tahdit Test Araması</h2>
+    </header>
+    <div class="card-body">
+        <form method="get" class="form-row align-items-end mb-3">
+            <div class="form-group col-md-4">
+                <label>Test ifadesi</label>
+                <input type="text" class="form-control" name="tahditSearch" value="@Model.TahditSearch" placeholder="Örn: 101 veya Ç-101" />
+            </div>
+            <div class="form-group col-md-3">
+                <button class="btn btn-primary" type="submit">
+                    <i class="fas fa-search"></i> Test Et
+                </button>
+            </div>
+        </form>
+
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered mb-0">
+                <thead>
+                    <tr>
+                        <th>Kod</th>
+                        <th>Açıklama</th>
+                        <th>Süre</th>
+                        <th>Robot Linki</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.TahditResults)
+                    {
+                        <tr>
+                            <td><strong>@item.Code</strong></td>
+                            <td>@item.Description</td>
+                            <td>@(item.DurationMonths.HasValue ? item.DurationMonths + " ay" : "-")</td>
+                            <td><a href="@item.Link" target="_blank" rel="noopener noreferrer">@item.Link</a></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<div class="row">
+    <div class="col-lg-6">
+        <section class="card">
+            <header class="card-header">
+                <h2 class="card-title"><i class="fas fa-reply"></i> Son Robot Cevapları</h2>
+            </header>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table id="robotMessagesTable" class="table table-striped mb-0">
+                        <thead>
+                            <tr>
+                                <th>Tarih</th>
+                                <th>Cevap</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var msg in Model.RecentRobotMessages)
+                            {
+                                <tr>
+                                    <td data-order="@msg.CreatedAt.ToString("yyyyMMddHHmmss")">@msg.CreatedAt.ToString("dd.MM.yyyy HH:mm")</td>
+                                    <td>@msg.MessageText</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
+    <div class="col-lg-6">
+        <section class="card">
+            <header class="card-header">
+                <h2 class="card-title"><i class="fas fa-comments"></i> Son Kullanıcı Mesajları</h2>
+            </header>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table id="userMessagesTable" class="table table-striped mb-0">
+                        <thead>
+                            <tr>
+                                <th>Tarih</th>
+                                <th>Kullanıcı</th>
+                                <th>Mesaj</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var msg in Model.RecentUserMessages)
+                            {
+                                <tr>
+                                    <td data-order="@msg.CreatedAt.ToString("yyyyMMddHHmmss")">@msg.CreatedAt.ToString("dd.MM.yyyy HH:mm")</td>
+                                    <td>@msg.SenderName</td>
+                                    <td>@msg.MessageText</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(function () {
+            if ($.fn.DataTable) {
+                $('#robotMessagesTable,#userMessagesTable').DataTable({
+                    pageLength: 10,
+                    order: [[0, 'desc']],
+                    language: {
+                        search: 'Ara:',
+                        lengthMenu: 'Sayfada _MENU_ kayıt göster',
+                        info: '_TOTAL_ kayıttan _START_ - _END_ arası gösteriliyor',
+                        infoEmpty: 'Kayıt yok',
+                        zeroRecords: 'Eşleşen kayıt bulunamadı',
+                        paginate: { next: 'Sonraki', previous: 'Önceki' }
+                    }
+                });
+            }
+        });
+    </script>
+}

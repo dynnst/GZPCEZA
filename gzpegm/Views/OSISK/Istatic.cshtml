@@ -1,0 +1,199 @@
+﻿@model IEnumerable<gzpegm.Models.E_IsK>
+@{
+    Layout = "~/Views/Shared/_Master.cshtml";
+}
+
+
+<section role="main" class="content-body">
+
+    <h5 class="font-weight-semibold text-dark text-uppercase mb-3 mt-3">Hudut Kapınıza Ait İstatistik Bilgileri</h5>
+    <div class="row">
+        
+        <div class="col-lg-6">
+            <section class="card card-featured-left card-featured-secondary mb-4">
+                <div class="card-body">
+                    <div class="widget-summary">
+                        <div class="widget-summary-col widget-summary-col-icon">
+                            <div class="summary-icon bg-primary">
+                                <i class="fas fa-dollar-sign"></i>
+                            </div>
+                        </div>
+                        <div class="widget-summary-col">
+                            <div class="summary">
+                                <h4 class="title">Toplam Kesilen Ceza Sayısı</h4>
+                                <div class="info">
+                                    <strong class="amount">@ViewBag.KesilenToplamCeza</strong>
+                                    
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+        <div class="col-lg-6">
+            <section class="card card-featured-top card-featured-primary mb-4">
+                <div class="card-body">
+                    <div class="widget-summary">
+                        <div class="widget-summary-col widget-summary-col-icon">
+                            <div class="summary-icon bg-quaternary">
+                                <i class="fas fa-user"></i>
+                            </div>
+                        </div>
+                        <div class="widget-summary-col">
+                            <div class="summary">
+                                <h4 class="title">Toplam Kesilen Ceza Miktarı</h4>
+                                <div class="info">
+                                    <strong class="amount">@ViewBag.toplam TL</strong>
+                                    
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+        <div class="col-lg-6">
+            <section class="card card-featured-right card-featured-primary mb-4">
+                <div class="card-body">
+                    <div class="widget-summary">
+                        <div class="widget-summary-col widget-summary-col-icon">
+                            <div class="summary-icon bg-primary">
+                                <i class="fas fa-life-ring"></i>
+                            </div>
+                        </div>
+                        <div class="widget-summary-col">
+                            <div class="summary">
+                                <h4 class="title">En Çok Cezai İşlem Yapan Personel</h4>
+                                <div class="info">
+                                    <strong class="amount">@ViewBag.kapiencokislemyapan</strong>
+                                   
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+        <div class="col-lg-6">
+            <section class="card card-featured-bottom card-featured-primary mb-4">
+                <div class="card-body">
+                    <div class="widget-summary">
+                        <div class="widget-summary-col widget-summary-col-icon">
+                            <div class="summary-icon bg-primary">
+                                <i class="fas fa-life-ring"></i>
+                            </div>
+                        </div>
+                        <div class="widget-summary-col">
+                            <div class="summary">
+                                <h4 class="title">En Çok İşlem Yapılan Ülke</h4>
+                                <div class="info">
+                                    <strong class="amount">@ViewBag.encokislemyapilanulke</strong>
+                                    
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+      <div class="col-lg-6">
+            <section class="card card-featured-bottom card-featured-primary mb-4">
+                <div class="card-body">
+                    <div class="widget-summary">
+                        <div class="widget-summary-col widget-summary-col-icon">
+                            <div class="summary-icon bg-primary">
+                                <i class="fas fa-life-ring"></i>
+                            </div>
+                        </div>
+                        <div class="widget-summary-col">
+                            <div class="summary">
+                                <h4 class="title">Bugün Kesilen Ceza Sayısı</h4>
+                                <div class="info">
+                                    <strong class="amount">@ViewBag.bugunlukceza</strong>
+                                  
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+       <div class="col-lg-6">
+            <section class="card card-featured-bottom card-featured-primary mb-4">
+                <div class="card-body">
+                    <div class="widget-summary">
+                        <div class="widget-summary-col widget-summary-col-icon">
+                            <div class="summary-icon bg-primary">
+                                <i class="fas fa-life-ring"></i>
+                            </div>
+                        </div>
+                        <div class="widget-summary-col">
+                            <div class="summary">
+                                <h4 class="title">Toplam Düzenlemiş Olduğunuz V-84</h4>
+                                <div class="info">
+                                    <strong class="amount">@ViewBag.v84sayisi</strong>
+                                  
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div> 
+        <div class="col-lg-6">
+            <section class="card card-featured-bottom card-featured-primary mb-4">
+                <div class="card-body">
+                    <div class="widget-summary">
+                        <div class="widget-summary-col widget-summary-col-icon">
+                            <div class="summary-icon bg-primary">
+                                <i class="fas fa-life-ring"></i>
+                            </div>
+                        </div>
+                        <div class="widget-summary-col">
+                            <div class="summary">
+                                <h4 class="title">En Fazla V-84 Düzenleyen Personel</h4>
+                                <div class="info">
+                                    <strong class="amount">@ViewBag.kapiv84enfazlayapan</strong>
+                                  
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+        <div class="col-lg-6">
+            <section class="card card-featured-bottom card-featured-primary mb-4">
+                <div class="card-body">
+                    <div class="widget-summary">
+                        <div class="widget-summary-col widget-summary-col-icon">
+                            <div class="summary-icon bg-primary">
+                                <i class="fas fa-life-ring"></i>
+                            </div>
+                        </div>
+                        <div class="widget-summary-col">
+                            <div class="summary">
+                                <h4 class="title">Kapınızdaki Toplam Personel Sayısı</h4>
+                                <div class="info">
+                                    <strong class="amount">@ViewBag.kapipersonelsayisi</strong>
+                                  
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+      
+    </div>
+</section>
+

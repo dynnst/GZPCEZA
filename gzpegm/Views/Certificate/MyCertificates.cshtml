@@ -1,0 +1,333 @@
+﻿@model List<gzpegm.Models.Certificate>
+@{
+    ViewBag.Title = "Sertifikalarım";
+    Layout = "~/Views/Shared/_Master.cshtml";
+}
+
+<head>
+    <style>
+        .certificate-container {
+            padding: 30px 0;
+        }
+
+        .page-header {
+            margin-bottom: 40px;
+        }
+
+        .page-title {
+            font-size: 32px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .page-subtitle {
+            font-size: 15px;
+            color: #7b8a8b;
+        }
+
+        .certificate-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .certificate-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            border: 1px solid #e8e8e8;
+        }
+
+            .certificate-card:hover {
+                transform: translateY(-8px);
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+                border-color: #667eea;
+            }
+
+        .certificate-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+
+        .certificate-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .certificate-badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 10px;
+        }
+
+        .certificate-body {
+            padding: 25px;
+        }
+
+        .cert-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            word-break: break-word;
+        }
+
+        .cert-info {
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .cert-label {
+            font-weight: 600;
+            color: #495057;
+            display: inline-block;
+            min-width: 100px;
+        }
+
+        .cert-value {
+            color: #666;
+        }
+
+        .cert-number {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 15px;
+            font-size: 12px;
+            color: #7b8a8b;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            text-align: center;
+        }
+
+        .certificate-footer {
+            padding: 15px 25px;
+            background: #f8f9fa;
+            border-top: 1px solid #e8e8e8;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .btn-view {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 13px;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+            .btn-view:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+                text-decoration: none;
+                color: white;
+            }
+
+        .btn-download {
+            background: #20c997;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 13px;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+            .btn-download:hover {
+                background: #12b886;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(32, 201, 151, 0.3);
+                text-decoration: none;
+                color: white;
+            }
+
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 10%);
+            border-radius: 12px;
+            margin-top: 40px;
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            color: #d0d7de;
+            margin-bottom: 20px;
+        }
+
+        .empty-state-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #6c757d;
+            margin-bottom: 10px;
+        }
+
+        .empty-state-text {
+            font-size: 15px;
+            color: #95a5a6;
+            margin-bottom: 30px;
+        }
+
+        .btn-request {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 15px;
+            display: inline-block;
+            text-decoration: none;
+        }
+
+            .btn-request:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+                text-decoration: none;
+                color: white;
+            }
+
+        .status-badge {
+            display: inline-block;
+            background: #d4edda;
+            color: #155724;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        @@media (max-width: 768px) {
+            .certificate-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .page-title {
+                font-size: 24px;
+            }
+
+            .certificate-footer {
+                flex-direction: column;
+            }
+
+            .btn-view,
+            .btn-download {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<div class="certificate-container">
+    <div class="page-header">
+        <h1 class="page-title">
+            <i class="fas fa-certificate"></i> Sertifikalarım
+        </h1>
+        <p class="page-subtitle">Tamamlanan kurslarınızın sertifikalarını görüntüleyin</p>
+    </div>
+
+    @if (Model != null && Model.Count > 0)
+    {
+        <div class="certificate-grid">
+            @foreach (var cert in Model)
+            {
+                <div class="certificate-card">
+                    <div class="certificate-header">
+                        <div class="certificate-icon">
+                            <i class="fas fa-award"></i>
+                        </div>
+                        <div class="certificate-badge">Sertifikalandı</div>
+                    </div>
+
+                    <div class="certificate-body">
+                        <div class="cert-title">
+                            @if (cert.Courses != null)
+                            {
+                                @cert.Courses.CourseTitle
+                            }
+                            else
+                            {
+                                <span class="text-muted">Kurs Adı</span>
+                            }
+                        </div>
+
+                        <div class="cert-info">
+                            <span class="cert-label">Tarih:</span>
+                            <span class="cert-value">@cert.IssuedDate.ToString("dd.MM.yyyy")</span>
+                        </div>
+
+                        <div class="cert-info">
+                            <span class="cert-label">Durum:</span>
+                            <span class="status-badge">
+                                <i class="fas fa-check-circle"></i> Aktif
+                            </span>
+                        </div>
+
+                        @if (cert.Score > 0)
+                        {
+                            <div class="cert-info">
+                                <span class="cert-label">Puan:</span>
+                                <span class="cert-value">@cert.Score</span>
+                            </div>
+                        }
+
+                        <div class="cert-number">
+                            <strong>Sertifika No:</strong><br />
+                            @cert.CertificateNumber
+                        </div>
+                    </div>
+
+                    <div class="certificate-footer">
+                        <a href="@Url.Action("ViewCertificate", "Certificate", new { certificateId = cert.CertificateId })" class="btn-view" target="_blank">
+                            <i class="fas fa-eye"></i> Görüntüle
+                        </a>
+                        <a href="@Url.Action("DownloadCertificate", "Certificate", new { certificateId = cert.CertificateId })" class="btn-download">
+                            <i class="fas fa-download"></i> İndir
+                        </a>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="fas fa-inbox"></i>
+            </div>
+            <div class="empty-state-title">Henüz Sertifikanız Yok</div>
+            <div class="empty-state-text">
+                Kursları tamamlayıp sertifika talebinde bulunduktan sonra,<br />
+                yönetici tarafından onaylanınca sertifikalarınız burada görüntülenecektir.
+            </div>
+            <a href="@Url.Action("StudentIndex", "Course")" class="btn-request">
+                <i class="fas fa-book"></i> Kurslara Gözat
+            </a>
+        </div>
+    }
+</div>

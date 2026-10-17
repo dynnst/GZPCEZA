@@ -1,0 +1,537 @@
+@model gzpegm.Models.ViewModels.StudentExamViewModel
+@{
+    Layout = "~/Views/Shared/_Master.cshtml";
+    ViewBag.Title = "Sınav - " + Model.ExamTitle;
+    var examResultId = ViewBag.ExamResultId;
+}
+
+@section Styles {
+    <style>
+        body { background: #f0f4f8; }
+
+        /* ── TOP BAR ── */
+        .exam-topbar {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 56px;
+            background: #1e3a8a;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 1100;
+            box-shadow: 0 2px 8px rgba(0,0,0,.25);
+        }
+        .exam-topbar .exam-title {
+            font-size: .95rem;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 55%;
+        }
+        .exam-topbar .exam-meta {
+            font-size: .78rem;
+            opacity: .8;
+        }
+        .timer-pill {
+            background: #22c55e;
+            color: #fff;
+            padding: 5px 16px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 1rem;
+            min-width: 80px;
+            text-align: center;
+            transition: background .4s;
+        }
+        .timer-pill.warn  { background: #f59e0b; }
+        .timer-pill.danger{ background: #ef4444; }
+
+        /* ── LAYOUT ── */
+        .exam-layout {
+            display: flex;
+            margin-top: 56px;
+            min-height: calc(100vh - 56px);
+        }
+
+        /* ── SIDEBAR ── */
+        .exam-sidebar {
+            width: 220px;
+            flex-shrink: 0;
+            background: #fff;
+            border-right: 1px solid #e5e7eb;
+            padding: 16px 12px 80px 12px;
+            position: fixed;
+            top: 56px;
+            bottom: 0;
+            overflow-y: auto;
+        }
+        .sidebar-title {
+            font-size: .75rem;
+            font-weight: 700;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            margin-bottom: 10px;
+        }
+        .q-nav-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
+            margin-bottom: 16px;
+        }
+        .q-nav-btn {
+            aspect-ratio: 1;
+            border: 2px solid #d1d5db;
+            border-radius: 6px;
+            background: #fff;
+            font-size: .78rem;
+            font-weight: 600;
+            color: #374151;
+            cursor: pointer;
+            transition: all .2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .q-nav-btn:hover   { border-color: #1e40af; color: #1e40af; background: #eff6ff; }
+        .q-nav-btn.active  { border-color: #1e40af; background: #1e40af; color: #fff; }
+        .q-nav-btn.answered{ border-color: #22c55e; background: #f0fdf4; color: #16a34a; }
+        .q-nav-btn.answered.active { background: #16a34a; color: #fff; border-color: #16a34a; }
+
+        .sidebar-legend {
+            font-size: .72rem;
+            color: #6b7280;
+        }
+        .legend-dot {
+            display: inline-block;
+            width: 10px; height: 10px;
+            border-radius: 2px;
+            margin-right: 4px;
+            vertical-align: middle;
+        }
+
+        /* ── MAIN AREA ── */
+        .exam-main {
+            margin-left: 220px;
+            flex: 1;
+            padding: 24px 24px 100px 24px;
+            max-width: 860px;
+        }
+
+        /* ── QUESTION CARD ── */
+        .question-card {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 1px 6px rgba(0,0,0,.08);
+            overflow: hidden;
+            display: none;
+        }
+        .question-card.active { display: block; }
+
+        .q-card-header {
+            background: #1e3a8a;
+            color: #fff;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .q-card-header .q-num {
+            font-weight: 700;
+            font-size: .95rem;
+        }
+        .q-points-badge {
+            background: rgba(255,255,255,.2);
+            padding: 3px 12px;
+            border-radius: 12px;
+            font-size: .82rem;
+            font-weight: 600;
+        }
+
+        .q-card-body { padding: 20px 24px; }
+
+        .q-text {
+            font-size: 1rem;
+            line-height: 1.75;
+            color: #1f2937;
+            margin-bottom: 18px;
+        }
+
+        /* media */
+        .q-media img {
+            max-height: 280px;
+            object-fit: contain;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+            background: #f9fafb;
+            margin-bottom: 16px;
+        }
+        .q-media video {
+            max-height: 280px;
+            width: 100%;
+            border-radius: 6px;
+            background: #000;
+            margin-bottom: 16px;
+        }
+
+        /* options */
+        .options-list { display: flex; flex-direction: column; gap: 8px; }
+
+        .option-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 11px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all .2s;
+            background: #fafafa;
+        }
+        .option-item:hover { border-color: #1e40af; background: #eff6ff; }
+        .option-item.selected { border-color: #22c55e; background: #f0fdf4; }
+
+        .option-item input[type="radio"] {
+            width: 18px; height: 18px;
+            accent-color: #1e40af;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+        .option-text { font-size: .95rem; color: #1f2937; line-height: 1.5; }
+
+        /* ── NAV BUTTONS ── */
+        .q-nav-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid #f3f4f6;
+        }
+        .btn-nav {
+            padding: 8px 20px;
+            border-radius: 7px;
+            border: 2px solid #1e40af;
+            background: #fff;
+            color: #1e40af;
+            font-weight: 600;
+            font-size: .88rem;
+            cursor: pointer;
+            transition: all .2s;
+        }
+        .btn-nav:hover { background: #1e40af; color: #fff; }
+        .btn-nav:disabled { opacity: .4; cursor: not-allowed; }
+
+        .q-progress-text { font-size: .82rem; color: #6b7280; }
+
+        /* ── BOTTOM BAR ── */
+        .exam-bottombar {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            background: #fff;
+            border-top: 1px solid #e5e7eb;
+            padding: 10px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 1050;
+            box-shadow: 0 -2px 8px rgba(0,0,0,.07);
+        }
+        .answered-info { font-size: .85rem; color: #6b7280; }
+        .answered-info strong { color: #1e3a8a; }
+
+        .btn-submit {
+            background: #22c55e;
+            color: #fff;
+            border: none;
+            padding: 10px 28px;
+            border-radius: 8px;
+            font-size: .95rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all .2s;
+        }
+        .btn-submit:hover { background: #16a34a; transform: translateY(-1px); }
+
+        /* ── RESPONSIVE ── */
+        @@media (max-width: 768px) {
+            .exam-sidebar { display: none; }
+            .exam-main { margin-left: 0; padding: 16px 12px 90px 12px; }
+            .exam-topbar .exam-meta { display: none; }
+        }
+    </style>
+}
+
+<!-- TOP BAR -->
+<div class="exam-topbar">
+    <div>
+        <div class="exam-title"><i class="fas fa-file-alt me-1"></i>@Model.ExamTitle</div>
+        <div class="exam-meta">@Model.CourseTitle &nbsp;|&nbsp; @Model.TotalQuestions Soru &nbsp;|&nbsp; Geçme: @Model.PassingScore</div>
+    </div>
+    <div class="timer-pill" id="timerPill">@Model.Duration:00</div>
+</div>
+
+<!-- LAYOUT -->
+<div class="exam-layout">
+
+    <!-- SIDEBAR -->
+    <div class="exam-sidebar">
+        <div class="sidebar-title">Sorular</div>
+        <div class="q-nav-grid" id="qNavGrid">
+            @for (int i = 0; i < Model.Questions.Count; i++)
+            {
+                <button type="button" class="q-nav-btn @(i == 0 ? "active" : "")" data-idx="@i">@(i + 1)</button>
+            }
+        </div>
+        <div class="sidebar-legend">
+            <div><span class="legend-dot" style="background:#1e40af"></span>Aktif</div>
+            <div class="mt-1"><span class="legend-dot" style="background:#22c55e"></span>Cevaplandı</div>
+            <div class="mt-1"><span class="legend-dot" style="background:#e5e7eb;border:1px solid #d1d5db"></span>Boş</div>
+        </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="exam-main">
+        <form id="examForm" method="post" action="@Url.Action("SubmitExam", "StudentExam")">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="examResultId" value="@examResultId" />
+
+            @for (int i = 0; i < Model.Questions.Count; i++)
+            {
+                var question = Model.Questions[i];
+                <div class="question-card @(i == 0 ? "active" : "")" data-idx="@i">
+                    <div class="q-card-header">
+                        <span class="q-num">Soru @(i + 1) / @Model.Questions.Count</span>
+                        <span class="q-points-badge">@question.Points Puan</span>
+                    </div>
+                    <div class="q-card-body">
+                        <div class="q-text">@Html.Raw(question.QuestionText)</div>
+
+                        @if (question.MediaFiles != null && question.MediaFiles.Count > 0)
+                        {
+                            <div class="q-media">
+                                @foreach (var media in question.MediaFiles)
+                                {
+                                    if (media.MediaType == 1)
+                                    {
+                                        <img src="@media.MediaPath" alt="Soru Görseli" onerror="this.style.display='none'" />
+                                    }
+                                    else if (media.MediaType == 2)
+                                    {
+                                        <video controls preload="metadata" onerror="this.style.display='none'">
+                                            <source src="@media.MediaPath" type="video/mp4" />
+                                        </video>
+                                    }
+                                }
+                            </div>
+                        }
+
+                        @if (question.QuestionType == "Text")
+                        {
+                            <div class="options-list">
+                                <textarea name="Questions[@i].TextAnswer"
+                                          class="form-control answer-text"
+                                          rows="5"
+                                          maxlength="2000"
+                                          placeholder="Cevabınızı buraya yazınız..."></textarea>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="options-list">
+                                @if (question.Options != null && question.Options.Any())
+                                {
+                                    foreach (var option in question.Options)
+                                    {
+                                        <label class="option-item">
+                                            <input type="radio"
+                                                   name="Questions[@i].SelectedOptionId"
+                                                   value="@option.OptionId"
+                                                   class="answer-input" />
+                                            <span class="option-text">@option.OptionText</span>
+                                        </label>
+                                    }
+                                }
+                                else
+                                {
+                                    <div class="alert alert-warning mb-0">
+                                        Bu soru için cevap seçeneği tanımlanmamış.
+                                    </div>
+                                }
+                            </div>
+                        }
+
+                        <input type="hidden" name="Questions[@i].QuestionId" value="@question.QuestionId" />
+                        <input type="hidden" name="Questions[@i].Points" value="@question.Points" />
+                        <input type="hidden" name="Questions.Index" value="@i" />
+
+                        <div class="q-nav-row">
+                            <button type="button" class="btn-nav btn-prev" data-idx="@i" @(i == 0 ? "disabled" : "")>
+                                <i class="fas fa-chevron-left"></i> Önceki
+                            </button>
+                            <span class="q-progress-text" id="answeredCount">0 / @Model.TotalQuestions cevaplandı</span>
+                            @if (i < Model.Questions.Count - 1)
+                            {
+                                <button type="button" class="btn-nav btn-next" data-idx="@i">
+                                    Sonraki <i class="fas fa-chevron-right"></i>
+                                </button>
+                            }
+                            else
+                            {
+                                <button type="button" class="btn-nav" style="border-color:#22c55e;color:#16a34a" onclick="confirmSubmit()">
+                                    <i class="fas fa-paper-plane"></i> Bitir
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </form>
+    </div>
+</div>
+
+<!-- BOTTOM BAR -->
+<div class="exam-bottombar">
+    <div class="answered-info">
+        <strong id="answeredCountBottom">0</strong> / @Model.TotalQuestions cevaplandı
+    </div>
+    <button type="button" class="btn-submit" onclick="confirmSubmit()">
+        <i class="fas fa-paper-plane"></i> Sınavı Bitir
+    </button>
+</div>
+
+@section Scripts {
+    <script src="@Url.Content("~/js/Egitim/examresult.js")"></script>
+    <script>
+        $(document).ready(function () {
+            var totalQ = @Model.TotalQuestions;
+            var endTime = new Date('@Model.EndTime.ToString("yyyy-MM-ddTHH:mm:ss")');
+            var submitted = false;
+            var currentIdx = 0;
+
+            // ── TIMER ──
+            function updateTimer() {
+                var now = new Date();
+                var left = Math.max(0, Math.floor((endTime - now) / 1000));
+                var m = Math.floor(left / 60);
+                var s = left % 60;
+                var pill = $('#timerPill');
+                pill.text(m + ':' + (s < 10 ? '0' : '') + s);
+                pill.removeClass('warn danger');
+                if (m < 5)       pill.addClass('danger');
+                else if (m < 10) pill.addClass('warn');
+                if (left <= 0) { pill.text('SÜRE DOLDU!'); doSubmit(); }
+            }
+            updateTimer();
+            setInterval(updateTimer, 1000);
+
+            // ── NAVIGATE ──
+            function goTo(idx) {
+                if (idx < 0 || idx >= totalQ) return;
+                $('.question-card').removeClass('active');
+                $('.question-card[data-idx="' + idx + '"]').addClass('active');
+                $('.q-nav-btn').removeClass('active');
+                $('.q-nav-btn[data-idx="' + idx + '"]').addClass('active');
+                currentIdx = idx;
+                updateAnswered();
+            }
+
+            $('#qNavGrid').on('click', '.q-nav-btn', function () {
+                goTo(parseInt($(this).data('idx')));
+            });
+
+            $(document).on('click', '.btn-next', function () {
+                goTo(parseInt($(this).data('idx')) + 1);
+            });
+            $(document).on('click', '.btn-prev', function () {
+                goTo(parseInt($(this).data('idx')) - 1);
+            });
+
+            // ── ANSWER ──
+            function updateAnswered() {
+                var count = 0;
+
+                $('.question-card').each(function () {
+                    var hasChoiceAnswer = $(this).find('.answer-input:checked').length > 0;
+                    var hasTextAnswer = $.trim($(this).find('.answer-text').val() || '').length > 0;
+
+                    if (hasChoiceAnswer || hasTextAnswer) {
+                        count++;
+                    }
+                });
+                $('#answeredCount').text(count + ' / ' + totalQ + ' cevaplandı');
+                $('#answeredCountBottom').text(count);
+            }
+
+            $(document).on('change', '.answer-input', function () {
+                var card = $(this).closest('.question-card');
+                var idx = card.data('idx');
+                card.find('.option-item').removeClass('selected');
+                $(this).closest('.option-item').addClass('selected');
+                $('.q-nav-btn[data-idx="' + idx + '"]').addClass('answered');
+                updateAnswered();
+            });
+
+            $(document).on('input', '.answer-text', function () {
+                var card = $(this).closest('.question-card');
+                var idx = card.data('idx');
+                var hasValue = $.trim($(this).val() || '').length > 0;
+
+                $('.q-nav-btn[data-idx="' + idx + '"]').toggleClass('answered', hasValue);
+                updateAnswered();
+            });
+
+            // ── SUBMIT ──
+            window.confirmSubmit = function () {
+                var answered = 0;
+
+                $('.question-card').each(function () {
+                    var hasChoiceAnswer = $(this).find('.answer-input:checked').length > 0;
+                    var hasTextAnswer = $.trim($(this).find('.answer-text').val() || '').length > 0;
+
+                    if (hasChoiceAnswer || hasTextAnswer) {
+                        answered++;
+                    }
+                });
+
+                var unanswered = totalQ - answered;
+                var msg = 'Sınavı bitirmek istediğinizden emin misiniz?';
+                if (unanswered > 0) msg += '\n\n' + unanswered + ' soru boş bırakıldı!';
+                if (!confirm(msg)) return;
+                doSubmit();
+            };
+
+            function doSubmit() {
+                if (submitted) return;
+                submitted = true;
+                $('#examForm').find('button').prop('disabled', true);
+                $.ajax({
+                    url: $('#examForm').attr('action'),
+                    type: 'POST',
+                    data: $('#examForm').serialize(),
+                    success: function (r) {
+                        if (r.success) {
+                            window.location.href = '@Url.Action("ExamResult", "StudentExam")/' + r.examResultId;
+                        } else {
+                            alert('Hata: ' + r.message);
+                            submitted = false;
+                            $('#examForm').find('button').prop('disabled', false);
+                        }
+                    },
+                    error: function (xhr, s, e) {
+                        alert('Gönderim hatası: ' + e);
+                        submitted = false;
+                        $('#examForm').find('button').prop('disabled', false);
+                    }
+                });
+            }
+
+            window.addEventListener('beforeunload', function (e) {
+                if (!submitted) { e.preventDefault(); e.returnValue = 'Sınav devam ediyor!'; }
+            });
+        });
+    </script>
+}

@@ -1,0 +1,511 @@
+﻿@model gzpegm.Models.E_Inad
+@using System.Linq
+@using System
+
+@{
+    Layout = null;
+
+    if (Model == null)
+    {
+        <p>Form verisi bulunamadı.</p>
+        return;
+    }
+
+    var seciliSebepler = new List<string>();
+    if (!string.IsNullOrWhiteSpace(Model.InadSebep))
+    {
+        foreach (var s in Model.InadSebep.Split(','))
+        {
+            seciliSebepler.Add((s ?? "").Trim().ToLowerInvariant());
+        }
+    }
+
+    var nakil = (Model.UcagaNakil ?? "").ToLowerInvariant();
+    var beyan = (Model.Beyan ?? "").Trim();
+    Func<string, bool> hasSebep = (s) => seciliSebepler.Contains((s ?? "").Trim().ToLowerInvariant());
+
+    // Üst araması için modelden gelen listeyi hazırla (virgül veya noktalı virgül ile ayrılmışsa al)
+    var ustItems = new List<string>();
+    if (!string.IsNullOrWhiteSpace(Model.UstAramaEsya))
+    {
+        ustItems = Model.UstAramaEsya
+            .Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(x => x.Trim())
+            .Where(x => !string.IsNullOrEmpty(x))
+            .ToList();
+    }
+
+    // Sol sütun: 1..3, Sağ sütun: 4..6 (yoksa boş satır)
+    var leftItems = Enumerable.Range(0, 3)
+        .Select(i => i < ustItems.Count ? ustItems[i] : "")
+        .ToList();
+    var rightItems = Enumerable.Range(0, 3)
+        .Select(i => (i + 3) < ustItems.Count ? ustItems[i + 3] : "")
+        .ToList();
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Kabul Edilemeyen Yolcu Formu</title>
+    <style>
+        /* Genel sıkıştırma (yazdırma için) */
+        html, body {
+            height: auto;
+        }
+
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 9pt; /* GENEL PUNTO = 9pt */
+            margin: 8px; /* kenarları küçülttüm */
+            line-height: 1.05; /* sıkıştırılmış satırlar */
+            color: #000;
+        }
+
+        .center {
+            text-align: center;
+        }
+
+        .header-logo {
+            height: 55px; /* biraz küçültüldü */
+            width: auto;
+            display: block;
+            margin: 0 auto 4px;
+        }
+
+        .section-title {
+            font-weight: bold;
+            font-size: 10pt; /* küçültüldü */
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 4px;
+            page-break-inside: avoid; /* tablonun bölünmesini engelle */
+        }
+
+        td {
+            vertical-align: top;
+            padding: 2px 2px;
+        }
+
+        .label {
+            width: 25%;
+            white-space: nowrap;
+        }
+
+        .sep {
+            width: 2%;
+            text-align: center;
+        }
+
+        .val {
+            width: 48%;
+        }
+
+        .date-cell {
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        /* Checkbox görselliği: küçük kare - DÜZENLENDİ */
+        .checkbox {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            line-height: 10px;
+            border: 1px solid #000;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            font-size: 8px;
+            vertical-align: top;
+            margin-right: 6px;
+            margin-top: 1px;
+            flex-shrink: 0;
+        }
+
+        /* Her bir satır için flex düzeni - YENİ */
+        div[style*="margin-top:4px"] {
+            display: flex;
+            align-items: flex-start;
+            gap: 0;
+        }
+
+        .reason-text {
+            display: inline-block;
+            vertical-align: top;
+            flex: 1;
+            line-height: 1.15;
+            font-size: 9pt;
+        }
+
+        .small {
+            font-size: 7.5pt;
+        }
+
+        /* İmza alanı düzenlemeleri - çakışmayı engellemek için */
+        .signatures {
+            margin-top: 8px;
+        }
+
+            .signatures td {
+                padding: 6px 6px;
+                text-align: center;
+                vertical-align: top; /* üstten başlat */
+                min-height: 56px; /* yeterli boşluk ver */
+                box-sizing: border-box;
+                /* page-break-inside: avoid; - zaten üstte tablolar için tanımlı */
+            }
+
+        .signature-block {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 4px;
+            height: 100%;
+            width: 100%;
+            box-sizing: border-box;
+            line-height: 1.05;
+            word-break: break-word;
+            white-space: normal;
+        }
+
+        .signature-line {
+            border-bottom: 1px solid #000;
+            margin: 0 8px 4px 8px;
+            height: 16px;
+            width: 80%;
+        }
+
+        .body-search {
+            margin-top: 6px;
+            page-break-inside: avoid;
+        }
+
+        .body-search-grid {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            page-break-inside: avoid;
+        }
+
+            .body-search-grid .col {
+                width: 48%;
+            }
+
+            .body-search-grid ol {
+                margin: 2px 0;
+                padding-left: 16px;
+            }
+
+            .body-search-grid li {
+                margin: 1px 0;
+            }
+
+        .reasons {
+            page-break-inside: avoid;
+        }
+
+        /* Yazdırma ayarları */
+        @@media print {
+            @@page {
+                size: A4 portrait;
+                margin: 6mm; /* küçük kenar boşluğu */
+            }
+
+            body {
+                margin: 0;
+                font-size: 9pt;
+                line-height: 1.05;
+            }
+
+            img.header-logo {
+                height: 50px;
+            }
+
+            table, .reasons, .body-search, .signatures {
+                page-break-inside: avoid;
+            }
+            /* Daha sıkı boşluklar yazdırmada */
+            td {
+                padding: 1px 2px;
+            }
+
+            .signatures td {
+                padding: 4px 4px;
+                min-height: 50px;
+            }
+        }
+    </style>
+
+</head>
+<body>
+
+    <!-- Logo (ortalanmış) -->
+    <div class="center">
+        <img src='@Url.Content("~/files/Inad/Resim1.png")' alt="Logo" class="header-logo" />
+    </div>
+
+    <!-- Başlık -->
+    <div class="center">
+        <div style="font-weight:bold; font-size:9pt;">T.C.<br /> @((Model.Valilik ?? "").ToUpperInvariant()) VALİLİĞİ</div>
+        <div style="font-size: 9pt; font-weight: bold; ">@((Model.Kapi ?? "").ToUpperInvariant()) MÜLKÎ İDARE AMİRLİĞİ</div>
+        <div style="margin-top:6px; font-weight:bold; font-size:7.5pt;">KABUL EDİLEMEYEN YOLCU FORMU</div>
+        <div style="font-size:7.5pt; margin-top:2px;">INADMISSIBLE PASSENGER FORM</div>
+    </div>
+
+    <!-- Kimlik Bilgileri -->
+    <table>
+        <tr>
+            <td colspan="4" class="section-title" style="text-decoration: underline;">YOLCU KİMLİK BİLGİLERİ/PASSENGER ID INFORMATION</td>
+            <td class="date-cell">Tarih/Date: @(Model.TarihSaat?.ToString("dd.MM.yyyy") ?? "__.__.____")</td>
+            <td class="date-cell">Saat/Time: @(Model.TarihSaat?.ToString("HH:mm") ?? "__:__")</td>
+        </tr>
+
+        <tr>
+            <td class="label">Soyadı/Surname</td>
+            <td class="sep">:</td>
+            <td class="val">@Html.Raw(HttpUtility.HtmlEncode(Model.AdSoyad ?? ""))</td>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+
+        <tr>
+            <td class="label">Adı/Name</td>
+            <td class="sep">:</td>
+            <td class="val">@Html.Raw(HttpUtility.HtmlEncode(Model.AdSoyad ?? ""))</td>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+
+        <tr>
+            <td class="label">Doğum Tarihi/Date of Birth</td>
+            <td class="sep">:</td>
+            <td class="val">@(Model.DogumT?.ToString("dd.MM.yyyy") ?? "")</td>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+
+        <tr>
+            <td class="label">Doğum Yeri/Place of Birth</td>
+            <td class="sep">:</td>
+            <td class="val">@Html.Raw(HttpUtility.HtmlEncode(Model.DogumY ?? ""))</td>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+
+        <tr>
+            <td class="label">Cinsiyeti/Sex</td>
+            <td class="sep">:</td>
+            <td class="val">@Html.Raw(HttpUtility.HtmlEncode(Model.Cinsiyet ?? ""))</td>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+
+        <tr>
+            <td class="label">Uyruğu/Nationality</td>
+            <td class="sep">:</td>
+            <td class="val">@Html.Raw(HttpUtility.HtmlEncode(Model.Uyruk ?? ""))</td>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+
+        <tr>
+            <td colspan="6" style="padding-top:6px;">
+                <span class="checkbox">@Html.Raw(beyan == "Yolcu kimlik bilgileri yolcunun beyanına göredir." ? "X" : "&nbsp;")</span>
+                <span class="reason-text">Yolcu Kimlik Bilgileri yolcunun beyanına göredir./ Passenger ID information is based on the person's statement.</span>
+                <br />
+                <span class="checkbox">@Html.Raw(beyan == "Yolcu kimlik bilgileri hamili olduğu belgeye göredir." ? "X" : "&nbsp;")</span>
+                <span class="reason-text">Yolcu Kimlik Bilgileri hamili olduğu belgeye göredir./ Passenger ID information is based on the person's document.</span>
+            </td>
+        </tr>
+    </table>
+
+
+    <!-- Geliş & Gidiş Bilgileri -->
+    <table>
+        <tr>
+            <td colspan="4" class="section-title" style="text-decoration:underline; font-size:10pt;">GELİŞ BİLGİLERİ/ARRIVAL DETAILS</td>
+            <td></td>
+            <td></td>
+        </tr>
+
+        <tr>
+            <td class="label">Taşıyıcı Hava Yolu / Aircraft Carrier</td>
+            <td class="sep">:</td>
+            <td class="val">@Html.Raw(HttpUtility.HtmlEncode(Model.GelenHavayolu ?? ""))</td>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+
+        <tr>
+            <td class="label">Uçuş Numarası / Flight Number</td>
+            <td class="sep">:</td>
+            <td class="val">@Html.Raw(HttpUtility.HtmlEncode(Model.GelenUcusNo ?? ""))</td>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+
+        <tr>
+            <td class="label">Geldiği Yer / From</td>
+            <td class="sep">:</td>
+            <td class="val">@Html.Raw(HttpUtility.HtmlEncode(Model.GeldigiYer ?? ""))</td>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+
+        <tr>
+            <td class="label">Tarih ve Saat / Date and Time</td>
+            <td class="sep">:</td>
+            <td class="val">@(Model.GeldigiTarihSaat?.ToString("dd.MM.yyyy HH:mm") ?? "")</td>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+
+        <tr><td colspan="6" style="height:6px;"></td></tr>
+
+        <tr>
+            <td colspan="4" class="section-title" style="text-decoration:underline; font-size:10pt; padding-top:6px;">GİDİŞ BİLGİLERİ/DEPARTURE DETAILS</td>
+            <td></td>
+            <td></td>
+        </tr>
+
+        <tr>
+            <td class="label">Taşıyıcı Hava Yolu / Aircraft Carrier</td>
+            <td class="sep">:</td>
+            <td class="val">@Html.Raw(HttpUtility.HtmlEncode(Model.GidenHavayolu ?? ""))</td>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+
+        <tr>
+            <td class="label">Uçuş Numarası / Flight Number</td>
+            <td class="sep">:</td>
+            <td class="val">@Html.Raw(HttpUtility.HtmlEncode(Model.GidisUcusNo ?? ""))</td>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+
+        <tr>
+            <td class="label">Gideceği Yer / Destination</td>
+            <td class="sep">:</td>
+            <td class="val">@Html.Raw(HttpUtility.HtmlEncode(Model.GidisYer ?? ""))</td>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+
+        <tr>
+            <td class="label">Tarih ve Saat / Date and Time</td>
+            <td class="sep">:</td>
+            <td class="val">@(Model.GidisTarihSaat?.ToString("dd.MM.yyyy HH:mm") ?? "")</td>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+    </table>
+    <!-- Sebepler -->
+    <table class="reasons">
+        <tr>
+            <td style="padding-top:6px;">
+                Bu yolcunun Türkiye’ye girişine aşağıdaki nedenlerle <strong>6458 sayılı Yabancılar ve Uluslararası Koruma Kanunu</strong> çerçevesinde <strong>izin verilmemiştir;</strong>
+                (This passenger was <strong>not allowed</strong> to enter into Turkey due to the reasons stated below within the scope of <strong>Law on Foreigners and International Protection No. 6458</strong>;)
+            </td>
+
+        <tr><td><span class="checkbox">@Html.Raw(hasSebep("Geçerli bir seyahat belgesine sahip olmaması") ? "X" : "&nbsp;")</span><span class="reason-text">Geçerli bir seyahat belgesine sahip olmaması / Not holding a valid travel document (Law No 6458 Article 7-1a)</span></td></tr>
+        <tr><td><span class="checkbox">@Html.Raw(hasSebep("Türkiye'ye girişi sakıncalı görülmesi") ? "X" : "&nbsp;")</span><span class="reason-text">Türkiye'ye girişi sakıncalı görülmesi / Not permitted to enter into Turkey due to public security (Law No 6458 Article 15-1c)</span></td></tr>
+        <tr><td><span class="checkbox">@Html.Raw(hasSebep("Yeterli maddi imkâna sahip olmaması") ? "X" : "&nbsp;")</span><span class="reason-text">Yeterli maddi imkâna sahip olmaması / Not having sufficient financial resources (Law No 6458 Article 15-1g)</span></td></tr>
+        <tr><td><span class="checkbox">@Html.Raw(hasSebep("Hakkında Türkiye'ye giriş yasağı bulunması") ? "X" : "&nbsp;")</span><span class="reason-text">Hakkında Türkiye'ye giriş yasağı bulunması / Entry ban (Law No 6458 Article 15-1b)</span></td></tr>
+        <tr><td><span class="checkbox">@Html.Raw(hasSebep("Giriş vizesinin olmaması") ? "X" : "&nbsp;")</span><span class="reason-text">Giriş vizesinin olmaması / Not holding a visa (Law No 6458 Article 7-1a)</span></td></tr>
+        <tr><td><span class="checkbox">@Html.Raw(hasSebep("Pasaport süresinin yetersiz olması") ? "X" : "&nbsp;")</span><span class="reason-text">Pasaport süresinin yetersiz olması / Insufficient pasaport validity period (Law No 6458 Article 7-1b)</span></td></tr>
+        <tr><td><span class="checkbox">@Html.Raw(hasSebep("Sahte pasaport") ? "X" : "&nbsp;")</span><span class="reason-text">Sahte pasaport / Counterfeit passaport (Law No 6458 Article 7-1b)</span></td></tr>
+        <tr><td><span class="checkbox">@Html.Raw(hasSebep("Pasaportta tahrifat yapılmış olması") ? "X" : "&nbsp;")</span><span class="reason-text">Pasaportta tahrifat yapılmış olması / Altered passport (Law No 6458 Article 7-1b)</span></td></tr>
+        <tr><td><span class="checkbox">@Html.Raw(hasSebep("Sahte vize-ikamet") ? "X" : "&nbsp;")</span><span class="reason-text">Sahte vize-ikamet / Counterfeit Visa-Residence (Law No 6458 Article 7-1a)</span></td></tr>
+        <tr><td><span class="checkbox">@Html.Raw(hasSebep("Çalıntı belge") ? "X" : "&nbsp;")</span><span class="reason-text">Çalıntı belge / Stolen document (Law No 6458 Article 7-1a)</span></td></tr>
+        <tr><td><span class="checkbox">@Html.Raw(hasSebep("180 günde 90 gün uygulamasının ihlali") ? "X" : "&nbsp;")</span><span class="reason-text">180 günde 90 gün uygulamasının ihlâli / Violation of the duration of stay 90 days within 180 days (Law No 6458 Article 11-1)</span></td></tr>
+        <tr><td><span class="checkbox">@Html.Raw(hasSebep("Türkiye'ye girmek istememesi") ? "X" : "&nbsp;")</span><span class="reason-text">Türkiye'ye girmek istememesi / Person does not want to enter into Turkey</span></td></tr>
+        <tr><td><span class="checkbox">@Html.Raw(hasSebep("Diğer Sebepler / Other Reasons") ? "X" : "&nbsp;")</span><span class="reason-text">Diğer Sebepler / Other Reasons : @Html.Raw(HttpUtility.HtmlEncode(Model.DigerSebepAciklama ?? ""))</span></td></tr>
+    </table>
+
+    <!-- Üst Araması -->
+    <div class="body-search">
+        <div><strong style="font-size:9pt;">Üst Aramasında Bulunan Eşyalar / Found and kept goods during body search</strong></div>
+
+        <div class="body-search-grid">
+            <div class="col">
+                <ol>
+                    <li>@Html.Raw(HttpUtility.HtmlEncode(leftItems[0]))</li>
+                    <li>@Html.Raw(HttpUtility.HtmlEncode(leftItems[1]))</li>
+                    <li>@Html.Raw(HttpUtility.HtmlEncode(leftItems[2]))</li>
+                </ol>
+            </div>
+            <div class="col">
+                <ol start="4">
+                    <li>@Html.Raw(HttpUtility.HtmlEncode(rightItems[0]))</li>
+                    <li>@Html.Raw(HttpUtility.HtmlEncode(rightItems[1]))</li>
+                    <li>@Html.Raw(HttpUtility.HtmlEncode(rightItems[2]))</li>
+                </ol>
+            </div>
+        </div>
+        <!-- DÜZENLENMİŞ HTML KISMI -->
+        <div style="margin-top:4px;">
+            <span class="checkbox">@Html.Raw(nakil.Contains("esyalari ve evraklari teslim edildi") ? "X" : "&nbsp;")</span>
+            <span class="reason-text">Şahsın eşyaları ve evrakları hava yolu işleticisine/yer hizmeti kuruluşuna tam ve sağlam olarak teslim edilmiştir. / The whole and complete items and documents of this person have been delivered to the airport operator/ground handling services.</span>
+        </div>
+
+        <div style="margin-top:4px;">
+            <span class="checkbox">@Html.Raw(nakil.Contains("refakat edilmesi gerekmektedir") ? "X" : "&nbsp;")</span>
+            <span class="reason-text">Kabul edilmeyen yolcuya seyahati sırasında refakat edilmesi gerekmektedir. / The person who is an inadmissible passenger needs to be accompanied during her/his journey.</span>
+        </div>
+
+        <div style="margin-top:6px; font-size:8pt; text-align:justify;">
+            <strong>7 Aralık 1944 Chicago kongresine göre, Montreal Kongresi değişiklikleri ve 9 uncu Uluslararası Sivil Havacılık Organizasyonu Kongresinde alınan ek kararlara göre; Kabul Edilemeyen Yolcuyu, ilk çıkış yaptığı ülke tekrar kabul etmek zorundadır. (In accordance with the Chicago Congress on 7 December 1944 along with the amendments to Montreal Congress and International Civil Aviation Organization Congress; the first country from which the inadmissible passenger has exited must admit the said passenger.)</strong>
+        </div>
+    </div>
+
+    <!-- İmza alanları (3 sütunlu) -->
+    <table class="signatures" style="margin-top:8px;">
+        <tr>
+            <td style="width:33%; text-align:center; vertical-align:middle;">
+                <div class="signature-block">
+                    <div style="font-size:8pt;">TESLİM EDEN</div>
+                    <div style="font-size:8pt;">Ad-Soyad / Unvan / İmza:</div>
+                    <div style="font-size:9pt; margin-top:2px;">@Html.Raw(HttpUtility.HtmlEncode(Model.Personel ?? ""))</div>
+                    <div style="font-size:9pt; margin-top:2px;">Birimi: @((Model.Kapi ?? "").ToUpperInvariant()) Amirliği / Müdürlüğü</div>
+                </div>
+            </td>
+            <td style="width:33%; text-align:center; vertical-align:middle;">
+                <div class="signature-block">
+                    <div style="font-size:8pt;">Özel Güvenlik / Private Security</div>
+                    <div style="font-size:9pt; margin-top:2px;">@Html.Raw(HttpUtility.HtmlEncode(Model.OzelGuvenlik ?? ""))</div>
+                </div>
+            </td>
+            <td style="width:33%; text-align:center; vertical-align:middle;">
+                <div class="signature-block">
+                    <div style="font-size:8pt;">TESLİM ALAN</div>
+                    <div style="font-size:8pt;">Hava Yolu / Yer Hizmetleri Temsilcisi</div>
+                    <div style="font-size:9pt; margin-top:2px;">@Html.Raw(HttpUtility.HtmlEncode(Model.YerHizmetleriPersonel ?? ""))</div>
+                    <div style="font-size:9pt; margin-top:2px;">Airline/Ground Handling Services Agent Representative</div>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <script>window.print();</script>
+</body>
+</html>

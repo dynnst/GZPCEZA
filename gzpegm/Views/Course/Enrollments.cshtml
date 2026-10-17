@@ -1,0 +1,412 @@
+@model IEnumerable<gzpegm.Models.ViewModel.EnrollmentViewModel>
+@{
+    ViewBag.Title = "Kursa Kayıtlı Öğrenciler";
+    Layout = "~/Views/Shared/_Master.cshtml";
+    ViewBag.UseDataTables = true;
+}
+
+<!-- SAYFA YAPISI -->
+<div class="page-wrapper">
+    <div class="container-fluid p-0">
+        <!-- BAŞLIK BÖLÜMÜ -->
+        <div class="page-heading mb-4">
+            <div class="d-flex justify-content-between align-items-center flex-wrap">
+                <div>
+                    <h2 class="page-title">
+                        <i class="fas fa-users me-2"></i>Kursa Kayıtlı Öğrenciler
+                    </h2>
+                    <p class="page-subtitle">Kurslara kayıtlı öğrencileri görüntüleyin ve takip edin</p>
+                </div>
+                <div class="table-info">
+                    <span class="badge bg-primary">Toplam: @Model.Count()</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- MESAJLAR -->
+        @if (TempData["msgError"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                <strong>Hata!</strong> @TempData["msgError"]
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        }
+        @if (TempData["msgSuccess"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                <i class="fas fa-check-circle me-2"></i>
+                <strong>Başarılı!</strong> @TempData["msgSuccess"]
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        }
+
+        <!-- FİLTRE KARTI -->
+        <div class="filter-card mb-4">
+            <div class="filter-body">
+                @if (ViewBag.Courses != null)
+                {
+                    <form method="get" action="@Url.Action("Enrollments","Course")" class="row align-items-end g-3">
+                        <div class="col-md-10">
+                            <label class="form-label">Kurs Seçin</label>
+                            <div class="search-box">
+                                <i class="fas fa-graduation-cap search-icon"></i>
+                                <select name="courseId" class="form-control category-select">
+                                    <option value="">Tüm Kurslar</option>
+                                    @foreach (var c in ViewBag.Courses)
+                                    {
+                                        <option value="@c.CourseId" @(ViewBag.CourseId != null && ViewBag.CourseId == c.CourseId ? "selected" : "")>@c.CourseTitle</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-filter me-2"></i>Filtrele
+                            </button>
+                        </div>
+                    </form>
+                }
+            </div>
+        </div>
+
+        <!-- ÖĞRENCİLER TABLOSU -->
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="card-title mb-0">
+                            <i class="fas fa-list me-2"></i>Öğrenci Listesi
+                        </h4>
+                        <p class="card-subtitle mt-1">Kurslara kayıtlı öğrenci bilgileri</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table id="enrollmentsTable" class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 60px">#</th>
+                                <th>Ders</th>
+                                <th>Öğrenci</th>
+                                <th>E-Posta</th>
+                                <th style="width: 150px">İşlem</th>
+                                <th>Kayıt Tarihi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{
+                                int i = 1;
+                                foreach (var item in Model)
+                                {
+                                    <tr>
+                                        <td class="fw-semibold">@i</td>
+                                        <td>
+                                            <div class="course-title-cell">
+                                                <i class="fas fa-book-open me-2 text-primary"></i>
+                                                @item.CourseTitle
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-user-circle me-2 text-muted"></i>
+                                                @item.UserFullName
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-envelope me-2 text-muted"></i>
+                                                @item.UserEmail
+                                            </div>
+                                        </td>
+                                        <td>
+                                            @using (Html.BeginForm("RemoveEnrollment", "Course", FormMethod.Post, new { @class = "remove-enrollment-form" }))
+                                            {
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="enrollmentId" value="@item.EnrollmentId" />
+                                                <input type="hidden" name="courseId" value="@ViewBag.CourseId" />
+                                                <button type="submit" class="btn btn-danger btn-sm">
+                                                    <i class="fas fa-user-minus me-1"></i> Dersten Çıkar
+                                                </button>
+                                            }
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-calendar-alt me-2 text-muted"></i>
+                                                @(item.EnrollmentDate.HasValue ? item.EnrollmentDate.Value.ToString("dd.MM.yyyy HH:mm") : "-")
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    i++;
+}
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        /* SAYFA YAPISI */
+        .page-wrapper {
+            padding: 20px;
+            background: #f5f7fb;
+            min-height: 100vh;
+        }
+
+        .page-heading {
+            margin-bottom: 30px;
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #333;
+            margin: 0 0 8px 0;
+        }
+
+        .page-subtitle {
+            font-size: 14px;
+            color: #999;
+            margin: 0;
+        }
+
+        /* FİLTRE KARTI */
+        .filter-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            margin-bottom: 30px;
+            border: none;
+        }
+
+        .filter-body {
+            padding: 20px 25px;
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+            font-size: 14px;
+            z-index: 1;
+        }
+
+        .category-select {
+            padding-left: 40px;
+            height: 45px;
+            border-radius: 8px;
+            border: 1px solid #e1e5eb;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+            .category-select:focus {
+                border-color: #667eea;
+                box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+                outline: none;
+            }
+
+        /* KART YAPISI */
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            background: white;
+        }
+
+        .card-header {
+            background: white;
+            border-bottom: 1px solid #eef2f7;
+            padding: 20px 25px;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin: 0;
+        }
+
+        .card-subtitle {
+            font-size: 12px;
+            color: #999;
+            margin: 0;
+        }
+
+        /* TABLO STİLLERİ */
+        .table {
+            margin-bottom: 0;
+        }
+
+            .table thead th {
+                background-color: #f8f9fa;
+                border-bottom: 2px solid #eef2f7;
+                font-weight: 600;
+                color: #666;
+                font-size: 13px;
+                padding: 15px;
+            }
+
+            .table tbody tr {
+                border-bottom: 1px solid #eef2f7;
+                transition: background-color 0.2s ease;
+            }
+
+                .table tbody tr:hover {
+                    background-color: #fafbfc;
+                }
+
+            .table tbody td {
+                padding: 15px;
+                vertical-align: middle;
+            }
+
+        .course-title-cell {
+            display: flex;
+            align-items: center;
+            font-weight: 500;
+            color: #333;
+        }
+
+        /* BADGE STİLLERİ */
+        .badge {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .bg-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        /* BUTON STİLLERİ */
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+            .btn-primary:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+                background: linear-gradient(135deg, #5a67d8 0%, #6b46a0 100%);
+            }
+
+        /* ALERT STİLLERİ */
+        .alert {
+            border-radius: 10px;
+            border: none;
+            padding: 15px 20px;
+        }
+
+        .alert-danger {
+            background: #fee2e2;
+            color: #dc2626;
+            border-left: 4px solid #dc2626;
+        }
+
+        /* FORM STİLLERİ */
+        .form-label {
+            font-weight: 600;
+            font-size: 13px;
+            margin-bottom: 8px;
+            color: #555;
+        }
+
+        /* RESPONSİVE */
+        @@media (max-width: 768px) {
+            .page-wrapper {
+                padding: 15px;
+            }
+
+            .page-title {
+                font-size: 22px;
+            }
+
+            .table-responsive {
+                font-size: 13px;
+            }
+
+            .filter-body {
+                padding: 15px;
+            }
+
+            .btn-primary {
+                margin-top: 10px;
+            }
+        }
+    </style>
+}
+
+@section scripts {
+    <script>
+        $(function () {
+            try {
+                if ($.fn.DataTable) {
+                    $('#enrollmentsTable').DataTable({
+                        language: {
+                            "sDecimal": ",",
+                            "sEmptyTable": "Tabloda herhangi bir veri mevcut değil",
+                            "sInfo": "_START_ - _END_ arasındaki kayıtlar gösteriliyor. Toplam _TOTAL_ kayıt",
+                            "sInfoEmpty": "Kayıt yok",
+                            "sInfoFiltered": "(_MAX_ kayıt içerisinden bulunan)",
+                            "sInfoPostFix": "",
+                            "sInfoThousands": ".",
+                            "sLengthMenu": "Sayfada _MENU_ kayıt göster",
+                            "sLoadingRecords": "Yükleniyor...",
+                            "sProcessing": "İşleniyor...",
+                            "sSearch": "Ara:",
+                            "sZeroRecords": "Eşleşen kayıt bulunamadı",
+                            "oPaginate": {
+                                "sFirst": "İlk",
+                                "sLast": "Son",
+                                "sNext": "Sonraki",
+                                "sPrevious": "Önceki"
+                            },
+                            "oAria": {
+                                "sSortAscending": ": artan sütun sıralamasını aktifleştir",
+                                "sSortDescending": ": azalan sütun sıralamasını aktifleştir"
+                            }
+                        },
+                        pageLength: 25,
+                        order: [[5, "desc"]]
+                    });
+                }
+            } catch (e) {
+                console.error('DataTable başlatılamadı:', e);
+            }
+
+            $('.remove-enrollment-form').on('submit', function () {
+                return confirm('Bu öğrenciyi dersten çıkarmak istediğinize emin misiniz?');
+            });
+
+            // Alert otomatik kapatma
+            setTimeout(function () {
+                $('.alert').fadeOut('slow', function () {
+                    $(this).alert('close');
+                });
+            }, 5000);
+        });
+    </script>
+}

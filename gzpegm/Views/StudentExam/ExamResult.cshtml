@@ -1,0 +1,706 @@
+@using System.Linq
+@model gzpegm.Models.ViewModels.ExamResultViewModel
+@{
+    ViewBag.Title = "Sınav Sonucu - " + (Model?.ExamTitle ?? "Sonuç");
+    Layout = "~/Views/Shared/_Master.cshtml";
+
+    var answers = Model?.Answers ?? new List<gzpegm.Models.ViewModels.AnswerResultViewModel>();
+    int totalQuestions = answers.Count;
+    int correctCount = answers.Count(a => a != null && a.IsCorrect);
+    int incorrectCount = totalQuestions - correctCount;
+}
+
+<div class="exam-result-container">
+
+    <!-- ÜST BİLGİ VE AKSİYON HERO BANNERI (EGM POLİS TEMASI) -->
+    <div class="exam-result-hero-banner mb-4">
+        <div class="row align-items-center">
+            <div class="col-lg-7 col-md-6">
+                <div class="d-flex align-items-center">
+                    <div class="hero-icon-box mr-3 d-none d-sm-flex">
+                        <i class="fas fa-award"></i>
+                    </div>
+                    <div>
+                        <div class="hero-breadcrumbs mb-1">
+                            <a href="@Url.Action("AvailableExams", "StudentExam")" class="text-white-50"><i class="fas fa-graduation-cap mr-1"></i>Sınavlar</a>
+                            <span class="text-white-50 mx-1">/</span>
+                            <a href="@Url.Action("MyExamResults", "StudentExam")" class="text-white-50"><i class="fas fa-history mr-1"></i>Sınav Geçmişim</a>
+                            <span class="text-white-50 mx-1">/</span>
+                            <span class="text-white font-weight-semibold">Sonuç Belgesi</span>
+                        </div>
+                        <h2 class="hero-title mb-1">@(Model?.ExamTitle ?? "Sınav Değerlendirme Raporu")</h2>
+                        <p class="hero-desc mb-0">
+                            <strong>Ders:</strong> @(Model?.CourseTitle ?? "-") &nbsp;&bull;&nbsp;
+                            <strong>Tarih:</strong> @(Model?.StartTime.ToString("dd.MM.yyyy HH:mm") ?? "-") &nbsp;&bull;&nbsp;
+                            <strong>Tamamlama Süresi:</strong> @(Model != null ? Model.Duration.ToString(@"hh\:mm\:ss") : "-")
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-5 col-md-6 text-md-right mt-3 mt-md-0 no-print">
+                <div class="d-flex justify-content-md-end align-items-center gap-2 flex-wrap">
+                    <a href="@Url.Action("MyExamResults", "StudentExam")" class="btn btn-outline-light hero-action-btn mr-1" title="Tüm Sınav Sonuçlarım">
+                        <i class="fas fa-history mr-1"></i>Sonuçlarım
+                    </a>
+                    <a href="@Url.Action("AvailableExams", "StudentExam")" class="btn btn-outline-light hero-action-btn mr-1" title="Sınavlar Listesi">
+                        <i class="fas fa-arrow-left mr-1"></i>Sınavlar
+                    </a>
+                    <button type="button" class="btn btn-warning hero-action-btn font-weight-bold shadow-sm" onclick="window.print()" title="Yazdır veya PDF olarak kaydet">
+                        <i class="fas fa-print mr-1"></i>Yazdır / PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SİSTEM BİLDİRİM MESAJLARI -->
+    @if (TempData["msgSuccess"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm mb-4" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-check-circle fa-lg mr-2 text-success"></i>
+                <div>
+                    <strong>İşlem Başarılı!</strong> @TempData["msgSuccess"]
+                </div>
+            </div>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Kapat">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+    @if (TempData["msgError"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-4" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-times-circle fa-lg mr-2 text-danger"></i>
+                <div>
+                    <strong>Hata:</strong> @TempData["msgError"]
+                </div>
+            </div>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Kapat">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
+    @if (Model != null)
+    {
+        <!-- 4 İSTATİSTİK METRİK KARTI -->
+        <div class="row stat-cards-row mb-4">
+
+            <!-- 1. BAŞARI DURUMU KARTI -->
+            <div class="col-xl-3 col-sm-6 mb-3 mb-xl-0">
+                <div class="metric-card @(Model.IsPassed ? "stat-emerald" : "stat-ruby")">
+                    <div class="metric-icon">
+                        <i class="fas @(Model.IsPassed ? "fa-trophy" : "fa-times-circle")"></i>
+                    </div>
+                    <div class="metric-body">
+                        <div class="metric-value font-weight-bold">
+                            @(Model.IsPassed ? "BAŞARILI" : "BAŞARISIZ")
+                        </div>
+                        <div class="metric-label">
+                            @(Model.IsPassed ? "Sınavı Başarıyla Geçtiniz" : "Baraj Puanının Altında Kaldınız")
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. ALINAN PUAN KARTI -->
+            <div class="col-xl-3 col-sm-6 mb-3 mb-xl-0">
+                <div class="metric-card stat-blue">
+                    <div class="metric-icon">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <div class="metric-body">
+                        <div class="metric-value">
+                            @Model.TotalScore <small style="font-size: 1rem; opacity: 0.9;">/ @Model.MaxScore</small>
+                        </div>
+                        <div class="metric-label">Toplam Kazanılan Puan</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. BAŞARI YÜZDESİ KARTI -->
+            <div class="col-xl-3 col-sm-6 mb-3 mb-xl-0">
+                <div class="metric-card stat-teal">
+                    <div class="metric-icon">
+                        <i class="fas fa-chart-pie"></i>
+                    </div>
+                    <div class="metric-body">
+                        <div class="metric-value">
+                            %@Model.Percentage.ToString("F1")
+                        </div>
+                        <div class="metric-label">Genel Başarı Yüzdesi</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. DOĞRU / YANLIŞ ANALİZİ KARTI -->
+            <div class="col-xl-3 col-sm-6 mb-3 mb-xl-0">
+                <div class="metric-card stat-purple">
+                    <div class="metric-icon">
+                        <i class="fas fa-check-double"></i>
+                    </div>
+                    <div class="metric-body">
+                        <div class="metric-value" style="font-size: 1.35rem;">
+                            <span class="text-white">@correctCount Doğru</span> &bull; <span style="opacity: 0.85;">@incorrectCount Yanlış</span>
+                        </div>
+                        <div class="metric-label">Toplam @totalQuestions Soru &bull; Süre: @Model.Duration.ToString(@"mm\:ss")</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SORU DETAYLARI VE FİLTRE ÇUBUĞU -->
+        <div class="card shadow-sm border-0 result-details-card mb-4">
+            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-list-alt text-primary mr-2" style="font-size: 1.25rem;"></i>
+                    <h5 class="card-title font-weight-bold text-dark mb-0">Soru ve Cevap Detay Analizi</h5>
+                </div>
+
+                <!-- Filtre Butonları -->
+                <div class="btn-group btn-group-toggle no-print" data-toggle="buttons">
+                    <label class="btn btn-outline-secondary btn-sm active filter-btn" data-filter="all">
+                        <input type="radio" name="filterOption" autocomplete="off" checked> Tümü (@totalQuestions)
+                    </label>
+                    <label class="btn btn-outline-success btn-sm filter-btn" data-filter="correct">
+                        <input type="radio" name="filterOption" autocomplete="off"> <i class="fas fa-check mr-1"></i>Doğru (@correctCount)
+                    </label>
+                    <label class="btn btn-outline-danger btn-sm filter-btn" data-filter="incorrect">
+                        <input type="radio" name="filterOption" autocomplete="off"> <i class="fas fa-times mr-1"></i>Yanlış / Boş (@incorrectCount)
+                    </label>
+                </div>
+            </div>
+
+            <div class="card-body p-4 bg-light-subtle">
+                @if (answers != null && answers.Count > 0)
+                {
+                    <div class="answers-container">
+                        @for (int i = 0; i < answers.Count; i++)
+                        {
+                            var answer = answers[i];
+                            if (answer == null) { continue; }
+                            string filterType = answer.IsCorrect ? "correct" : "incorrect";
+
+                            <div class="answer-review-card card mb-4 border-0 shadow-sm" data-type="@filterType">
+
+                                <!-- KART BAŞLIĞI -->
+                                <div class="card-header @(answer.IsCorrect ? "answer-header-correct" : "answer-header-incorrect") text-white py-2 px-3 d-flex justify-content-between align-items-center">
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge badge-light mr-2 font-weight-bold text-dark">Soru @(i + 1)</span>
+                                        @if (answer.IsCorrect)
+                                        {
+                                            <span class="font-weight-semibold"><i class="fas fa-check-circle mr-1"></i>DOĞRU</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="font-weight-semibold"><i class="fas fa-times-circle mr-1"></i>YANLIŞ / EKSİK</span>
+                                        }
+                                    </div>
+                                    <div class="font-weight-bold">
+                                        <span class="badge badge-light text-dark">
+                                            @answer.PointsEarned / @answer.MaxPoints Puan
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- KART GÖVDESİ -->
+                                <div class="card-body p-4 bg-white">
+
+                                    <!-- Soru Metni -->
+                                    <div class="question-prompt-box mb-3">
+                                        <h6 class="font-weight-bold text-dark mb-1">Soru Metni:</h6>
+                                        <div class="question-text-content text-dark font-weight-medium">
+                                            @Html.Raw(answer.QuestionText ?? "")
+                                        </div>
+                                    </div>
+
+                                    <!-- Soru Medyaları -->
+                                    @if (answer.MediaFiles != null && answer.MediaFiles.Count(m => !string.IsNullOrEmpty(m?.MediaPath)) > 0)
+                                    {
+                                        <div class="media-preview-container mb-3 p-2 bg-light rounded border">
+                                            <div class="row">
+                                                @foreach (var m in answer.MediaFiles.Where(m => m != null && !string.IsNullOrEmpty(m.MediaPath)))
+                                                {
+                                                    string mediaPath = m.MediaPath;
+                                                    if (!mediaPath.StartsWith("http", StringComparison.OrdinalIgnoreCase) && !mediaPath.StartsWith("/") && !mediaPath.StartsWith("~/"))
+                                                    {
+                                                        mediaPath = "~/files/Egitim/" + mediaPath;
+                                                    }
+                                                    mediaPath = Url.Content(mediaPath);
+
+                                                    if (m.MediaType == 1)
+                                                    {
+                                                        <div class="col-md-3 col-6 mb-2">
+                                                            <img src="@mediaPath" class="img-fluid rounded border shadow-sm media-zoomable" alt="Soru görseli" title="Görseli büyüt" data-zoom-src="@mediaPath" onerror="this.style.display='none'" />
+                                                        </div>
+                                                    }
+                                                    else if (m.MediaType == 2)
+                                                    {
+                                                        <div class="col-md-6 col-12 mb-2">
+                                                            <video controls class="w-100 rounded border" preload="metadata">
+                                                                <source src="@mediaPath" type="video/mp4" />
+                                                            </video>
+                                                        </div>
+                                                    }
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+
+                                    <!-- CEVAP KARŞILAŞTIRMA KUTULARI -->
+                                    <div class="row mt-3">
+                                        <!-- Kullanıcının Cevabı -->
+                                        <div class="col-md-6 mb-3 mb-md-0">
+                                            <label class="small text-muted font-weight-bold text-uppercase mb-1">
+                                                <i class="fas fa-user-edit mr-1"></i>Sizin Verdiğiniz Cevap
+                                            </label>
+
+                                            @{
+                                                string userAnswerDisplay = "";
+                                                if (!string.IsNullOrEmpty(answer.UserAnswer))
+                                                {
+                                                    userAnswerDisplay = answer.UserAnswer;
+                                                }
+                                                else if (answer.SelectedOptionId.HasValue && answer.Options != null && answer.Options.Any())
+                                                {
+                                                    var selectedOption = answer.Options.FirstOrDefault(o => o?.OptionId == answer.SelectedOptionId.Value);
+                                                    userAnswerDisplay = selectedOption?.OptionText ?? "Cevap verilmedi";
+                                                }
+                                                else
+                                                {
+                                                    userAnswerDisplay = "Cevap verilmedi (Boş)";
+                                                }
+                                                bool isBlank = userAnswerDisplay.Contains("Boş") || userAnswerDisplay == "Cevap verilmedi";
+                                            }
+
+                                            <div class="answer-box @(answer.IsCorrect ? "answer-box-success" : (isBlank ? "answer-box-blank" : "answer-box-danger")) p-3 rounded">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fas @(answer.IsCorrect ? "fa-check-circle text-success" : (isBlank ? "fa-minus-circle text-muted" : "fa-times-circle text-danger")) mr-2 fa-lg"></i>
+                                                    <span class="font-weight-semibold">@Html.Raw(userAnswerDisplay)</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Doğru Cevap -->
+                                        <div class="col-md-6">
+                                            <label class="small text-muted font-weight-bold text-uppercase mb-1">
+                                                <i class="fas fa-key mr-1"></i>Doğru Kabul Edilen Cevap
+                                            </label>
+                                            <div class="answer-box answer-box-correct-key p-3 rounded">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fas fa-check-double text-primary mr-2 fa-lg"></i>
+                                                    <span class="font-weight-semibold text-primary">
+                                                        @(string.IsNullOrWhiteSpace(answer.CorrectAnswer) ? "Sistemde doğru şık belirtilmemiş" : answer.CorrectAnswer)
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- TÜM SEÇENEKLER LİSTESİ -->
+                                    @if (answer.Options != null && answer.Options.Count(o => o != null) > 0)
+                                    {
+                                        var orderedOptions = answer.Options.Where(o => o != null).OrderBy(o => o.SortOrder).ToList();
+                                        <div class="all-options-wrapper mt-3 pt-3 border-top">
+                                            <small class="text-muted font-weight-bold text-uppercase d-block mb-2">
+                                                <i class="fas fa-list-ol mr-1"></i>Sınav Şıkları & Seçim Durumu:
+                                            </small>
+                                            <div class="list-group">
+                                                @{
+                                                    char optChar = 'A';
+                                                }
+                                                @foreach (var opt in orderedOptions)
+                                                {
+                                                    if (opt == null) { continue; }
+                                                    bool isSelected = answer.SelectedOptionId.HasValue && answer.SelectedOptionId.Value == opt.OptionId;
+                                                    bool isCorrectOption = opt.IsCorrect;
+
+                                                    <div class="list-group-item d-flex justify-content-between align-items-center py-2 px-3 @(isCorrectOption ? "option-item-correct-row" : (isSelected ? "option-item-selected-row" : ""))">
+                                                        <div class="d-flex align-items-center">
+                                                            <span class="option-letter-chip mr-2">@optChar</span>
+                                                            <span class="option-text font-weight-medium">@Html.Raw(opt.OptionText ?? "")</span>
+                                                        </div>
+                                                        <div class="option-badges d-flex align-items-center gap-1">
+                                                            @if (isCorrectOption)
+                                                            {
+                                                                <span class="badge badge-success px-2 py-1 mr-1">
+                                                                    <i class="fas fa-check mr-1"></i>Doğru Şık
+                                                                </span>
+                                                            }
+                                                            @if (isSelected)
+                                                            {
+                                                                <span class="badge @(isCorrectOption ? "badge-primary" : "badge-danger") px-2 py-1">
+                                                                    <i class="fas fa-user-check mr-1"></i>Sizin Seçiminiz
+                                                                </span>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                    optChar++;
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-warning text-center py-4">
+                        <i class="fas fa-info-circle fa-2x mb-2 text-warning"></i>
+                        <h5>Bu Sınava Ait Soru Detayı Bulunamadı</h5>
+                        <p class="text-muted mb-0">Sınav tamamlanmış ancak soru havuzunda aktif soru verisi eşleşmemiştir.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-danger text-center py-5 shadow-sm">
+            <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
+            <h4>Sınav Sonucu Yüklenemedi</h4>
+            <p class="text-muted">İstenen sınav sonucuna ulaşılamadı veya görüntüleme yetkiniz bulunmamaktadır.</p>
+            <a href="@Url.Action("AvailableExams", "StudentExam")" class="btn btn-primary mt-2">
+                <i class="fas fa-arrow-left mr-1"></i>Sınavlar Sayfasına Dön
+            </a>
+        </div>
+    }
+</div>
+
+<!-- ===================== GÖRSEL BÜYÜTME LIGHTBOX MODALI ===================== -->
+<div class="modal fade" id="resultImageModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content border-0 bg-dark text-white shadow-lg">
+            <div class="modal-header border-0 pb-0">
+                <h6 class="modal-title text-white"><i class="fas fa-image mr-2"></i>Soru Görseli Önizleme</h6>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Kapat">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body text-center p-3">
+                <img id="resultZoomedImage" src="" class="img-fluid rounded" style="max-height: 80vh;" alt="Büyütülmüş Görsel" />
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        /* ================= SINAV SONUCU STİLLERİ ================= */
+        .exam-result-container {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', Arial, sans-serif;
+            color: #1e293b;
+        }
+
+        /* HERO BANNER (EGM POLİS TEMASI) */
+        .exam-result-hero-banner {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            border-radius: 12px;
+            padding: 24px 28px;
+            color: #ffffff;
+            box-shadow: 0 8px 24px rgba(30, 60, 114, 0.18);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .exam-result-hero-banner::after {
+            content: '';
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 240px;
+            height: 240px;
+            background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .hero-icon-box {
+            width: 58px;
+            height: 58px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.16);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: #fbbf24;
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            flex-shrink: 0;
+        }
+
+        .hero-title {
+            font-size: 1.65rem;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: -0.3px;
+        }
+
+        .hero-desc {
+            font-size: 0.92rem;
+            color: rgba(255, 255, 255, 0.88);
+            line-height: 1.5;
+            max-width: 780px;
+        }
+
+        .hero-breadcrumbs a {
+            font-size: 0.82rem;
+            transition: color 0.2s;
+        }
+
+        .hero-breadcrumbs a:hover {
+            color: #ffffff !important;
+            text-decoration: underline;
+        }
+
+        .hero-action-btn {
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 0.88rem;
+            transition: all 0.2s ease;
+        }
+
+        /* METRİK STAT KARTLARI */
+        .metric-card {
+            border-radius: 12px;
+            padding: 18px 20px;
+            display: flex;
+            align-items: center;
+            color: #ffffff;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.14);
+        }
+
+        .metric-card.stat-blue {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        }
+
+        .metric-card.stat-emerald {
+            background: linear-gradient(135deg, #065f46 0%, #10b981 100%);
+        }
+
+        .metric-card.stat-ruby {
+            background: linear-gradient(135deg, #991b1b 0%, #ef4444 100%);
+        }
+
+        .metric-card.stat-teal {
+            background: linear-gradient(135deg, #0e7490 0%, #06b6d4 100%);
+        }
+
+        .metric-card.stat-purple {
+            background: linear-gradient(135deg, #581c87 0%, #7c3aed 100%);
+        }
+
+        .metric-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.18);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-right: 16px;
+            flex-shrink: 0;
+        }
+
+        .metric-value {
+            font-size: 1.65rem;
+            font-weight: 700;
+            line-height: 1.1;
+        }
+
+        .metric-label {
+            font-size: 0.84rem;
+            color: rgba(255, 255, 255, 0.88);
+            font-weight: 500;
+            margin-top: 2px;
+        }
+
+        /* DETAY KARTLARI */
+        .result-details-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .answer-review-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .answer-header-correct {
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+        }
+
+        .answer-header-incorrect {
+            background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+        }
+
+        .question-text-content {
+            font-size: 1.05rem;
+            line-height: 1.6;
+        }
+
+        /* CEVAP KUTULARI */
+        .answer-box {
+            border: 1px solid #e2e8f0;
+            font-size: 0.95rem;
+            min-height: 52px;
+            display: flex;
+            align-items: center;
+        }
+
+        .answer-box-success {
+            background-color: #ecfdf5;
+            border-color: #a7f3d0;
+            color: #065f46;
+        }
+
+        .answer-box-danger {
+            background-color: #fef2f2;
+            border-color: #fecaca;
+            color: #991b1b;
+        }
+
+        .answer-box-blank {
+            background-color: #f8fafc;
+            border-color: #e2e8f0;
+            color: #64748b;
+        }
+
+        .answer-box-correct-key {
+            background-color: #eff6ff;
+            border-color: #bfdbfe;
+            color: #1e40af;
+        }
+
+        /* ŞIK SATIRLARI */
+        .option-letter-chip {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            color: #334155;
+            font-size: 0.75rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .option-item-correct-row {
+            background-color: #f0fdf4 !important;
+            border-color: #bbf7d0 !important;
+        }
+
+        .option-item-selected-row {
+            background-color: #eff6ff !important;
+            border-color: #bfdbfe !important;
+        }
+
+        .media-zoomable {
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .media-zoomable:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+        }
+
+        /* ================= YAZDIRMA / PDF ÇIKTISI STİLLERİ ================= */
+        @@media print {
+            .no-print,
+            header.header,
+            aside.sidebar-left,
+            .sidebar-right,
+            footer,
+            .btn,
+            .hero-action-btn,
+            .btn-group {
+                display: none !important;
+            }
+
+            body, .content-body {
+                background: #ffffff !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+
+            .exam-result-hero-banner {
+                background: #1e3c72 !important;
+                color: #000000 !important;
+                border: 1px solid #cbd5e1 !important;
+                box-shadow: none !important;
+                page-break-after: avoid;
+            }
+
+            .metric-card {
+                box-shadow: none !important;
+                border: 1px solid #cbd5e1 !important;
+                color: #000000 !important;
+                background: #f8fafc !important;
+            }
+
+            .metric-value {
+                color: #000000 !important;
+            }
+
+            .metric-label {
+                color: #475569 !important;
+            }
+
+            .answer-review-card {
+                page-break-inside: avoid;
+                border: 1px solid #cbd5e1 !important;
+                margin-bottom: 20px !important;
+            }
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        $(function () {
+            'use strict';
+
+            // Soru filtreleme (Tümü / Doğru / Yanlış)
+            $('.filter-btn').on('click', function () {
+                var filter = $(this).data('filter');
+                var $cards = $('.answer-review-card');
+
+                if (filter === 'all') {
+                    $cards.show();
+                } else if (filter === 'correct') {
+                    $cards.hide();
+                    $('.answer-review-card[data-type="correct"]').show();
+                } else if (filter === 'incorrect') {
+                    $cards.hide();
+                    $('.answer-review-card[data-type="incorrect"]').show();
+                }
+            });
+
+            // Görsel Lightbox Büyütme
+            $(document).on('click', '[data-zoom-src]', function () {
+                var src = $(this).attr('data-zoom-src');
+                $('#resultZoomedImage').attr('src', src);
+                $('#resultImageModal').modal('show');
+            });
+        });
+    </script>
+}

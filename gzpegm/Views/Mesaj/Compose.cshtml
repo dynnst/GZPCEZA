@@ -1,0 +1,102 @@
+@model gzpegm.Models.ViewModels.SendMessageViewModel
+@{
+    Layout = "~/Views/Shared/_Master.cshtml";
+    ViewBag.Title = "Yeni Mesaj";
+}
+
+@section Styles {
+    <link href="@Url.Content("~/css/mesaj.css")?v=1.2" rel="stylesheet" />
+}
+
+<section class="card">
+    <header class="card-header">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h2 class="card-title">
+                    <i class="fas fa-edit text-primary mr-1"></i> Yeni Mesaj Oluştur
+                </h2>
+                <p class="card-subtitle">Sistem içi yetkili personele mesaj gönderin</p>
+            </div>
+            <div class="col-md-6 text-right mt-2 mt-md-0">
+                <a href="@Url.Action("Inbox", "Mesaj")" class="btn btn-secondary">
+                    <i class="fas fa-inbox"></i> Gelen Kutusu
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <div class="card-body">
+        @using (Html.BeginForm("Send", "Mesaj", FormMethod.Post, new { @class = "form-horizontal" }))
+        {
+            @Html.AntiForgeryToken()
+
+            if (TempData["msgError"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-circle mr-1"></i> @TempData["msgError"]
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Kapat">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            }
+
+            <div class="form-group row">
+                <label class="col-md-2 col-form-label">Alıcı <span class="text-danger">*</span></label>
+                <div class="col-md-10">
+                    @Html.DropDownListFor(m => m.RecipientId, Model.AvailableRecipients,
+                        "-- Alıcı Seçiniz --",
+                        new { @class = "form-control", required = "required" })
+                    @Html.ValidationMessageFor(m => m.RecipientId, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <div class="form-group row">
+                <label class="col-md-2 col-form-label">Konu <span class="text-danger">*</span></label>
+                <div class="col-md-10">
+                    @Html.TextBoxFor(m => m.Subject, new
+                    {
+                        @class = "form-control",
+                        placeholder = "Mesaj konusu giriniz...",
+                        maxlength = "200",
+                        required = "required",
+                        id = "subjectInput"
+                    })
+                    <span class="char-counter" id="subjectCounter">0 / 200</span>
+                    @Html.ValidationMessageFor(m => m.Subject, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <div class="form-group row">
+                <label class="col-md-2 col-form-label">Mesaj <span class="text-danger">*</span></label>
+                <div class="col-md-10">
+                    @Html.TextAreaFor(m => m.Message, new
+                    {
+                        @class = "form-control",
+                        rows = "10",
+                        placeholder = "Mesajınızı buraya yazınız...",
+                        maxlength = "4000",
+                        required = "required",
+                        id = "messageInput"
+                    })
+                    <span class="char-counter" id="messageCounter">0 / 4000</span>
+                    @Html.ValidationMessageFor(m => m.Message, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <div class="form-group row">
+                <div class="col-md-10 offset-md-2">
+                    <button type="submit" class="btn btn-primary mr-1">
+                        <i class="fas fa-paper-plane mr-1"></i> Mesajı Gönder
+                    </button>
+                    <a href="@Url.Action("Inbox", "Mesaj")" class="btn btn-secondary">
+                        <i class="fas fa-times mr-1"></i> İptal
+                    </a>
+                </div>
+            </div>
+        }
+    </div>
+</section>
+
+@section Scripts {
+    <script src="@Url.Content("~/js/mesaj-compose.js")?v=1.2"></script>
+}

@@ -1,0 +1,282 @@
+@model gzpegm.Controllers.SystemHealthViewModel
+@using gzpegm.Controllers
+
+@{
+    Layout = "~/Views/Shared/_Master.cshtml";
+    ViewBag.Title = "Sistem Sağlık Kontrolü";
+
+    Func<HealthStatus, string> badgeClass = status =>
+        status == HealthStatus.Ok ? "badge-success" :
+        status == HealthStatus.Warning ? "badge-warning" : "badge-danger";
+
+    Func<HealthStatus, string> statusText = status =>
+        status == HealthStatus.Ok ? "Sorunsuz" :
+        status == HealthStatus.Warning ? "Uyarı" : "Kritik";
+
+    Func<long, string> formatBytes = bytes =>
+    {
+        decimal value = bytes;
+        string[] units = { "B", "KB", "MB", "GB", "TB" };
+        var unit = 0;
+        while (value >= 1024 && unit < units.Length - 1)
+        {
+            value /= 1024;
+            unit++;
+        }
+        return string.Format("{0:N2} {1}", value, units[unit]);
+    };
+}
+
+<section class="card">
+    <header class="card-header d-flex align-items-center justify-content-between flex-wrap">
+        <div>
+            <h2 class="card-title mb-0"><i class="fas fa-heartbeat"></i> Sistem Sağlık Kontrolü</h2>
+            <p class="card-subtitle">Veritabanı, dosya klasörleri, yazma izinleri, disk alanı ve IIS/runtime bilgileri.</p>
+        </div>
+        <div class="text-right">
+            <span class="badge @badgeClass(Model.OverallStatus) p-2">@statusText(Model.OverallStatus)</span>
+            <div class="small text-muted mt-1">Son kontrol: @Model.GeneratedAt.ToString("dd.MM.yyyy HH:mm:ss")</div>
+        </div>
+    </header>
+    <div class="card-body">
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i>
+            Bu ekran admin içindir. Yazma izni kontrolleri küçük bir geçici dosya oluşturup hemen silerek yapılır.
+        </div>
+
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <div class="card h-100 border">
+                    <div class="card-body">
+                        <h4><i class="fas fa-database"></i> Veritabanı</h4>
+                        <span class="badge @badgeClass(Model.Database.Status)">@statusText(Model.Database.Status)</span>
+                        <p class="mt-3 mb-1">@Model.Database.Message</p>
+                        <small class="text-muted">@Model.Database.Path</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card h-100 border">
+                    <div class="card-body">
+                        <h4><i class="fas fa-folder-open"></i> Depolama</h4>
+                        @{
+                            var storageErrors = Model.StorageChecks.Count(x => x.Status == HealthStatus.Error);
+                            var storageWarnings = Model.StorageChecks.Count(x => x.Status == HealthStatus.Warning);
+                        }
+                        <span class="badge @(storageErrors > 0 ? "badge-danger" : storageWarnings > 0 ? "badge-warning" : "badge-success")">
+                            @(storageErrors > 0 ? "Kritik" : storageWarnings > 0 ? "Uyarı" : "Sorunsuz")
+                        </span>
+                        <p class="mt-3 mb-0">@Model.StorageChecks.Count klasör kontrol edildi.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card h-100 border">
+                    <div class="card-body">
+                        <h4><i class="fas fa-hdd"></i> Disk</h4>
+                        @{
+                            var minFree = Model.Disks.Any() ? Model.Disks.Min(x => x.FreePercent) : 0;
+                        }
+                        <span class="badge @(minFree < 10 ? "badge-danger" : minFree < 20 ? "badge-warning" : "badge-success")">
+                            En düşük boş alan: %@minFree
+                        </span>
+                        <p class="mt-3 mb-0">@Model.Disks.Count disk kökü kontrol edildi.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="card">
+    <header class="card-header d-flex align-items-center justify-content-between flex-wrap">
+        <div>
+            <h2 class="card-title mb-0">
+                <i class="fas fa-network-wired text-primary mr-1"></i> Akıllı Sunucu Yedekliliği ve Failover Durumu
+            </h2>
+            <p class="card-subtitle">Ana Sunucu (10.7.202.75) ve Yedek Sunucu (10.7.202.76) otomatik yönlendirme ve acil durum modu bilgileri.</p>
+        </div>
+        <div>
+            @if (Model.ServerRole == "Primary")
+            {
+                <span class="badge badge-primary p-2"><i class="fas fa-shield-alt mr-1"></i>Ana Sunucu (Primary)</span>
+            }
+            else if (Model.ServerRole == "Backup")
+            {
+                <span class="badge badge-warning p-2"><i class="fas fa-life-ring mr-1"></i>Yedek Sunucu (Backup)</span>
+            }
+            else
+            {
+                <span class="badge badge-secondary p-2">@Model.ServerRole</span>
+            }
+        </div>
+    </header>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <table class="table table-sm mb-0">
+                    <tr>
+                        <th style="width: 40%;">Aktif Sunucu Rolü</th>
+                        <td>
+                            <strong>@Model.ServerRole</strong>
+                            @if (Model.ServerRole == "Backup")
+                            {
+                                <span class="badge badge-warning ml-1">Yedek Modunda</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-success ml-1">Ana Sunucu</span>
+                            }
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Ana Sunucu URL (Primary)</th>
+                        <td>
+                            <code>@Model.PrimaryServerUrl</code>
+                            @if (Model.IsPrimaryServerOnline)
+                            {
+                                <span class="badge badge-success ml-1"><i class="fas fa-check mr-1"></i>Çevrimiçi</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-danger ml-1"><i class="fas fa-times mr-1"></i>Ulaşılamıyor</span>
+                            }
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Yedek Sunucu URL (Backup)</th>
+                        <td><code>@Model.BackupServerUrl</code></td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <table class="table table-sm mb-0">
+                    <tr>
+                        <th style="width: 40%;">Otomatik Yönlendirme</th>
+                        <td>
+                            @if (Model.IsRedirectActive)
+                            {
+                                <span class="badge badge-success"><i class="fas fa-exchange-alt mr-1"></i>Aktif (Kullanıcılar Ana Sunucuya Aktarılıyor)</span>
+                            }
+                            else if (Model.ServerRole == "Backup" && !Model.IsPrimaryServerOnline)
+                            {
+                                <span class="badge badge-danger"><i class="fas fa-exclamation-triangle mr-1"></i>Acil Durum (Yedek Sunucu Hizmet Veriyor)</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-light border">Gerek Yok (Ana Sunucu Üzerindesiniz)</span>
+                            }
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Algılanan Yerel IP'ler</th>
+                        <td>
+                            @(Model.LocalIPAddresses != null && Model.LocalIPAddresses.Any() ? string.Join(", ", Model.LocalIPAddresses) : "Algılanamadı")
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Yönetici Bypass (Erişim)</th>
+                        <td>
+                            <small class="text-muted">Yedek sunucuya doğrudan girmek için URL sonuna <code>?forceLocal=1</code> ekleyebilirsiniz.</small>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="card">
+    <header class="card-header">
+        <h2 class="card-title"><i class="fas fa-folder"></i> Klasör ve Yazma İzni Kontrolleri</h2>
+    </header>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Durum</th>
+                        <th>Kontrol</th>
+                        <th>Açıklama</th>
+                        <th>Fiziksel Yol</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.StorageChecks)
+                    {
+                        <tr>
+                            <td><span class="badge @badgeClass(item.Status)">@statusText(item.Status)</span></td>
+                            <td><strong>@item.Name</strong></td>
+                            <td>@item.Message</td>
+                            <td><code>@item.Path</code></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<section class="card">
+    <header class="card-header">
+        <h2 class="card-title"><i class="fas fa-hdd"></i> Disk Alanı</h2>
+    </header>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-striped mb-0">
+                <thead>
+                    <tr>
+                        <th>Durum</th>
+                        <th>Disk</th>
+                        <th>Boş Alan</th>
+                        <th>Toplam Alan</th>
+                        <th>Boş Oran</th>
+                        <th>Açıklama</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var disk in Model.Disks)
+                    {
+                        <tr>
+                            <td><span class="badge @badgeClass(disk.Status)">@statusText(disk.Status)</span></td>
+                            <td><strong>@disk.Name</strong></td>
+                            <td>@formatBytes(disk.FreeBytes)</td>
+                            <td>@formatBytes(disk.TotalBytes)</td>
+                            <td>%@disk.FreePercent</td>
+                            <td>@disk.Message</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<section class="card">
+    <header class="card-header">
+        <h2 class="card-title"><i class="fas fa-server"></i> IIS / Uygulama Ortamı</h2>
+    </header>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <table class="table table-sm">
+                    <tr><th>Makine</th><td>@Model.MachineName</td></tr>
+                    <tr><th>Çalışan Kullanıcı</th><td>@Model.UserName</td></tr>
+                    <tr><th>Process</th><td>@Model.ProcessName</td></tr>
+                    <tr><th>App Pool</th><td>@(string.IsNullOrWhiteSpace(Model.AppPoolName) ? "-" : Model.AppPoolName)</td></tr>
+                    <tr><th>Sunucu Yazılımı</th><td>@(string.IsNullOrWhiteSpace(Model.ServerSoftware) ? "-" : Model.ServerSoftware)</td></tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <table class="table table-sm">
+                    <tr><th>İşletim Sistemi</th><td>@Model.OperatingSystem</td></tr>
+                    <tr><th>.NET Runtime</th><td>@Model.DotNetVersion</td></tr>
+                    <tr><th>64 Bit Process</th><td>@(Model.Is64BitProcess ? "Evet" : "Hayır")</td></tr>
+                    <tr><th>PublicBaseUrl</th><td>@Model.PublicBaseUrl</td></tr>
+                    <tr><th>Uygulama Yolu</th><td><code>@Model.ApplicationPath</code></td></tr>
+                    <tr><th>Dış Depolama</th><td><code>@Model.ExternalFileStorageRoot</code></td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>

@@ -1,0 +1,445 @@
+@model IEnumerable<gzpegm.Models.TahditListItem>
+@using System.Linq
+@{
+    ViewBag.Title = "Tahdit Kodları & Giriş-Çıkış Kısıtlamaları";
+    Layout = "~/Views/Shared/_Master.cshtml";
+    ViewBag.UseDataTables = true;
+    ViewBag.UseSummernote = true;
+
+    var canManage = ViewBag.CanManage as bool? ?? false;
+    var isAll = string.Equals(Request.QueryString["all"], "true", StringComparison.OrdinalIgnoreCase);
+    int totalCount = ViewBag.TotalCount as int? ?? 0;
+    int aktifCount = ViewBag.AktifCount as int? ?? 0;
+    int filteredCount = ViewBag.FilteredCount as int? ?? 0;
+}
+
+@section Styles {
+    <link rel="stylesheet" href="@Url.Content("~/css/tahdit-index.css")?v=2.0" />
+}
+
+<div id="tahdit-page-data"
+     data-can-manage="@canManage.ToString().ToLowerInvariant()"
+     data-list-url="@Url.Action("List", "Tahdit", new { all = Request.QueryString["all"] })"
+     data-detail-url="@Url.Action("GetTahditKodById", "Tahdit")"
+     data-delete-url="@Url.Action("Sil", "Tahdit")"
+     style="display:none">
+</div>
+
+<div class="page-wrapper">
+    <div class="container-fluid p-0">
+
+        <!-- ================================================================
+             1. EGM POLICE HERO BANNER
+             ================================================================ -->
+        <div class="egm-tahdit-hero">
+            <div class="hero-watermark">
+                <i class="fas fa-shield-alt"></i>
+            </div>
+            <div class="hero-inner">
+                <div class="dept-pill">
+                    <i class="fas fa-shield-alt mr-1"></i> TAHDİT PROJESİ
+                </div>
+                <h1 class="hero-title">
+                    <i class="fas fa-passport"></i> Tahdit Kodları &amp; Giriş-Çıkış Kısıtlama Veri Tabanı
+                </h1>
+                <p class="hero-desc">
+                    Hudut kapılarında yolcu kontrolü, vize ihlalleri, adli tedbirler ve yurda giriş-çıkış yasaklarına ilişkin resmi tahdit kodları referans ve yönetim sistemi.
+                </p>
+            </div>
+        </div>
+
+        <!-- Yönetici Değilse Bilgilendirme -->
+        @if (!canManage)
+        {
+            <div class="alert alert-info d-flex align-items-center mb-4 border-0 shadow-sm" style="border-radius:10px; background:#eff6ff; color:#1e40af; border-left:4px solid #3b82f6 !important;">
+                <i class="fas fa-user-shield fa-2x mr-3 text-primary"></i>
+                <div>
+                    <strong>Sorgulama Modundasınız</strong>
+                    <p class="mb-0 mt-1" style="font-size:13px; color:#475569;">
+                        Tahdit kodlarını inceleyebilir ve detaylarını görüntüleyebilirsiniz. Yeni kod ekleme, düzenleme ve silme işlemleri için Eğitimci/Yönetici yetkisi gereklidir.
+                    </p>
+                </div>
+            </div>
+        }
+
+        <!-- ================================================================
+             2. KPI İSTATİSTİK KARTLARI
+             ================================================================ -->
+        <div class="stat-cards-grid">
+            <div class="stat-card-item">
+                <div class="stat-card-info">
+                    <div class="stat-card-val text-primary">@totalCount</div>
+                    <div class="stat-card-lbl">Kayıtlı Tahdit Kodu</div>
+                </div>
+                <div class="stat-card-icon icon-blue">
+                    <i class="fas fa-database"></i>
+                </div>
+            </div>
+
+            <div class="stat-card-item">
+                <div class="stat-card-info">
+                    <div class="stat-card-val text-success">@aktifCount</div>
+                    <div class="stat-card-lbl">Aktif Yürürlükte</div>
+                </div>
+                <div class="stat-card-icon icon-green">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+            </div>
+
+            <div class="stat-card-item">
+                <div class="stat-card-info">
+                    <div class="stat-card-val text-warning">@(totalCount - aktifCount)</div>
+                    <div class="stat-card-lbl">Pasif / Arşiv Kod</div>
+                </div>
+                <div class="stat-card-icon icon-amber">
+                    <i class="fas fa-archive"></i>
+                </div>
+            </div>
+
+            <div class="stat-card-item">
+                <div class="stat-card-info">
+                    <div class="stat-card-val" style="color:#7c3aed; font-size:18px;">
+                        @(canManage ? "Yönetici" : "Operatör")
+                    </div>
+                    <div class="stat-card-lbl">Erişim Düzeyiniz</div>
+                </div>
+                <div class="stat-card-icon icon-purple">
+                    <i class="fas fa-user-lock"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================================================================
+             3. HIZLI FİLTRE VE EYLEM ÇUBUĞU
+             ================================================================ -->
+        <div class="tahdit-filter-bar">
+            <div class="filter-chips-list">
+                <span class="mr-1 font-weight-bold text-muted" style="font-size:12px; text-transform:uppercase;">Hızlı Filtre:</span>
+                <button type="button" class="filter-chip-btn active" data-filter="">
+                    <i class="fas fa-layer-group"></i> Tümü
+                </button>
+                <button type="button" class="filter-chip-btn" data-filter="Ç-">
+                    <i class="fas fa-ban"></i> Ç-Serisi (Vize &amp; Giriş/Çıkış Yasağı)
+                </button>
+                <button type="button" class="filter-chip-btn" data-filter="V-">
+                    <i class="fas fa-passport"></i> V-Serisi (İkamet &amp; Vize Şerhleri)
+                </button>
+                <button type="button" class="filter-chip-btn" data-filter="G-">
+                    <i class="fas fa-shield-alt"></i> G-Serisi (Genel Güvenlik)
+                </button>
+                <button type="button" class="filter-chip-btn" data-filter="N-">
+                    <i class="fas fa-money-bill-wave"></i> N-Serisi (İdari Para Cezası)
+                </button>
+                <button type="button" class="filter-chip-btn" data-filter="O-">
+                    <i class="fas fa-user-friends"></i> O-Serisi (Sığınmacı / Koruma)
+                </button>
+            </div>
+
+            <div class="filter-actions-right">
+                <!-- Aktif / Tümü Geçişi -->
+                @if (isAll)
+                {
+                    <a href="@Url.Action("Index", "Tahdit")" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-filter mr-1"></i>Sadece Aktifleri Göster
+                    </a>
+                }
+                else
+                {
+                    <a href="@Url.Action("Index", "Tahdit", new { all = "true" })" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-eye mr-1"></i>Pasif Kodları da Dahil Et
+                    </a>
+                }
+
+                @if (canManage)
+                {
+                    <button type="button" class="btn btn-sm btn-primary shadow-sm" data-toggle="modal" data-target="#createModal">
+                        <i class="fas fa-plus-circle mr-1"></i>Yeni Tahdit Kodu Ekle
+                    </button>
+                }
+            </div>
+        </div>
+
+        <!-- ================================================================
+             4. TAHDİT KODLARI DATA TABLE KARTI
+             ================================================================ -->
+        <div class="tahdit-main-card">
+            <div class="tahdit-card-header">
+                <div class="card-title">
+                    <i class="fas fa-list-alt"></i> Tahdit Kodları Dizini
+                </div>
+                <div class="card-badge">
+                    <i class="fas fa-table mr-1"></i> @filteredCount kayıt gösteriliyor (Toplam @totalCount)
+                </div>
+            </div>
+            <div class="tahdit-card-body">
+                <div class="table-responsive">
+                    <table id="tahditTable" class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th style="width: 10%;">Kod</th>
+                                <th style="width: 20%;">Açıklama</th>
+                                <th style="width: 11%;">Ceza Süre</th>
+                                <th style="width: 22%;">Girişe Gelirse</th>
+                                <th style="width: 22%;">Çıkışa Gelirse</th>
+                                <th style="width: 7%;">Durum</th>
+                                <th style="width: 8%; text-align:center;">İşlem</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Anti-Forgery token (Silme ve Ajax için) -->
+@if (canManage)
+{
+    <div id="deleteTokenHolder" class="d-none">@Html.AntiForgeryToken()</div>
+}
+
+<!-- ================================================================
+     5. MODAL: YENİ TAHDİT KODU EKLE
+     ================================================================ -->
+@if (canManage)
+{
+    <div class="modal fade modal-egm" id="createModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-plus-circle"></i> Yeni Tahdit Kodu Tanımlama
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Kapat">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                @using (Html.BeginForm("Ekle", "Tahdit", FormMethod.Post, new { id = "createForm" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-4 form-group">
+                                <label class="font-weight-bold text-dark">Tahdit Kodu <span class="text-danger">*</span></label>
+                                <input name="Kod" id="Yeni_Kod" class="form-control" placeholder="Örn: Ç-101" required />
+                                <small class="text-muted">Örn: Ç-101, V-68, G-82 vb.</small>
+                            </div>
+                            <div class="col-md-8 form-group">
+                                <label class="font-weight-bold text-dark">Ceza Süresi (Ay)</label>
+                                <input name="SureAy" id="Yeni_SureAy" type="number" class="form-control" placeholder="Varsa yasaklama süresi (Ay)" />
+                                <small class="text-muted">Giriş yasağı süresi yoksa veya süresiz ise boş bırakınız.</small>
+                            </div>
+                            <div class="col-md-12 form-group">
+                                <label class="font-weight-bold text-dark">Açıklama / Kapsam</label>
+                                <textarea name="Aciklama" id="Yeni_Aciklama" class="form-control" rows="2" placeholder="Tahdit kodunun resmi açıklaması..."></textarea>
+                            </div>
+                            <div class="col-md-6 form-group">
+                                <label class="font-weight-bold text-danger">
+                                    <i class="fas fa-sign-in-alt mr-1"></i> Girişe Gelirse Yapılacak İşlem
+                                </label>
+                                <textarea name="GirisGelirse" id="Yeni_GirisGelirse" class="form-control" rows="3" placeholder="Yolcu yurda giriş kapısına geldiğinde uygulanacak prosedür..."></textarea>
+                            </div>
+                            <div class="col-md-6 form-group">
+                                <label class="font-weight-bold text-primary">
+                                    <i class="fas fa-sign-out-alt mr-1"></i> Çıkışa Gelirse Yapılacak İşlem
+                                </label>
+                                <textarea name="CikisGelirse" id="Yeni_CikisGelirse" class="form-control" rows="3" placeholder="Yolcu yurttan çıkış kapısına geldiğinde uygulanacak prosedür..."></textarea>
+                            </div>
+                            <div class="col-md-12 form-group">
+                                <label class="font-weight-bold text-dark">Mevzuat / Genelge &amp; Zengin İçerik</label>
+                                <textarea name="TahditMedia" id="Yeni_TahditMedia" class="form-control" rows="5"></textarea>
+                                <small class="text-muted">Resim yüklemek için editörün resim butonunu, genelge metinleri için tablo veya formatlama araçlarını kullanabilirsiniz.</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                            <i class="fas fa-times mr-1"></i> İptal
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save mr-1"></i> Tahdit Kodunu Kaydet
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================
+         6. MODAL: DÜZENLE
+         ================================================================ -->
+    <div class="modal fade modal-egm" id="editModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-edit"></i> Tahdit Kodunu Güncelle
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Kapat">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                @using (Html.BeginForm("Duzenle", "Tahdit", FormMethod.Post, new { id = "editForm" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <div class="modal-body">
+                        <input type="hidden" name="Id" id="Edit_Id" />
+                        <div class="row">
+                            <div class="col-md-4 form-group">
+                                <label class="font-weight-bold text-dark">Tahdit Kodu <span class="text-danger">*</span></label>
+                                <input name="Kod" id="Edit_Kod" class="form-control" required />
+                            </div>
+                            <div class="col-md-4 form-group">
+                                <label class="font-weight-bold text-dark">Ceza Süresi (Ay)</label>
+                                <input name="SureAy" id="Edit_SureAy" type="number" class="form-control" />
+                            </div>
+                            <div class="col-md-4 form-group">
+                                <label class="font-weight-bold text-dark">Durum</label>
+                                <div class="mt-2">
+                                    <input type="hidden" name="Aktif" id="Edit_Aktif_Hidden" value="false">
+                                    <div class="custom-control custom-switch">
+                                        <input type="checkbox" class="custom-control-input" id="Edit_Aktif">
+                                        <label class="custom-control-label font-weight-bold text-primary" for="Edit_Aktif">
+                                            <span id="Edit_AktifText">Aktif</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-12 form-group">
+                                <label class="font-weight-bold text-dark">Açıklama / Kapsam</label>
+                                <textarea name="Aciklama" id="Edit_Aciklama" class="form-control" rows="2"></textarea>
+                            </div>
+                            <div class="col-md-6 form-group">
+                                <label class="font-weight-bold text-danger">
+                                    <i class="fas fa-sign-in-alt mr-1"></i> Girişe Gelirse Yapılacak İşlem
+                                </label>
+                                <textarea name="GirisGelirse" id="Edit_GirisGelirse" class="form-control" rows="3"></textarea>
+                            </div>
+                            <div class="col-md-6 form-group">
+                                <label class="font-weight-bold text-primary">
+                                    <i class="fas fa-sign-out-alt mr-1"></i> Çıkışa Gelirse Yapılacak İşlem
+                                </label>
+                                <textarea name="CikisGelirse" id="Edit_CikisGelirse" class="form-control" rows="3"></textarea>
+                            </div>
+                            <div class="col-md-12 form-group">
+                                <label class="font-weight-bold text-dark">Mevzuat / Genelge &amp; Zengin İçerik</label>
+                                <textarea name="TahditMedia" id="Edit_TahditMedia" class="form-control" rows="5"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                            <i class="fas fa-times mr-1"></i> İptal
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save mr-1"></i> Güncellemeleri Kaydet
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+<!-- ================================================================
+     7. MODAL: DETAY GÖRÜNTÜLEME
+     ================================================================ -->
+<div class="modal fade modal-egm" id="detailModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-shield-alt"></i> Tahdit Kodu Detayları &amp; Uygulama Talimatı
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Kapat">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Yükleniyor Göstergesi -->
+                <div id="detailLoadingState" class="py-5 text-center text-primary">
+                    <i class="fas fa-spinner fa-spin fa-3x mb-3"></i>
+                    <p class="font-weight-bold">Tahdit detayları yükleniyor, lütfen bekleyiniz...</p>
+                </div>
+
+                <!-- Detay İçeriği -->
+                <div id="detailLoadedContent" style="display:none;">
+                    <!-- Başlık & Rozetler Kartı -->
+                    <div class="detail-card-section d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div>
+                            <span class="text-muted" style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Tahdit Kodu:</span>
+                            <h2 class="mb-0 font-weight-bold text-primary" id="detailKodTitle" style="font-size:26px;">—</h2>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span id="detailSureBadge" class="sure-badge sure-badge-highlight" style="font-size:13px; padding:6px 12px;"></span>
+                            <span id="detailAktifBadge"></span>
+                        </div>
+                    </div>
+
+                    <!-- Açıklama -->
+                    <div class="detail-card-section">
+                        <div class="detail-card-title">
+                            <i class="fas fa-info-circle text-info"></i> Açıklama ve Kapsam
+                        </div>
+                        <div class="detail-card-val" id="detailAciklama"></div>
+                    </div>
+
+                    <!-- Giriş & Çıkış Talimatları (İki Kolon) -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="detail-card-section h-100 mb-0">
+                                <div class="detail-card-title text-danger">
+                                    <i class="fas fa-sign-in-alt"></i> Girişe Gelirse Yapılacak İşlem
+                                </div>
+                                <div id="detailGirisBox" class="detail-alert-box detail-alert-giris">
+                                    <span id="detailGirisText"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <div class="detail-card-section h-100 mb-0">
+                                <div class="detail-card-title text-primary">
+                                    <i class="fas fa-sign-out-alt"></i> Çıkışa Gelirse Yapılacak İşlem
+                                </div>
+                                <div id="detailCikisBox" class="detail-alert-box detail-alert-cikis">
+                                    <span id="detailCikisText"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mevzuat & Zengin İçerik / Medya -->
+                    <div class="detail-card-section">
+                        <div class="detail-card-title">
+                            <i class="fas fa-paperclip text-secondary"></i> Mevzuat, Genelge &amp; Döküman Bilgisi
+                        </div>
+                        <div id="detailMediaContainer" class="detail-media-container" style="display:none;"></div>
+                        <div id="detailMediaEmpty" class="text-muted font-italic p-3 text-center bg-light rounded" style="font-size:13px;">
+                            <i class="fas fa-file-alt mr-1"></i> Bu tahdit kodu için kayıtlı ek döküman veya görsel bulunmamaktadır.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <div>
+                    @if (canManage)
+                    {
+                        <button type="button" class="btn btn-warning" id="btnDetailEditShortcut" style="display:none;">
+                            <i class="fas fa-edit mr-1"></i> Bu Kaydı Düzenle
+                        </button>
+                    }
+                </div>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i> Kapat
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="@Url.Content("~/js/tahdit-index.js")?v=2.0"></script>
+}

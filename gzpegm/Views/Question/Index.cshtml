@@ -1,0 +1,1501 @@
+@model List<gzpegm.Models.ViewModels.QuestionViewModel>
+@using System.Linq
+@{
+    ViewBag.Title = "Soru Havuzu - " + (ViewBag.ExamTitle ?? "Sınav");
+    Layout = "~/Views/Shared/_Master.cshtml";
+    ViewBag.UseDataTables = true;
+
+    var questions = Model ?? new List<gzpegm.Models.ViewModels.QuestionViewModel>();
+    int totalQuestions = questions.Count;
+    int activeQuestions = questions.Count(q => q.IsActive);
+    int passiveQuestions = questions.Count(q => !q.IsActive);
+    int totalPoints = questions.Where(q => q.IsActive).Sum(q => q.Points);
+    int multipleChoiceCount = questions.Count(q => q.QuestionType == "MultipleChoice");
+    int trueFalseCount = questions.Count(q => q.QuestionType == "TrueFalse");
+    int textCount = questions.Count(q => q.QuestionType == "Text");
+}
+
+<div class="question-management-container">
+
+    <!-- ÜST BİLGİ VE AKSİYON HERO BANNERI (EGM POLİS TEMASI) -->
+    <div class="question-hero-banner mb-4">
+        <div class="row align-items-center">
+            <div class="col-lg-7 col-md-6">
+                <div class="d-flex align-items-center">
+                    <div class="hero-icon-box mr-3 d-none d-sm-flex">
+                        <i class="fas fa-question-circle"></i>
+                    </div>
+                    <div>
+                        <div class="hero-breadcrumbs mb-1">
+                            <a href="@Url.Action("Index", "Course")" class="text-white-50"><i class="fas fa-book-open mr-1"></i>@(ViewBag.CourseTitle ?? "Ders")</a>
+                            <span class="text-white-50 mx-1">/</span>
+                            <a href="@Url.Action("Index", "Exam")" class="text-white-50"><i class="fas fa-file-signature mr-1"></i>@(ViewBag.ExamTitle ?? "Sınav")</a>
+                            <span class="text-white-50 mx-1">/</span>
+                            <span class="text-white font-weight-semibold">Soru Havuzu</span>
+                        </div>
+                        <h2 class="hero-title mb-1">@ViewBag.ExamTitle &mdash; Soru Havuzu</h2>
+                        <p class="hero-desc mb-0">Bu sınava ait soruları, çoktan seçmeli şıkları, puan ağırlıklarını ve soru medyalarını yönetin.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-5 col-md-6 text-md-right mt-3 mt-md-0">
+                <div class="d-flex justify-content-md-end align-items-center gap-2 flex-wrap">
+                    @if (ViewBag.CourseId != null)
+                    {
+                        <a href="@Url.Action("Details", "Course", new { id = ViewBag.CourseId })" class="btn btn-outline-light hero-action-btn mr-1" title="Kursa Dön">
+                            <i class="fas fa-graduation-cap mr-1"></i>Kursa Dön
+                        </a>
+                    }
+                    <a href="@Url.Action("Index", "Exam")" class="btn btn-outline-light hero-action-btn mr-1" title="Sınavlar Listesi">
+                        <i class="fas fa-arrow-left mr-1"></i>Sınavlara Dön
+                    </a>
+                    @if (ViewBag.CourseIsActive == false && ViewBag.CourseId != null)
+                    {
+                        <a href="@Url.Action("Review", "EducationPackage", new { id = ViewBag.CourseId })" class="btn btn-warning hero-action-btn mr-1 font-weight-bold" title="Taslak Kontrolü">
+                            <i class="fas fa-clipboard-check mr-1"></i>Taslak Kontrolü
+                        </a>
+                    }
+                    <button type="button" class="btn btn-success hero-action-btn font-weight-bold shadow-sm" data-toggle="modal" data-target="#createQuestionModal">
+                        <i class="fas fa-plus-circle mr-1"></i>Yeni Soru Ekle
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SİSTEM BİLDİRİM MESAJLARI -->
+    @if (TempData["msgSuccess"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm mb-4" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-check-circle fa-lg mr-2 text-success"></i>
+                <div>
+                    <strong>İşlem Başarılı!</strong> @TempData["msgSuccess"]
+                </div>
+            </div>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Kapat">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+    @if (TempData["msgWarning"] != null)
+    {
+        <div class="alert alert-warning alert-dismissible fade show shadow-sm mb-4" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-exclamation-triangle fa-lg mr-2 text-warning"></i>
+                <div>
+                    <strong>Uyarı:</strong> @TempData["msgWarning"]
+                </div>
+            </div>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Kapat">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+    @if (TempData["msgError"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-4" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-times-circle fa-lg mr-2 text-danger"></i>
+                <div>
+                    <strong>Hata:</strong> @TempData["msgError"]
+                </div>
+            </div>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Kapat">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
+    <!-- İSTATİSTİK METRİK KARTLARI (4 KART) -->
+    <div class="row stat-cards-row mb-4">
+        <div class="col-xl-3 col-sm-6 mb-3 mb-xl-0">
+            <div class="metric-card stat-blue">
+                <div class="metric-icon">
+                    <i class="fas fa-list-ol"></i>
+                </div>
+                <div class="metric-body">
+                    <div class="metric-value">@totalQuestions</div>
+                    <div class="metric-label">Toplam Soru</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-sm-6 mb-3 mb-xl-0">
+            <div class="metric-card stat-emerald">
+                <div class="metric-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="metric-body">
+                    <div class="metric-value">@activeQuestions</div>
+                    <div class="metric-label">Aktif Soru</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-sm-6 mb-3 mb-xl-0">
+            <div class="metric-card stat-teal">
+                <div class="metric-icon">
+                    <i class="fas fa-star"></i>
+                </div>
+                <div class="metric-body">
+                    <div class="metric-value">
+                        @totalPoints <small style="font-size: 1rem; opacity: 0.9;">/ 100</small>
+                    </div>
+                    <div class="metric-label">
+                        Toplam Puan Ağırlığı
+                        @if (totalPoints == 100)
+                        {
+                            <span class="badge badge-light text-success ml-1 font-weight-bold">100 Tamam</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-light text-danger ml-1 font-weight-bold">@(100 - totalPoints > 0 ? (100 - totalPoints) + " Puan Eksik" : (totalPoints - 100) + " Puan Fazla")</span>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-sm-6 mb-3 mb-xl-0">
+            <div class="metric-card stat-purple">
+                <div class="metric-icon">
+                    <i class="fas fa-layer-group"></i>
+                </div>
+                <div class="metric-body">
+                    <div class="metric-value" style="font-size: 1.3rem;">
+                        <span>@multipleChoiceCount Ç.Seçim</span>
+                    </div>
+                    <div class="metric-label">@trueFalseCount D/Y &bull; @textCount Klasik</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FİLTRE VE ARAMA ÇUBUĞU -->
+    <div class="card filter-toolbar-card mb-4 shadow-sm">
+        <div class="card-body p-3">
+            <div class="row align-items-center">
+                <!-- Arama Kutusu -->
+                <div class="col-lg-5 col-md-6 mb-2 mb-lg-0">
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-muted"></i></span>
+                        </div>
+                        <input type="text" id="questionSearchInput" class="form-control border-left-0" placeholder="Soru metni veya şık içeriği ara..." />
+                    </div>
+                </div>
+
+                <!-- Tür Filtresi -->
+                <div class="col-lg-3 col-md-6 mb-2 mb-lg-0">
+                    <select id="typeFilterSelect" class="form-control">
+                        <option value="">Tüm Soru Türleri</option>
+                        <option value="MultipleChoice">Çoktan Seçmeli</option>
+                        <option value="TrueFalse">Doğru / Yanlış</option>
+                        <option value="Text">Klasik (Yazılı)</option>
+                    </select>
+                </div>
+
+                <!-- Durum Filtresi -->
+                <div class="col-lg-4 col-md-12 text-lg-right">
+                    <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                        <label class="btn btn-outline-secondary btn-sm active status-filter-btn" data-status="all">
+                            <input type="radio" name="statusOption" autocomplete="off" checked> Tümü (@totalQuestions)
+                        </label>
+                        <label class="btn btn-outline-success btn-sm status-filter-btn" data-status="active">
+                            <input type="radio" name="statusOption" autocomplete="off"> Aktif (@activeQuestions)
+                        </label>
+                        <label class="btn btn-outline-danger btn-sm status-filter-btn" data-status="passive">
+                            <input type="radio" name="statusOption" autocomplete="off"> Pasif (@passiveQuestions)
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SORU LİSTESİ TABLOSU -->
+    <div class="card shadow-sm border-0 question-list-card">
+        <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-tasks text-primary mr-2" style="font-size: 1.2rem;"></i>
+                <h5 class="card-title font-weight-bold text-dark mb-0">Soru Listesi & Seçenekler</h5>
+            </div>
+            <span class="badge badge-primary px-3 py-2 font-weight-semibold" id="visibleCountBadge">Toplam @totalQuestions Soru</span>
+        </div>
+
+        <div class="card-body p-0">
+            @if (questions.Count > 0)
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" id="questionDataTable">
+                        <thead class="thead-light">
+                            <tr>
+                                <th style="width: 70px;" class="text-center">Sıra</th>
+                                <th>Soru Metni & Şıklar</th>
+                                <th style="width: 150px;" class="text-center">Soru Türü</th>
+                                <th style="width: 100px;" class="text-center">Puan</th>
+                                <th style="width: 140px;" class="text-center">Medya</th>
+                                <th style="width: 110px;" class="text-center">Durum</th>
+                                <th style="width: 130px;" class="text-center">İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var question in questions)
+                            {
+                                string rowStatus = question.IsActive ? "active" : "passive";
+                                string rowSearchText = (question.QuestionText + " " + (question.Options != null ? string.Join(" ", question.Options.Select(o => o.OptionText)) : "")).ToLower();
+
+                                <tr class="question-row @(question.IsActive ? "" : "table-secondary-passive")"
+                                    data-status="@rowStatus"
+                                    data-type="@question.QuestionType"
+                                    data-search="@rowSearchText">
+
+                                    <!-- SIRA NO -->
+                                    <td class="text-center font-weight-bold">
+                                        <span class="badge-order-circle @(question.IsActive ? "badge-order-active" : "badge-order-passive")">
+                                            @question.SortOrder
+                                        </span>
+                                    </td>
+
+                                    <!-- SORU METNİ VE ŞIKLAR -->
+                                    <td>
+                                        <div class="question-text-wrapper mb-2">
+                                            <span class="question-title-text font-weight-semibold text-dark">
+                                                @question.QuestionText
+                                            </span>
+                                            @if (!question.IsActive)
+                                            {
+                                                <span class="badge badge-danger ml-2 font-weight-normal"><i class="fas fa-ban mr-1"></i>Pasif</span>
+                                            }
+                                        </div>
+
+                                        <!-- ŞIKLAR / SEÇENEKLER ÖNİZLEMESİ -->
+                                        @if (question.Options != null && question.Options.Count > 0)
+                                        {
+                                            <div class="question-options-preview d-flex flex-wrap gap-2 mt-2">
+                                                @{
+                                                    char optionLetter = 'A';
+                                                }
+                                                @foreach (var opt in question.Options)
+                                                {
+                                                    <div class="option-preview-chip @(opt.IsCorrect ? "option-correct-chip" : "option-standard-chip")">
+                                                        <span class="option-letter-badge">@optionLetter</span>
+                                                        <span class="option-text-span">@opt.OptionText</span>
+                                                        @if (opt.IsCorrect)
+                                                        {
+                                                            <i class="fas fa-check-circle text-success ml-1" title="Doğru Cevap"></i>
+                                                        }
+                                                    </div>
+                                                    optionLetter++;
+                                                }
+                                            </div>
+                                        }
+                                        else if (question.QuestionType == "Text")
+                                        {
+                                            <div class="text-muted small mt-1">
+                                                <i class="fas fa-info-circle mr-1 text-primary"></i>Klasik soru — Değerlendirme eğitmen tarafından metin bazlı yapılır.
+                                            </div>
+                                        }
+                                    </td>
+
+                                    <!-- SORU TÜRÜ -->
+                                    <td class="text-center">
+                                        @if (question.QuestionType == "MultipleChoice")
+                                        {
+                                            <span class="badge badge-soft-primary px-2 py-1">
+                                                <i class="fas fa-list-ul mr-1"></i>Çoktan Seçmeli
+                                            </span>
+                                        }
+                                        else if (question.QuestionType == "TrueFalse")
+                                        {
+                                            <span class="badge badge-soft-info px-2 py-1">
+                                                <i class="fas fa-check-square mr-1"></i>Doğru / Yanlış
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-soft-secondary px-2 py-1">
+                                                <i class="fas fa-paragraph mr-1"></i>Klasik
+                                            </span>
+                                        }
+                                    </td>
+
+                                    <!-- PUAN -->
+                                    <td class="text-center">
+                                        <span class="badge-points">
+                                            @question.Points Puan
+                                        </span>
+                                    </td>
+
+                                    <!-- MEDYA DOSYALARI -->
+                                    <td class="text-center">
+                                        @if (question.MediaFiles != null && question.MediaFiles.Count > 0)
+                                        {
+                                            <div class="d-flex justify-content-center align-items-center gap-1 flex-wrap">
+                                                @foreach (var media in question.MediaFiles)
+                                                {
+                                                    if (media.MediaType == 1)
+                                                    {
+                                                        <div class="media-thumb-box" title="Görseli Büyüt" data-src="@media.MediaPath" data-type="image">
+                                                            <img src="@media.MediaPath" class="media-thumb-img" alt="Soru Görseli" />
+                                                            <span class="media-thumb-overlay"><i class="fas fa-search-plus"></i></span>
+                                                        </div>
+                                                    }
+                                                    else if (media.MediaType == 2)
+                                                    {
+                                                        <div class="media-thumb-box video-box" title="Videoyu Oynat" data-src="@media.MediaPath" data-type="video">
+                                                            <div class="media-video-placeholder">
+                                                                <i class="fas fa-play text-white"></i>
+                                                            </div>
+                                                            <span class="media-thumb-overlay"><i class="fas fa-play"></i></span>
+                                                        </div>
+                                                    }
+                                                }
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">&mdash;</span>
+                                        }
+                                    </td>
+
+                                    <!-- DURUM -->
+                                    <td class="text-center">
+                                        @if (question.IsActive)
+                                        {
+                                            <span class="badge-status-pill badge-active">
+                                                <span class="status-pulse-dot"></span> Aktif
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge-status-pill badge-passive">
+                                                <i class="fas fa-ban mr-1"></i> Pasif
+                                            </span>
+                                        }
+                                    </td>
+
+                                    <!-- İŞLEMLER -->
+                                    <td class="text-center">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <!-- Düzenle -->
+                                            <button type="button"
+                                                    class="btn btn-outline-primary edit-question-btn"
+                                                    data-questionid="@question.QuestionId"
+                                                    title="Soruyu Düzenle">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+
+                                            <!-- Durum Değiştir / Pasif / Aktif Yap -->
+                                            <button type="button"
+                                                    class="btn @(question.IsActive ? "btn-outline-warning" : "btn-outline-success") delete-question-btn"
+                                                    data-questionid="@question.QuestionId"
+                                                    data-isactive="@(question.IsActive ? "true" : "false")"
+                                                    title="@(question.IsActive ? "Pasife Al / Sil" : "Yeniden Aktif Et")">
+                                                <i class="fas @(question.IsActive ? "fa-ban" : "fa-check")"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <div class="empty-state-icon mb-3">
+                        <i class="fas fa-folder-open text-muted" style="font-size: 3.5rem;"></i>
+                    </div>
+                    <h5 class="text-dark font-weight-bold">Henüz Soru Eklenmemiş</h5>
+                    <p class="text-muted mb-3">Bu sınava henüz soru havuzundan soru tanımlanmamıştır. Aşağıdaki butondan hemen soru ekleyebilirsiniz.</p>
+                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#createQuestionModal">
+                        <i class="fas fa-plus mr-1"></i>İlk Soruyu Ekle
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- ===================== YENİ SORU EKLEME MODALI (CREATE) ===================== -->
+<div class="modal fade" id="createQuestionModal" tabindex="-1" role="dialog" aria-labelledby="createQuestionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+        <div class="modal-content border-0 shadow-lg">
+            <form id="createQuestionForm" method="post" action="@Url.Action("CreateQuestion", "Question")" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="ExamId" value="@(ViewBag.ExamId ?? Request.QueryString["examId"] ?? "0")" />
+
+                <!-- MODAL HEADER -->
+                <div class="modal-header modal-hero-header text-white">
+                    <div class="d-flex align-items-center">
+                        <div class="modal-header-icon mr-3">
+                            <i class="fas fa-plus-circle"></i>
+                        </div>
+                        <div>
+                            <h5 class="modal-title font-weight-bold text-white mb-0" id="createQuestionModalLabel">Yeni Soru Ekle</h5>
+                            <small class="text-white-50">Soru metnini, türünü, puanını ve varsa şıklarını tanımlayın</small>
+                        </div>
+                    </div>
+                    <button type="button" class="close text-white opacity-8" data-dismiss="modal" aria-label="Kapat">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+
+                <!-- MODAL BODY -->
+                <div class="modal-body p-4 bg-light-subtle">
+
+                    <!-- Soru Metni -->
+                    <div class="form-group mb-3">
+                        <label class="form-label font-weight-bold text-dark">
+                            Soru Metni <span class="text-danger">*</span>
+                        </label>
+                        <textarea class="form-control" name="QuestionText" rows="3" required placeholder="Soru metnini detaylı şekilde buraya yazınız..."></textarea>
+                    </div>
+
+                    <!-- Tür, Puan ve Sıra -->
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label font-weight-bold text-dark">Soru Türü <span class="text-danger">*</span></label>
+                            <select class="form-control" id="createQuestionTypeSelect" name="QuestionType" required>
+                                <option value="MultipleChoice" selected>Çoktan Seçmeli</option>
+                                <option value="TrueFalse">Doğru / Yanlış</option>
+                                <option value="Text">Klasik (Yazılı)</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label font-weight-bold text-dark">Puan <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" name="Points" value="10" min="1" max="100" required />
+                                <div class="input-group-append">
+                                    <span class="input-group-text bg-white">Puan</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label font-weight-bold text-dark">Soru Sırası <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" name="SortOrder" value="@(totalQuestions + 1)" min="1" required />
+                        </div>
+                    </div>
+
+                    <!-- ÇOKTAN SEÇMELİ ŞIKLAR BÖLÜMÜ -->
+                    <div id="createOptionsSection" class="options-container-box p-3 mb-3 border rounded bg-white shadow-sm">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label class="form-label font-weight-bold text-dark mb-0">
+                                <i class="fas fa-list-ul mr-1 text-primary"></i>Şıklar & Seçenekler <span class="text-danger">*</span>
+                            </label>
+                            <small class="text-muted"><i class="fas fa-info-circle mr-1"></i>Doğru şıkkı yanındaki kutucuktan işaretleyin</small>
+                        </div>
+
+                        <div id="createOptionsContainer" class="mb-2">
+                            <!-- Dinamik şıklar JavaScript ile doldurulacak -->
+                        </div>
+
+                        <button type="button" id="createAddOptionBtn" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-plus mr-1"></i>Yeni Şık Ekle
+                        </button>
+                    </div>
+
+                    <!-- KLASİK SORU BİLGİLENDİRMESİ -->
+                    <div id="createTextNotice" class="alert alert-info py-2 px-3 mb-3 d-none">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        <strong>Klasik Yazılı Soru:</strong> Bu soru tipi için şık tanımlanmaz. Sınav esnasında adaya metin kutusu sunulur.
+                    </div>
+
+                    <!-- MEDYA EKLEME BÖLÜMÜ -->
+                    <div class="media-upload-section p-3 border rounded bg-white shadow-sm">
+                        <label class="form-label font-weight-bold text-dark mb-2">
+                            <i class="fas fa-paperclip mr-1 text-primary"></i>Medya Dosyaları Ekle (İsteğe Bağlı)
+                        </label>
+                        <div class="row">
+                            <div class="col-md-6 mb-2">
+                                <label class="small text-muted font-weight-semibold mb-1"><i class="fas fa-image mr-1"></i>Görsel Dosyaları (JPG, PNG)</label>
+                                <div class="custom-file">
+                                    <input type="file" class="custom-file-input" id="createImageFiles" name="ImageFiles" accept="image/png,image/jpeg" multiple>
+                                    <label class="custom-file-label" for="createImageFiles">Görsel seçin...</label>
+                                </div>
+                                <div id="createImagePreviewContainer" class="d-flex flex-wrap gap-2 mt-2"></div>
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="small text-muted font-weight-semibold mb-1"><i class="fas fa-video mr-1"></i>Video Dosyaları (MP4)</label>
+                                <div class="custom-file">
+                                    <input type="file" class="custom-file-input" id="createVideoFiles" name="VideoFiles" accept="video/mp4" multiple>
+                                    <label class="custom-file-label" for="createVideoFiles">Video seçin...</label>
+                                </div>
+                                <div id="createVideoPreviewContainer" class="d-flex flex-wrap gap-2 mt-2"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- MODAL FOOTER -->
+                <div class="modal-footer bg-white border-top">
+                    <button type="button" class="btn btn-secondary px-3" data-dismiss="modal">
+                        <i class="fas fa-times mr-1"></i>İptal
+                    </button>
+                    <button type="submit" class="btn btn-success px-4 font-weight-bold">
+                        <i class="fas fa-save mr-1"></i>Soruyu Kaydet
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== SORU DÜZENLEME MODALI (EDIT) ===================== -->
+<div class="modal fade" id="editQuestionModal" tabindex="-1" role="dialog" aria-labelledby="editQuestionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+        <div class="modal-content border-0 shadow-lg">
+            <form id="editQuestionForm" method="post" action="@Url.Action("EditQuestion", "Question")" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="editQuestionId" name="QuestionId" />
+                <input type="hidden" name="ExamId" value="@(ViewBag.ExamId ?? Request.QueryString["examId"] ?? "0")" />
+
+                <!-- MODAL HEADER -->
+                <div class="modal-header modal-hero-header text-white">
+                    <div class="d-flex align-items-center">
+                        <div class="modal-header-icon mr-3">
+                            <i class="fas fa-edit"></i>
+                        </div>
+                        <div>
+                            <h5 class="modal-title font-weight-bold text-white mb-0" id="editQuestionModalLabel">Soru Düzenle</h5>
+                            <small class="text-white-50">Soru metnini, puanını, şıklarını ve medyalarını güncelleyin</small>
+                        </div>
+                    </div>
+                    <button type="button" class="close text-white opacity-8" data-dismiss="modal" aria-label="Kapat">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+
+                <!-- MODAL BODY -->
+                <div class="modal-body p-4 bg-light-subtle">
+
+                    <!-- Soru Metni -->
+                    <div class="form-group mb-3">
+                        <label class="form-label font-weight-bold text-dark">
+                            Soru Metni <span class="text-danger">*</span>
+                        </label>
+                        <textarea class="form-control" id="editQuestionText" name="QuestionText" rows="3" required placeholder="Soru metnini yazınız..."></textarea>
+                    </div>
+
+                    <!-- Tür, Puan ve Sıra -->
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label font-weight-bold text-dark">Soru Türü <span class="text-danger">*</span></label>
+                            <select class="form-control" id="editQuestionTypeSelect" name="QuestionType" required>
+                                <option value="MultipleChoice">Çoktan Seçmeli</option>
+                                <option value="TrueFalse">Doğru / Yanlış</option>
+                                <option value="Text">Klasik (Yazılı)</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label font-weight-bold text-dark">Puan <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="editPoints" name="Points" min="1" max="100" required />
+                                <div class="input-group-append">
+                                    <span class="input-group-text bg-white">Puan</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label font-weight-bold text-dark">Soru Sırası <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="editSortOrder" name="SortOrder" min="1" required />
+                        </div>
+                    </div>
+
+                    <!-- ŞIKLAR BÖLÜMÜ -->
+                    <div id="editOptionsSection" class="options-container-box p-3 mb-3 border rounded bg-white shadow-sm">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label class="form-label font-weight-bold text-dark mb-0">
+                                <i class="fas fa-list-ul mr-1 text-primary"></i>Şıklar & Seçenekler <span class="text-danger">*</span>
+                            </label>
+                            <small class="text-muted"><i class="fas fa-info-circle mr-1"></i>Doğru şıkkı yanındaki kutucuktan işaretleyin</small>
+                        </div>
+
+                        <div id="editOptionsContainer" class="mb-2"></div>
+
+                        <button type="button" id="editAddOptionBtn" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-plus mr-1"></i>Yeni Şık Ekle
+                        </button>
+                    </div>
+
+                    <!-- MEVCUT MEDYALAR -->
+                    <div class="existing-media-section p-3 mb-3 border rounded bg-white shadow-sm">
+                        <label class="form-label font-weight-bold text-dark mb-2">
+                            <i class="fas fa-images mr-1 text-primary"></i>Mevcut Soru Medyaları
+                        </label>
+                        <div id="editQuestionMediaContainer" class="d-flex flex-wrap gap-2">
+                            <span class="text-muted small">Yüklenmiş medya bulunmuyor.</span>
+                        </div>
+                    </div>
+
+                    <!-- YENİ MEDYA EKLEME -->
+                    <div class="new-media-section p-3 border rounded bg-white shadow-sm">
+                        <label class="form-label font-weight-bold text-dark mb-2">
+                            <i class="fas fa-plus mr-1 text-success"></i>Yeni Medya Ekle (İsteğe Bağlı)
+                        </label>
+                        <div class="row">
+                            <div class="col-md-6 mb-2">
+                                <label class="small text-muted font-weight-semibold mb-1"><i class="fas fa-image mr-1"></i>Görsel Dosyaları (JPG, PNG)</label>
+                                <div class="custom-file">
+                                    <input type="file" class="custom-file-input" id="editImageFiles" name="ImageFiles" accept="image/png,image/jpeg" multiple>
+                                    <label class="custom-file-label" for="editImageFiles">Görsel seçin...</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="small text-muted font-weight-semibold mb-1"><i class="fas fa-video mr-1"></i>Video Dosyaları (MP4)</label>
+                                <div class="custom-file">
+                                    <input type="file" class="custom-file-input" id="editVideoFiles" name="VideoFiles" accept="video/mp4" multiple>
+                                    <label class="custom-file-label" for="editVideoFiles">Video seçin...</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- MODAL FOOTER -->
+                <div class="modal-footer bg-white border-top">
+                    <button type="button" class="btn btn-secondary px-3" data-dismiss="modal">
+                        <i class="fas fa-times mr-1"></i>İptal
+                    </button>
+                    <button type="submit" class="btn btn-primary px-4 font-weight-bold">
+                        <i class="fas fa-check mr-1"></i>Değişiklikleri Kaydet
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== MEDYA ÖNİZLEME LIGHTBOX MODALI ===================== -->
+<div class="modal fade" id="mediaLightboxModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content border-0 shadow-lg bg-dark text-white">
+            <div class="modal-header border-0 pb-0">
+                <h6 class="modal-title font-weight-bold text-white"><i class="fas fa-photo-video mr-2"></i>Medya Önizleme</h6>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Kapat">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body text-center p-3" id="lightboxModalBody">
+                <!-- Medya içeriği buraya yerleşecek -->
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        /* ================= KAPSAYICI VE GENEL STİLLER ================= */
+        .question-management-container {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', Arial, sans-serif;
+            color: #1e293b;
+        }
+
+        /* HERO BANNER (EGM POLİS TEMASI) */
+        .question-hero-banner {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            border-radius: 12px;
+            padding: 24px 28px;
+            color: #ffffff;
+            box-shadow: 0 8px 24px rgba(30, 60, 114, 0.18);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .question-hero-banner::after {
+            content: '';
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 240px;
+            height: 240px;
+            background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .hero-icon-box {
+            width: 58px;
+            height: 58px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.16);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: #ffffff;
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            flex-shrink: 0;
+        }
+
+        .hero-title {
+            font-size: 1.65rem;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: -0.3px;
+        }
+
+        .hero-desc {
+            font-size: 0.92rem;
+            color: rgba(255, 255, 255, 0.88);
+            line-height: 1.5;
+            max-width: 780px;
+        }
+
+        .hero-breadcrumbs a {
+            font-size: 0.82rem;
+            transition: color 0.2s;
+        }
+
+        .hero-breadcrumbs a:hover {
+            color: #ffffff !important;
+            text-decoration: underline;
+        }
+
+        .hero-action-btn {
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 0.88rem;
+            transition: all 0.2s ease;
+        }
+
+        /* METRİK STAT KARTLARI */
+        .metric-card {
+            border-radius: 12px;
+            padding: 18px 20px;
+            display: flex;
+            align-items: center;
+            color: #ffffff;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.14);
+        }
+
+        .metric-card.stat-blue {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        }
+
+        .metric-card.stat-emerald {
+            background: linear-gradient(135deg, #065f46 0%, #10b981 100%);
+        }
+
+        .metric-card.stat-teal {
+            background: linear-gradient(135deg, #0e7490 0%, #06b6d4 100%);
+        }
+
+        .metric-card.stat-purple {
+            background: linear-gradient(135deg, #581c87 0%, #7c3aed 100%);
+        }
+
+        .metric-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.18);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-right: 16px;
+            flex-shrink: 0;
+        }
+
+        .metric-value {
+            font-size: 1.65rem;
+            font-weight: 700;
+            line-height: 1.1;
+        }
+
+        .metric-label {
+            font-size: 0.84rem;
+            color: rgba(255, 255, 255, 0.88);
+            font-weight: 500;
+            margin-top: 2px;
+        }
+
+        /* FİLTRE VE ARAÇ ÇUBUĞU */
+        .filter-toolbar-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            background: #ffffff;
+        }
+
+        /* TABLO VE SATIR ELEMANLARI */
+        .question-list-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .table thead th {
+            font-size: 0.82rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #475569;
+            border-top: none;
+            border-bottom: 2px solid #e2e8f0;
+            padding: 14px 16px;
+            background-color: #f8fafc;
+        }
+
+        .table tbody td {
+            padding: 14px 16px;
+            vertical-align: middle;
+            border-top: 1px solid #f1f5f9;
+        }
+
+        .table-secondary-passive {
+            background-color: #f8fafc !important;
+            opacity: 0.72;
+        }
+
+        .table-secondary-passive:hover {
+            opacity: 0.95;
+        }
+
+        /* SIRA NO DAİRESİ */
+        .badge-order-circle {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.88rem;
+        }
+
+        .badge-order-active {
+            background-color: #eff6ff;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+        }
+
+        .badge-order-passive {
+            background-color: #f1f5f9;
+            color: #64748b;
+            border: 1px solid #cbd5e1;
+        }
+
+        /* SORU METNİ VE ŞIK ÇİPLERİ */
+        .question-title-text {
+            font-size: 0.98rem;
+            color: #0f172a;
+            line-height: 1.45;
+        }
+
+        .option-preview-chip {
+            display: inline-flex;
+            align-items: center;
+            font-size: 0.8rem;
+            padding: 4px 10px;
+            border-radius: 20px;
+            margin-right: 6px;
+            margin-bottom: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .option-standard-chip {
+            background-color: #f1f5f9;
+            color: #334155;
+            border: 1px solid #e2e8f0;
+        }
+
+        .option-correct-chip {
+            background-color: #dcfce7;
+            color: #15803d;
+            border: 1px solid #86efac;
+            font-weight: 600;
+        }
+
+        .option-letter-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.08);
+            font-size: 0.7rem;
+            font-weight: 700;
+            margin-right: 6px;
+        }
+
+        /* TÜR ROZETLERİ */
+        .badge-soft-primary {
+            background-color: #dbeafe;
+            color: #1d4ed8;
+            border: 1px solid #bfdbfe;
+            font-weight: 600;
+            font-size: 0.8rem;
+            border-radius: 6px;
+        }
+
+        .badge-soft-info {
+            background-color: #cffafe;
+            color: #0e7490;
+            border: 1px solid #a5f3fc;
+            font-weight: 600;
+            font-size: 0.8rem;
+            border-radius: 6px;
+        }
+
+        .badge-soft-secondary {
+            background-color: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+            font-weight: 600;
+            font-size: 0.8rem;
+            border-radius: 6px;
+        }
+
+        .badge-points {
+            display: inline-block;
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fde68a;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+
+        /* MEDYA THUMBNAIL */
+        .media-thumb-box {
+            position: relative;
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #cbd5e1;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-block;
+        }
+
+        .media-thumb-box:hover {
+            transform: scale(1.08);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+
+        .media-thumb-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .media-thumb-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.45);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 0.85rem;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .media-thumb-box:hover .media-thumb-overlay {
+            opacity: 1;
+        }
+
+        .media-thumb-box.video-box {
+            background: #1e293b;
+        }
+
+        .media-video-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+        }
+
+        /* DURUM ROZETLERİ */
+        .badge-status-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .badge-status-pill.badge-active {
+            background-color: #dcfce7;
+            color: #15803d;
+            border: 1px solid #86efac;
+        }
+
+        .badge-status-pill.badge-passive {
+            background-color: #fee2e2;
+            color: #b91c1c;
+            border: 1px solid #fca5a5;
+        }
+
+        .status-pulse-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background-color: #22c55e;
+            display: inline-block;
+            margin-right: 6px;
+            box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.25);
+        }
+
+        /* MODAL POLİS GRADIENT HEADER */
+        .modal-hero-header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            border-radius: calc(0.3rem - 1px) calc(0.3rem - 1px) 0 0;
+            padding: 16px 24px;
+        }
+
+        .modal-header-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.18);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        /* MODAL ŞIK SATIRLARI */
+        .option-row-item {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            transition: all 0.2s;
+        }
+
+        .option-row-item:hover {
+            border-color: #cbd5e1;
+            background: #ffffff;
+        }
+
+        .option-row-item.is-correct-selected {
+            border-color: #86efac;
+            background: #f0fdf4;
+        }
+
+        /* MEVCUT MEDYA KUTUSU (MODAL) */
+        .media-edit-box {
+            position: relative;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+            width: 110px;
+            height: 80px;
+            background: #f8fafc;
+        }
+
+        .media-edit-box img,
+        .media-edit-box video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .media-delete-btn {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+
+        @@media (max-width: 767.98px) {
+            .hero-title {
+                font-size: 1.25rem;
+            }
+            .question-hero-banner {
+                padding: 18px 20px;
+            }
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        $(function () {
+            'use strict';
+
+            var currentSearch = '';
+            var currentType = '';
+            var currentStatus = 'all';
+
+            var $questionRows = $('.question-row');
+
+            // FİLTRE VE ARAMA UYGULA
+            function applyFilters() {
+                var visibleCount = 0;
+
+                $questionRows.each(function () {
+                    var $row = $(this);
+                    var text = ($row.attr('data-search') || '').toLowerCase();
+                    var type = $row.attr('data-type') || '';
+                    var status = $row.attr('data-status') || '';
+
+                    var matchSearch = !currentSearch || text.indexOf(currentSearch) >= 0;
+                    var matchType = !currentType || type === currentType;
+                    var matchStatus = currentStatus === 'all' || status === currentStatus;
+
+                    if (matchSearch && matchType && matchStatus) {
+                        $row.show();
+                        visibleCount++;
+                    } else {
+                        $row.hide();
+                    }
+                });
+
+                $('#visibleCountBadge').text('Gösterilen: ' + visibleCount + ' Soru');
+            }
+
+            // Arama kutusu
+            $('#questionSearchInput').on('keyup', function () {
+                currentSearch = $(this).val().trim().toLowerCase();
+                applyFilters();
+            });
+
+            // Tür seçimi
+            $('#typeFilterSelect').on('change', function () {
+                currentType = $(this).val();
+                applyFilters();
+            });
+
+            // Durum butonları
+            $('.status-filter-btn').on('click', function () {
+                currentStatus = $(this).attr('data-status');
+                applyFilters();
+            });
+
+            /* ================= DİNAMİK ŞIK OLUŞTURMA YARDIMCISI ================= */
+            function buildOptionRowHtml(index, text, isCorrect, isTrueFalse) {
+                var checkedAttr = isCorrect ? 'checked' : '';
+                var selectedClass = isCorrect ? 'is-correct-selected' : '';
+                var letter = String.fromCharCode(65 + index);
+
+                return '<div class="option-row-item d-flex align-items-center ' + selectedClass + '" data-idx="' + index + '">' +
+                            '<div class="mr-2 font-weight-bold text-muted" style="width: 22px;">' + letter + '</div>' +
+                            '<div class="custom-control custom-checkbox mr-3" title="Doğru Şık İşareti">' +
+                                '<input type="checkbox" class="custom-control-input option-correct-chk" id="optChk_' + index + '_' + Math.random().toString(36).substring(7) + '" name="Options[' + index + '].IsCorrect" value="true" ' + checkedAttr + ' />' +
+                                '<label class="custom-control-label small font-weight-bold text-success" for="' + 'optChk_' + index + '_' + Math.random().toString(36).substring(7) + '">Doğru</label>' +
+                            '</div>' +
+                            '<input type="text" class="form-control form-control-sm mr-2" name="Options[' + index + '].OptionText" value="' + (text || '') + '" placeholder="' + letter + ' şıkkı metnini giriniz..." required ' + (isTrueFalse ? 'readonly' : '') + ' />' +
+                            (!isTrueFalse ? '<button type="button" class="btn btn-outline-danger btn-sm remove-option-row-btn" title="Şıkkı Kaldır"><i class="fas fa-trash"></i></button>' : '') +
+                       '</div>';
+            }
+
+            // CREATE MODAL: Şık ekleme ve tür değişimleri
+            var createIdx = 0;
+
+            function initCreateOptions(type) {
+                var $c = $('#createOptionsContainer');
+                $c.empty();
+                createIdx = 0;
+
+                if (type === 'MultipleChoice') {
+                    $('#createOptionsSection').removeClass('d-none');
+                    $('#createTextNotice').addClass('d-none');
+                    $('#createAddOptionBtn').removeClass('d-none');
+
+                    // 4 varsayılan şık ekle (A, B, C, D)
+                    for (var i = 0; i < 4; i++) {
+                        $c.append(buildOptionRowHtml(createIdx++, '', i === 0, false));
+                    }
+                } else if (type === 'TrueFalse') {
+                    $('#createOptionsSection').removeClass('d-none');
+                    $('#createTextNotice').addClass('d-none');
+                    $('#createAddOptionBtn').addClass('d-none');
+
+                    // 2 şık: Doğru / Yanlış
+                    $c.append(buildOptionRowHtml(createIdx++, 'Doğru', true, true));
+                    $c.append(buildOptionRowHtml(createIdx++, 'Yanlış', false, true));
+                } else if (type === 'Text') {
+                    $('#createOptionsSection').addClass('d-none');
+                    $('#createTextNotice').removeClass('d-none');
+                }
+            }
+
+            $('#createQuestionTypeSelect').on('change', function () {
+                initCreateOptions($(this).val());
+            });
+
+            // Modal açıldığında varsayılanı yükle
+            $('#createQuestionModal').on('show.bs.modal', function () {
+                if ($('#createOptionsContainer .option-row-item').length === 0) {
+                    initCreateOptions($('#createQuestionTypeSelect').val());
+                }
+            });
+
+            $('#createAddOptionBtn').on('click', function () {
+                $('#createOptionsContainer').append(buildOptionRowHtml(createIdx++, '', false, false));
+            });
+
+            // Şık silme ve yeniden indeksleme
+            $(document).on('click', '.remove-option-row-btn', function () {
+                var $container = $(this).closest('#createOptionsContainer, #editOptionsContainer');
+                $(this).closest('.option-row-item').remove();
+
+                // Reindex
+                $container.find('.option-row-item').each(function (i, el) {
+                    var $el = $(el);
+                    $el.attr('data-idx', i);
+                    $el.find('.mr-2.font-weight-bold').text(String.fromCharCode(65 + i));
+                    $el.find('input[type="checkbox"]').attr('name', 'Options[' + i + '].IsCorrect');
+                    $el.find('input[type="text"]').attr('name', 'Options[' + i + '].OptionText');
+                });
+
+                if ($container.attr('id') === 'createOptionsContainer') {
+                    createIdx = $('#createOptionsContainer .option-row-item').length;
+                } else {
+                    editIdx = $('#editOptionsContainer .option-row-item').length;
+                }
+            });
+
+            // Checkbox seçildiğinde satır stili değişimi
+            $(document).on('change', '.option-correct-chk', function () {
+                var $item = $(this).closest('.option-row-item');
+                if ($(this).is(':checked')) {
+                    $item.addClass('is-correct-selected');
+                } else {
+                    $item.removeClass('is-correct-selected');
+                }
+            });
+
+            /* ================= EDIT MODAL AJAX İŞLEMLERİ ================= */
+            var editIdx = 0;
+
+            function populateEditOptions(options, type) {
+                var $c = $('#editOptionsContainer');
+                $c.empty();
+                editIdx = 0;
+
+                if (type === 'Text') {
+                    $('#editOptionsSection').addClass('d-none');
+                    return;
+                }
+
+                $('#editOptionsSection').removeClass('d-none');
+                var isTrueFalse = (type === 'TrueFalse');
+
+                if (isTrueFalse) {
+                    $('#editAddOptionBtn').addClass('d-none');
+                } else {
+                    $('#editAddOptionBtn').removeClass('d-none');
+                }
+
+                if (options && options.length) {
+                    options.forEach(function (opt) {
+                        $c.append(buildOptionRowHtml(editIdx++, opt.OptionText, opt.IsCorrect, isTrueFalse));
+                    });
+                } else {
+                    if (isTrueFalse) {
+                        $c.append(buildOptionRowHtml(editIdx++, 'Doğru', true, true));
+                        $c.append(buildOptionRowHtml(editIdx++, 'Yanlış', false, true));
+                    } else {
+                        $c.append(buildOptionRowHtml(editIdx++, '', true, false));
+                        $c.append(buildOptionRowHtml(editIdx++, '', false, false));
+                    }
+                }
+            }
+
+            $('#editAddOptionBtn').on('click', function () {
+                $('#editOptionsContainer').append(buildOptionRowHtml(editIdx++, '', false, false));
+            });
+
+            $('#editQuestionTypeSelect').on('change', function () {
+                var type = $(this).val();
+                if (type === 'Text') {
+                    $('#editOptionsSection').addClass('d-none');
+                } else {
+                    $('#editOptionsSection').removeClass('d-none');
+                    if (type === 'TrueFalse') {
+                        $('#editAddOptionBtn').addClass('d-none');
+                    } else {
+                        $('#editAddOptionBtn').removeClass('d-none');
+                    }
+                }
+            });
+
+            // Düzenle butonuna tıklama
+            $(document).on('click', '.edit-question-btn', function () {
+                var questionId = $(this).data('questionid');
+                var $btn = $(this);
+                $btn.prop('disabled', true);
+
+                $.post('@Url.Action("GetQuestionDetails", "Question")',
+                    {
+                        questionId: questionId,
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').first().val()
+                    },
+                    function (res) {
+                        $btn.prop('disabled', false);
+
+                        if (!res.success) {
+                            alert(res.message || 'Soru bilgileri alınamadı.');
+                            return;
+                        }
+
+                        var q = res.question;
+                        $('#editQuestionId').val(q.QuestionId);
+                        $('#editQuestionText').val(q.QuestionText);
+                        $('#editQuestionTypeSelect').val(q.QuestionType);
+                        $('#editPoints').val(q.Points);
+                        $('#editSortOrder').val(q.SortOrder);
+
+                        // Şıkları doldur
+                        populateEditOptions(q.Options, q.QuestionType);
+
+                        // Medyaları doldur
+                        var $mediaContainer = $('#editQuestionMediaContainer');
+                        $mediaContainer.empty();
+
+                        if (q.MediaFiles && q.MediaFiles.length > 0) {
+                            q.MediaFiles.forEach(function (m) {
+                                var html = '<div class="media-edit-box mr-2 mb-2" data-mediaid="' + m.MediaId + '">';
+                                if (m.MediaType === 1) {
+                                    html += '<img src="' + m.MediaPath + '" alt="Medya" />';
+                                } else if (m.MediaType === 2) {
+                                    html += '<video controls><source src="' + m.MediaPath + '" type="video/mp4"></video>';
+                                }
+                                html += '<button type="button" class="btn btn-danger btn-sm media-delete-btn" data-mediaid="' + m.MediaId + '" title="Medyayı Sil"><i class="fas fa-trash"></i></button>';
+                                html += '</div>';
+                                $mediaContainer.append(html);
+                            });
+                        } else {
+                            $mediaContainer.html('<span class="text-muted small">Yüklenmiş medya bulunmuyor.</span>');
+                        }
+
+                        $('#editQuestionModal').modal('show');
+                    }
+                ).fail(function () {
+                    $btn.prop('disabled', false);
+                    alert('Sunucu ile iletişim kurulurken bir hata oluştu.');
+                });
+            });
+
+            /* ================= MEDYA SİLME (AJAX) ================= */
+            $(document).on('click', '.media-delete-btn', function () {
+                if (!confirm('Bu görsel veya video silinsin mi?')) return;
+
+                var mediaId = $(this).data('mediaid');
+                var $box = $(this).closest('.media-edit-box');
+
+                $.post('@Url.Action("DeleteQuestionMedia", "Question")',
+                    {
+                        mediaId: mediaId,
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').first().val()
+                    },
+                    function (res) {
+                        if (res.success) {
+                            $box.fadeOut(250, function () {
+                                $(this).remove();
+                                if ($('#editQuestionMediaContainer .media-edit-box').length === 0) {
+                                    $('#editQuestionMediaContainer').html('<span class="text-muted small">Yüklenmiş medya bulunmuyor.</span>');
+                                }
+                            });
+                        } else {
+                            alert(res.message || 'Medya silinemedi.');
+                        }
+                    }
+                ).fail(function () {
+                    alert('Sunucu hatası oluştu.');
+                });
+            });
+
+            /* ================= SORU SİL / PASİF / AKTİF YAP ================= */
+            $(document).on('click', '.delete-question-btn', function () {
+                var questionId = $(this).data('questionid');
+                var isActive = $(this).data('isactive') === true || $(this).data('isactive') === 'true';
+
+                var confirmMsg = isActive
+                    ? 'Bu soruyu pasif duruma almak veya silmek istediğinizden emin misiniz?'
+                    : 'Bu pasif soruyu yeniden aktif duruma getirmek istiyor musunuz?';
+
+                if (!confirm(confirmMsg)) return;
+
+                var $btn = $(this);
+                $btn.prop('disabled', true);
+
+                $.ajax({
+                    url: '@Url.Action("DeleteQuestion", "Question")',
+                    type: 'POST',
+                    data: {
+                        questionId: questionId,
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').first().val()
+                    },
+                    success: function (res) {
+                        if (res.success) {
+                            location.reload();
+                        } else {
+                            $btn.prop('disabled', false);
+                            alert(res.message || 'İşlem gerçekleştirilemedi.');
+                        }
+                    },
+                    error: function () {
+                        $btn.prop('disabled', false);
+                        alert('Sunucu hatası oluştu.');
+                    }
+                });
+            });
+
+            /* ================= LIGHTBOX MEDYA ÖNİZLEME ================= */
+            $(document).on('click', '.media-thumb-box', function () {
+                var src = $(this).attr('data-src');
+                var type = $(this).attr('data-type');
+                var $body = $('#lightboxModalBody');
+
+                if (type === 'image') {
+                    $body.html('<img src="' + src + '" class="img-fluid rounded" style="max-height: 75vh;" alt="Önizleme" />');
+                } else if (type === 'video') {
+                    $body.html('<video controls autoplay style="width: 100%; max-height: 75vh;"><source src="' + src + '" type="video/mp4"></video>');
+                }
+
+                $('#mediaLightboxModal').modal('show');
+            });
+
+            $('#mediaLightboxModal').on('hidden.bs.modal', function () {
+                $('#lightboxModalBody').empty();
+            });
+
+            // Dosya input etiket güncellemesi
+            $('.custom-file-input').on('change', function () {
+                var filesCount = $(this)[0].files.length;
+                var fileName = filesCount > 1 ? filesCount + ' dosya seçildi' : $(this).val().split('\\').pop();
+                $(this).next('.custom-file-label').addClass('selected').html(fileName || 'Dosya seçin...');
+            });
+        });
+    </script>
+}

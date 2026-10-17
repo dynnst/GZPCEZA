@@ -1,0 +1,362 @@
+@model List<gzpegm.Models.ViewModels.ExamResultListItemViewModel>
+@{
+    ViewBag.Title = "Sınav Sonuçları";
+    Layout = "~/Views/Shared/_Master.cshtml";
+    ViewBag.UseDataTables = true;
+}
+
+<div class="page-wrapper">
+    <div class="container-fluid p-0">
+        <div class="page-heading mb-4 d-flex justify-content-between flex-wrap">
+            <div>
+                <h2 class="page-title">📊 @ViewBag.ExamTitle - Sınav Sonuçları</h2>
+                <p class="page-subtitle">Öğrenci performansları</p>
+            </div>
+            <a href="@Url.Action("Index", "Exam")" class="btn btn-secondary btn-sm">← Geri</a>
+        </div>
+
+        <div class="card">
+            <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <h4 class="card-title mb-0">📝 Sonuç Listesi</h4>
+                <p class="card-subtitle mt-1" style="color: rgba(255,255,255,0.8);">Toplam @(Model?.Count ?? 0) kayıt</p>
+            </div>
+            <div class="card-body p-0">
+                @if (Model != null && Model.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table" id="resultsTable">
+                            <thead>
+                                <tr><th>Öğrenci</th><th>Puan</th><th>Yüzde</th><th>Durum</th><th>Başlangıç</th><th>Bitiş</th><th>Süre</th><th></th></tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var r in Model)
+                                {
+                                    <tr>
+                                        <td class="student-name">@r.UserFullName</td>
+                                        <td><strong>@r.TotalScore</strong> / @r.MaxScore</td>
+                                        <td>@string.Format("{0:F1}%", r.Percentage)</td>
+                                        <td>@(r.IsPassed ? Html.Raw("<span class='badge bg-success'>✅ Başarılı</span>") : Html.Raw("<span class='badge bg-danger'>❌ Başarısız</span>"))</td>
+                                        <td>@(r.StartTime?.ToString("dd.MM.yyyy HH:mm") ?? "—")</td>
+                                        <td>@(r.EndTime?.ToString("dd.MM.yyyy HH:mm") ?? "—")</td>
+                                        <td><span class="badge bg-info">@(r.Duration.ToString("hh\\:mm\\:ss") ?? "00:00:00")</span></td>
+                                        <td><a href="@Url.Action("ExamResult", "StudentExam", new { id = r.ExamResultId })" class="btn btn-info btn-sm">🔍 Detay</a></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-5"><span class="empty-icon">📭</span><h5 class="text-muted mt-2">Sonuç yok</h5></div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        background: #f5f7fb;
+        font-family: 'Segoe UI', sans-serif;
+        margin: 0;
+    }
+
+    .page-wrapper {
+        padding: 20px;
+        background: #f5f7fb;
+        min-height: 100vh;
+    }
+
+    .container-fluid {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: #333;
+        margin: 0 0 8px;
+    }
+
+    .page-subtitle {
+        font-size: 14px;
+        color: #999;
+    }
+
+    .card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        background: white;
+        margin-bottom: 24px;
+    }
+
+    .card-header {
+        padding: 20px 25px;
+        border-bottom: 1px solid #eef2f7;
+    }
+
+    .card-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .card-subtitle {
+        font-size: 12px;
+        margin-top: 4px;
+        color: rgba(0,0,0,0.6);
+    }
+
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 0;
+    }
+
+        .table thead th {
+            background: #f8f9fa;
+            border-bottom: 2px solid #eef2f7;
+            font-weight: 600;
+            color: #666;
+            font-size: 13px;
+            padding: 15px;
+        }
+
+        .table tbody tr {
+            border-bottom: 1px solid #eef2f7;
+            transition: .2s;
+        }
+
+            .table tbody tr:hover {
+                background: #fafbfc;
+            }
+
+        .table tbody td {
+            padding: 15px;
+            vertical-align: middle;
+        }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        font-size: 12px;
+        font-weight: 500;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        text-decoration: none;
+        transition: .2s;
+    }
+
+    .btn-sm {
+        padding: 5px 12px;
+    }
+
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+    .btn-info {
+        background: #17a2b8;
+        color: white;
+    }
+
+        .btn-info:hover {
+            background: #138496;
+        }
+
+    .badge {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .bg-success {
+        background: #28a745;
+        color: white;
+    }
+
+    .bg-danger {
+        background: #dc3545;
+        color: white;
+    }
+
+    .bg-info {
+        background: #17a2b8;
+        color: white;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #e1e5eb;
+        border-radius: 8px;
+    }
+
+        .form-control:focus {
+            border-color: #667eea;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+        }
+
+    .border-bottom {
+        border-bottom: 1px solid #eef2f7;
+    }
+
+    .text-center {
+        text-align: center;
+    }
+
+    .text-muted {
+        color: #6c757d;
+    }
+
+    .py-5 {
+        padding: 3rem 0;
+    }
+
+    .mt-2 {
+        margin-top: 8px;
+    }
+
+    .mb-0 {
+        margin-bottom: 0;
+    }
+
+    .mb-4 {
+        margin-bottom: 24px;
+    }
+
+    .me-2 {
+        margin-right: 8px;
+    }
+
+    .empty-icon {
+        font-size: 48px;
+        display: block;
+    }
+
+    /* DataTable Özel Stil Ayarları */
+    .dataTables_wrapper .dataTables_filter {
+        text-align: left;
+    }
+
+        .dataTables_wrapper .dataTables_filter input {
+            border: 1px solid #e1e5eb;
+            border-radius: 8px;
+            padding: 8px 12px;
+            margin-left: 0.5em;
+        }
+
+    .dataTables_wrapper .dataTables_length {
+        margin-bottom: 15px;
+    }
+
+    .dataTables_wrapper .dataTables_info {
+        padding-top: 0.85em;
+        font-size: 12px;
+    }
+
+    .dataTables_wrapper .dataTables_paginate {
+        padding-top: 0.5em;
+    }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            padding: 5px 10px;
+            margin: 0 2px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            background: white;
+            color: #333;
+            cursor: pointer;
+            transition: .2s;
+        }
+
+            .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+                background: #667eea;
+                color: white;
+                border-color: #667eea;
+            }
+
+            .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+                background: #667eea;
+                color: white;
+                border-color: #667eea;
+            }
+
+            .dataTables_wrapper .dataTables_paginate .paginate_button.disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+
+    @@media (max-width: 768px) {
+        .page-wrapper {
+            padding: 15px;
+        }
+
+        .page-title {
+            font-size: 22px;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        .btn {
+            padding: 4px 10px;
+        }
+
+        .dataTables_wrapper .dataTables_length,
+        .dataTables_wrapper .dataTables_filter {
+            text-align: center;
+        }
+    }
+</style>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('#resultsTable').DataTable({
+                language: {
+                    search: "Ara:",
+                    lengthMenu: "Sayfada _MENU_ kayıt göster",
+                    info: "_TOTAL_ kayıttan _START_ ile _END_ arası gösteriliyor",
+                    paginate: {
+                        first: "İlk",
+                        last: "Son",
+                        next: "Sonraki",
+                        previous: "Önceki"
+                    },
+                    emptyTable: "Veri yok"
+                },
+                paging: true,
+                pageLength: 10,
+                searching: true,
+                ordering: true,
+                info: true,
+                lengthChange: true,
+                autoWidth: false,
+                columnDefs: [
+                    { orderable: false, targets: 7 }
+                ],
+                dom: '<"top"lf>rt<"bottom"ip><"clear">'
+            });
+        });
+    </script>
+}

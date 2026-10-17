@@ -1,0 +1,538 @@
+@model gzpegm.Models.E_Inad
+@using System.Linq
+
+<HEAD>
+    <style>
+        /* Görsel olarak tüm metinleri büyük harfe çevir */
+        .form1-header,
+        .form1-header * {
+            text-transform: uppercase;
+        }
+
+        /* Yazdırma sırasında arka plan renklerini korumaya yönelik - tarayıcıya bağlı çalışır */
+        .form1-header,
+        table, td, th {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            color-adjust: exact; /* bazı tarayıcılarda */
+        }
+
+        /* Sayfanın üstünde boşluk kalmaması için body/containers sıfırla (gerekirse global değil sadece bu template) */
+        body, html {
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Tablo hücrelerinde arka plan belirtildiyse kesin uygulama */
+        .inad-table-cell {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+    </style>
+</HEAD>
+<div>
+    @* Üst kısma eklenecek stil: tüm metinleri görsel olarak BÜYÜK yapar ve yazdırmada arka plan renklerini korumaya çalışır *@
+
+
+    <div style="margin:0; padding:0;">
+        <div class="form1-header" style="display:flex; align-items:center; width:100%; margin:0; padding:0;">
+            <!-- Sol logo -->
+            <div style="flex:0 0 auto; margin:0; padding:0;">
+                <img src="@Url.Content("~/files/Inad/Resim1.png")" alt="Logo" style="height:66px; width:auto; display:block; margin:0; padding:0;" />
+            </div>
+
+            <!-- Ortadaki başlıklar (tam ortalanmış) -->
+            <div style="flex:1 1 auto; text-align:center; margin:0; padding:0 8px;">
+                <div style="font-weight:bold; font-size:10pt; line-height:1; margin:0; padding:0;">T.C.</div>
+                @* Server-side olarak da kesin büyük harf için ToUpperInvariant() ekledim *@
+                <div style="line-height:1; margin:2px 0 0 0; padding:0;">@((Model?.Valilik ?? "").ToUpperInvariant()) VALİLİĞİ</div>
+                <div style="line-height:1; margin:2px 0 0 0; padding:0;">@((Model?.Kapi ?? "").ToUpperInvariant()) MÜLKİ İDARE AMİRLİĞİ</div>
+                <div style="margin-top:6px; font-weight:bold; font-size:11pt; line-height:1.05; margin:6px 0 0 0; padding:0;">KABUL EDİLEMEYEN YOLCU BİLGİ FORMU</div>
+                <div style="margin-top:2px; font-size:9pt; line-height:1; margin:2px 0 0 0; padding:0;">INADMISSIBLE PASSENGER INFORMATION FORM</div>
+            </div>
+
+            <!-- Sağda boşluk (denge için, istersen kaldır) -->
+            <div style="flex:0 0 66px; margin:0; padding:0;"></div>
+        </div>
+    </div>
+    <div style="text-align:center;">
+        <table cellspacing="0" cellpadding="0" style="margin-right: auto; margin-left: auto; border: 0.75pt solid rgb(0, 0, 0); border-collapse: collapse; width: 100%;">
+            <tbody>
+                <tr style="height:12.75pt;">
+                    <td colspan="2" style="width:237.05pt; border-right-style:solid; border-right-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#bfbfbf;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; text-align:center; font-size:8pt;"><strong>YOLCU KİMLİK BİLGİLERİ /&nbsp;</strong>PASSENGER IDENTITY INFORMATION</p>
+                    </td>
+                    <td colspan="2" style="width:245.75pt; border-left-style:solid; border-left-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#bfbfbf;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; text-align:center; font-size:8pt;"><strong>D&Uuml;ZENLEME BİLGİLERİ /&nbsp;</strong>ISSUE INFORMATION</p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:109.45pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong>Soyadı</strong></p>
+                    </td>
+                    <td rowspan="2" style="width:116.8pt; border-style:solid; border-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong>@Model.AdSoyad</strong></p>
+                    </td>
+                    <td style="width:109.65pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong>Tarih</strong></p>
+                    </td>
+                    <td rowspan="2" style="width:125.3pt; border-top-style:solid; border-top-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong>@Model.TarihSaat</strong></p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:109.45pt; border-right-style:solid; border-right-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;">Surname</p>
+                    </td>
+                    <td style="width:109.65pt; border-right-style:solid; border-right-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;">Date</p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:109.45pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong>Adı</strong></p>
+                    </td>
+                    <td rowspan="2" style="width:116.8pt; border-style:solid; border-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong>@Model.AdSoyad</strong></p>
+                    </td>
+                    <td style="width:109.65pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong>Saat</strong></p>
+                    </td>
+                    <td rowspan="2" style="width:125.3pt; border-top-style:solid; border-top-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong></strong></p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:109.45pt; border-right-style:solid; border-right-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;">Name</p>
+                    </td>
+                    <td style="width:109.65pt; border-right-style:solid; border-right-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;">Time</p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:109.45pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong>Doğum Tarihi</strong></p>
+                    </td>
+                    <td rowspan="2" style="width:116.8pt; border-style:solid; border-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong>@Model.DogumT</strong></p>
+                    </td>
+                    <td colspan="2" rowspan="2" style="width:245.75pt; border-top-style:solid; border-top-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#bfbfbf;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; text-align:center; font-size:8pt;"><strong>YOLCU GELİŞ BİLGİLERİ</strong><strong>&nbsp;&nbsp;</strong><strong>/&nbsp;</strong>PASSENGER ARRIVAL INFORMATION</p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:109.45pt; border-right-style:solid; border-right-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;">Date of Birth</p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:109.45pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong>Doğum Yeri</strong></p>
+                    </td>
+                    <td rowspan="2" style="width:116.8pt; border-style:solid; border-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong>@Model.DogumY</strong></p>
+                    </td>
+                    <td style="width:109.65pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong>Taşıyıcı Havayolu</strong></p>
+                    </td>
+                    <td rowspan="2" style="width:125.3pt; border-top-style:solid; border-top-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong>@Model.GelenHavayolu</strong></p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:109.45pt; border-right-style:solid; border-right-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;">Place of Birth</p>
+                    </td>
+                    <td style="width:109.65pt; border-right-style:solid; border-right-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;">Carrier Airline</p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:109.45pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong>Cinsiyeti</strong></p>
+                    </td>
+                    <td rowspan="2" style="width:116.8pt; border-style:solid; border-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong>@Model.Cinsiyet</strong></p>
+                    </td>
+                    <td style="width:109.65pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong>U&ccedil;uş Numarası</strong></p>
+                    </td>
+                    <td rowspan="2" style="width:125.3pt; border-top-style:solid; border-top-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong>@Model.GelenUcusNo</strong></p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:109.45pt; border-right-style:solid; border-right-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;">Sex</p>
+                    </td>
+                    <td style="width:109.65pt; border-right-style:solid; border-right-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;">Flight Number</p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:109.45pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong>Uyruğu</strong></p>
+                    </td>
+                    <td rowspan="2" style="width:116.8pt; border-style:solid; border-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong>@Model.Uyruk</strong></p>
+                    </td>
+                    <td style="width:109.65pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong>Geldiği Yer</strong></p>
+                    </td>
+                    <td rowspan="2" style="width:125.3pt; border-top-style:solid; border-top-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong>@Model.GeldigiYer</strong></p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:109.45pt; border-right-style:solid; border-right-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;">Nationality</p>
+                    </td>
+                    <td style="width:109.65pt; border-right-style:solid; border-right-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;">Place of Origin</p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:109.45pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong>Passport No</strong></p>
+                    </td>
+                    <td rowspan="2" style="width:116.8pt; border-style:solid; border-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong>@Model.PasaportNo</strong></p>
+                    </td>
+                    <td style="width:109.65pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong>Tarih ve Saat</strong></p>
+                    </td>
+                    <td rowspan="2" style="width:125.3pt; border-top-style:solid; border-top-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong>@Model.GeldigiTarihSaat</strong></p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:109.45pt; border-right-style:solid; border-right-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;">Pasaport No</p>
+                    </td>
+                    <td style="width:109.65pt; border-right-style:solid; border-right-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;">Date and Time</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <p style="margin-top:0pt; margin-bottom:0pt; line-height:108%; font-size:8pt;"><strong>&nbsp;</strong></p>
+    <div style="text-align:center;">
+        <table cellspacing="0" cellpadding="0" style="margin-right: auto; margin-left: auto; border: 0.75pt solid rgb(0, 0, 0); border-collapse: collapse; width: 100%;">
+            <tbody>
+                <tr style="height:10.65pt;">
+                    <td colspan="2" style="width:492.3pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#bfbfbf;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; text-align:center; font-size:8pt;"><strong>KABUL EDİLEMEYEN YOLCU BİLGİLERİ /&nbsp;</strong>INADMISSIBLE PASSENGER INFORMATION<strong>&nbsp;</strong></p>
+                    </td>
+                </tr>
+                <tr style="height:31.2pt;">
+                    <td colspan="2" style="width:492.3pt; border-top-style:solid; border-top-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong><em><span style="font-size:7.5pt;">Aşağıda belirtilen sebeplerden dolayı 6458 sayılı Yabancılar ve Uluslararası Koruma Kanunu &ccedil;er&ccedil;evesinde hakkınızda &ldquo;Kabul edilemeyen yolcu (INAD) kararı alındığı i&ccedil;in T&uuml;rkiye&rsquo;ye girişinize izin verilmemiştir.</span></em></strong><em><span style="font-size:7.5pt;"> / </span></em><em>An &quot;Inadmissible Passenger&quot; (INAD) decision has been issued against you due to the reasons indicated below, and you have been denied entry to T&uuml;rkiye within the framework of Law on Foreigners and International Protection numbered 6458.&nbsp;</em></p>
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><em>&nbsp;</em></p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:8.95pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:top;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><em>&nbsp;</em></p>
+                    </td>
+                    <td style="width:472.55pt; border-top-style:solid; border-top-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong><span style="font-size:7.5pt;">Ge&ccedil;erli bir seyahat belgesine sahip olmaması</span></strong><span style="font-size:7.5pt;">&nbsp;/&nbsp;</span>Lack of a valid travel document</p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:8.95pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:top; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><em>&nbsp;</em></p>
+                    </td>
+                    <td style="width:472.55pt; border-top-style:solid; border-top-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong><span style="font-size:7.5pt;">T&uuml;rkiye&rsquo;ye girişi sakıncalı g&ouml;r&uuml;lmesi</span></strong><span style="font-size:7.5pt;">&nbsp;/</span><span style="font-size:7.5pt;">&nbsp;&nbsp;</span>Entry into T&uuml;rkiye is deemed unsafe</p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:8.95pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:top;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><em>&nbsp;</em></p>
+                    </td>
+                    <td style="width:472.55pt; border-top-style:solid; border-top-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong><span style="font-size:7.5pt;">Yeterli maddi imkana sahip olmaması</span></strong><span style="font-size:7.5pt;">&nbsp;/</span><span style="font-size:7.5pt;">&nbsp;&nbsp;</span>Lack of adequate financial means</p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:8.95pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:top; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><em>&nbsp;</em></p>
+                    </td>
+                    <td style="width:472.55pt; border-top-style:solid; border-top-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong><span style="font-size:7.5pt;">Hakkında T&uuml;rkiye&rsquo;ye giriş yasağı bulunması</span></strong><span style="font-size:7.5pt;">&nbsp;/</span><span style="font-size:7.5pt;">&nbsp;&nbsp;</span>The presence of an entry ban for T&uuml;rkiye</p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:8.95pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:top;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><em>&nbsp;</em></p>
+                    </td>
+                    <td style="width:472.55pt; border-top-style:solid; border-top-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong><span style="font-size:7.5pt;">Giriş vizesinin olmaması</span></strong><span style="font-size:7.5pt;">&nbsp;/</span><span style="font-size:7.5pt;">&nbsp;&nbsp;</span>Lack of an entry visa</p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:8.95pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:top; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><em>&nbsp;</em></p>
+                    </td>
+                    <td style="width:472.55pt; border-top-style:solid; border-top-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong><span style="font-size:7.5pt;">Pasaport s&uuml;resinin yeterli olmaması</span></strong><span style="font-size:7.5pt;">&nbsp;/&nbsp;</span>The validity of the passport is inadequate for entry</p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:8.95pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:top;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><em>&nbsp;</em></p>
+                    </td>
+                    <td style="width:472.55pt; border-top-style:solid; border-top-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong><span style="font-size:7.5pt;">Sahte pasaport</span></strong><span style="font-size:7.5pt;">&nbsp;/&nbsp;</span>Fake passport</p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:8.95pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:top; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><em>&nbsp;</em></p>
+                    </td>
+                    <td style="width:472.55pt; border-top-style:solid; border-top-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong><span style="font-size:7.5pt;">Pasaportta tahrifat yapılmış olması</span></strong><span style="font-size:7.5pt;">&nbsp;/&nbsp;</span>Forged passport</p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:8.95pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:top;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><em>&nbsp;</em></p>
+                    </td>
+                    <td style="width:472.55pt; border-top-style:solid; border-top-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong><span style="font-size:7.5pt;">Sahte vize-ikamet</span></strong><span style="font-size:7.5pt;">&nbsp;/&nbsp;</span>Fake visa-residency</p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:8.95pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:top; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><em>&nbsp;</em></p>
+                    </td>
+                    <td style="width:472.55pt; border-top-style:solid; border-top-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong><span style="font-size:7.5pt;">&Ccedil;alıntı belge</span></strong><span style="font-size:7.5pt;">&nbsp;/&nbsp;</span>Stolen document</p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:8.95pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:top;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><em>&nbsp;</em></p>
+                    </td>
+                    <td style="width:472.55pt; border-top-style:solid; border-top-width:0.75pt; border-left-style:solid; border-left-width:0.75pt;;border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong><span style="font-size:7.5pt;">180 g&uuml;nde 90 g&uuml;n uygulamasının ihlali</span></strong><span style="font-size:7.5pt;">&nbsp;/&nbsp;</span>Violation of 90 days stay rule within 180 days</p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:8.95pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:top; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><em>&nbsp;</em></p>
+                    </td>
+                    <td style="width:472.55pt; border-top-style:solid; border-top-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong><span style="font-size:7.5pt;">T&uuml;rkiye&rsquo;ye girmek istememesi</span></strong><span style="font-size:7.5pt;">&nbsp;/&nbsp;</span>Unwillingness to enter T&uuml;rkiye</p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:8.95pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:top;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><em>&nbsp;</em></p>
+                    </td>
+                    <td style="width:472.55pt; border-top-style:solid; border-top-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong><span style="font-size:7.5pt;">Diğer sebepler</span></strong><span style="font-size:7.5pt;">&nbsp;/&nbsp;</span>Other reasons</p>
+                    </td>
+                </tr>
+                <tr style="height:18.45pt;">
+                    <td colspan="2" style="width:492.3pt; border-top-style:solid; border-top-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; line-height:80%; font-size:8pt;"><strong><em>Bu karara karşı vatandaşı olduğunuz veya yasal olarak bulunduğunuz &uuml;lkedeki T&uuml;rk konsolosluklarına itirazda bulunabilirsiniz.</em></strong></p>
+                        <p style="margin-top:0pt; margin-bottom:0pt; line-height:80%; font-size:8pt;"><em>You can file an appeal against this decision through Turkish consulates in countries where you are a citizen or staying legally.</em><span style="color:#ff0000;">&nbsp;</span></p>
+                    </td>
+                </tr>
+                <tr style="height:24.35pt;">
+                    <td colspan="2" style="width:492.3pt; border-top-style:solid; border-top-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; line-height:80%; font-size:8pt;"><strong><em><span style="line-height:80%; font-size:7.5pt;">Hakkınızda T&uuml;rkiye&rsquo;ye giriş yasağı bulunuyorsa, vatandaşı olduğunuz veya yasal olarak bulunduğunuz &uuml;lkedeki T&uuml;rk Konsolosluklarından amacına uygun &ouml;zel meşruhatlı vize alarak gelmeniz durumunda T&uuml;rkiye&rsquo;ye giriş yapabilirsiniz</span></em></strong><em><span style="line-height:80%; font-size:7.5pt;"> / </span></em><em>If there is an entry ban against you, you may enter T&uuml;rkiye by obtaining an annotated visa from the Turkish Consulate in the country where you are a citizen or</em><em>&nbsp;</em><em>legally</em><em>&nbsp;</em><em>reside</em></p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <p style="margin-top:0pt; margin-bottom:0pt; line-height:108%; font-size:8pt;">&nbsp;</p>
+    <div style="text-align:center;">
+        <table cellspacing="0" cellpadding="0" style="margin-right: auto; margin-left: auto; border: 0.75pt solid rgb(0, 0, 0); border-collapse: collapse; width: 100%;">
+            <tbody>
+                <tr style="height:12.75pt;">
+                    <td colspan="2" style="width:489.95pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#bfbfbf;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; text-align:center; font-size:8pt;"><strong>GİDİŞ BİLGİLERİ /&nbsp;</strong>DEPARTURE INFORMATION</p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td colspan="2" style="width:489.95pt; border-top-style:solid; border-top-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong>Geri d&ouml;n&uuml;ş yapacağınız u&ccedil;uş bilgileri aşağıdadır./</strong> Below is your return flight information.</p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:180.4pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong>Taşıyıcı Havayolu</strong> / Carrier Airline</p>
+                    </td>
+                    <td style="width:298.75pt; border-top-style:solid; border-top-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong>&nbsp;</strong></p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:180.4pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong>U&ccedil;uş Numarası</strong> / Flight Number</p>
+                    </td>
+                    <td style="width:298.75pt; border-top-style:solid; border-top-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong>&nbsp;</strong></p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:180.4pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong>Gideceği Yer</strong> / Destination</p>
+                    </td>
+                    <td style="width:298.75pt; border-top-style:solid; border-top-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong>&nbsp;</strong></p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:180.4pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong>Tarih ve Saat</strong> / Date and Time</p>
+                    </td>
+                    <td style="width:298.75pt; border-top-style:solid; border-top-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong>&nbsp;</strong></p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <p style="margin-top:0pt; margin-bottom:0pt; line-height:108%; font-size:8pt;"><strong>&nbsp;</strong></p>
+    <div style="text-align:center;">
+        <table cellspacing="0" cellpadding="0" style="margin-right: auto; margin-left: auto; border: 0.75pt solid rgb(0, 0, 0); border-collapse: collapse; width: 100%;">
+            <tbody>
+                <tr style="height:12.75pt;">
+                    <td style="width:488.6pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#bfbfbf;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; text-align:center; font-size:8pt;"><strong>DİĞER BİLGİLER /&nbsp;</strong>OTHER INFORMATION<strong>&nbsp;</strong></p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:488.6pt; border-top-style:solid; border-top-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; text-align:justify; line-height:80%; font-size:7.5pt;"><strong>Bu andan itibaren geri d&ouml;n&uuml;ş işlemlerinizle gelmiş olduğunuz havayolu şirketi veya yer hizmeti veren şirket ilgilenecektir.</strong></p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:488.6pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:7.5pt;">From this point forward, the airline or the ground services provider will be responsible for managing the procedures related to your return.</p>
+                    </td>
+                </tr>
+                <tr style="height:17pt;">
+                    <td style="width:488.6pt; border-top-style:solid; border-top-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; text-align:justify; line-height:80%; font-size:7.5pt;"><strong>U&ccedil;uşunuza kadarki herhangi bir zamanda havayolu şirketinin planlamasını beklemeden kendi imkanlarınızla kendi &uuml;lkenize veya kabul edilebileceğiniz başka bir &uuml;lkeye havayolu şirketlerinin kabul etmesi halinde gitme hakkına sahipsiniz.</strong></p>
+                    </td>
+                </tr>
+                <tr style="height:17pt;">
+                    <td style="width:488.6pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:top; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; line-height:80%; font-size:7.5pt;">Subject to approval by the airline companies, you have the option to arrange your return to your home country or any other nation where you are granted entry by your own means. You are not required to wait for the airline company to make these arrangements, and you may choose a date that suits you best.</p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:488.6pt; border-top-style:solid; border-top-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; text-align:justify; line-height:80%; font-size:7.5pt;"><strong>U&ccedil;uş zamanınıza kadar yemek i&ccedil;mek gibi ihtiya&ccedil;larınız bu şirketler tarafından karşılanacaktır.</strong></p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:488.6pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:top;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:7.5pt;">Your basic needs, such as food and beverages, will be covered by these companies until your flight.</p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:488.6pt; border-top-style:solid; border-top-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; text-align:justify; line-height:80%; font-size:7.5pt;"><strong>U&ccedil;uşunuza kadar havalimanı işletmecisi tarafından tahsis edilen Kabul edilemeyen yolcu misafirhanesinde kalacaksınız.</strong></p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:488.6pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:7.5pt;">You will be staying in the Inadmissible Passenger guesthouse allocated by the airline management until your flight.</p>
+                    </td>
+                </tr>
+                <tr style="height:17.65pt;">
+                    <td style="width:488.6pt; border-top-style:solid; border-top-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; text-align:justify; line-height:80%; font-size:7.5pt;"><strong>Odada bulunan tuvalet, lavabo, banyo, yatak ve varsa televizyon, radyo, wifi (havalimanı işletmecisinin sağladığı kadar) imkanlarından &uuml;cretsiz olarak faydalanabilirsiniz.</strong></p>
+                    </td>
+                </tr>
+                <tr style="height:8pt;">
+                    <td style="width:488.6pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:top;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; line-height:90%; font-size:7.5pt;">You can use the toilet, sink, shower, bed, and, if available, television, radio, WiFi as provided by the airport operator) in the room, free of charge.</p>
+                    </td>
+                </tr>
+                <tr style="height:17pt;">
+                    <td style="width:488.6pt; border-top-style:solid; border-top-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; text-align:justify; line-height:80%; font-size:7.5pt;"><strong>Yakınlarınıza bilgi vermek veya başka g&ouml;r&uuml;şmeler yapmak i&ccedil;in misafirhane girişinde bulunan uluslararası ve şehirlerarası g&ouml;r&uuml;şmelerde a&ccedil;ık olan ve kredi kartı veya telefon kartı ile &ccedil;alışan ankes&ouml;rl&uuml; telefonları kullanabilirsiniz.</strong></p>
+                    </td>
+                </tr>
+                <tr style="height:17pt;">
+                    <td style="width:488.6pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:top; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; line-height:80%; font-size:7.5pt;">To inform your relatives or to make other calls, you can make use of the payphones located at the guesthouse entrance, which are equipped for international and long-distance calls and accept credit cards or phone cards.</p>
+                    </td>
+                </tr>
+                <tr style="height:17pt;">
+                    <td style="width:488.6pt; border-top-style:solid; border-top-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; text-align:justify; line-height:80%; font-size:7.5pt;"><strong>Havalimanında kaldığınız s&uuml;re boyunca size yardım ve refakat etmek &uuml;zere havalimanı &ouml;zel g&uuml;venlik şirketinden bir g&ouml;revli yanınızda bulunacak. Herhangi bir ihtiyacınız olursa bu g&uuml;venlik g&ouml;revlisinden yardım isteyebilirsiniz.</strong></p>
+                    </td>
+                </tr>
+                <tr style="height:17pt;">
+                    <td style="width:488.6pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:top;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; text-align:justify; line-height:80%; font-size:7.5pt;">During your stay at the airport, an officer from the airport&apos;s private security company will assist and accompany you. You may ask this security guard for assistance if you need anything.</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <p style="margin-top:0pt; margin-bottom:0pt; line-height:108%; font-size:6pt;"><strong>&nbsp;</strong></p>
+    <div style="text-align:center;">
+        <table cellspacing="0" cellpadding="0" style="margin-right: auto; margin-left: auto; border-collapse: collapse; width: 100%;">
+            <tbody>
+                <tr style="height:11.25pt;">
+                    <td style="width:201.6pt; padding-right:5.4pt; padding-left:5.4pt; vertical-align:top;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; text-align:center; font-size:8pt;"><strong>TEBLİĞ EDEN /&nbsp;</strong>NOTIFYING PARTY<strong>&nbsp;</strong></p>
+                    </td>
+                    <td style="width:53pt; padding-right:5.4pt; padding-left:5.4pt; vertical-align:top;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; text-align:center; font-size:8pt;">&nbsp;</p>
+                    </td>
+                    <td style="width:212.4pt; padding-right:5.4pt; padding-left:5.4pt; vertical-align:top;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; text-align:center; font-size:8pt;"><strong>TEBELL&Uuml;Ğ EDEN /&nbsp;</strong>NOTIFIED PARTY<strong>&nbsp;</strong></p>
+                    </td>
+                </tr>
+                <tr style="height:12.1pt;">
+                    <td style="width:201.6pt; padding-right:5.4pt; padding-left:5.4pt; vertical-align:top;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; text-align:center; font-size:8pt;">&nbsp;</p>
+                    </td>
+                    <td style="width:53pt; padding-right:5.4pt; padding-left:5.4pt; vertical-align:top;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; text-align:center; font-size:8pt;">&nbsp;</p>
+                    </td>
+                    <td style="width:212.4pt; padding-right:5.4pt; padding-left:5.4pt; vertical-align:top;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; text-align:center; font-size:8pt;"><strong>KABUL EDİLEMEYEN YOLCU /&nbsp;</strong>INADMISSIBLE PASSENGER<strong>&nbsp;</strong></p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <p style="margin-top:0pt; margin-bottom:8pt; line-height:108%; font-size:8pt;"><strong>&nbsp;</strong></p>
+
+</div>
+
+<script>
+    (function () {
+        function doPrint() {
+            try {
+                // Tarayıcıya odaklan ve küçük gecikme ile yazdırma penceresini aç
+                window.focus();
+                setTimeout(function () { window.print(); }, 250);
+            } catch (e) {
+                // Hata varsa konsola yaz (sunucu tarafı hata değil)
+                if (window.console && window.console.error) {
+                    console.error('Auto print failed:', e);
+                }
+            }
+        }
+
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            doPrint();
+        } else {
+            document.addEventListener('DOMContentLoaded', doPrint);
+        }
+    })();
+</script>

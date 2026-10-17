@@ -1,0 +1,292 @@
+/* ==========================================================================
+   Sinir Kapilari Yonetimi Stilleri (border-index.css)
+   ========================================================================== */
+
+.page-wrapper {
+    padding: 20px 10px;
+}
+
+.page-title {
+    font-size: 26px;
+    font-weight: 700;
+    color: #1a2a47;
+    margin-bottom: 4px;
+}
+
+.border-card {
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+}
+
+.border-icon-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background-color: rgba(37, 99, 235, 0.1);
+    flex-shrink: 0;
+}
+
+.border-link-btn {
+    color: #1e293b;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.border-link-btn:hover {
+    color: #2563eb;
+    text-decoration: underline;
+}
+
+/* Personel Rozet Butonları */
+.btn-personnel-badge {
+    background-color: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+    border-radius: 20px;
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 4px 12px;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+}
+
+.btn-personnel-badge:hover {
+    background-color: #2563eb;
+    color: #ffffff;
+    border-color: #2563eb;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.25);
+}
+
+.btn-personnel-badge:hover i {
+    color: #ffffff !important;
+}
+
+.btn-personnel-empty {
+    background-color: #f8fafc;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    font-size: 12.5px;
+    padding: 4px 12px;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+}
+
+.btn-personnel-empty:hover {
+    background-color: #f1f5f9;
+    color: #334155;
+    border-color: #cbd5e1;
+}
+
+.table thead th {
+    background-color: #f8fafc;
+    color: #475569;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    vertical-align: middle;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.table tbody td {
+    vertical-align: middle;
+    font-size: 14px;
+}
+
+.btn-delete-border {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.btn-delete-border:hover {
+    transform: scale(1.1);
+    background-color: #dc3545;
+    color: #fff;
+    border-color: #dc3545;
+}
+
+/* ==========================================================================
+   Personel Listesi Modalı (Genişletilmiş ve Ferah Düzen)
+   ========================================================================== */
+
+#borderPersonnelModal .modal-dialog {
+    width: 95% !important;
+    max-width: 1400px !important;
+    margin: 1.5rem auto !important;
+}
+
+@media (min-width: 1600px) {
+    #borderPersonnelModal .modal-dialog {
+        max-width: 1550px !important;
+    }
+}
+
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #1e40af 0%, #2563eb 50%, #3b82f6 100%);
+}
+
+.modal-header-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    flex-shrink: 0;
+}
+
+#borderPersonnelModal .modal-content,
+#addBorderModal .modal-content {
+    border-radius: 14px;
+    overflow: hidden;
+    border: none;
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.25);
+}
+
+#borderPersonnelModal .modal-header,
+#addBorderModal .modal-header {
+    border-top-left-radius: 14px;
+    border-top-right-radius: 14px;
+}
+
+#borderPersonnelModal .modal-body {
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+    padding: 24px !important;
+}
+
+/* Modal Personel Tablosu */
+#modalPersonnelTable {
+    width: 100% !important;
+}
+
+#modalPersonnelTable thead th {
+    white-space: nowrap;
+    padding: 12px 14px;
+    background-color: #f1f5f9;
+    color: #334155;
+    font-size: 13px;
+    font-weight: 600;
+    border-bottom: 2px solid #cbd5e1;
+}
+
+#modalPersonnelTable tbody td {
+    padding: 12px 14px;
+    vertical-align: middle;
+}
+
+/* Personel Tablosu Detayları */
+.user-avatar-circle {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background-color: #e0e7ff;
+    color: #4338ca;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+.badge-role-admin {
+    background-color: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.badge-role-teacher {
+    background-color: #fef3c7;
+    color: #b45309;
+    border: 1px solid #fde68a;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.badge-role-student {
+    background-color: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.badge-status-active {
+    background-color: #dcfce7;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 11.5px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.badge-status-inactive {
+    background-color: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 11.5px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 6px;
+}
+
+.status-dot-active {
+    background-color: #22c55e;
+}
+
+.status-dot-inactive {
+    background-color: #94a3b8;
+}
+
+.contact-item {
+    font-size: 12.5px;
+    color: #475569;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+}
+
+.contact-item i {
+    width: 14px;
+    margin-right: 6px;
+    color: #94a3b8;
+}

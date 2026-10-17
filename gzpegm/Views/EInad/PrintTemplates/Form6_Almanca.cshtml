@@ -1,0 +1,485 @@
+﻿@using System.Text
+@{
+    Layout = null;
+    Response.ContentType = "text/html; charset=utf-8";
+
+    string tarih = DateTime.Now.ToString("dd.MM.yyyy");
+    string saat = DateTime.Now.ToString("HH:mm");
+
+    Func<string, string, string, string> getField = (name, format, def) =>
+    {
+        var prop = Model?.GetType().GetProperty(name);
+        if (prop == null) return def;
+
+        var val = prop.GetValue(Model);
+        if (val == null) return def;
+
+        if (val is DateTime dt)
+            return string.IsNullOrEmpty(format) ? dt.ToString() : dt.ToString(format);
+
+        return val.ToString();
+    };
+}
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Protokoll über die Durchsuchung der Person (Üst Arama Tutanak Protokolü)</title>
+
+    <style>
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 11pt;
+            margin: 40px 50px;
+            line-height: 1.4;
+            color: #000;
+            background: #fafafa;
+        }
+
+        .doc-header-no {
+            font-weight: bold;
+            font-size: 11pt;
+            margin-bottom: 15px;
+        }
+
+        .tutanak-title {
+            text-align: center;
+            font-size: 14pt;
+            font-weight: bold;
+            margin-bottom: 25px;
+            letter-spacing: 0.5px;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 12pt;
+            font-weight: bold;
+            margin-top: 15px;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+
+            .info-table td {
+                padding: 3px 0;
+                vertical-align: top;
+            }
+
+                .info-table td.label-col {
+                    width: 380px;
+                    font-weight: normal;
+                }
+
+                .info-table td.colon-col {
+                    width: 15px;
+                    text-align: center;
+                }
+
+                .info-table td.value-col {
+                    font-weight: normal;
+                }
+
+        .field-input {
+            border: none;
+            border-bottom: 1px solid #777;
+            background: transparent;
+            padding: 2px 4px;
+            font-family: inherit;
+            font-size: inherit;
+            width: 90%;
+            outline: none;
+        }
+
+            .field-input:focus {
+                border-bottom-color: #0056b3;
+                background: rgba(0, 86, 179, 0.05);
+            }
+
+        .esya-container {
+            margin: 10px 0 10px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .esya-madde-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .esya-madde-input {
+            flex: 1;
+            border: none;
+            border-bottom: 1px solid #888;
+            background: transparent;
+            padding: 3px 6px;
+            font-family: inherit;
+            font-size: inherit;
+            outline: none;
+        }
+
+        .madde-sil-btn {
+            background: #d9534f;
+            border: none;
+            color: #fff;
+            padding: 2px 10px;
+            border-radius: 4px;
+            font-size: 9pt;
+            cursor: pointer;
+        }
+
+        .madde-ekle-btn {
+            background: #337ab7;
+            border: none;
+            color: #fff;
+            padding: 5px 15px;
+            border-radius: 4px;
+            font-size: 10pt;
+            cursor: pointer;
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .esya-print-list {
+            list-style-type: decimal;
+            padding-left: 30px;
+            margin: 5px 0 15px 0;
+        }
+
+        .content-text {
+            text-align: justify;
+            margin-top: 15px;
+            margin-bottom: 25px;
+            text-indent: 1.5cm;
+        }
+
+        .signatures-table {
+            width: 100%;
+            margin-top: 30px;
+            border-collapse: collapse;
+            text-align: center;
+        }
+
+            .signatures-table td {
+                vertical-align: top;
+                padding: 10px;
+                width: 33.33%;
+            }
+
+        .sig-header {
+            font-weight: bold;
+            font-size: 10.5pt;
+            margin-bottom: 10px;
+        }
+
+        .sig-name {
+            margin-top: 35px;
+            font-weight: bold;
+        }
+
+        .checkbox-box {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 1px solid #000;
+            vertical-align: middle;
+            margin-left: 5px;
+        }
+
+        .print-button-container {
+            text-align: center;
+            margin-top: 40px;
+        }
+
+            .print-button-container button {
+                background: #28a745;
+                border: none;
+                color: #fff;
+                padding: 10px 30px;
+                border-radius: 4px;
+                font-size: 12pt;
+                font-weight: bold;
+                cursor: pointer;
+            }
+
+        @@page {
+            margin: 0;
+        }
+
+        @@media print {
+            .screen-only, .print-button-container {
+                display: none !important;
+            }
+
+            .print-only {
+                display: inline !important;
+                visibility: visible !important;
+            }
+
+            body {
+                background: #fff !important;
+                margin: 20px 30px !important;
+                font-size: 11pt;
+            }
+
+            .field-input, .esya-madde-input {
+                border: none !important;
+                background: transparent !important;
+                padding: 0 !important;
+            }
+
+            ul.esya-print-list {
+                display: block !important;
+            }
+        }
+    </style>
+
+    <script>
+        function addMadde() {
+            var container = document.getElementById('esyaContainer');
+            var count = container.querySelectorAll('.esya-madde-box').length + 1;
+            var newBox = document.createElement('div');
+            newBox.className = 'esya-madde-box';
+            newBox.innerHTML = '<input type="text" class="esya-madde-input" data-index="' + count + '" placeholder="' + count + '. Gegenstand (Eşya)" />' +
+                '<button type="button" class="madde-sil-btn screen-only" onclick="removeMadde(this)">Löschen (Sil)</button>';
+            container.appendChild(newBox);
+        }
+
+        function removeMadde(btn) {
+            var box = btn.parentElement;
+            box.remove();
+            var boxes = document.querySelectorAll('.esya-madde-box');
+            boxes.forEach(function (b, idx) {
+                var input = b.querySelector('.esya-madde-input');
+                if (input) {
+                    input.dataset.index = idx + 1;
+                    input.placeholder = (idx + 1) + '. Gegenstand (Eşya)';
+                }
+            });
+        }
+
+        function updatePrintFields() {
+            var fields = [
+                'UstNo', 'YapildigiYer', 'YapildigiTarihSaat', 'KimlikBeyanTipi', 'TcNo', 'PasaportNo', 'AdSoyad',
+                'DogumTarihi', 'DogumYeriTarihi', 'MedeniHalCinsiyet',
+                'UstAramaNedeni', 'YapanAdSoyad', 'HazurunAdSoyad', 'YakalananAdSoyad'
+            ];
+
+            fields.forEach(function (f) {
+                var inp = document.getElementById('inp_' + f);
+                var spn = document.getElementById('sp_' + f);
+                if (inp && spn) spn.innerText = inp.value || '';
+            });
+
+            var esyaInputs = document.querySelectorAll('.esya-madde-input');
+            var esyaList = document.getElementById('sp_EsyaListesi');
+            if (esyaList) {
+                esyaList.innerHTML = '';
+                esyaInputs.forEach(function (inp) {
+                    var val = inp.value.trim();
+                    if (val !== '') {
+                        var li = document.createElement('li');
+                        li.textContent = val;
+                        esyaList.appendChild(li);
+                    }
+                });
+            }
+        }
+
+        function printPage() {
+            updatePrintFields();
+            window.print();
+        }
+    </script>
+</head>
+
+<body>
+
+    <div class="tutanak-title">PROTOKOLL ÜBER DIE DURCHSUCHUNG DER PERSON <br />(ÜST ARAMA TUTANAĞI)</div>
+
+    <table class="info-table">
+        <tr>
+            <td class="label-col">Ort der Protokollerstellung (Tutanak Tanzim Yeri)</td>
+            <td class="colon-col">:</td>
+            <td class="value-col">
+                <input id="inp_YapildigiYer" class="field-input screen-only" value="@getField("YapildigiYer", null, "Antalya Gazipaşa Flughafen Polizeidirektion")" />
+                <span id="sp_YapildigiYer" class="print-only">@getField("YapildigiYer", null, "Antalya Gazipaşa Flughafen Polizeidirektion")</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="label-col">Datum und Uhrzeit des Protokolls (Tutanak Tarih ve Saati)</td>
+            <td class="colon-col">:</td>
+            <td class="value-col">
+                <input id="inp_YapildigiTarihSaat" class="field-input screen-only" value="@getField("YapildigiTarihSaat", "dd.MM.yyyy HH:mm", tarih + " " + saat)" />
+                <span id="sp_YapildigiTarihSaat" class="print-only">@getField("YapildigiTarihSaat", "dd.MM.yyyy HH:mm", tarih + " " + saat)</span>
+            </td>
+        </tr>
+    </table>
+
+    <div class="section-title">IDENTITÄTSANGABEN DER FESTGENOMMENEN PERSON <br />(YAKALANAN ŞAHSIN KİMLİK BİLGİLERİ)</div>
+
+    <table class="info-table">
+        <tr>
+            <td class="label-col">Art der Identitätserklärung (Kimlik Beyan Türü)</td>
+            <td class="colon-col">:</td>
+            <td class="value-col">
+                <input id="inp_KimlikBeyanTipi" class="field-input screen-only" value="@getField("Beyan", null, "")" />
+                <span id="sp_KimlikBeyanTipi" class="print-only">@getField("Beyan", null, "")</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="label-col">Ausweis-Nr. / Reisepass-Nr. ( Kimlik No / Pasaport No)</td>
+            <td class="colon-col">:</td>
+            <td class="value-col">
+                <input id="inp_TcNo" class="field-input screen-only" value="@getField("KimlikNo", null, "")" placeholder="Kimlik No" />
+                <span id="sp_TcNo" class="print-only">@getField("KimlikNo", null, "")</span> /
+                <input id="inp_PasaportNo" class="field-input screen-only" value="@getField("PasaportNo", null, "")" placeholder="Pasaport No" />
+                <span id="sp_PasaportNo" class="print-only">@getField("PasaportNo", null, "")</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="label-col">Vor- und Nachname (Adı Soyadı)</td>
+            <td class="colon-col">:</td>
+            <td class="value-col">
+                <input id="inp_AdSoyad" class="field-input screen-only" value="@getField("AdSoyad", null, "")" />
+                <span id="sp_AdSoyad" class="print-only">@getField("AdSoyad", null, "")</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="label-col">Geburtsdatum (Doğum Tarihi)</td>
+            <td class="colon-col">:</td>
+            <td class="value-col">
+                <input id="inp_DogumTarihi" class="field-input screen-only" value="@getField("DogumT", "dd.MM.yyyy", "")" />
+                <span id="sp_DogumTarihi" class="print-only">@getField("DogumT", "dd.MM.yyyy", "")</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="label-col">Geburtsort (Doğum Yeri)</td>
+            <td class="colon-col">:</td>
+            <td class="value-col">
+                <input id="inp_DogumYeriTarihi" class="field-input screen-only" value="@getField("DogumY", null, "")" />
+                <span id="sp_DogumYeriTarihi" class="print-only">@getField("DogumY", null, "")</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="label-col">Geschlecht (Cinsiyeti)</td>
+            <td class="colon-col">:</td>
+            <td class="value-col">
+                <input id="inp_MedeniHalCinsiyet" class="field-input screen-only" value="@getField("Cinsiyet", null, "")" />
+                <span id="sp_MedeniHalCinsiyet" class="print-only">@getField("Cinsiyet", null, "")</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="label-col"><strong>GRUND DER DURCHSUCHUNG (ÜST ARAMA NEDENİ)</strong></td>
+            <td class="colon-col">:</td>
+            <td class="value-col">
+                <input id="inp_UstAramaNedeni" class="field-input screen-only" value="@getField("InadSebep", null, "")" />
+                <span id="sp_UstAramaNedeni" class="print-only">@getField("InadSebep", null, "")</span>
+            </td>
+        </tr>
+    </table>
+
+    <div style="font-weight: bold; margin-top: 10px;">LISTE DER GEGENSTÄNDE (EŞYA LİSTESİ)</div>
+
+    <div class="screen-only">
+        <div id="esyaContainer" class="esya-container">
+            @{
+                var esyaMetin = getField("UstAramaEsya", null, "");
+                if (!string.IsNullOrWhiteSpace(esyaMetin))
+                {
+                    var maddeler = esyaMetin.Split(new[] { "\r\n", "\r", "\n", ",", ";" }, StringSplitOptions.RemoveEmptyEntries);
+                    int mIndex = 0;
+                    foreach (var m in maddeler)
+                    {
+                        if (!string.IsNullOrWhiteSpace(m))
+                        {
+                            mIndex++;
+                            <div class="esya-madde-box">
+                                <input type="text" class="esya-madde-input" data-index="@mIndex" value="@m.Trim()" placeholder="@mIndex. Gegenstand (Eşya)" />
+                                <button type="button" class="madde-sil-btn" onclick="removeMadde(this)">Löschen (Sil)</button>
+                            </div>
+                        }
+                    }
+                    if (mIndex == 0)
+                    {
+                        <div class="esya-madde-box">
+                            <input type="text" class="esya-madde-input" data-index="1" placeholder="1. Gegenstand (Eşya)" />
+                            <button type="button" class="madde-sil-btn" onclick="removeMadde(this)">Löschen (Sil)</button>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="esya-madde-box">
+                        <input type="text" class="esya-madde-input" data-index="1" placeholder="1. Gegenstand (Eşya)" />
+                        <button type="button" class="madde-sil-btn" onclick="removeMadde(this)">Löschen (Sil)</button>
+                    </div>
+                }
+            }
+        </div>
+        <button type="button" class="madde-ekle-btn" onclick="addMadde()">+ Gegenstand Hinzufügen (Eşya Ekle)</button>
+    </div>
+
+    <ul id="sp_EsyaListesi" class="print-only esya-print-list">
+        @{
+            var printEsyaMetin = getField("UstAramaEsya", null, "");
+            if (!string.IsNullOrWhiteSpace(printEsyaMetin))
+            {
+                var printMaddeler = printEsyaMetin.Split(new[] { "\r\n", "\r", "\n", ",", ";" }, StringSplitOptions.RemoveEmptyEntries);
+                foreach (var m in printMaddeler)
+                {
+                    if (!string.IsNullOrWhiteSpace(m))
+                    {
+                        <li>@m.Trim()</li>
+                    }
+                }
+            }
+        }
+    </ul>
+
+    <div class="content-text">
+        Dieses Durchsuchungsprotokoll wurde von uns erstellt. Sichergestellte Gegenstände, die nicht der Beschlagnahme unterliegen, wurden zurückgegeben. Nachdem das Protokoll von den Anwesenden verlesen und auf Richtigkeit überprüft wurde, wurde es von den Parteien unterzeichnet. Eine Ausfertigung dieses Protokolls wurde der verdächtigen/beschuldigten/festgenommenen Person ausgehändigt. / (İşbu üst arama tutanağı tarafımızdan tanzim edilmiştir. El konulması gerekmeyen kişisel eşyalar iade edilmiştir. Tutanak hazır bulunanlarca okunup doğruluğu anlaşıldıktan sonra taraflarca imzalanmıştır. Bu tutanağın bir nüshası şüpheli/sanık/yakalanan kişiye teslim edilmiştir.) <span id="sp_TutanakTarihSaat">@getField("YapildigiTarihSaat", "dd.MM.yyyy HH:mm", tarih + " " + saat)</span>
+    </div>
+
+    <table class="signatures-table">
+        <tr>
+            <td class="sig-header">DURCHSUCHENDE PERSON<br />(ARAMAYI YAPAN PERSONEL)</td>
+            <td class="sig-header">ZEUGE / ANWESENDER<br />(HAZURUN / TANIK)</td>
+            <td class="sig-header">FESTGENOMMENE / DURCHSUCHTE PERSON<br />(ARANAN / YAKALANAN ŞAHIS)</td>
+        </tr>
+        <tr>
+            <td>
+                <input id="inp_YapanAdSoyad" class="field-input screen-only" value="@getField("YapanAdSoyad", null, "")" placeholder="Vorname Nachname / Dienstnummer (Adı Soyadı / Sicil)" />
+                <div id="sp_YapanAdSoyad" class="print-only sig-name">@getField("YapanAdSoyad", null, "")</div>
+            </td>
+            <td>
+                <input id="inp_HazurunAdSoyad" class="field-input screen-only" value="@getField("Sicil", null, "")" placeholder="Vorname Nachname / Titel (Adı Soyadı / Ünvan)" />
+                <div id="sp_HazurunAdSoyad" class="print-only sig-name">@getField("Sicil", null, "")</div>
+            </td>
+            <td>
+                <input id="inp_YakalananAdSoyad" class="field-input screen-only" value="@getField("AdSoyad", null, "")" placeholder="Vor- und Nachname (Adı Soyadı)" />
+                <div id="sp_YakalananAdSoyad" class="print-only sig-name">@getField("AdSoyad", null, "")</div>
+            </td>
+        </tr>
+    </table>
+
+    <div style="margin-top: 25px; text-align: center;">
+        <span>Ich habe die bei der Durchsuchung sichergestellten Gegenstände vollständig zurückerhalten. (Aramada alınan eşyalarımı eksiksiz olarak geri teslim aldım.)</span>
+        <span style="margin-left: 15px;">JA (EVET) <span class="checkbox-box"></span></span>
+        <span style="margin-left: 15px;">NEIN (HAYIR) <span class="checkbox-box"></span></span>
+    </div>
+
+    <div class="print-button-container screen-only">
+        <button onclick="printPage()">🖨️ Drucken (Yazdır)</button>
+    </div>
+
+</body>
+</html>

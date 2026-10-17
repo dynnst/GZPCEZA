@@ -1,0 +1,664 @@
+﻿@model gzpegm.Models.ViewModels.CourseContentViewModel
+@using System
+@using System.IO
+@using System.Linq
+@{
+    ViewBag.Title = Model.ContentTitle;
+    Layout = "~/Views/Shared/_Master.cshtml";
+
+    // Dosya URL'si - normalizasyon + uzantıya göre tür tespiti
+    string fileUrl = null;
+    if (ViewBag.FilePath != null)
+    {
+        string raw = ViewBag.FilePath.ToString() ?? "";
+        raw = raw.Trim();
+
+        if (!string.IsNullOrEmpty(raw))
+        {
+            if (raw.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+            {
+                fileUrl = null;
+            }
+            else if (raw.StartsWith("~") || raw.StartsWith("/"))
+            {
+                // Zaten sanal yol verilmişse doğrudan kullan
+                fileUrl = Url.Content(raw);
+            }
+            else
+            {
+                // Projenizdeki yerel dosyalar için varsayılan klasör
+                fileUrl = Url.Content("~/files/Egitim/" + raw.TrimStart('/', '~'));
+            }
+        }
+    }
+
+    // İçerik türü: önce modelde varsa ona bak, yoksa dosya uzantısından türet
+    bool isVideo = false;
+    bool isPdf = false;
+    bool isImage = false;
+    bool isHtml = false;
+
+    if (!string.IsNullOrEmpty(Model?.ContentType))
+    {
+        // IndexOf ile kontrol yaparak .NET sürüm farklarından kaynaklı Contains overload sorununu önlüyoruz
+        string contentType = Model.ContentType;
+        isVideo = contentType.IndexOf("video", StringComparison.OrdinalIgnoreCase) >= 0
+                  || contentType.IndexOf("mp4", StringComparison.OrdinalIgnoreCase) >= 0
+                  || contentType.IndexOf("webm", StringComparison.OrdinalIgnoreCase) >= 0;
+        isPdf = contentType.IndexOf("pdf", StringComparison.OrdinalIgnoreCase) >= 0;
+        isImage = contentType.IndexOf("image", StringComparison.OrdinalIgnoreCase) >= 0
+                  || contentType.IndexOf("jpg", StringComparison.OrdinalIgnoreCase) >= 0
+                  || contentType.IndexOf("png", StringComparison.OrdinalIgnoreCase) >= 0;
+        isHtml = contentType.IndexOf("html", StringComparison.OrdinalIgnoreCase) >= 0;
+    }
+
+    if (!isVideo && !isPdf && !isImage && !isHtml && !string.IsNullOrEmpty(fileUrl))
+    {
+        var ext = Path.GetExtension(fileUrl)?.ToLowerInvariant() ?? "";
+
+        var imgExts = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".svg" };
+        var vidExts = new[] { ".mp4", ".webm", ".ogg" };
+
+        if (Array.IndexOf(imgExts, ext) >= 0)
+        {
+            isImage = true;
+        }
+        else if (Array.IndexOf(vidExts, ext) >= 0)
+        {
+            isVideo = true;
+        }
+        else if (ext == ".pdf")
+        {
+            isPdf = true;
+        }
+        else if (ext == ".html" || ext == ".htm")
+        {
+            isHtml = true;
+        }
+    }
+
+    bool canModifyContent = ViewBag.CanModifyContent != null && (bool)ViewBag.CanModifyContent;
+
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@Model.ContentTitle</title>
+
+    <link href="/AdminTemplate/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="/AdminTemplate/font-awesome/css/font-awesome.css" rel="stylesheet" />
+    <link href="/AdminTemplate/css/animate.css" rel="stylesheet" />
+    <link href="/AdminTemplate/css/style.css" rel="stylesheet" />
+
+    <style>
+        body {
+            padding-top: 20px;
+        }
+
+        .content-header h2 {
+            font-weight: 600;
+        }
+
+        .exam-list .list-group-item {
+            font-size: 0.9rem;
+        }
+
+        .media-display-area {
+            margin-top: 20px;
+        }
+
+        .pdf-container iframe {
+            height: 600px;
+        }
+
+        .content-description {
+            margin-top: 15px;
+            font-size: 0.95rem;
+            color: #555;
+        }
+
+        /* Resim için maksimum yükseklik, taşmayı kesme */
+        .content-image {
+            max-height: 700px;
+            object-fit: contain;
+            cursor: zoom-in;
+        }
+
+        .image-lightbox {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 32px;
+            background: rgba(5, 12, 26, 0.92);
+        }
+
+        .image-lightbox.is-open {
+            display: flex;
+        }
+
+        .image-lightbox img {
+            max-width: 96vw;
+            max-height: 92vh;
+            object-fit: contain;
+            border-radius: 10px;
+            box-shadow: 0 18px 60px rgba(0, 0, 0, 0.55);
+            background: #fff;
+            cursor: zoom-out;
+        }
+
+        .image-lightbox-close {
+            position: fixed;
+            top: 18px;
+            right: 22px;
+            z-index: 10000;
+            width: 44px;
+            height: 44px;
+            border: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.16);
+            color: #fff;
+            font-size: 28px;
+            line-height: 44px;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .image-lightbox-close:hover {
+            background: rgba(255, 255, 255, 0.28);
+        }
+
+        .image-lightbox-hint {
+            position: fixed;
+            bottom: 18px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.78);
+            font-size: 13px;
+            text-align: center;
+        }
+
+        .content-edit-panel {
+            border-left: 4px solid #f8ac59;
+        }
+
+        .html-editor-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .html-editor-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            padding: 8px;
+            border: 1px solid #dfe5ea;
+            border-bottom: 0;
+            border-radius: 6px 6px 0 0;
+            background: #f8f9fa;
+        }
+
+        .html-visual-frame {
+            width: 100%;
+            min-height: 560px;
+            border: 1px solid #dfe5ea;
+            border-radius: 0 0 6px 6px;
+            background: #fff;
+        }
+
+        .html-source-editor {
+            min-height: 560px;
+            font-family: Consolas, Monaco, "Courier New", monospace;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .html-editor-pane.d-none {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+
+            <!-- SOL ANA İÇERİK -->
+            <div class="col-lg-9">
+
+                <!-- Breadcrumb -->
+                <nav aria-label="breadcrumb" class="mb-3">
+                    <ol class="breadcrumb bg-light p-2 rounded">
+                        <li class="breadcrumb-item"><a href="@Url.Action("StudentIndex","Course")"><i class="fa fa-home"></i> Kurslarım</a></li>
+                        <li class="breadcrumb-item"><a href="@Url.Action("Details","Course", new { id=Model.CourseId })">@ViewBag.CourseTitle</a></li>
+                        <li class="breadcrumb-item active">@Model.ContentTitle</li>
+                    </ol>
+                </nav>
+
+                <!-- İçerik Başlığı -->
+                <div class="content-header text-center mb-4 p-3 bg-white shadow-sm rounded">
+                    <h1 class="display-5 font-weight-bold mb-2"><i class="fa fa-file-text-o"></i> @Model.ContentTitle</h1>
+                    <p class="text-secondary mb-0 small">
+                        <i class="fa fa-clock-o"></i> @((ViewBag.CreatedDate != null) ? ((DateTime)ViewBag.CreatedDate).ToString("dd.MM.yyyy HH:mm") : "") &nbsp; | &nbsp;
+                        <i class="fa fa-tag"></i> @Model.ContentType
+                    </p>
+
+                    @if (!string.IsNullOrEmpty(Model.ContentDescription))
+                    {
+                        <p class="content-description">@Html.Raw(Model.ContentDescription)</p>
+                    }
+                </div>
+
+                @if (TempData["msgSuccess"] != null)
+                {
+                    <div class="alert alert-success">@TempData["msgSuccess"]</div>
+                }
+                @if (TempData["msgError"] != null)
+                {
+                    <div class="alert alert-danger">@TempData["msgError"]</div>
+                }
+
+                @if (canModifyContent)
+                {
+                    <div class="card shadow-sm mb-4 content-edit-panel">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <strong><i class="fa fa-edit"></i> Eğitim Paketi İçeriğini Düzenle</strong>
+                            <button type="button" class="btn btn-sm btn-warning" data-toggle="collapse" data-target="#contentEditForm">
+                                Düzenle
+                            </button>
+                        </div>
+                        <div id="contentEditForm" class="collapse">
+                            <div class="card-body">
+                                <form method="post" action="@Url.Action("EditContent", "Course")" enctype="multipart/form-data">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="ContentId" value="@Model.ContentId" />
+                                    <input type="hidden" name="CourseId" value="@Model.CourseId" />
+                                    <input type="hidden" name="ReturnToContentDetail" value="true" />
+
+                                    <div class="form-row">
+                                        <div class="form-group col-md-6">
+                                            <label>İçerik Başlığı</label>
+                                            <input type="text" name="ContentTitle" value="@Model.ContentTitle" class="form-control" required maxlength="200" />
+                                        </div>
+                                        <div class="form-group col-md-6">
+                                            <label>İçerik Türü</label>
+                                            <select name="ContentType" class="form-control">
+                                                @foreach (var type in new[] { "HTML", "PDF", "Video", "Doküman", "Sunum", "Resim" })
+                                                {
+                                                    <option value="@type" @(string.Equals(Model.ContentType, type, StringComparison.OrdinalIgnoreCase) ? "selected" : "")>@type</option>
+                                                }
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>İçerik Açıklaması</label>
+                                        <textarea name="ContentDescription" class="form-control" rows="3" maxlength="500">@Model.ContentDescription</textarea>
+                                    </div>
+
+                                    @if (isHtml)
+                                    {
+                                        <div class="form-group">
+                                            <label>HTML İçerik</label>
+                                            <div class="html-editor-tabs">
+                                                <button type="button" class="btn btn-sm btn-primary html-editor-tab" data-target="visual">
+                                                    <i class="fa fa-eye"></i> Görsel Düzenle
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-secondary html-editor-tab" data-target="source">
+                                                    <i class="fa fa-code"></i> HTML Kaynak
+                                                </button>
+                                            </div>
+
+                                            <div id="htmlVisualPane" class="html-editor-pane">
+                                                <div class="html-editor-toolbar">
+                                                    <button type="button" class="btn btn-sm btn-light html-command" data-command="bold"><i class="fa fa-bold"></i></button>
+                                                    <button type="button" class="btn btn-sm btn-light html-command" data-command="italic"><i class="fa fa-italic"></i></button>
+                                                    <button type="button" class="btn btn-sm btn-light html-command" data-command="underline"><i class="fa fa-underline"></i></button>
+                                                    <button type="button" class="btn btn-sm btn-light html-command" data-command="insertUnorderedList"><i class="fa fa-list-ul"></i></button>
+                                                    <button type="button" class="btn btn-sm btn-light html-command" data-command="insertOrderedList"><i class="fa fa-list-ol"></i></button>
+                                                    <button type="button" class="btn btn-sm btn-light html-command" data-command="formatBlock" data-value="h2">Başlık</button>
+                                                    <button type="button" class="btn btn-sm btn-light html-command" data-command="formatBlock" data-value="p">Paragraf</button>
+                                                </div>
+                                                <iframe id="htmlVisualEditor" class="html-visual-frame" title="HTML görsel düzenleyici"></iframe>
+                                            </div>
+
+                                            <div id="htmlSourcePane" class="html-editor-pane d-none">
+                                                <textarea id="htmlSourceEditor" name="ContentHtml" class="form-control html-source-editor" rows="20">@Model.ContentHtml</textarea>
+                                            </div>
+                                            <small class="text-muted">Varsayılan olarak görsel görünümde metinleri düzenleyin; gerektiğinde HTML Kaynak sekmesinden kodu açabilirsiniz.</small>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="form-group">
+                                            <label>Yeni Dosya (isteğe bağlı)</label>
+                                            <input type="file" name="FileUpload" class="form-control" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip,.rar,.mp4,.avi,.mov,.wmv,.flv,.webm,.mkv,.m4v,.3gp,.jpg,.jpeg,.png,.gif,.bmp,.html,.htm" />
+                                            <small class="text-muted">Dosya seçmezseniz mevcut dosya korunur.</small>
+                                        </div>
+                                    }
+
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fa fa-save"></i> Değişiklikleri Kaydet
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- İçerik Gövdesi -->
+                <div class="content-body">
+                    @if (!string.IsNullOrEmpty(fileUrl))
+                    {
+                        <div class="media-display-area">
+                            @if (isVideo)
+                            {
+                                <video controls controlsList="nodownload" class="w-100 mb-2">
+                                    <source src="@fileUrl" type="video/mp4">
+                                    <source src="@fileUrl" type="video/webm">
+                                    Tarayıcınız video oynatmayı desteklemiyor.
+                                    <a href="@fileUrl" download>Videoyu indirmek için tıklayın</a>
+                                </video>
+                            }
+                            else if (isPdf)
+                            {
+                                <div class="pdf-container mb-2">
+                                    <iframe src="@fileUrl" frameborder="0" width="100%"></iframe>
+                                </div>
+                            }
+                            else if (isImage)
+                            {
+                                <!-- Görüntü hatası için alt link ve onerror fallback -->
+                                <img src="@fileUrl" alt="@Model.ContentTitle" class="img-fluid shadow mb-2 content-image"
+                                     data-fullscreen-image="true"
+                                     onerror="this.style.display='none'; document.getElementById('imgFallback').style.display='block';" />
+                                <div id="imgFallback" class="alert alert-secondary text-center" style="display:none;">
+                                    <p>Resim yüklenemedi. <a href="@fileUrl" target="_blank">Resmi yeni sekmede aç</a> veya indir.</p>
+                                    <a href="@fileUrl" download class="btn btn-sm btn-primary"><i class="fa fa-download"></i> İndir</a>
+                                </div>
+                            }
+                            else if (isHtml)
+                            {
+                                <div class="html-content-container mb-3">
+                                    <iframe id="htmlContentFrame" src="@fileUrl" title="@Model.ContentTitle" style="width:100%; min-height:720px; border:1px solid #dfe5ea; border-radius:8px; background:#fff;"></iframe>
+                                </div>
+                                <div class="alert alert-info d-flex justify-content-between align-items-center flex-wrap">
+                                    <span><i class="fa fa-info-circle"></i> Çevrimdışı paket HTML içeriğini ve yerel görselleri birlikte içerir.</span>
+                                    <a href="@Url.Action("DownloadContent", "Course", new { id = Model.ContentId })" class="btn btn-primary mt-2 mt-md-0">
+                                        <i class="fa fa-download"></i> Görsellerle Birlikte ZIP İndir
+                                    </a>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="file-download-card text-center p-3 mb-2 border rounded">
+                                    <i class="fa fa-file-o fa-3x text-muted mb-2"></i>
+                                    <h4>@Model.ContentTitle</h4>
+                                    @if (!string.IsNullOrEmpty(Model.ContentDescription))
+                                    {
+                                        <p class="text-muted">@Html.Raw(Model.ContentDescription)</p>
+                                    }
+                                    <a href="@fileUrl" download class="btn btn-primary">
+                                        <i class="fa fa-download"></i> Dosyayı İndir
+                                    </a>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning text-center">
+                            <i class="fa fa-exclamation-triangle fa-2x"></i>
+                            <h4>Dosya Bulunamadı</h4>
+                            <p>Bu içerik için yüklenmiş bir dosya bulunmamaktadır.</p>
+                        </div>
+                    }
+                </div>
+
+                <!-- Navigasyon Butonları -->
+                <div class="d-flex justify-content-between mt-3">
+                    @if (ViewBag.PreviousContentId != null)
+                    {
+                        <a href="@Url.Action("Details", "Course", new { id = Model.CourseId })" class="btn btn-outline-primary">
+                            <i class="fa fa-arrow-left"></i> Kursa Dön
+                        </a>
+                    }
+
+                    <a href="@Url.Action("Details", new { id=Model.CourseId })" class="btn btn-info">
+                        <i class="fa fa-list"></i> Tüm İçeriklere Dön
+                    </a>
+
+                    @if (ViewBag.NextContentId != null)
+                    {
+                        <a href="@Url.Action("ContentDetail", new { id=ViewBag.NextContentId })" class="btn btn-outline-primary">
+                            Sonraki İçerik <i class="fa fa-arrow-right"></i>
+                        </a>
+                    }
+                </div>
+
+            </div>
+
+            <!-- SAĞ SINAV PANELİ -->
+            <div class="col-lg-3">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-info text-white">
+                        <strong><i class="fa fa-graduation-cap"></i> Kursa Ait Sınavlar</strong>
+                    </div>
+                    <div class="card-body p-2">
+                        @if (ViewBag.ContentExams != null && ((List<gzpegm.Models.ViewModels.ExamViewModel>)ViewBag.ContentExams).Count > 0)
+                        {
+                            <ul class="list-group exam-list mb-2">
+                                @foreach (var exam in (List<gzpegm.Models.ViewModels.ExamViewModel>)ViewBag.ContentExams)
+                                {
+                                    <li class="list-group-item">
+                                        <div class="mb-2">
+                                            <i class="fa fa-pencil text-primary"></i>
+                                            <strong>@exam.ExamTitle</strong>
+                                        </div>
+                                        <div class="small text-muted mb-2">
+                                            <i class="fa fa-clock-o"></i> @exam.Duration dk<br />
+                                            <i class="fa fa-question-circle"></i> @exam.QuestionCount soru<br />
+                                            <i class="fa fa-trophy"></i> Geçme: @exam.PassingScore
+                                        </div>
+
+                                        @if (exam.ExamResultId.HasValue)
+                                        {
+                                            <a href="@Url.Action("ExamResult", "StudentExam", new { id = exam.ExamResultId.Value })"
+                                               class="btn btn-sm btn-info btn-block">
+                                                <i class="fa fa-eye"></i> Sonucu Gör
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <a href="@Url.Action("StartExam", "StudentExam", new { id = exam.ExamId })"
+                                               class="btn btn-sm btn-success btn-block">
+                                                <i class="fa fa-play"></i> Sınava Başla
+                                            </a>
+                                        }
+                                    </li>
+                                }
+                            </ul>
+                        }
+                        else
+                        {
+                            <div class="text-center text-muted py-3">
+                                <i class="fa fa-info-circle fa-2x mb-2"></i>
+                                <p class="small mb-0">Bu kursa ait aktif sınav bulunmuyor.</p>
+                            </div>
+                        }
+
+                        <div class="text-center text-muted small mt-2">
+                            <i class="fa fa-info-circle"></i> Bu içerik okunduktan sonra sınav önerilir.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="imageLightbox" class="image-lightbox" aria-hidden="true" role="dialog" aria-label="Resim önizleme">
+        <button type="button" class="image-lightbox-close" aria-label="Kapat">&times;</button>
+        <img id="imageLightboxImg" src="" alt="Büyütülmüş resim" />
+        <div class="image-lightbox-hint">Kapatmak için ESC tuşuna veya boş alana tıklayın</div>
+    </div>
+
+    <script src="/AdminTemplate/js/jquery-3.1.1.min.js"></script>
+    <script src="/AdminTemplate/js/bootstrap.js"></script>
+    <script>
+        (function () {
+            var lightbox = document.getElementById('imageLightbox');
+            var lightboxImg = document.getElementById('imageLightboxImg');
+            if (!lightbox || !lightboxImg) return;
+
+            function openImage(src, alt) {
+                if (!src) return;
+                lightboxImg.src = src;
+                lightboxImg.alt = alt || 'Büyütülmüş resim';
+                lightbox.classList.add('is-open');
+                lightbox.setAttribute('aria-hidden', 'false');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeImage() {
+                lightbox.classList.remove('is-open');
+                lightbox.setAttribute('aria-hidden', 'true');
+                document.body.style.overflow = '';
+                lightboxImg.src = '';
+            }
+
+            lightbox.addEventListener('click', function (event) {
+                if (event.target === lightbox || event.target.classList.contains('image-lightbox-close') || event.target === lightboxImg) {
+                    closeImage();
+                }
+            });
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape' && lightbox.classList.contains('is-open')) {
+                    closeImage();
+                }
+            });
+
+            document.addEventListener('click', function (event) {
+                var image = event.target.closest && event.target.closest('img[data-fullscreen-image="true"], .content-body img');
+                if (!image) return;
+                event.preventDefault();
+                openImage(image.currentSrc || image.src, image.alt);
+            });
+
+            function enableFrameImages() {
+                var frame = document.getElementById('htmlContentFrame');
+                if (!frame) return;
+
+                frame.addEventListener('load', function () {
+                    try {
+                        var doc = frame.contentDocument || frame.contentWindow.document;
+                        if (!doc) return;
+
+                        var images = doc.querySelectorAll('img');
+                        for (var i = 0; i < images.length; i++) {
+                            images[i].style.cursor = 'zoom-in';
+                            images[i].addEventListener('click', function (event) {
+                                event.preventDefault();
+                                var src = this.currentSrc || this.src || this.getAttribute('src');
+                                if (src && !/^https?:\/\//i.test(src) && frame.contentWindow) {
+                                    src = new URL(src, frame.contentWindow.location.href).href;
+                                }
+                                openImage(src, this.alt);
+                            });
+                        }
+                    } catch (e) {
+                        // Farklı kaynaklı iframe olursa tarayıcı güvenliği nedeniyle içerideki resimlere erişemeyiz.
+                    }
+                });
+            }
+
+            enableFrameImages();
+        })();
+
+        (function () {
+            var sourceEditor = document.getElementById('htmlSourceEditor');
+            var visualFrame = document.getElementById('htmlVisualEditor');
+            if (!sourceEditor || !visualFrame) return;
+
+            var currentMode = 'visual';
+
+            function getFrameDocument() {
+                return visualFrame.contentDocument || visualFrame.contentWindow.document;
+            }
+
+            function loadVisualFromSource() {
+                var doc = getFrameDocument();
+                doc.open();
+                doc.write(sourceEditor.value || '<!doctype html><html><head><meta charset="utf-8"></head><body></body></html>');
+                doc.close();
+                doc.designMode = 'on';
+                if (doc.body) {
+                    doc.body.setAttribute('contenteditable', 'true');
+                }
+            }
+
+            function syncSourceFromVisual() {
+                var doc = getFrameDocument();
+                if (!doc || !doc.documentElement) return;
+                sourceEditor.value = '<!doctype html>\n' + doc.documentElement.outerHTML;
+            }
+
+            function switchMode(mode) {
+                if (mode === currentMode) return;
+
+                if (currentMode === 'visual') {
+                    syncSourceFromVisual();
+                } else {
+                    loadVisualFromSource();
+                }
+
+                currentMode = mode;
+                document.getElementById('htmlVisualPane').classList.toggle('d-none', mode !== 'visual');
+                document.getElementById('htmlSourcePane').classList.toggle('d-none', mode !== 'source');
+
+                var buttons = document.querySelectorAll('.html-editor-tab');
+                for (var i = 0; i < buttons.length; i++) {
+                    var isActive = buttons[i].getAttribute('data-target') === mode;
+                    buttons[i].classList.toggle('btn-primary', isActive);
+                    buttons[i].classList.toggle('btn-outline-secondary', !isActive);
+                }
+            }
+
+            var tabButtons = document.querySelectorAll('.html-editor-tab');
+            for (var i = 0; i < tabButtons.length; i++) {
+                tabButtons[i].addEventListener('click', function () {
+                    switchMode(this.getAttribute('data-target'));
+                });
+            }
+
+            var commandButtons = document.querySelectorAll('.html-command');
+            for (var j = 0; j < commandButtons.length; j++) {
+                commandButtons[j].addEventListener('click', function () {
+                    var doc = getFrameDocument();
+                    var command = this.getAttribute('data-command');
+                    var value = this.getAttribute('data-value') || null;
+                    visualFrame.contentWindow.focus();
+                    doc.execCommand(command, false, value);
+                    syncSourceFromVisual();
+                });
+            }
+
+            var form = sourceEditor.closest('form');
+            if (form) {
+                form.addEventListener('submit', function () {
+                    if (currentMode === 'visual') {
+                        syncSourceFromVisual();
+                    }
+                });
+            }
+
+            loadVisualFromSource();
+        })();
+    </script>
+</body>
+</html>

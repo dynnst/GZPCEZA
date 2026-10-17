@@ -1,0 +1,331 @@
+﻿@model gzpegm.Models.E_User
+@{
+    Layout = "~/Views/Shared/_Master.cshtml";
+    ViewBag.Title = "Profilim";
+    var tahditStats = ViewBag.TahditStats as gzpegm.Models.ViewModels.TahditStatisticsViewModel ?? new gzpegm.Models.ViewModels.TahditStatisticsViewModel();
+}
+
+@section Styles {
+    <link href="@Url.Content("~/css/profil-index.css")?v=1.0" rel="stylesheet" />
+}
+
+<div class="wrapper wrapper-content animated fadeInRight">
+    <div class="row">
+        <!-- LEFT COLUMN: Profile Edit Form + Last Message -->
+        <div class="col-lg-3">
+            <div class="ibox">
+                <div class="profile-header">
+                    <h4 class="mb-1" style="color:white">@Model.fldName @Model.fldLastName</h4>
+                    <div class="text-white-50 small">@Model.fldTitle ?? "Personel"</div>
+                </div>
+                <div class="ibox-content text-center" style="padding-top:0">
+                    <div class="profile-avatar">
+                        @{
+                            var pictureUrl = string.IsNullOrEmpty(Model.fldPicture)
+                                ? Url.Content("/AdminTemplate/img/a4.jpg")
+                                : Url.Content("~/files/User/" + Model.fldPicture);
+                        }
+                        <img alt="profile" class="rounded-circle" src="@pictureUrl" id="profilePreview" style="width:120px;height:120px;object-fit:cover;border-radius:50%;" />
+                        <div class="mt-2">
+                            <span class="stat-badge"><i class="fas"></i> @Model.fldDeputy</span>
+                        </div>
+                    </div>
+
+                    <form method="post" action="@Url.Action("SaveProfile","Profile")" enctype="multipart/form-data" id="profileForm">
+                        @Html.AntiForgeryToken()
+                        <div class="form-group text-left mt-3">
+                            <label>👤 Ad</label>
+                            <input type="text" name="fldName" class="form-control" value="@Model.fldName" />
+                        </div>
+                        <div class="form-group text-left">
+                            <label>👥 Soyad</label>
+                            <input type="text" name="fldLastName" class="form-control" value="@Model.fldLastName" />
+                        </div>
+                        <div class="form-group text-left">
+                            <label>🖼️ Profil Fotoğrafı</label>
+                            <input type="file" name="PictureFile" class="form-control-file" accept=".jpg,.jpeg,.png,.gif,.bmp" id="profileImageInput" />
+                            <small class="text-muted">JPG, PNG, GIF (max 2MB)</small>
+                        </div>
+                        <div class="form-group text-left">
+                            <label>📞 Telefon</label>
+                            <input type="text" name="fldPhone" class="form-control" value="@Model.fldPhone" />
+                        </div>
+                        <div class="form-group text-left">
+                            <label>✉️ E-Posta</label>
+                            <input type="email" name="fldEmail" class="form-control" value="@Model.fldEmail" />
+                        </div>
+                        <div class="form-group text-left">
+                            <label>💼 Ünvan</label>
+                            <input type="text" name="fldTitle" class="form-control" value="@Model.fldTitle" />
+                        </div>
+                        <div class="form-group text-left">
+                            <label>📍 Görev Yeri</label>
+                            <input type="text" name="fldDeputy" class="form-control" value="@Model.fldDeputy" />
+                        </div>
+                        <div class="form-group text-left">
+                            <label>🌉 Hudut Kapısı</label>
+                            <select name="fldBorder" class="form-control">
+                                <option value="">Seçiniz</option>
+                                @if (ViewBag.Borders != null)
+                                {
+                                    foreach (var b in (System.Collections.IEnumerable)ViewBag.Borders)
+                                    {
+                                        var bb = b as dynamic;
+                                        var id = bb.fldId;
+                                        var name = bb.fldName as string;
+                                        var selected = string.Equals(name, Model.fldBorder, StringComparison.OrdinalIgnoreCase) ? "selected" : "";
+                                        <option value="@name" @selected>@name</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+
+                        <hr />
+                        <h6 class="text-left">🔐 Şifre Güncelleme</h6>
+                        <div class="form-group text-left">
+                            <label>Mevcut Şifre</label>
+                            <input type="password" name="currentpass" class="form-control" placeholder="Değişmeyecekse boş bırakın" />
+                        </div>
+                        <div class="form-group text-left">
+                            <label>Yeni Şifre</label>
+                            <input type="password" name="newpass" class="form-control" />
+                        </div>
+                        <div class="form-group text-left">
+                            <label>Yeni Şifre (Tekrar)</label>
+                            <input type="password" name="confirmpass" class="form-control" />
+                        </div>
+
+                        <div class="text-right">
+                            <button type="submit" class="btn btn-success btn-sm"><span>💾</span> Tüm Bilgileri Kaydet</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Son Mesaj Card Improved -->
+            <div class="ibox mt-4">
+                <div class="ibox-title">
+                    <h5>📬 Son Mesaj</h5>
+                </div>
+                <div class="ibox-content">
+                    @if (ViewBag.LastMessageSubject != null)
+                    {
+                        <p><strong>@ViewBag.LastMessageSubject</strong></p>
+                        <p class="small text-muted">@(ViewBag.LastMessageDate != null ? ((DateTime)ViewBag.LastMessageDate).ToString("dd.MM.yyyy HH:mm") : "")</p>
+                        <div class="alert alert-light border-left-primary" style="border-left: 4px solid #2a5298;">
+                            @Html.Raw(Html.Encode(ViewBag.LastMessageText ?? "").Replace("\n", "<br/>"))
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-3">
+                            <span class="badge-custom">📭 Henüz mesaj yok</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- MIDDLE COLUMN: Statistics and Charts -->
+        <div class="col-lg-6">
+            <div class="ibox">
+                <div class="ibox-title">
+                    <h5>📈 Kişisel İstatistikler</h5>
+                </div>
+                <div class="ibox-content">
+                    <div class="row text-center stats-row g-0">
+                        <div class="col-md-4">
+                            <div class="stat-circle">@(ViewBag.TotalHistory ?? 0)</div>
+                            <div class="text-muted small">Toplam İşlem</div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stat-circle">₺ @(ViewBag.TotalPenalty ?? 0)</div>
+                            <div class="text-muted small">Toplam Ceza (TL)</div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stat-circle">@(ViewBag.EnrolledCoursesCount ?? 0)</div>
+                            <div class="text-muted small">Kayıtlı Kurslar</div>
+                        </div>
+                    </div>
+
+                    <hr />
+
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3">
+                            <div class="p-3 bg-light rounded-3">
+                                <strong>📆 En Aktif Gün:</strong>
+                                <span class="float-right badge-custom">@(ViewBag.MostActiveDay ?? "-")</span>
+                                <p class="mt-2 mb-0 text-muted small">İşlem Sayısı: <b>@(ViewBag.MostActiveDayCount ?? 0)</b></p>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="p-3 bg-light rounded-3">
+                                <strong>🏆 Ceza Sıralaması:</strong>
+                                <span class="float-right badge-custom">@(ViewBag.PenaltyRank ?? "-")</span>
+                                <p class="mt-2 mb-0 text-muted small">En çok işlem yapılan ülke: <b>@(ViewBag.TopCountry ?? "-")</b> (@(ViewBag.TopCountryCount ?? 0))</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="p-3 bg-light rounded-3">
+                                <strong>🚫 En Çok İnad:</strong>
+                                <span class="float-right badge-custom">@(ViewBag.InadTopCountry ?? "-")</span>
+                                <p class="mt-2 mb-0 text-muted small">Sebep: @(ViewBag.InadTopReason ?? "-") (@(ViewBag.InadTopCount ?? 0))</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="p-3 bg-light rounded-3">
+                                <strong>📝 Sınav Sonuçları:</strong>
+                                <span class="float-right">@(ViewBag.ExamResultsCount ?? 0) adet</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr />
+                    <h6>🚫 Kişisel Tahdit Form İstatistikleri</h6>
+                    <div class="profile-tahdit-grid">
+                        <div class="profile-tahdit-stat"><span>Bugün Bastığın Form</span><strong>@tahditStats.TodayTotal</strong></div>
+                        <div class="profile-tahdit-stat"><span>Toplam Bastığın Form</span><strong>@tahditStats.AllTotal</strong></div>
+                    </div>
+                    <div class="table-responsive profile-tahdit-table mb-4">
+                        <table class="table table-sm table-striped">
+                            <thead><tr><th>Tahdit</th><th>İdari</th><th class="text-right">Adet</th></tr></thead>
+                            <tbody>
+                                @if (tahditStats.AllByCode.Any())
+                                {
+                                    foreach (var item in tahditStats.AllByCode)
+                                    {
+                                        <tr><td>@item.TahditCode</td><td>@item.IdariTahditCode</td><td class="text-right">@item.Count</td></tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr><td colspan="3" class="text-center text-muted">Henüz tahdit formu kaydın yok.</td></tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <hr />
+                    <h6>📊 Son 12 Ay - İşlem Grafiği</h6>
+                    <div id="profile-sparkline" style="height:220px; margin-top:15px;"></div>
+
+                </div>
+            </div>
+
+            <!-- Kurs & Sınav Özet -->
+            <div class="ibox mt-3">
+                <div class="ibox-title">
+                    <h5>🎓 Kayıtlı Sınavlar / Kurslar</h5>
+                </div>
+                <div class="ibox-content">
+                    <div class="row">
+                        <div class="col-md-6 text-center">
+                            <div class="p-3 border rounded-3 mx-2">
+                                <span class="display-4">📘</span>
+                                <h4 class="mt-2">@(ViewBag.EnrolledCoursesCount ?? 0)</h4>
+                                <p class="text-muted">Aktif Kurs Kaydı</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6 text-center">
+                            <div class="p-3 border rounded-3 mx-2">
+                                <span class="display-4">📋</span>
+                                <h4 class="mt-2">@(ViewBag.ExamResultsCount ?? 0)</h4>
+                                <p class="text-muted">Tamamlanan Sınavlar</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Detailed Info & Border Stats -->
+        <div class="col-lg-3">
+            <div class="ibox">
+                <div class="ibox-title">
+                    <h5>📌 Detaylı Bilgiler</h5>
+                </div>
+                <div class="ibox-content">
+                    <div class="mb-3">
+                        <span class="text-muted">📋 Toplam İşlem</span>
+                        <div class="fw-bold fs-5">@(ViewBag.TotalHistory ?? 0)</div>
+                    </div>
+                    <div class="mb-3">
+                        <span class="text-muted">💰 Toplam Ceza (TL)</span>
+                        <div class="fw-bold text-danger">₺ @(ViewBag.TotalPenalty ?? 0)</div>
+                    </div>
+                    <div class="mb-3">
+                        <span class="text-muted">🌍 En Çok Ceza Uygulanan Ülke</span>
+                        <div class="fw-bold">@(ViewBag.TopCountry ?? "-")</div>
+                    </div>
+                    <div class="mb-3">
+                        <span class="text-muted">🏅 Ceza Sıralaması</span>
+                        <div class="fw-bold">@(ViewBag.PenaltyRank ?? "-")</div>
+                    </div>
+                    <div class="mb-3">
+                        <span class="text-muted">🗓️ En son mesaj</span>
+                        <div class="small bg-light p-2 rounded">
+                            @if (ViewBag.LastMessageSubject != null)
+                            {
+                                <strong>@ViewBag.LastMessageSubject</strong><br />
+                                <span class="text-muted">@(ViewBag.LastMessageDate != null ? ((DateTime)ViewBag.LastMessageDate).ToString("dd.MM.yyyy HH:mm") : "")</span>
+                            }
+                            else
+                            {
+                                <span>Mesaj bulunmuyor</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ibox mt-3">
+                <div class="ibox-title">
+                    <h5>🌐 Diğer Hudut Kapıları</h5>
+                </div>
+                <div class="ibox-content">
+                    @{
+                        var list = (IEnumerable<gzpegm.Models.ViewModels.ProfileBorderStat>)(ViewBag.BorderHistory ?? new List<gzpegm.Models.ViewModels.ProfileBorderStat>());
+                        var top5 = list.OrderByDescending(x => x.Count).Take(5).ToList();
+                    }
+                    @if (list != null && list.Any())
+                    {
+                        foreach (var bi in top5)
+                        {
+                            <div class="border-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>@bi.Border</strong>
+                                    <div><small class="text-muted">📊 @bi.Count işlem</small></div>
+                                    <div><span class="badge-custom">💰 @bi.Sum TL</span></div>
+                                </div>
+                                <div>
+                                    <button class="btn btn-sm btn-primary view-border rounded-pill" data-border='@bi.Border'>Detay</button>
+                                </div>
+                            </div>
+                        }
+
+                        if (list.Count() > 5)
+                        {
+                            <div class="text-center mt-3">
+                                <a href="#" id="showAllBorders" class="text-decoration-none">🔍 Tüm hudut kapılarını göster</a>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center py-3 text-muted">Henüz hudut bilgisi yok</div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <div id="profil-config"
+         data-details-url="@Url.Action("GetBorderDetails", "Profile")"
+         data-history-chart='@Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.HistoryChart ?? new object[0]))'
+         data-border-history='@Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.BorderHistory ?? new List<object>()))'
+         style="display:none;"></div>
+    <script src="@Url.Content("~/AdminTemplate/js/plugins/sparkline/jquery.sparkline.min.js")"></script>
+    <script src="@Url.Content("~/js/profil-index.js")?v=1.0"></script>
+}

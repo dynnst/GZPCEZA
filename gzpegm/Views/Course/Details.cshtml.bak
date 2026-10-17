@@ -1,0 +1,1032 @@
+@model gzpegm.Models.ViewModels.CourseViewModel
+@using System
+@using System.Collections.Generic
+@using System.IO
+@using System.Linq
+@using System.Text.RegularExpressions
+@using System.Web
+@{
+    ViewBag.Title = "Öğrenci Paneli";
+    Layout = "~/Views/Shared/_Master.cshtml";
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kurs Detayı</title>
+
+    <link href="/AdminTemplate/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/AdminTemplate/font-awesome/css/font-awesome.css" rel="stylesheet">
+    <link href="/AdminTemplate/css/animate.css" rel="stylesheet">
+    <link href="/AdminTemplate/css/style.css" rel="stylesheet">
+
+    <!-- Summernote CSS -->
+    <link href="~/css/Summernote/summernote-bs4.css" rel="stylesheet" />
+
+    <style>
+        /* Sidebar tamamen kapalı */
+        .navbar-static-side {
+            display: none !important;
+        }
+
+        /* Wrapper ve body boşlukları */
+        body,
+        body.fixed-sidebar,
+        body.mini-navbar {
+            padding: 0 !important;
+            margin: 0 !important;
+            background: #f3f3f4;
+        }
+
+        #wrapper,
+        #page-wrapper {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            min-height: 100vh;
+        }
+
+        /* İçerik alanı */
+        .wrapper-content {
+            padding: 20px !important;
+        }
+
+        /* Sağ-sol koyu alanları yok et */
+        .gray-bg {
+            background-color: #f3f3f4 !important;
+        }
+
+        /* Kartların daha geniş görünmesi */
+        .ibox {
+            margin-bottom: 20px;
+        }
+        /* ===== UDEMY STYLE HERO ===== */
+        .course-hero {
+            background: linear-gradient(135deg, #1c1d1f, #2a2b2f);
+            color: #fff;
+            padding: 35px 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+        }
+
+            .course-hero h2 {
+                font-weight: 700;
+                margin-bottom: 10px;
+            }
+
+            .course-hero .btn {
+                margin-top: 10px;
+            }
+
+        /* İçerik kartları */
+        .content-item {
+            border-radius: 10px;
+            transition: all .2s ease;
+        }
+
+            .content-item:hover {
+                background: #f8f9fa;
+                transform: translateY(-2px);
+            }
+
+        /* Summernote modal içi z-index düzeltmeleri */
+        .note-popover {
+            z-index: 2000 !important;
+        }
+
+        .note-handle {
+            z-index: 2000 !important;
+        }
+
+        .mce-tooltip {
+            z-index: 2000 !important;
+        }
+
+        /* Medya galeri stilleri */
+        .media-gallery {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+            .media-gallery .media-item {
+                width: 160px;
+                text-align: center;
+            }
+
+            .media-gallery img {
+                max-width: 160px;
+                max-height: 120px;
+                display: block;
+                border-radius: 6px;
+            }
+
+            .media-gallery video {
+                max-width: 100%;
+                border-radius: 6px;
+                display: block;
+            }
+
+        .media-file-link {
+            display: block;
+            word-break: break-all;
+            font-size: .85rem;
+            margin-top: 6px;
+        }
+
+        .course-detail-summary {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+            margin: 18px 0 22px;
+        }
+
+        .course-detail-summary .summary-card {
+            border: 1px solid #e7eaec;
+            border-radius: 12px;
+            padding: 14px;
+            background: #fff;
+            box-shadow: 0 8px 18px rgba(0,0,0,.035);
+        }
+
+        .course-detail-summary .summary-card i {
+            display: block;
+            margin-bottom: 8px;
+            color: #1ab394;
+            font-size: 22px;
+        }
+
+        .course-detail-summary .summary-card strong {
+            display: block;
+            color: #2f4050;
+            font-size: 20px;
+            line-height: 1.1;
+        }
+
+        .course-detail-summary .summary-card span {
+            color: #7b8794;
+            font-size: 12px;
+        }
+
+        .course-intro-box {
+            border: 1px solid #e7eaec;
+            border-radius: 14px;
+            padding: 18px;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #ffffff, #f8fbfd);
+        }
+
+        .course-preview-list {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .course-preview-item {
+            border: 1px solid #e7eaec;
+            border-radius: 10px;
+            padding: 12px;
+            background: #fff;
+        }
+
+        .course-preview-item .title {
+            font-weight: 700;
+            color: #2f4050;
+            margin-bottom: 5px;
+        }
+
+        .course-preview-item .desc {
+            color: #6c757d;
+            font-size: 12px;
+            line-height: 1.45;
+        }
+
+        @@media (max-width: 991px) {
+            .course-detail-summary,
+            .course-preview-list {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @@media (max-width: 575px) {
+            .course-detail-summary,
+            .course-preview-list {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+
+
+</head>
+<body>
+    <div id="wrapper" class="full-width">
+
+        <div id="page-wrapper" class="gray-bg">
+            @{
+                var detailExams = new List<gzpegm.Models.ViewModels.ExamViewModel>();
+                if (ViewBag.CourseExams is IEnumerable<gzpegm.Models.ViewModels.ExamViewModel> detailExamSource)
+                {
+                    detailExams = detailExamSource as List<gzpegm.Models.ViewModels.ExamViewModel> ?? new List<gzpegm.Models.ViewModels.ExamViewModel>(detailExamSource);
+                }
+
+                var detailContents = Model.Contents ?? new List<gzpegm.Models.CourseContents>();
+                var detailQuestionCount = detailExams.Sum(e => e.QuestionCount);
+                var detailCompletedExamCount = detailExams.Count(e => e.ExamResultId.HasValue);
+                var detailIntro = ToPlainText(Model.CourseDescription, 360);
+                var detailPreviewContents = detailContents
+                    .OrderBy(c => c.CreatedDate ?? DateTime.MinValue)
+                    .Take(4)
+                    .ToList();
+            }
+            <div class="course-hero text-center">
+
+                <h2 class="course-title">@Model.CourseTitle</h2>
+                <p class="lead" style="max-width: 820px; margin: 10px auto 0; color: rgba(255,255,255,.82);">
+                    @(string.IsNullOrWhiteSpace(detailIntro) ? "Bu kurs için hazırlanan dersleri, içerikleri ve sınavları aşağıdan inceleyebilirsiniz." : detailIntro)
+                </p>
+                <div class="mt-3">
+                    <span class="badge badge-info mr-1"><i class="fa fa-tag"></i> @Model.CategoryName</span>
+                    @if (Model.CreatedDate.HasValue)
+                    {
+                        <span class="badge badge-light"><i class="fa fa-calendar"></i> @Model.CreatedDate.Value.ToString("dd.MM.yyyy")</span>
+                    }
+                </div>
+                <a href="@Url.Action("StudentIndex", "Course")" class="btn btn-primary btn-sm btn-back">
+                    <i class="fa fa-arrow-left"></i> Kurslarıma Dön
+                </a>
+
+                <div class="mt-4 mb-4 text-center">
+                    @if (ViewBag.CurrentUser != null)
+                    {
+                        var cu = ViewBag.CurrentUser as gzpegm.Models.E_User;
+                        if (!string.Equals(cu.Role, "Admin", StringComparison.OrdinalIgnoreCase) && !string.Equals(cu.Role, "Teacher", StringComparison.OrdinalIgnoreCase))
+                        {
+                            <form id="teacherRequestFormCourse">@Html.AntiForgeryToken()</form>
+                            <button id="teacherRequestBtnCourse" class="btn btn-warning">
+                                <i class="fa fa-user-plus"></i> Sen de Eğitimci Olmak İçin Başvur
+                            </button>
+                        }
+                    }
+                    else
+                    {
+                        <a href="@Url.Action("Index","Giris")" class="btn btn-outline-primary">Giriş Yaparak Başvur</a>
+                    }
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-9">
+                    <div class="wrapper wrapper-content animated fadeInUp">
+                        <div class="ibox">
+                            @if (TempData["msgWarningTitleMissing"] != null)
+                            {
+                                <div class="alert alert-warning">
+                                    <i class="fa fa-exclamation-triangle"></i>
+                                    @Html.Raw(HttpUtility.HtmlEncode(TempData["msgWarningTitleMissing"].ToString()))
+                                    <hr />
+                                    <form method="post" action="@Url.Action("UpdateTitle", "Course")" class="form-inline" style="margin-top:10px;">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@Model.CourseId" />
+                                        <div class="form-group mr-2" style="min-width:320px;">
+                                            <input type="text" name="CourseTitle" id="CourseTitleInput" class="form-control form-control-lg" value="@Model.CourseTitle" placeholder="Kurs başlığını girin" />
+                                        </div>
+                                        <button type="submit" class="btn btn-primary btn-lg">Başlığı Kaydet</button>
+                                    </form>
+                                    <script>setTimeout(function(){ try { document.getElementById('CourseTitleInput').focus(); } catch(e){} },50);</script>
+                                </div>
+                            }
+                            <div class="ibox-content">
+                                @if (!string.IsNullOrEmpty(Model.CoverImagePath))
+                                {
+                                    <img src="@Model.CoverImagePath" class="img-fluid rounded mb-3" />
+                                }
+
+                                <div class="course-detail-summary">
+                                    <div class="summary-card">
+                                        <i class="fa fa-file-text-o"></i>
+                                        <strong>@detailContents.Count</strong>
+                                        <span>Ders / içerik</span>
+                                    </div>
+                                    <div class="summary-card">
+                                        <i class="fa fa-graduation-cap"></i>
+                                        <strong>@detailExams.Count</strong>
+                                        <span>Sınav</span>
+                                    </div>
+                                    <div class="summary-card">
+                                        <i class="fa fa-question-circle"></i>
+                                        <strong>@detailQuestionCount</strong>
+                                        <span>Toplam soru</span>
+                                    </div>
+                                    <div class="summary-card">
+                                        <i class="fa fa-check-circle"></i>
+                                        <strong>@detailCompletedExamCount / @detailExams.Count</strong>
+                                        <span>Tamamlanan sınav</span>
+                                    </div>
+                                </div>
+
+                                <div class="course-intro-box">
+                                    <h4 class="mb-2"><i class="fa fa-map-signs text-info"></i> Bu Kursta Neler Var?</h4>
+                                    <p class="text-muted mb-2">
+                                        Bu sayfada kursun genel açıklamasını, eğitim içeriklerini, yüklü medyaları, sınavları ve sertifika durumunu tek ekranda görebilirsiniz.
+                                    </p>
+
+                                    @if (detailPreviewContents.Count > 0)
+                                    {
+                                        <div class="course-preview-list">
+                                            @foreach (var item in detailPreviewContents)
+                                            {
+                                                <a class="course-preview-item" href="@Url.Action("ContentDetail", "Course", new { id = item.ContentId })" style="text-decoration:none;">
+                                                    <div class="title">
+                                                        <i class="fa @GetContentIcon(item.ContentType) text-info mr-1"></i>
+                                                        @item.ContentTitle
+                                                    </div>
+                                                    <div class="desc">
+                                                        @ToPlainText(item.ContentDescription, 120)
+                                                    </div>
+                                                </a>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+
+                                <h4 class="mb-3">Kurs Açıklaması</h4>
+                                <p>@Html.Raw(Model.CourseDescription)</p>
+
+                                <hr />
+                                <h4 class="mb-3">Kurs Yorumları</h4>
+
+                                <div class="alert alert-warning">
+                                    <i class="fa fa-info-circle"></i> Yaptığınız yorumlar <strong>admin onayından</strong> sonra yayınlanır.
+                                </div>
+
+                                <form method="post" action="@Url.Action("AddReview", "Course")" class="mb-4">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="courseId" value="@Model.CourseId" />
+
+                                    <div class="form-group">
+                                        <label for="rating">Puan (1-5) <span class="text-danger">*</span></label>
+                                        <select name="rating" id="rating" class="form-control" style="max-width:200px;" required>
+                                            <option value="">Puan Seçiniz</option>
+                                            <option value="5">⭐⭐⭐⭐⭐ Mükemmel (5)</option>
+                                            <option value="4">⭐⭐⭐⭐ Çok İyi (4)</option>
+                                            <option value="3">⭐⭐⭐ İyi (3)</option>
+                                            <option value="2">⭐⭐ Orta (2)</option>
+                                            <option value="1">⭐ Kötü (1)</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="comment">Yorum <span class="text-danger">*</span></label>
+                                        <textarea name="comment" id="comment" class="form-control" rows="4" maxlength="1000" placeholder="Kurs hakkında düşüncelerinizi paylaşın..." required></textarea>
+                                        <small class="form-text text-muted">En az 10, en fazla 1000 karakter</small>
+                                    </div>
+
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fa fa-comment"></i> Yorumu Gönder
+                                    </button>
+                                </form>
+
+                                @if (Model.ApprovedReviews != null && Model.ApprovedReviews.Count > 0)
+                                {
+                                    <div class="reviews-section">
+                                        <h5 class="mb-3">Öğrenci Yorumları (@Model.ApprovedReviews.Count)</h5>
+                                        @foreach (var r in Model.ApprovedReviews)
+                                        {
+                                            <div class="card border-left-primary mb-3">
+                                                <div class="card-body">
+                                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                                        <div>
+                                                            <h6 class="card-title mb-1">
+                                                                <strong>@r.UserFullName</strong>
+                                                            </h6>
+                                                            <small class="text-muted">
+                                                                <i class="fa fa-calendar"></i> @r.CreatedDate.ToString("dd MMMM yyyy HH:mm", new System.Globalization.CultureInfo("tr-TR"))
+                                                            </small>
+                                                        </div>
+                                                        <div class="text-warning">
+                                                            @for (int i = 1; i <= 5; i++)
+                                                            {
+                                                                if (i <= r.Rating)
+                                                                {
+                                                                    <i class="fa fa-star"></i>
+                                                                }
+                                                                else
+                                                                {
+                                                                    <i class="fa fa-star-o"></i>
+                                                                }
+                                                            }
+                                                            <span class="text-dark ml-2">(@r.Rating.0)</span>
+                                                        </div>
+                                                    </div>
+                                                    @{
+                                                        var replyMarker = "[[ADMIN_REPLY]]";
+                                                        string fullComment = r.Comment ?? "";
+                                                        string mainComment = fullComment;
+                                                        string replyMeta = null;
+                                                        if (fullComment.Contains(replyMarker))
+                                                        {
+                                                            var parts = fullComment.Split(new[] { replyMarker
+}, 2, System.StringSplitOptions.None);
+                                                            mainComment = parts[0].Trim();
+                                                            replyMeta = parts[1];
+                                                        }
+                                                    }
+
+                                                    <p class="card-text">@Html.Raw(System.Web.HttpUtility.HtmlEncode(mainComment).Replace("\n", "<br/>"))</p>
+
+                                                    @if (!string.IsNullOrEmpty(replyMeta))
+                                                    {
+                                                        var metaParts = replyMeta.Split(new[] { "||" }, 3, System.StringSplitOptions.None);
+                                                        var adminName = metaParts.Length > 0 ? metaParts[0] : "";
+                                                        var dateStr = metaParts.Length > 1 ? metaParts[1] : "";
+                                                        var replyText = metaParts.Length > 2 ? metaParts[2] : "";
+                                                        DateTime replyDate;
+                                                        bool parsed = DateTime.TryParse(dateStr, out replyDate);
+
+                                                        <div class="card mt-2 border-left-info p-2">
+                                                            <small class="text-muted">Yanıt - <strong>@adminName</strong> - @(parsed ? replyDate.ToString("dd MMMM yyyy HH:mm", new System.Globalization.CultureInfo("tr-TR")) : dateStr)</small>
+                                                            <p class="mb-0">@Html.Raw(System.Web.HttpUtility.HtmlEncode(replyText).Replace("\n", "<br/>"))</p>
+                                                        </div>
+                                                    }
+
+                                                    @{
+                                                        var canReply = false;
+                                                        if (ViewBag.CurrentUser != null)
+                                                        {
+                                                            dynamic cu = ViewBag.CurrentUser;
+                                                            try
+                                                            {
+                                                                string role = cu.Role as string;
+                                                                int uid = cu.fldId;
+                                                                if (!string.IsNullOrEmpty(role) && role == "Admin") { canReply = true;
+}
+                                                                if (!string.IsNullOrEmpty(role) && role == "Teacher" && Model.CreatedBy == uid) { canReply = true; }
+                                                            }
+                                                            catch { canReply = false; }
+                                                        }
+                                                    }
+
+                                                    @if (canReply)
+                                                    {
+                                                        <form method="post" action="@Url.Action("ReplyReview", "Course")" class="mt-2">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="reviewId" value="@r.ReviewId" />
+                                                            <input type="hidden" name="courseId" value="@Model.CourseId" />
+                                                            <div class="form-group mb-2">
+                                                                <textarea name="replyText" class="form-control" rows="3" maxlength="1000" placeholder="Cevabınızı yazın..."></textarea>
+                                                            </div>
+                                                            <button type="submit" class="btn btn-sm btn-primary">Yanıtla</button>
+                                                        </form>
+                                                    }
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="alert alert-info">
+                                        <i class="fa fa-comment-o"></i> Henüz yayınlanmış yorum yok. İlk yorumcu olun!
+                                    </div>
+                                }
+
+                                <hr />
+                                <h5 class="mt-4 mb-3">
+                                    <i class="fa fa-file-text"></i> Eğitim Paketi İçeriği
+                                    @if (Model.Contents != null && Model.Contents.Count > 0)
+                                    {
+                                        <span class="badge badge-primary">@Model.Contents.Count</span>
+                                    }
+                                </h5>
+
+                                @if (Model.Contents != null && Model.Contents.Count > 0)
+                                {
+                                    var sortedContents = new List<gzpegm.Models.ViewModels.CourseContentItemViewModel>();
+                                    foreach (var c in Model.Contents)
+                                    {
+                                        sortedContents.Add(new gzpegm.Models.ViewModels.CourseContentItemViewModel
+                                        {
+                                            ContentId = c.ContentId,
+                                            ContentTitle = c.ContentTitle,
+                                            ContentType = c.ContentType,
+                                            FilePath = c.FilePath,
+                                            CreatedDate = c.CreatedDate
+                                        });
+                                    }
+
+                                    sortedContents.Sort(delegate (gzpegm.Models.ViewModels.CourseContentItemViewModel x,
+                                                                 gzpegm.Models.ViewModels.CourseContentItemViewModel y)
+                                    {
+                                        DateTime dx = x.CreatedDate.HasValue ? x.CreatedDate.Value : DateTime.MinValue;
+                                        DateTime dy = y.CreatedDate.HasValue ? y.CreatedDate.Value : DateTime.MinValue;
+                                        return dx.CompareTo(dy);
+                                    });
+
+                                    <div class="content-list">
+                                        @foreach (var content in sortedContents)
+                                        {
+                                            <div class="content-item card mb-2 border-left-info">
+                                                <div class="card-body py-3 px-4">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <div class="content-info flex-grow-1">
+                                                            <a href="@Url.Action("ContentDetail", "Course", new { id = content.ContentId })"
+                                                               class="content-link d-block mb-2"
+                                                               style="text-decoration: none; color: #2f4050; font-weight: 600; font-size: 1.05rem;">
+                                                                <i class="fa @GetContentIcon(content.ContentType) text-info mr-2"></i>
+                                                                @content.ContentTitle
+                                                            </a>
+                                                            <small class="text-muted">
+                                                                <i class="fa fa-clock-o"></i>
+                                                                @(content.CreatedDate.HasValue ? content.CreatedDate.Value.ToString("dd.MM.yyyy HH:mm") : "Tarih belirtilmemiş")
+                                                                &nbsp;&nbsp;
+                                                                <span class="badge badge-light" style="background-color: #e9ecef; color: #495057;">
+                                                                    @content.ContentType
+                                                                </span>
+                                                            </small>
+                                                        </div>
+                                                        <div class="ml-3">
+                                                            <a href="@Url.Action("ContentDetail", "Course", new { id = content.ContentId })"
+                                                               class="btn btn-sm btn-outline-info"
+                                                               title="İçeriği Görüntüle">
+                                                                <i class="fa fa-arrow-right"></i> Görüntüle
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="alert alert-light border">
+                                        <i class="fa fa-info-circle"></i> Bu kurs için eğitim paketi içeriği bulunmuyor.
+                                    </div>
+                                }
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sağ panel - Kursa Ait Sınavlar -->
+                <!-- Sağ panel - Kursa Ait Sınavlar -->
+                <div class="col-lg-3">
+                    <div class="ibox">
+                        <div class="ibox-title">
+                            <h5>
+                                <i class="fa fa-graduation-cap"></i> Kursa Ait Sınavlar
+                                @{
+                                    var exams = new List<gzpegm.Models.ViewModels.ExamViewModel>();
+                                    if (ViewBag.CourseExams is IEnumerable<gzpegm.Models.ViewModels.ExamViewModel> ev)
+                                    {
+                                        exams = ev as List<gzpegm.Models.ViewModels.ExamViewModel> ?? new List<gzpegm.Models.ViewModels.ExamViewModel>(ev);
+}
+                                }
+                                @if (exams.Count > 0)
+                                {
+                                    <span class="badge badge-danger pull-right">@exams.Count</span>
+                                }
+                            </h5>
+                        </div>
+
+                        <div class="ibox-content">
+                            @if (exams.Count > 0)
+                            {
+                                <div class="exam-list">
+                                    @foreach (var exam in exams)
+                                    {
+                                        <div class="exam-card card mb-3 border-left-warning">
+                                            <div class="card-body p-3">
+                                                <h6 class="card-title mb-2">
+                                                    <i class="fa fa-pencil-square-o text-warning mr-1"></i>
+                                                    <strong>@exam.ExamTitle</strong>
+                                                </h6>
+                                                <p class="card-text small text-muted mb-2">
+                                                    @exam.ExamDescription
+                                                </p>
+                                                <div class="exam-info small mb-3">
+                                                    <div class="mb-1">
+                                                        <i class="fa fa-clock-o text-muted"></i>
+                                                        <strong>Süre:</strong> @exam.Duration dakika
+                                                    </div>
+                                                    <div class="mb-1">
+                                                        <i class="fa fa-question-circle text-muted"></i>
+                                                        <strong>Soru:</strong> @exam.QuestionCount adet
+                                                    </div>
+                                                    <div>
+                                                        <i class="fa fa-trophy text-warning"></i>
+                                                        <strong>Geçme Notu:</strong> @($"{exam.PassingScore}%")
+                                                    </div>
+                                                </div>
+
+                                                @if (exam.ExamResultId.HasValue)
+                                                {
+                                                    <a href="@Url.Action("ExamResult", "StudentExam", new { id = exam.ExamResultId.Value })"
+                                                       class="btn btn-info btn-sm btn-block">
+                                                        <i class="fa fa-check-circle"></i> Sonucu Görüntüle
+                                                    </a>
+                                                }
+                                                else
+                                                {
+                                                    <a href="@Url.Action("StartExam", "StudentExam", new { id = exam.ExamId })"
+                                                       class="btn btn-success btn-sm btn-block">
+                                                        <i class="fa fa-play"></i> Sınava Başla
+                                                    </a>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="alert alert-info text-center py-4">
+                                    <i class="fa fa-info-circle fa-2x mb-2 d-block"></i>
+                                    <p class="small mb-0">Bu kursa ait aktif sınav bulunmuyor.</p>
+                                </div>
+                            }
+
+                            <div class="alert alert-light border-left-info mt-3">
+                                <small class="text-muted d-block">
+                                    <i class="fa fa-lightbulb-o"></i>
+                                    <strong>İpucu:</strong> Sınava girdikten sonra sistem tüm cevaplarınızı otomatik olarak kaydeder.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sertifika Widget -->
+                    @{
+                        bool allExamsDone = ViewBag.AllExamsCompleted is bool && (bool)ViewBag.AllExamsCompleted;
+                        byte certStatus = ViewBag.CertificateStatus is byte ? (byte)ViewBag.CertificateStatus : (byte)255;
+}
+                    <div class="ibox">
+                        <div class="ibox-title">
+                            <h5><i class="fa fa-certificate text-warning"></i> Sertifika</h5>
+                        </div>
+                        <div class="ibox-content text-center">
+                            @if (certStatus == 1)
+                            {
+                                <i class="fa fa-check-circle fa-3x text-success mb-2 d-block"></i>
+                                <p class="font-bold text-success">Sertifikanız Hazır!</p>
+                                <a href="@Url.Action("MyCertificates","Certificate")" class="btn btn-success btn-sm btn-block">
+                                    <i class="fa fa-download mr-1"></i> Sertifikamı Gör
+                                </a>
+                            }
+                            else if (certStatus == 0)
+                            {
+                                <i class="fa fa-clock-o fa-3x text-warning mb-2 d-block"></i>
+                                <p class="text-warning font-bold">Talebiniz İnceleniyor</p>
+                                <small class="text-muted">Admin onayından sonra sertifikanız hazırlanacaktır.</small>
+                            }
+                            else if (certStatus == 2)
+                            {
+                                <i class="fa fa-times-circle fa-3x text-danger mb-2 d-block"></i>
+                                <p class="text-danger font-bold">Talebiniz Reddedildi</p>
+                                <small class="text-muted">Detaylar için yöneticinizle iletişime geçin.</small>
+                            }
+                            else if (allExamsDone)
+                            {
+                                <i class="fa fa-graduation-cap fa-3x text-primary mb-2 d-block"></i>
+                                <p class="font-bold">Tebrikler!</p>
+                                <p class="small text-muted mb-3">Tüm sınavları tamamladınız. Sertifika talep edebilirsiniz.</p>
+                                <form method="post" action="@Url.Action("RequestCertificate","Course")"
+                                      onsubmit="return confirm('Sertifika talebinde bulunmak istediğinize emin misiniz?');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="courseId" value="@Model.CourseId" />
+                                    <button type="submit" class="btn btn-primary btn-sm btn-block">
+                                        <i class="fa fa-certificate mr-1"></i> Sertifika Talep Et
+                                    </button>
+                                </form>
+                            }
+                            else
+                            {
+                                int completedCount = exams.Count(e => e.ExamResultId.HasValue);
+                                int totalCount = exams.Count;
+                                <i class="fa fa-lock fa-3x text-muted mb-2 d-block"></i>
+                                <p class="text-muted small">Sertifika için tüm sınavları tamamlayın.</p>
+                                if (totalCount > 0)
+                                {
+                                    <div class="progress mt-2" style="height: 8px;">
+                                        <div class="progress-bar bg-primary" style="width: @(totalCount > 0 ? (completedCount * 100 / totalCount) : 0)%"></div>
+                                    </div>
+                                    <small class="text-muted mt-1 d-block">@completedCount / @totalCount sınav tamamlandı</small>
+                                }
+                                else
+                                {
+                                    <small class="text-muted">Bu kursa ait sınav bulunmuyor.</small>
+                                }
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Summernote JS -->
+    <script src="~/css/Summernote/summernote-bs4.js"></script>
+    <script src="~/css/Summernote/lang/summernote-tr-TR.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            $('.summernote').summernote({
+                lang: 'tr-TR',
+                height: 300,
+                minHeight: 200,
+                maxHeight: 600,
+                dialogsInBody: true,
+                toolbar: [
+                    ['style', ['style']],
+                    ['font', ['bold', 'underline', 'clear']],
+                    ['fontname', ['fontname']],
+                    ['color', ['color']],
+                    ['para', ['ul', 'ol', 'paragraph']],
+                    ['table', ['table']],
+                    ['insert', ['link', 'picture', 'video']],
+                    ['view', ['fullscreen', 'codeview', 'help']]
+                ],
+                callbacks: {
+                    onImageUpload: function (files) {
+                        for (let i = 0; i < files.length; i++) {
+                            uploadImage(files[i], this);
+                        }
+                    }
+                }
+            });
+
+            function uploadImage(file, editor) {
+                var data = new FormData();
+                data.append("file", file);
+                // Antiforgery token eklemek isterseniz:
+                // data.append('__RequestVerificationToken', $('input[name="__RequestVerificationToken"]').val());
+
+                $.ajax({
+                    url: '@Url.Action("UploadImage", "Course")',
+                    type: 'POST',
+                    data: data,
+                    cache: false,
+                    contentType: false,
+                    processData: false,
+                    success: function (result) {
+                        if (result && result.success) {
+                            $(editor).summernote('insertImage', result.url);
+                        } else {
+                            alert('Resim yükleme başarısız: ' + (result ? result.message : 'Bilinmeyen hata'));
+                        }
+                    },
+                    error: function () {
+                        alert('Resim yükleme sırasında bir hata oluştu!');
+                    }
+                });
+            }
+        });
+
+        // Teacher request for course details page
+        $(function(){
+            $('#teacherRequestBtnCourse').on('click', function(e){
+                e.preventDefault();
+                var token = $('#teacherRequestFormCourse').find('input[name="__RequestVerificationToken"]').val();
+                $.ajax({
+                    url: '@Url.Action("TeacherRequest","Landing")',
+                    type: 'POST',
+                    data: { __RequestVerificationToken: token },
+                    success: function(res){
+                        if(!res) { alert('Beklenmeyen cevap.'); return; }
+                        if(res.status === 'notLogin') {
+                            window.location.href = '@Url.Action("Index","Giris")';
+                        } else if(res.status === 'ok') {
+                            alert('Başvurunuz alındı. Yönetici onayına gönderildi.');
+                        } else if(res.status === 'alreadyRequested') {
+                            alert('Zaten bir başvurunuz beklemede.');
+                        } else if(res.status === 'alreadyTeacher') {
+                            alert('Zaten eğitmensiniz.');
+                        } else {
+                            alert('Hata: ' + (res.message || res.status));
+                        }
+                    },
+                    error: function(){ alert('İstek gönderilirken hata oluştu.'); }
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>
+@functions {
+    public string ToPlainText(string html, int maxLength)
+    {
+        if (string.IsNullOrWhiteSpace(html))
+            return "";
+
+        var text = Regex.Replace(html, "<[^>]+>", " ");
+        text = HttpUtility.HtmlDecode(text ?? "");
+        text = Regex.Replace(text, "\\s+", " ").Trim();
+
+        if (text.Length <= maxLength)
+            return text;
+
+        return text.Substring(0, Math.Max(0, maxLength - 3)).TrimEnd() + "...";
+    }
+
+    // Build and normalize media URLs from model (description, resource, contents)
+    public List<string> BuildMediaList()
+    {
+        var mediaUrls = new List<string>();
+        try
+        {
+            // ResourceFilePath
+            if (!string.IsNullOrWhiteSpace(Model.ResourceFilePath))
+            {
+                mediaUrls.Add(Model.ResourceFilePath);
+            }
+
+            // CourseContents files
+            if (Model.Contents != null)
+            {
+                foreach (var c in Model.Contents)
+                {
+                    if (!string.IsNullOrWhiteSpace(c.FilePath))
+                    {
+                        if (!c.FilePath.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                        {
+                            string full = VirtualPathUtility.ToAbsolute("~/files/Egitim/" + c.FilePath);
+                            mediaUrls.Add(full);
+                        }
+                    }
+                }
+            }
+
+            // Parse CourseDescription HTML for img/src, source/src, video src, and anchor hrefs with extensions
+            if (!string.IsNullOrWhiteSpace(Model.CourseDescription))
+            {
+                string html = Model.CourseDescription;
+
+                // img src
+                foreach (Match m in Regex.Matches(html, "<img[^>]*\\ssrc=[\\\"'](?<src>[^\\\"']+)[\\\"'][^>]*>", RegexOptions.IgnoreCase))
+                {
+                    var src = m.Groups["src"].Value;
+                    if (!string.IsNullOrWhiteSpace(src)) mediaUrls.Add(src);
+                }
+
+                // source src (video)
+                foreach (Match m in Regex.Matches(html, "<source[^>]*\\ssrc=[\\\"'](?<src>[^\\\"']+)[\\\"'][^>]*>", RegexOptions.IgnoreCase))
+                {
+                    var src = m.Groups["src"].Value;
+                    if (!string.IsNullOrWhiteSpace(src)) mediaUrls.Add(src);
+                }
+
+                // video src attribute
+                foreach (Match m in Regex.Matches(html, "<video[^>]*\\ssrc=[\\\"'](?<src>[^\\\"']+)[\\\"'][^>]*>", RegexOptions.IgnoreCase))
+                {
+                    var src = m.Groups["src"].Value;
+                    if (!string.IsNullOrWhiteSpace(src)) mediaUrls.Add(src);
+                }
+
+                // anchor hrefs with file extensions
+                foreach (Match m in Regex.Matches(html, "<a[^>]*\\shref=[\\\"'](?<href>[^\\\"']+)[\\\"'][^>]*>", RegexOptions.IgnoreCase))
+                {
+                    var href = m.Groups["href"].Value;
+                    if (!string.IsNullOrWhiteSpace(href))
+                    {
+                        var ext = Path.GetExtension(href ?? "").ToLowerInvariant();
+                        if (!string.IsNullOrEmpty(ext)) mediaUrls.Add(href);
+                    }
+                }
+            }
+
+            // Normalize paths: ~/ -> absolute, relative filenames -> files folder
+            for (int i = 0; i < mediaUrls.Count; i++)
+            {
+                var u = mediaUrls[i];
+                if (string.IsNullOrWhiteSpace(u)) continue;
+
+                if (u.StartsWith("~/"))
+                {
+                    mediaUrls[i] = VirtualPathUtility.ToAbsolute(u);
+                }
+                else if (u.StartsWith("/files/", StringComparison.OrdinalIgnoreCase) || u.StartsWith("/Files/", StringComparison.OrdinalIgnoreCase))
+                {
+                    // keep as-is
+                }
+                else if (!u.StartsWith("http", StringComparison.OrdinalIgnoreCase) && !u.StartsWith("/"))
+                {
+                    // relative filename -> map to files folder
+                    mediaUrls[i] = VirtualPathUtility.ToAbsolute("~/files/Egitim/" + u);
+                }
+            }
+
+            // Distinct (case-insensitive) preserve order
+            var distinct = new List<string>();
+            foreach (var item in mediaUrls)
+            {
+                if (string.IsNullOrWhiteSpace(item)) continue;
+                if (item.StartsWith("http", StringComparison.OrdinalIgnoreCase)) continue;
+                bool found = false;
+                foreach (var ex in distinct)
+                {
+                    if (string.Equals(ex, item, StringComparison.OrdinalIgnoreCase))
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) distinct.Add(item);
+            }
+
+            return distinct;
+        }
+        catch
+        {
+            return new List<string>();
+        }
+    }
+
+    public string GetContentIcon(string contentType)
+    {
+        if (string.IsNullOrEmpty(contentType))
+            return "fa-file-o";
+
+        string type = contentType.ToLower();
+
+        if (type == "video") return "fa-video-camera";
+        if (type == "pdf") return "fa-file-pdf-o";
+        if (type == "document" || type == "doc" || type == "docx") return "fa-file-word-o";
+        if (type == "presentation" || type == "ppt" || type == "pptx") return "fa-file-powerpoint-o";
+        if (type == "spreadsheet" || type == "xls" || type == "xlsx") return "fa-file-excel-o";
+        if (type == "image" || type == "jpg" || type == "jpeg" || type == "png" || type == "gif") return "fa-file-image-o";
+        if (type == "audio" || type == "mp3" || type == "wav") return "fa-file-audio-o";
+        if (type == "archive" || type == "zip" || type == "rar") return "fa-file-archive-o";
+
+        return "fa-file-o";
+    }
+
+    // HTML dosyalarından gömmülü resimleri çıkaran helper method
+    public List<string> ExtractImagesFromHtmlFile(string filePath)
+    {
+        var images = new List<string>();
+        try
+        {
+            // Dosya tam yol mı kontrol et
+            string fullPath = filePath;
+            if (!Path.IsPathRooted(filePath))
+            {
+                fullPath = Server.MapPath("~/files/Egitim/" + filePath);
+            }
+
+            if (!System.IO.File.Exists(fullPath))
+                return images;
+
+            // HTML dosyasını oku
+            string htmlContent = System.IO.File.ReadAllText(fullPath, System.Text.Encoding.UTF8);
+            string fileDirectory = Path.GetDirectoryName(fullPath);
+
+            // img src'leri bul
+            foreach (Match m in Regex.Matches(htmlContent, "<img[^>]*\\ssrc=[\\\"'](?<src>[^\\\"']+)[\\\"'][^>]*>", RegexOptions.IgnoreCase))
+            {
+                var src = m.Groups["src"].Value.Trim();
+                if (string.IsNullOrWhiteSpace(src)) continue;
+
+                // Mutlak URL ise olduğu gibi ekle
+                if (src.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+                else if (src.StartsWith("data:"))
+                {
+                    images.Add(src);
+                }
+                else if (src.StartsWith("/"))
+                {
+                    // Kök yolundan başlıyorsa olduğu gibi ekle
+                    images.Add(src);
+                }
+                else
+                {
+                    // Relative yol ise HTML dosyasının dizinine göre çöz
+                    string relativePath = System.IO.Path.Combine(fileDirectory, src);
+                    relativePath = System.IO.Path.GetFullPath(relativePath);
+
+                    // URL'ye çevir
+                    string webPath = relativePath.Replace(Server.MapPath("~"), "").Replace("\\", "/");
+                    if (!webPath.StartsWith("/")) webPath = "/" + webPath;
+
+                    images.Add(webPath);
+                }
+            }
+
+            return images.Distinct().ToList();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Trace.TraceError($"ExtractImagesFromHtmlFile Error: {ex.Message}");
+            return images;
+        }
+    }
+}

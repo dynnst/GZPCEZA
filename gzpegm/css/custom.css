@@ -1,0 +1,54 @@
+.user-avatar i {
+    font-size: 2rem;
+}
+
+.card-title {
+    font-size: 0.95rem;
+    font-weight: bold;
+}
+
+.card-text small {
+    display: block;
+    font-size: 0.75rem;
+}
+/* MyCertificates / MyExamResults özel stilleri */
+.certificate-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    overflow: hidden;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+    .certificate-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+/* ...diðer stilleri buraya taþýyýn... */
+.card .btn-sm {
+    font-size: 0.65rem;
+    padding: 0.2rem 0.4rem;
+}
+
+.card-body {
+    padding: 0.5rem !important;
+}
+.answer-label {
+    font-size: 1.1rem; /* Baþlýðý biraz büyüttük */
+    font-weight: 600; /* Kalýn yazý */
+    color: #333; /* Daha kontrastlý renk */
+}
+
+.answer-text {
+    font-size: 1.05rem; /* Cevap yazýsýný büyüt */
+    font-weight: 500;
+    color: #111;
+}
+
+.bg-success.bg-opacity-10 {
+    background-color: rgba(40, 167, 69, 0.1) !important;
+}
+
+.bg-danger.bg-opacity-10 {
+    background-color: rgba(220, 53, 69, 0.1) !important;
+}

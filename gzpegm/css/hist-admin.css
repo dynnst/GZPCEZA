@@ -1,0 +1,43 @@
+/* ==========================================================================
+   HIST Admin Eski Hesaplamalar Stilleri (hist-admin.css)
+   ========================================================================== */
+
+.page-wrapper { padding: 20px; }
+.page-title { font-size: 28px; font-weight: 700; color: #2c3e50; margin: 0; }
+.stat-card { display: flex; align-items: center; min-height: 132px; padding: 24px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,.05); color: #fff !important; transition: all .25s ease; }
+.stat-card * { color: #fff !important; }
+.stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(0,0,0,.12); }
+.stat-card-primary { background: linear-gradient(135deg,#667eea 0%,#764ba2 100%); }
+.stat-card-success { background: linear-gradient(135deg,#4facfe 0%,#00f2fe 100%); }
+.stat-card-info { background: linear-gradient(135deg,#f093fb 0%,#f5576c 100%); }
+.stat-card-warning { background: linear-gradient(135deg,#43e97b 0%,#38f9d7 100%); }
+.stat-icon { width: 58px; height: 58px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.2); border-radius: 50%; margin-right: 18px; font-size: 26px; flex-shrink: 0; }
+.stat-content h5 { margin: 0 0 8px; font-size: 14px; font-weight: 600; opacity: .9; }
+.stat-content h2 { margin: 0 0 4px; font-size: 30px; font-weight: 700; line-height: 1.1; word-break: break-word; }
+.stat-content small { font-size: 12px; opacity: .85; }
+.mini-stat { min-height: 92px; padding: 18px 20px; border-radius: 12px; background: #fff; border: 1px solid #eef2f7; box-shadow: 0 4px 20px rgba(0,0,0,.04); display: flex; flex-direction: column; justify-content: center; }
+.mini-stat span { color: #718096; font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+.mini-stat strong { color: #2c3e50; font-size: 22px; line-height: 1.2; }
+.mini-stat small { color: #718096; margin-top: 4px; }
+.card { border: none; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,.05); background-color: #fff; }
+.card-header { padding: 18px 24px; border-bottom: 1px solid #eef2f7; background-color: transparent; border-radius: 16px 16px 0 0; gap: 14px; }
+.card-title { font-size: 18px; font-weight: 700; color: #2c3e50; }
+.card-subtitle { font-size: 13px; color: #7f8c8d; margin: 4px 0 0; }
+.filter-form { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.filter-form .form-control { width: auto; min-width: 130px; border-radius: 30px; }
+.btn { border-radius: 30px; }
+.table thead th { background-color: #f8fafd; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #4a5568; font-size: 12px; text-transform: uppercase; letter-spacing: .5px; padding: 14px 16px; }
+.table tbody td { padding: 12px 16px; vertical-align: middle; color: #2d3748; font-size: 14px; border-bottom: 1px solid #edf2f7; }
+.table tbody tr:hover { background-color: #f7fafc; }
+.badge-soft { display: inline-block; padding: 5px 10px; border-radius: 20px; background: #eef2ff; color: #3f51b5; font-weight: 600; }
+.money-cell { font-weight: 700; color: #2f855a !important; }
+.tahdit-code-table-wrap { max-height: 320px; overflow: auto; }
+.tahdit-code-table-wrap thead th { position: sticky; top: 0; z-index: 1; }
+@media (max-width: 768px) {
+    .page-wrapper { padding: 15px; }
+    .page-title { font-size: 22px; }
+    .filter-form { width: 100%; justify-content: flex-start; }
+    .filter-form .form-control, .filter-form .btn { width: 100%; }
+    .stat-card { padding: 16px; }
+    .stat-content h2 { font-size: 24px; }
+}

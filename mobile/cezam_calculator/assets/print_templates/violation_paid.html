@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page { size: A4; margin: 10mm; }
+  body { font-family: Arial, sans-serif; font-size: 12px; color: #000; }
+</style>
+</head>
+<body>
+<h3 align="center">VİZE İHLALİ İŞLEM FORMU /VISA VIOLATION FORM</h3>
+<br>
+<table width="800" border="0">
+  <tbody>
+    <tr>
+      <th style="text-align: left" scope="col">Adı Soyadı /Name/Surname</th>
+      <th style="text-align: left" scope="col">:<strong>{{NAME}}</strong></th>
+    </tr>
+    <tr>
+      <th style="text-align: left" scope="row">Uyruğu/ Nationality</th>
+      <td style="text-align: left">:<strong>{{ORGIN}}</strong></td>
+    </tr>
+    <tr>
+      <th style="text-align: left" scope="row">Pasaport No/Passport No</th>
+      <td style="text-align: left">:<strong>{{PASSPORT}}</strong></td>
+    </tr>
+  </tbody>
+</table>
+<br>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th style="text-align: left; font-size: 10px;" scope="col">*&nbsp;&nbsp;Ülkemize Giriş Tarihiniz ve Vize süreniz<br>
+      &nbsp;&nbsp;&nbsp;&nbsp; Date of entry into country and visa validity</th>
+      <th scope="col"><strong>:</strong></th>
+      <th style="text-align: left" scope="col"><strong>{{EDATE}}</strong></th>
+      <th style="text-align: left" scope="col"><strong>{{VDAY}}</strong> Gün / Day</th>
+    </tr>
+    <tr>
+      <th style="text-align: left; font-size: 12px;" scope="row">*&nbsp;&nbsp;Ülkemizden çıkış için müracaat tarihiniz<br>
+      &nbsp;&nbsp;&nbsp;The date that you are applying to leave the country</th>
+      <th scope="row"><strong>:</strong></th>
+      <td colspan="2" style="text-align: left"><strong>{{TODAY}}</strong></td>
+    </tr>
+    <tr>
+      <th style="text-align: left; font-size: 12px;" scope="row">*&nbsp;Tebliğ Edilen, Tahdit Çıkış&nbsp; veya İkamet Teskere Bitiş Tarihi / End date of notified or limitation date or residence permit</th>
+      <th scope="row">:</th>
+      <td colspan="2" style="text-align: left"><strong>{{SEDATE}}</strong></td>
+    </tr>
+    <tr>
+      <th style="text-align: left; font-size: 12px;" scope="row">*&nbsp;&nbsp;Ülkemizden çıkış yapmanız gereken tarih<br>
+      &nbsp;&nbsp;&nbsp;The date that you were meant to leave the country</th>
+      <th scope="row"><strong>:</strong></th>
+      <td colspan="2" style="text-align: left"><strong>{{SEDATE}}</strong></td>
+    </tr>
+    <tr>
+      <th style="text-align: left; font-size: 12px;" scope="row">*&nbsp;&nbsp;Vize ihlal süreniz<br>
+      &nbsp;&nbsp;&nbsp;Visa violation period</th>
+      <th scope="row"><strong>:</strong></th>
+      <td colspan="2" style="text-align: left"><strong>{{FINETIME}}</strong></td>
+    </tr>
+    <tr>
+      <th style="text-align: left; font-size: 12px;" scope="row">*&nbsp;&nbsp;Vize ihlali için ödenecek ücret<br>
+      &nbsp;&nbsp;&nbsp;Penalty for visa violation</th>
+      <th scope="row"><strong>:</strong></th>
+      <td style="text-align: left"><strong>{{FINET}}</strong></td>
+      <td style="text-align: left"><span style="font-weight: 700 !important;"><font size="2">TL</font></span><br></td>
+    </tr>
+  </tbody>
+</table>
+<br>
+<table width="800" border="0">
+  <tbody>
+    <tr>
+      <th style="text-align: justify; font-size: 12px;" scope="col">Sayın<strong>&nbsp;{{NAME}}</strong>&nbsp;Ülkemizdeki yasal kalış sürenizi ihlal etmiş bulunmaktasınız. Vize ihlal ücretinizi şimdi ödediğinizden dolayı teşekkür ederiz.</th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="0">
+  <tbody>
+    <tr>
+      <th style="text-align: left; font-size: x-small;" scope="col">Dear Madame/Sir&nbsp;<strong>{{NAME}}&nbsp;</strong>&nbsp; You have exceeded the legal duration of stay in our country. Thank you in advance for paying the penalty of your visa-offence.&nbsp;<strong>{{S}}&nbsp;</strong>You will be banned from entering our country for&nbsp;<strong>{{FINEDAY}}</strong>days Entry Ban Code:{{TCODE}}{{F}}</th>
+    </tr>
+  </tbody>
+</table>
+
+<br>
+<table align="center" width="400" border="0">
+  <tbody>
+    <tr>
+      <td>Düzenleme Tarihi / Dated On:</td>
+      <td><strong>{{TODAY}}</strong></td>
+    </tr>
+  </tbody>
+</table>
+<br>
+<br>
+<table width="800" border="0">
+  <tbody>
+    <tr>
+      <th style="text-align: center" scope="col">Yolcu İmzası</th>
+      <th style="text-align: center" scope="col">Pasaport Kontrol Polisi</th>
+    </tr>
+    <tr>
+      <th style="text-align: center" scope="row">Signature of passenger</th>
+      <td style="text-align: center">Passport police officer</td>
+    </tr>
+    <tr>
+      <th style="text-align: center" scope="row"><strong>{{NAME}}</strong></th>
+      <td style="text-align: center"><strong>{{POLICE}}</strong></td>
+    </tr>
+    <tr style="text-align: center">
+      <th colspan="2" scope="row">&nbsp;</th>
+    </tr>
+    <tr style="text-align: center">
+      <th colspan="2" scope="row">Formu okudum, imzaladım ve&nbsp;kopyasını aldım / I have read the form, signed it,and have a copy of the form</th>
+    </tr>
+ 
+    <tr style="text-align: center">
+      <th colspan="2" scope="row">&nbsp;</th>
+    </tr>
+    <tr style="text-align: center">
+      <th colspan="2" scope="row">O N A Y</th>
+  </tr>
+    <tr style="text-align: center">
+      <th colspan="2" scope="row">APPROVAL</th>
+  </tr>
+    <tr><td colspan="2" scope="row"></td></tr><tr style="text-align: center">
+      <th colspan="2" scope="row"><p><strong>{{USER}}</strong></p></th></tr></tbody></table>
+<table width="800" border="1">
+  <tbody>
+  <tr>
+						<th scope="col" style="width:10"><span style="font-size:10px">1</span></th>
+						<td style="text-align:left"><span style="font-size:10px">İkamet Harçları 492 sayılı Harçlar kanununun 6 sayılı tarifesine göre her yıl Maliye Bakanlığınca Belirlenmektedir./</span><span style="font-size: 10px;">Residence Fees are determined by the Ministry of Finance every year according to the tariff no. 6 of the Fees Law No. 492.</span></td>
+					</tr>
+					<tr>
+						<th scope="row" style="width:10"><span style="font-size:10px">2</span></th>
+						<td style="text-align:left"><span style="font-size:10px">Hakkınızda konulmuşsa, konulan ülkemize giriş yasağının kaldırılması için Türkiye Cumhuriyeti dış temsilciliklerine özel amaçlı vize için müracaat ediniz./</span><span style="font-size: 10px;">If it has been placed about you, apply for a special purpose visa to the foreign representatives of the Republic of Turkey in order to lift the ban on entry to our country.</span></td>
+					</tr>
+					<tr>
+						<th scope="row" style="width:20"><span style="font-size:10px">3</span></th>
+						<td style="text-align:left"><span style="font-size:10px">Vize ihlali nedeniyle hakkınızda uygulanan "N" veya "Ç" tahdit kodlarıyla ilgili , 60(altmış) gün içerisinde İdare mahkemesine başvuru yapmanız gerekmektedir./</span><span style="font-size: 10px;">You must apply to the Administrative Court within 60 (sixty) days regarding the "N" or "C" restriction codes applied to you due to visa violation.</span></td>
+					</tr>
+					<tr>
+						<th scope="row" style="width:20"><span style="font-size:10px">4</span></th>
+						<td style="text-align:left"><span style="font-size:10px">Tahdit iş ve işlemler ile ilgili uygulamalar Göç İdaresi Genel Müdürlüğü'nün 22/07/2020 tarih ve 2020/17 sayılı genelgeye istinaden yapılmaktadır./</span><span style="font-size: 10px;">Applications related to the restriction works and transactions are made in accordance with the circular numbered 2020/17 dated 22/07/2020 of the General Directorate of Migration Management.</span></td>
+					</tr>
+					<tr>
+						<th scope="row" style="width:20"><span style="font-size:10px">5</span></th>
+						<td style="text-align:left"><span style="font-size:10px">Vize ihlalinde bulunan yolcularla ilgili yurda giriş yasaklarına ilişkin uygulama 2020/17 sayılı genelgenin Madde 6'nın "A" ve "B" bendlerine istinaden uygulanır./</span><span style="font-size: 10px;">Implementation of bans on entry to the dormitory for passengers violating a visa is applied pursuant to subparagraphs "A" and "B" of Article 6 of the circular numbered 2020/17.</span></td>
+					</tr>
+					<tr>
+						<th scope="row" style="width:20"><span style="font-size:10px">6</span></th>
+						<td style="text-align:left"><span style="font-size:10px">6458 Sayılı Yabancılar ve Uluslararası Koruma Kanununun "9","15","102" Maddeleri./</span><span style="font-size: 10px;">Articles "9","15","102" of the Foreigners and International Protection Law No. 6458</span></td>
+					</tr>
+					<tr>
+						<th scope="row" style="width:20"><span style="font-size:10px">7</span></th>
+						<td style="text-align:left"><span style="font-size:10px">17/03/2016 tarihli ve 29656 sayılı Yabancılar ve Uluslararası Koruma Kanununun Uygulamasına İlişkin Yönetmeliğin 8. ve 9. Maddeleri./</span><span style="font-size: 10px;">Articles 8 and 9 of the Regulation on the Implementation of the Law on Foreigners and International Protection dated 17/03/2016 and numbered 29656</span></td>
+					</tr>
+					<tr>
+						<th scope="row" style="width:20"><span style="font-size:10px">8</span></th>
+						<td style="text-align:left"><span style="font-size:10px">Göç İdaresi Başkanlığı'nın 06.01.2022 tarih ve V-157 İdari Takip Kodu Görüş Talebi Konulu Yazısı.</span><span style="font-size: 10px;">Letter of the Directorate of Migration Management, dated 06.01.2022, on V-157 Administrative Tracking Code, Request for Opinion</span></td>
+					</tr>
+  </tbody>
+</table>
+
+<br>{{S1}}<center><br>
+<div align="center">
+<p align="center"><img src="../img/goc.png" width="200" height="95" class="note-float-left" style="float: left;"></p>
+</div>
+<table width="800" border="0">
+  <tbody>
+    <tr>
+      <th scope="col"><strong style="font-size: 14px; text-align: center;">Ç Kodlu Giriş Yasağı Kararı Tebliğ Formu<br>
+      Code Ç – Entry Ban Notification Form</strong></th>
+    </tr>
+  </tbody>
+</table>
+<br>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th scope="col"><strong style="font-size: 14px">Yabancıya İlişkin Bilgiler -&nbsp;</strong>Information on the Foreigner</th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th style="text-align: left; font-size: 12px;" scope="col">Adı<strong>&nbsp;-&nbsp;</strong>Name</th>
+      <th colspan="2" style="font-size: 12px; text-align: left;" scope="col"><strong>{{FIRSTNAME}}</strong></th>
+    </tr>
+    <tr>
+      <th style="text-align: left; font-size: 12px;" scope="row">Soyadı&nbsp;<strong>-&nbsp;</strong>Surname</th>
+      <td colspan="2" style="font-size: 12px"><strong>{{LASTNAME}}</strong></td>
+    </tr>
+    <tr>
+      <th style="text-align: left; font-size: 12px;" scope="row">Baba Adı&nbsp;<strong>-&nbsp;</strong>Father’s Name</th>
+      <td colspan="2" style="font-size: 12px"><strong>{{FATHERNAME}}</strong></td>
+    </tr>
+    <tr>
+      <th style="text-align: left; font-size: 12px;" scope="row">Anne Adı&nbsp;<strong>-&nbsp;</strong>Mother’s Name</th>
+      <td colspan="2" style="font-size: 12px"><strong>{{MOTHERNAME}}</strong></td>
+    </tr>
+    <tr>
+      <th style="text-align: left; font-size: 12px;" scope="row">Doğum Tarihi<strong>–&nbsp;</strong>Date of Birth</th>
+      <td style="font-size: 12px"><strong>{{BIRTHDATE}}</strong></td>
+      <td style="font-size: 12px">Uyruğu&nbsp;<strong>-&nbsp;</strong>Nationality</td>
+    </tr>
+    <tr>
+      <th style="text-align: left; font-size: 12px;" scope="row">İletişim Dili&nbsp;<strong>-&nbsp;</strong>Communication Language</th>
+      <td colspan="2" style="font-size: 12px"><strong>{{ORGIN}}</strong></td>
+    </tr>
+    <tr style="text-align: center; font-size: 12px;">
+      <th colspan="3" scope="row"><strong>Karar ve Değerlendirmeye İlişkin Bilgiler -&nbsp;</strong>Information about the Decision and Evaluation</th>
+    </tr>
+    <tr>
+      <th style="text-align: left; font-size: 12px;" scope="row">Giriş Yasağı Kararı Başlangıç-Bitiş Tarihi<strong>&nbsp;-&nbsp;</strong>Start and End Date of Entry Ban Decision</th>
+      <td style="font-size: 12px"><strong>{{TODAY}}</strong></td>
+      <td style="font-size: 12px"><strong>{{CANENT}}</strong></td>
+    </tr>
+    <tr>
+      <th style="text-align: left; font-size: 12px;" scope="row">Tahdit Kodu (Ban Code) :</th>
+      <td colspan="2" style="font-size: 12px"><strong>{{TCODE}}</strong></td>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="0">
+  <tbody>
+    <tr>
+      <th style="font-size: 12px" scope="col">* Bu alana giriş yasağı kararının başlangıç tarihi yazılacaktır. –&nbsp;<em>*&nbsp;Enter start date of entry ban decision to this field.</em> <br>
+      ** Bu alana giriş yasağı kararının bitiş tarihi yazılacaktır. –&nbsp;<em>**&nbsp;Enter end date of entry ban decision to this field.</em></th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="0">
+  <tbody>
+    <tr>
+      <th style="text-align:justify; font-size: 12px;" scope="col">
+      <p style="text-align:center;font-size:16px">1-Giriş Yasağı Kararı – Entry Ban Decision</p>
+      <p> 6458 sayılı Yabancılar ve Uluslararası Koruma Kanunun 9 uncu maddesi uyarınca gerçekleştirilen değerlendirme neticesinde, Göç İdaresi Genel Müdürlüğü / …………. Valiliği (İl Göç İdaresi Müdürlüğü) tarafından hakkınızda giriş yasağı kararı alınmıştır.
+        As a result of the evaluation conducted in accordance with the Article 9 of the Law on Foreigners and International Protection numbered 6458, Directorate General of Migration Management / Governorship of …………. (Provincial Directorate of Migration Management) has resolved to impose an entry ban on you. 
+        	Hakkınızda giriş yasağı kararı alınmasına dayanak teşkil eden husus/hususlar sebebiyle; 
+        	Based on the particular/particulars constituting grounds for imposing an entry ban on you;
+        	İkamet izninizin iptali için gerekli işlemler başlatılacaktır. – Respective procedures will be commenced for cancelling your residence permit.
+        	 Çalışma izninizin iptali için gerekli işlemler başlatılacaktır. – Respective procedures will be commenced for cancelling your work permit. 
+        
+        	Türkiye’ye girişinizin yasaklı olduğu süre içerisinde giriş yapmak istemeniz halinde, Türkiye Cumhuriyeti Dış Temsilciliklerinden amacına uygun (özel meşruhatlı) vize almanız gerekmektedir.
+        	If you wish to enter Turkey during the period of your entry ban, you are required to obtain the relevant visa (annotated visa) from Foreign Representative Offices of the Republic of Turkey.  
+        	Hakkınızda tahsis edilen giriş yasağı süresinin sona ermesi yüz seksen günde doksan gün kuralının uygulanmasına engel teşkil etmemektedir. Her halükârda vizenin veya vize muafiyetinin Türkiye’de sağladığı kalış süresi, her yüz seksen günde doksan günü geçemez.
+        	 Note that the expiration of the entry ban period imposed on you does not constitute any impediment for implementing the rule of ninety days in one hundred and eighty days. In any case, the duration of stay in Turkey granted by the visa or the visa exemption cannot exceed ninety days in every one hundred and eighty days.
+        
+        	Hakkınızda alınan giriş yasağı kararının süresi dolmuş olsa dahi idari para cezanızı ödememenizden kaynaklanan ön izin kararına ilişkin hükümler saklıdır. 
+        
+        	All provisions with respect to the preliminary permission decision stemming from the non-payment of your administrative fine are reserved regardless of the expiration of the entry ban decision imposed on you.
+        </p>
+      <p style="text-align:center;font-size:16px">2-Giriş Yasağı Kararına Karşı Yargı Yoluna Başvuru – Resort to the Jurisdiction Against the Entry Ban Decision</p>
+      <p> Şahsınız veya yasal temsilciniz ya da avukatınız tarafından, giriş yasağı kararına karşı, kararın tebliğinden itibaren 60 (altmış) gün içinde idare mahkemesine başvurulabilir. – You or your legal representative or lawyer may appeal against the entry ban decision to the Administrative Court within 60 (sixty) days from the notification of the decision.
+        Mahkemeye başvuran kişi, giriş yasağı kararı veren makama da başvurusunu bildirir. – The applicant who applied to the Court also notifies the authority of the entry ban decision.
+        Mahkemeye yapılan başvurular giriş yasağı kararını durdurmaz. – Applications made to the Court does not suspend the entry ban decision. 
+        Bu belge, bir nüshası avukatına/yabancıya/yasal temsilcisine verilmek üzere iki nüsha olarak hazırlanmış olup, hakkında sınır dışı etme kararı alınan yukarıda açık kimliği yazılı yabancıya kendi dilinde/anladığı dilde, {{TODAY}} _ tarihinde ve {{TOTIME}} saatinde yazılı olarak tebliğ edilmiş ve imza altına alınarak bir sureti tebellüğ edene verilmiştir. </p>
+      </th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="0">
+  <tbody>
+    <tr>
+      <th style="text-align: justify; font-size: 12px;" scope="col"><a name="_Hlk43631423"><em>This document has been issued in duplicate so a copy can be given to the lawyer/foreigner/legal representative and the foreigner, whose open identity is given above and upon whom the deportation decision has been imposed, has been notified in writing in his own language/language of comprehension on&nbsp;<strong>{{TODAY}}</strong>&nbsp;&nbsp;at&nbsp;<strong>{{TOTIME}}</strong>&nbsp;and one copy has been given to the notified with a signature.</em></a></th>
+    </tr>
+  </tbody>
+</table>
+<p>&nbsp;</p>
+
+
+<table width="800" border="0">
+  <tbody>
+    <tr>
+      <th style="text-align: center" scope="col"><strong>Tebliğ Eden -</strong><strong>Notifying Party</strong></th>
+      <th style="text-align: center" scope="col"><strong>Tebellüğ Eden -</strong><strong>Notified</strong></th>
+    </tr>
+    <tr>
+      <th style="text-align: center" scope="row"><strong>{{USER}}</strong></th>
+      <td style="text-align: center"><strong>{{NAME}}</strong></td>
+    </tr>
+  </tbody>
+</table>
+
+
+{{F1}}</center>
+
+</body>
+</html>

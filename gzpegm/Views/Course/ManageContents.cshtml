@@ -1,0 +1,979 @@
+@model gzpegm.Models.ViewModels.CourseContentViewModel
+@using System
+@{
+    ViewBag.Title = "İçerik Yönetimi - " + (ViewBag.CourseTitle ?? "Ders");
+    Layout = "~/Views/Shared/_Master.cshtml";
+    ViewBag.UseSummernote = true;
+    ViewBag.UseBootstrapFileUpload = true;
+
+    var contents = Model.Contents ?? new List<gzpegm.Models.ViewModels.CourseContentItemViewModel>();
+    int totalContents = contents.Count;
+}
+
+<div class="manage-contents-container">
+
+    <!-- ÜST BİLGİ VE AKSİYON BANNERI -->
+    <div class="contents-hero-banner mb-4">
+        <div class="row align-items-center">
+            <div class="col-lg-8 col-md-7">
+                <div class="d-flex align-items-center">
+                    <div class="hero-icon-box mr-3">
+                        <i class="fas fa-layer-group"></i>
+                    </div>
+                    <div>
+                        <div class="d-flex align-items-center flex-wrap mb-1">
+                            <span class="badge badge-light text-primary font-weight-bold mr-2">Ders #@Model.CourseId</span>
+                            <span class="badge badge-warning text-dark font-weight-bold">Toplam @totalContents İçerik</span>
+                        </div>
+                        <h2 class="hero-title mb-1">@ViewBag.CourseTitle</h2>
+                        <p class="hero-desc mb-0">Bu kursa ait dokümanları, videoları, ders notlarını ve zengin HTML içeriklerini yönetin.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-5 text-md-right mt-3 mt-md-0">
+                <div class="d-flex justify-content-md-end gap-2 flex-wrap">
+                    <a href="@Url.Action("Details", "Course", new { id = Model.CourseId })" class="btn btn-outline-light hero-action-btn mr-2" title="Kursu Önizle">
+                        <i class="fas fa-eye mr-1"></i> Kursu İncele
+                    </a>
+                    <a href="@Url.Action("Index", "Course")" class="btn btn-outline-light hero-action-btn mr-2" title="Tüm Derslere Dön">
+                        <i class="fas fa-arrow-left mr-1"></i> Dersler
+                    </a>
+                    <button type="button" class="btn btn-warning hero-action-btn font-weight-bold shadow-sm" data-toggle="modal" data-target="#addContentModal">
+                        <i class="fas fa-plus-circle mr-1"></i> Yeni İçerik Ekle
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BİLDİRİM ALANI -->
+    @if (TempData["msgSuccess"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm mb-4" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-check-circle fa-lg mr-2 text-success"></i>
+                <div>
+                    <strong>Başarılı!</strong> @TempData["msgSuccess"]
+                </div>
+            </div>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Kapat">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+    @if (TempData["msgError"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-4" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-exclamation-triangle fa-lg mr-2 text-danger"></i>
+                <div>
+                    <strong>Hata!</strong> @TempData["msgError"]
+                </div>
+            </div>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Kapat">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
+    <!-- İÇERİKLER TABLOSU VEYA BOŞ DURUM -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center flex-wrap">
+            <div class="d-flex align-items-center">
+                <h5 class="card-title font-weight-bold text-dark mb-0 mr-3">
+                    <i class="fas fa-list-ul mr-2 text-primary"></i>Kursa Ait İçerik Listesi
+                </h5>
+                <span class="badge badge-primary px-2 py-1" id="totalCountBadge">@totalContents Materyal</span>
+            </div>
+            <div class="mt-2 mt-sm-0">
+                <button type="button" class="btn btn-primary btn-sm font-weight-bold" data-toggle="modal" data-target="#addContentModal">
+                    <i class="fas fa-plus mr-1"></i> Yeni İçerik Ekle
+                </button>
+            </div>
+        </div>
+
+        <div class="card-body p-0">
+            @if (totalContents == 0)
+            {
+                <div class="empty-state-box text-center py-5">
+                    <div class="empty-icon-box mb-3 text-muted">
+                        <i class="fas fa-folder-open fa-4x"></i>
+                    </div>
+                    <h4 class="font-weight-bold text-dark">Bu Kursa Henüz İçerik Eklenmemiş</h4>
+                    <p class="text-muted max-w-500 mx-auto mb-4">
+                        Kursiyerlerin eğitim alabilmesi için video, mevzuat dokümanı (PDF/Word) veya zengin HTML ders notları ekleyebilirsiniz.
+                    </p>
+                    <button type="button" class="btn btn-primary shadow-sm" data-toggle="modal" data-target="#addContentModal">
+                        <i class="fas fa-plus-circle mr-1"></i> İlk İçeriği Ekle
+                    </button>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" id="contentsTable">
+                        <thead class="thead-light">
+                            <tr>
+                                <th style="width: 70px;" class="text-center">Sıra</th>
+                                <th style="width: 140px;">İçerik Türü</th>
+                                <th>Başlık ve Kısa Açıklama</th>
+                                <th>Bağlı Dosya</th>
+                                <th style="width: 120px;">Eklenme Tarihi</th>
+                                <th class="text-right" style="width: 230px;">İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{
+                                int counter = 1;
+                                foreach (var content in contents)
+                                {
+                                    var type = (content.ContentType ?? "HTML").ToUpperInvariant();
+                                    string badgeClass = "badge-primary";
+                                    string iconClass = "fa-file-code";
+                                    string typeLabel = "HTML Ders Notu";
+
+                                    if (type.Contains("PDF"))
+                                    {
+                                        badgeClass = "badge-danger";
+                                        iconClass = "fa-file-pdf";
+                                        typeLabel = "PDF Dokümanı";
+                                    }
+                                    else if (type.Contains("VIDEO") || type.Contains("MP4") || type.Contains("WEBM"))
+                                    {
+                                        badgeClass = "badge-info";
+                                        iconClass = "fa-video";
+                                        typeLabel = "Video Dersi";
+                                    }
+                                    else if (type.Contains("DOK") || type.Contains("DOC") || type.Contains("WORD") || type.Contains("XLS"))
+                                    {
+                                        badgeClass = "badge-dark";
+                                        iconClass = "fa-file-word";
+                                        typeLabel = "Belge / Doküman";
+                                    }
+                                    else if (type.Contains("SUNUM") || type.Contains("PPT"))
+                                    {
+                                        badgeClass = "badge-warning text-dark";
+                                        iconClass = "fa-file-powerpoint";
+                                        typeLabel = "Sunum (PPT)";
+                                    }
+                                    else if (type.Contains("RESIM") || type.Contains("IMAGE") || type.Contains("JPG") || type.Contains("PNG"))
+                                    {
+                                        badgeClass = "badge-success";
+                                        iconClass = "fa-image";
+                                        typeLabel = "Görsel / Şema";
+                                    }
+
+                                    var rawDesc = content.ContentDescription ?? "";
+                                    var plainDesc = System.Text.RegularExpressions.Regex.Replace(rawDesc, "<[^>]*>", "").Trim();
+                                    if (plainDesc.Length > 100) { plainDesc = plainDesc.Substring(0, 97) + "..."; }
+                                    if (string.IsNullOrWhiteSpace(plainDesc)) { plainDesc = "Açıklama belirtilmemiş."; }
+
+                                    <tr id="contentRow_@content.ContentId" class="content-table-row">
+                                        <td class="text-center font-weight-bold text-muted">
+                                            <span class="badge badge-light border">#@counter</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge @badgeClass py-1 px-2 font-weight-semibold">
+                                                <i class="fas @iconClass mr-1"></i>@typeLabel
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="font-weight-bold text-dark mb-1">
+                                                @content.ContentTitle
+                                            </div>
+                                            <div class="text-muted small text-truncate max-w-450" title="@plainDesc">
+                                                @plainDesc
+                                            </div>
+                                        </td>
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(content.FilePath))
+                                            {
+                                                var fileName = System.IO.Path.GetFileName(content.FilePath);
+                                                <div class="d-flex align-items-center text-truncate max-w-220">
+                                                    <i class="fas fa-paperclip text-muted mr-1"></i>
+                                                    <span class="text-truncate mr-2 font-weight-500" title="@fileName">@fileName</span>
+                                                    <a href="@Url.Content("~/files/Egitim/" + content.FilePath)" target="_blank" class="btn btn-xs btn-outline-secondary" title="Dosyayı Görüntüle / İndir">
+                                                        <i class="fas fa-external-link-alt"></i>
+                                                    </a>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted small"><i class="fas fa-file-alt mr-1"></i>HTML Metin İçeriği</span>
+                                            }
+                                        </td>
+                                        <td class="text-muted small">
+                                            @(content.CreatedDate.HasValue ? content.CreatedDate.Value.ToString("dd.MM.yyyy") : "—")
+                                        </td>
+                                        <td class="text-right">
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <!-- Önizle / Görüntüle Butonu -->
+                                                <a href="@Url.Action("ContentDetail", "Course", new { id = content.ContentId })"
+                                                   class="btn btn-outline-info" title="İçeriği Kursiyer Gözüyle Görüntüle / Oku">
+                                                    <i class="fas fa-eye mr-1"></i> Önizle
+                                                </a>
+
+                                                <!-- Düzenle Butonu (Modal Açar) -->
+                                                <button type="button" class="btn btn-outline-primary btn-edit-content"
+                                                        data-id="@content.ContentId" title="Bu İçeriği Düzenle">
+                                                    <i class="fas fa-edit mr-1"></i> Düzenle
+                                                </button>
+
+                                                <!-- Sil Butonu (AJAX ile onaylı siler) -->
+                                                <button type="button" class="btn btn-outline-danger btn-delete-content"
+                                                        data-id="@content.ContentId" data-title="@content.ContentTitle" title="İçeriği Sil">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    counter++;
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================== -->
+<!-- MODAL: YENİ İÇERİK EKLE                                        -->
+<!-- ============================================================== -->
+<div class="modal fade" id="addContentModal" tabindex="-1" role="dialog" aria-labelledby="addContentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable modal-extra-wide" style="max-width: 90vw; width: 1400px;" role="document">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header modal-hero-header text-white">
+                <div class="d-flex align-items-center">
+                    <div class="modal-icon-badge mr-3">
+                        <i class="fas fa-plus-circle fa-lg"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title font-weight-bold mb-0" id="addContentModalLabel">Yeni Ders İçeriği Ekle</h5>
+                        <small class="text-white-50">Ders: @ViewBag.CourseTitle</small>
+                    </div>
+                </div>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Kapat">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+
+            <form id="addContentForm" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="CourseId" value="@Model.CourseId" />
+
+                <div class="modal-body p-4 bg-light">
+                    <div id="addContentAlert" class="alert alert-dismissible fade show" style="display:none;" role="alert"></div>
+
+                    <!-- 1. KART: TEMEL BİLGİLER & TÜR -->
+                    <div class="card border-0 shadow-xs mb-3">
+                        <div class="card-header bg-white py-3 border-bottom">
+                            <h6 class="font-weight-bold mb-0 text-primary">
+                                <i class="fas fa-info-circle mr-2"></i>1. İçerik Künyesi ve Türü
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-8 mb-3">
+                                    <label class="form-label font-weight-semibold">
+                                        İçerik Başlığı <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text bg-white"><i class="fas fa-heading text-muted"></i></span>
+                                        </div>
+                                        <input type="text" id="ac_title" name="ContentTitle" class="form-control" placeholder="Örn: 1. Bölüm - Pasaport Çeşitleri ve Güvenlik Özellikleri" required maxlength="200" />
+                                    </div>
+                                    <small class="form-text text-muted">Kursiyerlerin içerik listesinde göreceği başlık.</small>
+                                </div>
+
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label font-weight-semibold">
+                                        İçerik Türü <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text bg-white"><i class="fas fa-tag text-muted"></i></span>
+                                        </div>
+                                        <select id="ac_type" name="ContentType" class="form-control">
+                                            <option value="HTML" selected>📄 HTML / Zengin Ders Notu</option>
+                                            <option value="PDF">📕 PDF Dokümanı</option>
+                                            <option value="Video">🎥 Video Dersi (MP4 / WebM)</option>
+                                            <option value="Doküman">📝 Word / Excel Dokümanı</option>
+                                            <option value="Sunum">📊 PowerPoint Sunumu</option>
+                                            <option value="Resim">🖼️ Görsel / Şema / İnfografik</option>
+                                        </select>
+                                    </div>
+                                    <small class="form-text text-muted">İçeriğin niteliğini belirler.</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. KART: DOSYA YÜKLEME & KISA ÖZET -->
+                    <div class="card border-0 shadow-xs mb-3">
+                        <div class="card-header bg-white py-3 border-bottom">
+                            <h6 class="font-weight-bold mb-0 text-primary">
+                                <i class="fas fa-paperclip mr-2"></i>2. Bağlı Dosya & Kısa Özet
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label font-weight-semibold">
+                                        Dosya Yükle (PDF, Video, Doküman, Resim)
+                                    </label>
+                                    <div class="custom-file mb-2">
+                                        <input type="file" id="ac_file" name="FileUpload" class="custom-file-input" onchange="updateCustomFileLabel(this, 'ac_file_label')">
+                                        <label class="custom-file-label text-truncate" id="ac_file_label" for="ac_file">Dosya Seçiniz...</label>
+                                    </div>
+                                    <small class="form-text text-muted">
+                                        <i class="fas fa-shield-alt mr-1"></i>İzin verilenler: PDF, MP4, AVI, MOV, DOC, DOCX, PPT, PPTX, XLS, XLSX, JPG, PNG (Video: 100MB, Diğer: 10MB)
+                                    </small>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label font-weight-semibold">Kısa Açıklama / Not</label>
+                                    <textarea id="ac_desc" name="ContentDescription" class="form-control" rows="3" maxlength="500" placeholder="Bu içerik hakkında kursiyerlere gösterilecek kısa not veya özet..."></textarea>
+                                    <small class="form-text text-muted">İçerik listesinde başlığın altında görüntülenir.</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. KART: ZENGİN DERS METNİ (SUMMERNOTE) -->
+                    <div class="card border-0 shadow-xs">
+                        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                            <h6 class="font-weight-bold mb-0 text-primary">
+                                <i class="fas fa-file-code mr-2"></i>3. Detaylı Eğitim Metni & Zengin HTML (Summernote)
+                            </h6>
+                            <span class="badge badge-light border">HTML Dersler İçin Temel Alan</span>
+                        </div>
+                        <div class="card-body">
+                            <textarea id="ac_html" name="ContentHtml" class="form-control" rows="10"></textarea>
+                            <small class="form-text text-muted mt-2">
+                                <i class="fas fa-info-circle mr-1"></i>Buraya doğrudan ders metnini yazabilir, görsel yükleyebilir, mevzuat maddelerini tablo veya listelerle zenginleştirebilirsiniz.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-white border-top px-4 py-3">
+                    <button type="button" class="btn btn-secondary px-4" data-dismiss="modal">
+                        <i class="fas fa-times mr-1"></i> Vazgeç
+                    </button>
+                    <button type="button" class="btn btn-primary px-4 font-weight-bold" id="saveAddContentBtn">
+                        <i class="fas fa-check-circle mr-1"></i> İçeriği Kaydet ve Ekle
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================== -->
+<!-- MODAL: İÇERİK DÜZENLE                                         -->
+<!-- ============================================================== -->
+<div class="modal fade" id="editContentModal" tabindex="-1" role="dialog" aria-labelledby="editContentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable modal-extra-wide" style="max-width: 90vw; width: 1400px;" role="document">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header modal-hero-header text-white">
+                <div class="d-flex align-items-center">
+                    <div class="modal-icon-badge mr-3">
+                        <i class="fas fa-edit fa-lg"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title font-weight-bold mb-0" id="editContentModalLabel">İçeriği Düzenle</h5>
+                        <small class="text-white-50" id="editContentModalSub">İçerik bilgilerini güncelleyin.</small>
+                    </div>
+                </div>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Kapat">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+
+            <!-- YÜKLENİYOR İNDİKATÖRÜ -->
+            <div id="editLoadingState" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                    <span class="sr-only">Yükleniyor...</span>
+                </div>
+                <h5 class="text-muted mt-3">İçerik bilgileri yükleniyor, lütfen bekleyiniz...</h5>
+            </div>
+
+            <form id="editContentForm" enctype="multipart/form-data" style="display:none;">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="ec_contentId" name="ContentId" value="" />
+                <input type="hidden" id="ec_courseId" name="CourseId" value="@Model.CourseId" />
+
+                <div class="modal-body p-4 bg-light">
+                    <div id="editContentAlert" class="alert alert-dismissible fade show" style="display:none;" role="alert"></div>
+
+                    <!-- 1. KART: TEMEL BİLGİLER -->
+                    <div class="card border-0 shadow-xs mb-3">
+                        <div class="card-header bg-white py-3 border-bottom">
+                            <h6 class="font-weight-bold mb-0 text-primary">
+                                <i class="fas fa-info-circle mr-2"></i>1. İçerik Başlığı & Türü
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-8 mb-3">
+                                    <label class="form-label font-weight-semibold">
+                                        İçerik Başlığı <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text bg-white"><i class="fas fa-heading text-muted"></i></span>
+                                        </div>
+                                        <input type="text" id="ec_title" name="ContentTitle" class="form-control" required maxlength="200" />
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label font-weight-semibold">
+                                        İçerik Türü <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text bg-white"><i class="fas fa-tag text-muted"></i></span>
+                                        </div>
+                                        <select id="ec_type" name="ContentType" class="form-control">
+                                            <option value="HTML">📄 HTML / Zengin Ders Notu</option>
+                                            <option value="PDF">📕 PDF Dokümanı</option>
+                                            <option value="Video">🎥 Video Dersi (MP4 / WebM)</option>
+                                            <option value="Doküman">📝 Word / Excel Dokümanı</option>
+                                            <option value="Sunum">📊 PowerPoint Sunumu</option>
+                                            <option value="Resim">🖼️ Görsel / Şema / İnfografik</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. KART: DOSYA VE KISA ÖZET -->
+                    <div class="card border-0 shadow-xs mb-3">
+                        <div class="card-header bg-white py-3 border-bottom">
+                            <h6 class="font-weight-bold mb-0 text-primary">
+                                <i class="fas fa-paperclip mr-2"></i>2. Bağlı Dosya & Kısa Açıklama
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label font-weight-semibold">Mevcut Dosya & Değiştirme</label>
+                                    <div class="alert alert-light border p-2 mb-2 d-flex align-items-center justify-content-between" id="ec_currentFileWrap">
+                                        <div class="text-truncate mr-2">
+                                            <i class="fas fa-file text-primary mr-1"></i>
+                                            <span id="ec_currentFileName" class="font-weight-500">Mevcut dosya yok</span>
+                                        </div>
+                                        <a href="#" id="ec_currentFileLink" target="_blank" class="btn btn-xs btn-outline-primary" style="display:none;">
+                                            <i class="fas fa-external-link-alt mr-1"></i>Aç
+                                        </a>
+                                    </div>
+                                    <div class="custom-file mb-1">
+                                        <input type="file" id="ec_file" name="FileUpload" class="custom-file-input" onchange="updateCustomFileLabel(this, 'ec_file_label')">
+                                        <label class="custom-file-label text-truncate" id="ec_file_label" for="ec_file">Yeni Dosya Seç (Opsiyonel)...</label>
+                                    </div>
+                                    <small class="form-text text-muted">Dosyayı değiştirmek istemiyorsanız bu alanı boş bırakınız.</small>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label font-weight-semibold">Kısa Açıklama / Not</label>
+                                    <textarea id="ec_desc" name="ContentDescription" class="form-control" rows="3" maxlength="500"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. KART: SUMMERNOTE DETAYLI METİN -->
+                    <div class="card border-0 shadow-xs">
+                        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                            <h6 class="font-weight-bold mb-0 text-primary">
+                                <i class="fas fa-file-code mr-2"></i>3. Detaylı Ders İçeriği (Summernote)
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <textarea id="ec_html" name="ContentHtml" class="form-control" rows="10"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-white border-top px-4 py-3">
+                    <button type="button" class="btn btn-secondary px-4" data-dismiss="modal">
+                        <i class="fas fa-times mr-1"></i> İptal
+                    </button>
+                    <button type="button" class="btn btn-success px-4 font-weight-bold" id="saveEditContentBtn">
+                        <i class="fas fa-save mr-1"></i> Değişiklikleri Kaydet
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .manage-contents-container {
+            padding: 10px 0 40px;
+        }
+
+        /* HERO BANNER */
+        .contents-hero-banner {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #ffffff;
+            border-radius: 14px;
+            padding: 24px 28px;
+            box-shadow: 0 8px 24px rgba(30, 60, 114, 0.22);
+        }
+
+        .hero-icon-box {
+            width: 58px;
+            height: 58px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.16);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: #ffffff;
+        }
+
+        .hero-title {
+            font-size: 23px;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: -0.3px;
+        }
+
+        .hero-desc {
+            font-size: 13.5px;
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        .hero-action-btn {
+            border-radius: 8px;
+            padding: 8px 18px;
+            font-size: 13.5px;
+            transition: all 0.25s ease;
+        }
+
+        /* TABLO VE ROZETLER */
+        #contentsTable thead th {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #475569;
+            background: #f8fafc;
+            border-top: none;
+            border-bottom: 2px solid #e2e8f0;
+            padding: 12px 14px;
+        }
+
+        #contentsTable tbody td {
+            padding: 14px;
+            vertical-align: middle;
+            border-bottom: 1px solid #edf2f7;
+            font-size: 13.5px;
+        }
+
+        .max-w-450 {
+            max-width: 450px;
+        }
+
+        .max-w-220 {
+            max-width: 220px;
+        }
+
+        .btn-xs {
+            padding: 2px 6px;
+            font-size: 11px;
+            border-radius: 4px;
+        }
+
+        /* MODAL STİLLERİ & GENİŞLETİLMİŞ MODAL */
+        .modal-hero-header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            border-bottom: none;
+            padding: 20px 24px;
+        }
+
+        .modal-icon-badge {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.16);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-extra-wide,
+        #addContentModal .modal-dialog,
+        #editContentModal .modal-dialog {
+            max-width: 90vw !important;
+            width: 1400px !important;
+            margin: 1.5rem auto !important;
+        }
+
+        .modal-dialog-scrollable .modal-content {
+            max-height: 90vh;
+        }
+
+        .modal-dialog-scrollable .modal-body {
+            max-height: calc(90vh - 140px);
+            overflow-y: auto;
+        }
+
+        @@media (min-width: 1600px) {
+            .modal-extra-wide,
+            #addContentModal .modal-dialog,
+            #editContentModal .modal-dialog {
+                max-width: 86vw !important;
+                width: 1550px !important;
+            }
+        }
+
+        @@media (max-width: 991px) {
+            .modal-extra-wide,
+            #addContentModal .modal-dialog,
+            #editContentModal .modal-dialog {
+                max-width: 96vw !important;
+                width: 96vw !important;
+                margin: 0.5rem auto !important;
+            }
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        // Dosya seçildiğinde input etiketini güncelle
+        window.updateCustomFileLabel = function (input, labelId) {
+            if (input.files && input.files[0]) {
+                var file = input.files[0];
+                var sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+                $('#' + labelId).html(file.name + ' (' + sizeMb + ' MB)');
+
+                // Tür tahminleme (Dosya uzantısına göre türü otomatik eşle)
+                var ext = file.name.split('.').pop().toLowerCase();
+                var targetSelect = $(input).attr('id') === 'ac_file' ? $('#ac_type') : $('#ec_type');
+                if (ext === 'pdf') {
+                    targetSelect.val('PDF');
+                } else if (['mp4', 'avi', 'mov', 'wmv', 'webm'].indexOf(ext) !== -1) {
+                    targetSelect.val('Video');
+                } else if (['doc', 'docx', 'xls', 'xlsx'].indexOf(ext) !== -1) {
+                    targetSelect.val('Doküman');
+                } else if (['ppt', 'pptx'].indexOf(ext) !== -1) {
+                    targetSelect.val('Sunum');
+                } else if (['jpg', 'jpeg', 'png', 'gif', 'bmp'].indexOf(ext) !== -1) {
+                    targetSelect.val('Resim');
+                }
+            }
+        };
+
+        $(document).ready(function () {
+            var token = $('input[name="__RequestVerificationToken"]').first().val();
+            var uploadUrl = '@Url.Action("UploadImage", "Course")';
+
+            // ==========================================
+            // SUMMERNOTE BAŞLATICI (LAZY INIT)
+            // ==========================================
+            function initModalSummernote($textarea) {
+                if (!$textarea.length || $textarea.data('sn-init')) return;
+
+                try {
+                    $textarea.summernote({
+                        lang: 'tr-TR',
+                        height: 320,
+                        minHeight: 200,
+                        maxHeight: 600,
+                        dialogsInBody: true,
+                        toolbar: [
+                            ['style', ['style']],
+                            ['font', ['bold', 'italic', 'underline', 'clear']],
+                            ['fontname', ['fontname']],
+                            ['color', ['color']],
+                            ['para', ['ul', 'ol', 'paragraph']],
+                            ['table', ['table']],
+                            ['insert', ['link', 'picture', 'video']],
+                            ['view', ['fullscreen', 'codeview']]
+                        ],
+                        callbacks: {
+                            onImageUpload: function (files) {
+                                for (var i = 0; i < files.length; i++) {
+                                    uploadEditorImage(files[i], this);
+                                }
+                            }
+                        }
+                    });
+                    $textarea.data('sn-init', true);
+                } catch (e) {
+                    console.warn('Summernote init hatası:', e);
+                }
+            }
+
+            function uploadEditorImage(file, editor) {
+                var fd = new FormData();
+                fd.append('file', file);
+                fd.append('__RequestVerificationToken', token);
+
+                $.ajax({
+                    url: uploadUrl,
+                    type: 'POST',
+                    data: fd,
+                    cache: false,
+                    contentType: false,
+                    processData: false
+                }).done(function (res) {
+                    if (res && res.success) {
+                        $(editor).summernote('insertImage', res.url);
+                    } else {
+                        alert((res && res.message) ? res.message : 'Resim yüklenemedi.');
+                    }
+                }).fail(function () {
+                    alert('Resim yüklenirken sunucu hatası oluştu.');
+                });
+            }
+
+            // ==========================================
+            // 1. YENİ İÇERİK EKLEME (ADD CONTENT)
+            // ==========================================
+            $('#addContentModal').on('shown.bs.modal', function () {
+                initModalSummernote($('#ac_html'));
+            });
+
+            $('#addContentModal').on('hidden.bs.modal', function () {
+                $('#addContentForm')[0].reset();
+                $('#ac_file_label').html('Dosya Seçiniz...');
+                $('#addContentAlert').hide().removeClass('alert-success alert-danger');
+                if ($('#ac_html').data('sn-init') && $('#ac_html').summernote) {
+                    try { $('#ac_html').summernote('reset'); } catch (e) { }
+                }
+                $('#saveAddContentBtn').prop('disabled', false).html('<i class="fas fa-check-circle mr-1"></i> İçeriği Kaydet ve Ekle');
+            });
+
+            $('#saveAddContentBtn').on('click', function () {
+                var title = $.trim($('#ac_title').val());
+                if (!title) {
+                    $('#addContentAlert')
+                        .removeClass('alert-success')
+                        .addClass('alert-danger')
+                        .html('<i class="fas fa-exclamation-circle mr-1"></i> Lütfen içerik başlığını giriniz.')
+                        .show();
+                    $('#ac_title').focus();
+                    return;
+                }
+
+                var btn = $(this).prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Kaydediliyor...');
+                var htmlContent = $('#ac_html').data('sn-init') && $('#ac_html').summernote ? $('#ac_html').summernote('code') : $('#ac_html').val();
+
+                var fd = new FormData();
+                fd.append('CourseId', '@Model.CourseId');
+                fd.append('ContentTitle', title);
+                fd.append('ContentType', $('#ac_type').val());
+                fd.append('ContentDescription', $('#ac_desc').val());
+                fd.append('ContentHtml', htmlContent);
+                fd.append('__RequestVerificationToken', token);
+
+                var fileInput = $('#ac_file')[0];
+                if (fileInput && fileInput.files && fileInput.files[0]) {
+                    fd.append('FileUpload', fileInput.files[0]);
+                }
+
+                $.ajax({
+                    url: '@Url.Action("CreateContentFromModal", "Course")',
+                    type: 'POST',
+                    data: fd,
+                    cache: false,
+                    contentType: false,
+                    processData: false
+                }).done(function (res) {
+                    if (res && res.success) {
+                        $('#addContentAlert')
+                            .removeClass('alert-danger')
+                            .addClass('alert-success')
+                            .html('<i class="fas fa-check-circle mr-1"></i> ' + (res.message || 'İçerik başarıyla eklendi!') + ' Sayfa yenileniyor...')
+                            .show();
+                        setTimeout(function () {
+                            window.location.reload();
+                        }, 900);
+                    } else {
+                        $('#addContentAlert')
+                            .removeClass('alert-success')
+                            .addClass('alert-danger')
+                            .html('<i class="fas fa-exclamation-triangle mr-1"></i> ' + (res.message || 'Hata oluştu.'))
+                            .show();
+                        btn.prop('disabled', false).html('<i class="fas fa-check-circle mr-1"></i> İçeriği Kaydet ve Ekle');
+                    }
+                }).fail(function () {
+                    $('#addContentAlert')
+                        .removeClass('alert-success')
+                        .addClass('alert-danger')
+                        .html('<i class="fas fa-exclamation-triangle mr-1"></i> Sunucu ile iletişim kurulamadı.')
+                        .show();
+                    btn.prop('disabled', false).html('<i class="fas fa-check-circle mr-1"></i> İçeriği Kaydet ve Ekle');
+                });
+            });
+
+            // ==========================================
+            // 2. İÇERİK DÜZENLEME (EDIT CONTENT)
+            // ==========================================
+            $('.btn-edit-content').on('click', function () {
+                var contentId = $(this).data('id');
+                $('#editContentModal').modal('show');
+                $('#editLoadingState').show();
+                $('#editContentForm').hide();
+                $('#editContentAlert').hide();
+
+                $.getJSON('@Url.Action("GetContentData", "Course")', { id: contentId })
+                    .done(function (res) {
+                        $('#editLoadingState').hide();
+                        if (res && res.success) {
+                            $('#editContentForm').show();
+                            $('#ec_contentId').val(res.contentId);
+                            $('#ec_title').val(res.title);
+                            $('#ec_type').val(res.contentType);
+                            $('#ec_desc').val(res.description);
+                            $('#editContentModalSub').text('İçerik #' + res.contentId + ' - ' + res.title);
+
+                            // Mevcut dosya bilgisi
+                            if (res.fileName) {
+                                $('#ec_currentFileName').text(res.fileName);
+                                $('#ec_currentFileLink').attr('href', '@Url.Content("~/files/Egitim/")' + res.filePath).show();
+                            } else {
+                                $('#ec_currentFileName').text('Bağlı dosya yok (Sadece HTML metin)');
+                                $('#ec_currentFileLink').hide();
+                            }
+                            $('#ec_file_label').html('Yeni Dosya Seç (Opsiyonel)...');
+                            $('#ec_file').val('');
+
+                            // Summernote init & set code
+                            initModalSummernote($('#ec_html'));
+                            if ($('#ec_html').summernote) {
+                                $('#ec_html').summernote('code', res.contentHtml || '');
+                            } else {
+                                $('#ec_html').val(res.contentHtml || '');
+                            }
+                        } else {
+                            alert((res && res.message) ? res.message : 'İçerik bilgisi alınamadı.');
+                            $('#editContentModal').modal('hide');
+                        }
+                    })
+                    .fail(function () {
+                        $('#editLoadingState').hide();
+                        alert('İçerik yüklenirken sunucu hatası oluştu.');
+                        $('#editContentModal').modal('hide');
+                    });
+            });
+
+            $('#saveEditContentBtn').on('click', function () {
+                var title = $.trim($('#ec_title').val());
+                if (!title) {
+                    $('#editContentAlert')
+                        .removeClass('alert-success')
+                        .addClass('alert-danger')
+                        .html('<i class="fas fa-exclamation-circle mr-1"></i> Lütfen içerik başlığını giriniz.')
+                        .show();
+                    $('#ec_title').focus();
+                    return;
+                }
+
+                var btn = $(this).prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Güncelleniyor...');
+                var htmlContent = $('#ec_html').data('sn-init') && $('#ec_html').summernote ? $('#ec_html').summernote('code') : $('#ec_html').val();
+
+                var fd = new FormData();
+                fd.append('ContentId', $('#ec_contentId').val());
+                fd.append('CourseId', '@Model.CourseId');
+                fd.append('ContentTitle', title);
+                fd.append('ContentType', $('#ec_type').val());
+                fd.append('ContentDescription', $('#ec_desc').val());
+                fd.append('ContentHtml', htmlContent);
+                fd.append('__RequestVerificationToken', token);
+
+                var fileInput = $('#ec_file')[0];
+                if (fileInput && fileInput.files && fileInput.files[0]) {
+                    fd.append('FileUpload', fileInput.files[0]);
+                }
+
+                $.ajax({
+                    url: '@Url.Action("UpdateContentFromModal", "Course")',
+                    type: 'POST',
+                    data: fd,
+                    cache: false,
+                    contentType: false,
+                    processData: false
+                }).done(function (res) {
+                    if (res && res.success) {
+                        $('#editContentAlert')
+                            .removeClass('alert-danger')
+                            .addClass('alert-success')
+                            .html('<i class="fas fa-check-circle mr-1"></i> ' + (res.message || 'İçerik başarıyla güncellendi!') + ' Sayfa yenileniyor...')
+                            .show();
+                        setTimeout(function () {
+                            window.location.reload();
+                        }, 900);
+                    } else {
+                        $('#editContentAlert')
+                            .removeClass('alert-success')
+                            .addClass('alert-danger')
+                            .html('<i class="fas fa-exclamation-triangle mr-1"></i> ' + (res.message || 'Güncelleme sırasında hata oluştu.'))
+                            .show();
+                        btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Değişiklikleri Kaydet');
+                    }
+                }).fail(function () {
+                    $('#editContentAlert')
+                        .removeClass('alert-success')
+                        .addClass('alert-danger')
+                        .html('<i class="fas fa-exclamation-triangle mr-1"></i> Sunucu ile iletişim kurulamadı.')
+                        .show();
+                    btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Değişiklikleri Kaydet');
+                });
+            });
+
+            // ==========================================
+            // 3. İÇERİK SİLME (DELETE CONTENT)
+            // ==========================================
+            $('.btn-delete-content').on('click', function () {
+                var contentId = $(this).data('id');
+                var contentTitle = $(this).data('title') || 'Bu içerik';
+
+                if (!confirm('⚠️ Dikkat!\n\n"' + contentTitle + '" başlıklı içeriği silmek istediğinizden emin misiniz?\n\nVarsa sunucudaki bağlı dosyası da kalıcı olarak silinecektir.')) {
+                    return;
+                }
+
+                var $row = $('#contentRow_' + contentId);
+                var $btn = $(this).prop('disabled', true);
+
+                $.post('@Url.Action("DeleteContentFromModal", "Course")', {
+                    contentId: contentId,
+                    __RequestVerificationToken: token
+                }).done(function (res) {
+                    if (res && res.success) {
+                        $row.fadeOut(300, function () {
+                            $(this).remove();
+                            var remaining = $('#contentsTable tbody tr').length;
+                            $('#totalCountBadge').text(remaining + ' Materyal');
+                            if (remaining === 0) {
+                                window.location.reload();
+                            }
+                        });
+                    } else {
+                        alert((res && res.message) ? res.message : 'İçerik silinemedi.');
+                        $btn.prop('disabled', false);
+                    }
+                }).fail(function () {
+                    alert('İçerik silinirken sunucu hatası oluştu.');
+                    $btn.prop('disabled', false);
+                });
+            });
+
+            // Otomatik alert kapatma
+            setTimeout(function () {
+                $('.alert.alert-dismissible').fadeOut(400);
+            }, 5000);
+        });
+    </script>
+}

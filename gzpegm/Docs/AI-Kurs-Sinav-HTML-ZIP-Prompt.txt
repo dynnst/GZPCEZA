@@ -1,0 +1,78 @@
+Sana PDF, JPEG, PNG veya metin belgeleri yükleyeceğim. Bu belgeleri kullanarak Türkçe bir eğitim kursu ve sınav hazırlamanı istiyorum.
+
+Çıktıyı benim sistemime yüklenecek şekilde HTML + varsa görseller klasörü olarak hazırla.
+
+Kurallar:
+
+1. Eğitim dili Türkçe olacak.
+2. İçerik resmi, sade ve eğitim amaçlı olacak.
+3. Belgedeki bilgileri uydurmadan, sadece verilen kaynağa dayanarak hazırla.
+4. Eğer kaynakta emin olmadığın bilgi varsa kesin ifade kullanma.
+5. Eğitim içeriğini bölümlere ayır:
+   - Kurs başlığı
+   - Eğitim amacı
+   - Temel bilgiler
+   - Dikkat edilmesi gereken hususlar
+   - Görsel inceleme notları
+   - Özet
+   - Sınav soruları
+
+6. HTML tek bir ana dosya olarak hazırlanacak:
+   - Dosya adı: index.html
+   - Dil: Türkçe
+   - UTF-8 karakter seti kullanılacak.
+   - Görseller varsa images/ klasörü içinde olacak.
+   - HTML içindeki görsel yolları şöyle olacak:
+     images/gorsel-1.jpg
+     images/gorsel-2.jpg
+
+7. Sınav soruları sistemimin okuyabileceği özel formatta olacak.
+
+Sınav bölümü mutlaka şu yapıda olmalı:
+
+<section data-exam="true">
+  <h2>Sınav Soruları</h2>
+
+  <div class="question" data-correct="B">
+    <p>Soru metni buraya yazılacak.</p>
+    <ol type="A">
+      <li>Birinci seçenek</li>
+      <li>İkinci seçenek</li>
+      <li>Üçüncü seçenek</li>
+      <li>Dördüncü seçenek</li>
+    </ol>
+  </div>
+</section>
+
+8. Her soru için:
+   - En az 4 seçenek olacak.
+   - Sadece 1 doğru cevap olacak.
+   - Doğru cevap data-correct alanında A, B, C veya D olarak belirtilecek.
+   - Sorular anlamlı, ölçülebilir ve eğitim içeriğiyle uyumlu olacak.
+   - “Hepsi”, “Hiçbiri”, “Yukarıdakilerin tamamı” gibi zayıf seçenekler kullanılmayacak.
+   - Cevaplar birbirine çok benzer veya bariz saçma olmayacak.
+   - Sorular belge güvenliği, kontrol süreci, dikkat edilmesi gereken alanlar ve pratik uygulama mantığına göre hazırlanacak.
+
+9. Eğer görseller kullanılacaksa:
+   - Görseller eğitim içeriğinde açıklamalı şekilde yer almalı.
+   - Her görsel için alt metin ve kısa açıklama yazılmalı.
+   - Görsel dosya adlarında Türkçe karakter, boşluk veya özel karakter kullanılmamalı.
+   - Örnek dosya adları:
+     images/belge-on-yuz.jpg
+     images/guvenlik-ozelligi-1.jpg
+
+10. En sonunda bana indirilebilir bir ZIP dosyası ver.
+    ZIP içeriği şöyle olmalı:
+
+    index.html
+    images/
+      gorsel-1.jpg
+      gorsel-2.jpg
+
+11. ZIP dosyasının içinde gereksiz sistem dosyası, script, dış bağlantı veya internetten çalışan kaynak olmasın.
+12. HTML dış internet bağlantısına ihtiyaç duymadan açılabilmeli.
+13. Sınav sorularını HTML içinde sadece yukarıdaki data-exam formatıyla ver.
+14. Ayrıca HTML içinde kaynak belgeye dayalı eğitim metni de bulunmalı.
+15. Eğer yüklediğim belgelerde yeterli bilgi yoksa önce benden ek belge iste; uydurma içerik üretme.
+
+Şimdi yüklediğim belgeleri incele ve bu kurallara uygun kurs + sınav HTML ZIP paketi hazırla.

@@ -1,0 +1,583 @@
+/* Landing page styles extracted from Landing/Index.cshtml. */
+
+/* Navbar tek satır zorlaması */
+                .navbar .navbar-nav {
+                    flex-wrap: nowrap !important; /* Alt satıra geçmesin */
+                    white-space: nowrap; /* Yazılar bölünmesin */
+                }
+
+                    .navbar .navbar-nav > li {
+                        white-space: nowrap;
+                    }
+
+                /* Taşarsa yatay scroll */
+                .navbar-collapse {
+                    overflow-x: auto;
+                    overflow-y: hidden;
+                }
+
+                    /* Scroll çubuğunu daha estetik yapmak (opsiyonel) */
+                    .navbar-collapse::-webkit-scrollbar {
+                        height: 6px;
+                    }
+
+                    .navbar-collapse::-webkit-scrollbar-thumb {
+                        background: rgba(0,0,0,0.2);
+                        border-radius: 3px;
+                    }
+
+                .empty-state-container {
+                    padding: 40px 20px;
+                    background: #fff;
+                    border-radius: 6px;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+                    max-width: 500px;
+                    margin: 0 auto;
+                }
+
+                .empty-state-icon {
+                    margin-bottom: 20px;
+                }
+
+                .empty-state-title {
+                    font-weight: 600;
+                    letter-spacing: 0.5px;
+                }
+
+                .empty-state-actions .btn {
+                    border-radius: 4px;
+                    padding: 10px 20px;
+                    font-size: 14px;
+                    transition: all 0.3s ease;
+                }
+
+                .empty-state-actions .btn-primary {
+                    background-color: #1e3c72;
+                    border-color: #1e3c72;
+                }
+
+                    .empty-state-actions .btn-primary:hover {
+                        background-color: #112959;
+                        border-color: #112959;
+                    }
+
+                .empty-state-actions .btn-outline-primary {
+                    color: #1e3c72;
+                    border-color: #1e3c72;
+                }
+
+                    .empty-state-actions .btn-outline-primary:hover {
+                        background-color: #1e3c72;
+                        color: #fff;
+                    }
+
+                .slider-img {
+                    max-height: 500px;
+                    object-fit: cover;
+                    width: 100%;
+                }
+
+                .feature-img {
+                    height: 200px;
+                    object-fit: cover;
+                    width: 100%;
+                }
+
+                .carousel-caption.slider-box {
+                    background: rgba(0, 0, 0, 0.6);
+                    padding: 20px;
+                    border-radius: 10px;
+                    max-width: 40%;
+                    left: 30px;
+                    bottom: 50px;
+                }
+
+                .course-card {
+                    border: 1px solid #e7eaec;
+                    border-radius: 5px;
+                    padding: 20px;
+                    height: 100%;
+                    transition: all 0.3s;
+                    margin-bottom: 30px;
+                }
+
+                    .course-card:hover {
+                        transform: translateY(-5px);
+                        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+                        border-color: #1ab394;
+                    }
+
+                .features-icon {
+                    transition: all 0.3s;
+                }
+
+                .course-card:hover .features-icon {
+                    transform: scale(1.1);
+                }
+
+                /* Recent exams / stats styling */
+                .recent-exam-card {
+                    display: flex;
+                    flex-direction: column;
+                    border-radius: 6px;
+                    border: 1px solid #e7eaec;
+                    box-shadow: 0 3px 10px rgba(0,0,0,0.03);
+                    transition: transform 0.2s ease, box-shadow 0.2s ease;
+                }
+
+                    .recent-exam-card:hover {
+                        transform: translateY(-6px);
+                        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+                    }
+
+                .exam-stat-card {
+                    min-height: 100px;
+                    border-radius: 6px;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                }
+
+                /* Footer styles */
+                .site-footer {
+                    background: #2f4050;
+                    color: #c7d0d9;
+                    padding: 48px 0;
+                    font-size: 14px;
+                    margin-top: 40px;
+                }
+
+                    .site-footer a {
+                        color: #d1e6ff;
+                        text-decoration: none;
+                    }
+
+                        .site-footer a:hover {
+                            color: #ffffff;
+                            text-decoration: underline;
+                        }
+
+                    .site-footer .footer-title {
+                        color: #ffffff;
+                        font-weight: 600;
+                        margin-bottom: 16px;
+                    }
+
+                    .site-footer .social-icon a {
+                        display: inline-block;
+                        width: 36px;
+                        height: 36px;
+                        line-height: 36px;
+                        text-align: center;
+                        border-radius: 50%;
+                        background: rgba(255,255,255,0.06);
+                        margin-right: 8px;
+                        color: #fff;
+                    }
+
+                    .site-footer .newsletter-input {
+                        max-width: 320px;
+                    }
+
+                    .site-footer .small {
+                        color: #9fb0c7;
+                    }
+
+                .footer-bottom {
+                    border-top: 1px solid rgba(255,255,255,0.06);
+                    padding-top: 18px;
+                    margin-top: 24px;
+                    color: #9fb0c7;
+                }
+
+                /* Kategori kartı stilleri */
+                .category-card {
+                    background: #fff;
+                    border: 2px solid #e7eaec;
+                    border-radius: 10px;
+                    padding: 36px 20px;
+                    min-height: 260px;
+                    height: auto;
+                    position: relative;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    overflow: hidden;
+                }
+
+                    .category-card:hover {
+                        transform: translateY(-5px);
+                        border-color: #1e3c72;
+                        box-shadow: 0 10px 25px rgba(30,60,114,0.12);
+                    }
+
+                .category-card.has-courses-card {
+                    border-top: 3.5px solid #1e3c72;
+                }
+
+                .category-icon {
+                    font-size: 56px;
+                    color: #1e3c72;
+                    margin-bottom: 15px;
+                    transition: all 0.3s ease;
+                }
+
+                .category-card:hover .category-icon {
+                    transform: scale(1.1);
+                    color: #112959;
+                }
+
+                .category-card h4 {
+                    color: #2f4050;
+                    font-weight: 600;
+                    margin-bottom: 10px;
+                    font-size: 18px;
+                }
+
+                .category-overlay {
+                    position: absolute;
+                    bottom: -50px;
+                    left: 0;
+                    right: 0;
+                    background: rgba(30, 60, 114, 0.92);
+                    color: white;
+                    padding: 15px;
+                    transition: all 0.3s ease;
+                }
+
+                .category-card:hover .category-overlay {
+                    bottom: 0;
+                }
+
+                .category-overlay .btn {
+                    border: 2px solid white;
+                    background: transparent;
+                    color: white;
+                }
+
+                    .category-overlay .btn:hover {
+                        background: white;
+                        color: #1e3c72;
+                    }
+
+                /* Arama sonuçları stili */
+                .search-results {
+                    background: #fff;
+                    color: #222;
+                    border-radius: 6px;
+                    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+                    padding: 6px;
+                }
+
+                .search-result-item {
+                    display: flex;
+                    gap: 10px;
+                    padding: 8px;
+                    align-items: center;
+                    border-radius: 4px;
+                    text-decoration: none;
+                    color: inherit;
+                }
+
+                    .search-result-item:hover {
+                        background: #f6f6f6;
+                    }
+
+                .search-result-thumb {
+                    width: 56px;
+                    height: 40px;
+                    object-fit: cover;
+                    border-radius: 4px;
+                }
+
+                .search-result-meta {
+                    flex: 1;
+                    min-width: 0;
+                }
+
+                .search-result-title {
+                    font-weight: 600;
+                    font-size: 14px;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+
+                .search-result-desc {
+                    font-size: 12px;
+                    color: #666;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+
+                .search-result-cat {
+                    font-size: 11px;
+                    color: #1ab394;
+                    margin-top: 4px;
+                }
+
+                /* Facebook benzeri navbar */
+                .fb-navbar-wrapper {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    z-index: 1030;
+                    background: linear-gradient(135deg, #071739 0%, #112959 50%, #1e3c72 100%) !important;
+                    box-shadow: 0 4px 16px rgba(7, 23, 57, 0.25);
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+                }
+
+                .fb-navbar {
+                    background: transparent !important;
+                    color: #fff;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 12px;
+                    padding: 8px 24px;
+                    position: relative;
+                    width: 100%;
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+                }
+
+                .fb-left {
+                    flex: 0 0 auto;
+                    display: flex;
+                    align-items: center;
+                    margin-right: 12px;
+                }
+
+                .fb-logo {
+                    color: #fff;
+                    font-weight: 700;
+                    font-size: 18px;
+                    text-decoration: none;
+                    letter-spacing: .2px;
+                }
+
+                /* Orta - arama */
+                .fb-center {
+                    flex: 1 1 auto;
+                    display: flex;
+                    justify-content: center;
+                    padding: 0 12px;
+                }
+
+                .fb-search-form {
+                    width: 60%;
+                    max-width: 560px;
+                    min-width: 180px;
+                    display: flex;
+                    align-items: center;
+                }
+
+                .fb-search-input {
+                    flex: 1;
+                    border-radius: 18px;
+                    padding: 8px 12px;
+                    border: none;
+                    outline: none;
+                    font-size: 14px;
+                }
+
+                .fb-search-btn {
+                    margin-left: -36px;
+                    background: transparent;
+                    border: none;
+                    color: #666;
+                    cursor: pointer;
+                }
+
+                /* Sağ - ikonlar + kullanıcı */
+                .fb-right {
+                    flex: 1 1 auto;
+                    display: flex;
+                    align-items: center;
+                    justify-content: flex-end;
+                    gap: 8px;
+                    margin-left: 8px;
+                    min-width: 0;
+                    overflow-x: auto;
+                    overflow-y: hidden;
+                    -webkit-overflow-scrolling: touch;
+                }
+
+                .fb-nav-icons {
+                    list-style: none;
+                    margin: 0;
+                    padding: 0;
+                    display: flex;
+                    align-items: center;
+                    flex-wrap: nowrap;
+                }
+
+                    .fb-nav-icons li {
+                        margin: 0 4px;
+                        flex: 0 0 auto;
+                    }
+
+                    .fb-nav-icons a {
+                        color: #fff;
+                        font-size: 12px;
+                        padding: 6px 8px;
+                        display: inline-flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 2px;
+                        min-width: 52px;
+                        text-align: center;
+                        text-decoration: none;
+                        white-space: nowrap;
+                        border-radius: 4px;
+                    }
+
+                        .fb-nav-icons a:hover {
+                            background: rgba(255,255,255,0.08);
+                        }
+
+                    .fb-nav-icons .nav-text {
+                        font-size: 9px;
+                        font-weight: 600;
+                        letter-spacing: 0.2px;
+                        line-height: 1.1;
+                    }
+
+                /* Kullanıcı alanı */
+                .fb-user {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    margin-left: 8px;
+                    flex-shrink: 0;
+                }
+
+                .fb-avatar {
+                    width: 36px;
+                    height: 36px;
+                    border-radius: 50%;
+                    object-fit: cover;
+                    border: 2px solid rgba(255,255,255,0.15);
+                }
+
+                .fb-user-name {
+                    color: #fff;
+                    font-size: 14px;
+                    display: inline-block;
+                    max-width: 160px;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+
+                /* Buton stilleri */
+                .btn-outline-light {
+                    color: #fff;
+                    border: 1px solid rgba(255,255,255,0.25);
+                    background: transparent;
+                }
+
+                    .btn-outline-light:hover {
+                        background: rgba(255,255,255,0.08);
+                        color: #fff;
+                    }
+
+                /* Sayfa içeriğinin navbar altından başlaması için body top offset */
+                body.landing-page {
+                    padding-top: 64px;
+                }
+
+                /* Responsive kurallar */
+                @media (max-width: 992px) {
+                    .fb-center {
+                        display: none;
+                    }
+
+                    .fb-logo {
+                        font-size: 16px;
+                    }
+
+                    .fb-nav-icons a {
+                        font-size: 16px;
+                        padding: 6px;
+                    }
+                }
+
+                @media (max-width: 768px) {
+                    .carousel-caption.slider-box {
+                        max-width: 90%;
+                        left: 50%;
+                        transform: translateX(-50%);
+                        bottom: 20px;
+                        text-align: center;
+                    }
+
+                    .carousel-caption h1 {
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        max-width: 100%;
+                    }
+
+                    .carousel-caption p {
+                        font-size: 0.9rem;
+                    }
+                }
+
+                @media (max-width: 767.98px) {
+                    .exam-stat-card {
+                        margin-right: 0 !important;
+                    }
+
+                    .recent-exam-card {
+                        padding: 18px;
+                    }
+
+                        .recent-exam-card .mb-0 {
+                            font-size: 0.95rem;
+                        }
+                }
+
+                @media (max-width: 576px) {
+                    .fb-user-name {
+                        display: none;
+                    }
+
+                    .fb-nav-icons li {
+                        margin: 0 4px;
+                    }
+
+                    .fb-navbar {
+                        padding: 6px 10px;
+                    }
+
+                    .site-footer .newsletter-input {
+                        max-width: 100%;
+                    }
+
+                    .category-card {
+                        padding: 24px 12px;
+                        min-height: 220px;
+                    }
+
+                    .category-icon {
+                        font-size: 44px;
+                    }
+
+                    .category-card h4 {
+                        font-size: 16px;
+                    }
+                }
+
+/* Compact, modern toast styling */
+                .custom-toast-container { position: fixed; top: 0.8rem; right: 1rem; z-index: 2050; }
+                .custom-toast { min-width: 300px; max-width: 560px; border-radius: 8px; overflow: hidden; box-shadow: 0 6px 18px rgba(0,0,0,0.12); }
+                .custom-toast .toast-body { padding: 10px; }
+                .custom-toast .toast-head { display:flex; align-items:center; gap:10px; padding:8px 12px; background:#fff; border-bottom:1px solid #f1f1f1; }
+                .custom-toast .toast-head .icon { width:34px; height:34px; border-radius:6px; display:inline-flex; align-items:center; justify-content:center; background:linear-gradient(90deg,#1e3c72,#2a5298); color:#fff; font-size:16px; }
+                .custom-toast .thumb { width:72px; height:48px; object-fit:cover; border-radius:6px; border:1px solid #eee; }
+                .custom-toast .title { font-size:14px; font-weight:700; color:#222; margin-bottom:4px; }
+                .custom-toast .meta { font-size:12px; color:#6c757d; }
+                .custom-toast .actions { display:flex; gap:8px; justify-content:flex-end; margin-top:8px; }
+                @media (max-width:480px) { .custom-toast{ min-width:260px; max-width:92%; } .custom-toast .thumb{ width:56px; height:40px; } }

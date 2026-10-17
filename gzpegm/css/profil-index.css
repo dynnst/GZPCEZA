@@ -1,0 +1,210 @@
+﻿/* ==========================================================================
+   Profil Sayfasi Stilleri (profil-index.css)
+   ========================================================================== */
+
+/* Modern enhancements - no external links, pure local CSS */
+    body {
+        background: #f5f7fb;
+    }
+    .wrapper-content {
+        padding: 20px 20px 40px;
+    }
+    /* Card styling */
+    .ibox {
+        border-radius: 20px;
+        overflow: hidden;
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.03), 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .ibox:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 20px 30px -12px rgba(0,0,0,0.12);
+    }
+    .ibox-title {
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+        background: rgba(255,255,255,0.5);
+        font-weight: 600;
+        padding: 16px 20px;
+    }
+    .ibox-content {
+        background: #ffffff;
+        padding: 24px 22px;
+    }
+    /* Profile card specific */
+    .profile-header {
+        position: relative;
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        border-radius: 20px 20px 0 0;
+        padding: 30px 20px 20px;
+        margin-top: -20px;
+        margin-bottom: 20px;
+        color: white;
+        text-align: center;
+    }
+    .profile-avatar {
+        margin-top: -50px;
+    }
+    .profile-avatar img {
+        border: 5px solid white;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        transition: transform 0.3s ease;
+    }
+    .profile-avatar img:hover {
+        transform: scale(1.02);
+    }
+    .stat-badge {
+        background: white;
+        border-radius: 30px;
+        padding: 5px 15px;
+        display: inline-block;
+        font-weight: 500;
+        margin: 8px 5px;
+        color: #2a5298;
+        font-size: 0.85rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .form-control, .form-control-file {
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        transition: all 0.2s;
+    }
+    .form-control:focus {
+        border-color: #2a5298;
+        box-shadow: 0 0 0 3px rgba(42,82,152,0.2);
+    }
+    .btn-success {
+        background: linear-gradient(135deg, #1ab394 0%, #179e82 100%);
+        border: none;
+        border-radius: 40px;
+        padding: 8px 25px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        transition: all 0.2s;
+    }
+    .btn-success:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(26,179,148,0.25);
+    }
+    .btn-primary {
+        border-radius: 40px;
+        font-weight: 500;
+        background: #2a5298;
+        border: none;
+        transition: all 0.2s;
+    }
+    .btn-primary:hover {
+        background: #1e3c72;
+        transform: translateY(-1px);
+    }
+    /* stats row */
+    .stats-row {
+        background: #f8fafc;
+        border-radius: 28px;
+        padding: 12px 5px;
+        margin-bottom: 20px;
+    }
+    .stat-circle {
+        font-size: 28px;
+        font-weight: 800;
+        color: #2a5298;
+        line-height: 1.2;
+    }
+    hr {
+        margin: 20px 0;
+        border-color: #edf2f7;
+    }
+    .border-item {
+        background: #f9f9ff;
+        border-radius: 16px;
+        padding: 12px;
+        margin-bottom: 12px;
+        transition: all 0.2s;
+    }
+    .border-item:hover {
+        background: #f1f5fe;
+        transform: translateX(5px);
+    }
+    .badge-custom {
+        background: rgba(42,82,152,0.1);
+        color: #1e3c72;
+        padding: 5px 12px;
+        border-radius: 50px;
+        font-size: 0.75rem;
+    }
+    /* Modal style */
+    .modal-content {
+        border-radius: 28px;
+        border: none;
+        overflow: hidden;
+    }
+    .modal-header {
+        background: #1e3c72;
+        color: white;
+        border-bottom: none;
+        padding: 18px 24px;
+    }
+    .modal-header .close {
+        color: white;
+        text-shadow: none;
+        opacity: 0.8;
+    }
+    .modal-footer {
+        border-top: 1px solid #edf2f7;
+    }
+    .pagination .page-link {
+        border-radius: 50px !important;
+        margin: 0 3px;
+        color: #2a5298;
+    }
+    .pagination .active .page-link {
+        background: #2a5298;
+        border-color: #2a5298;
+    }
+    /* Responsive touch */
+    @media (max-width: 768px) {
+        .ibox-content {
+            padding: 18px;
+        }
+        .stat-circle {
+            font-size: 22px;
+        }
+    }
+    /* Animation for fade-in */
+    .animated {
+        animation-duration: 0.5s;
+    }
+    .profile-tahdit-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+    .profile-tahdit-stat {
+        padding: 13px;
+        background: #f8fafc;
+        border: 1px solid #e0e8f0;
+        border-left: 4px solid #2a5298;
+        border-radius: 14px;
+    }
+    .profile-tahdit-stat span {
+        display: block;
+        color: #718096;
+        font-size: .75rem;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+    .profile-tahdit-stat strong {
+        display: block;
+        margin-top: 6px;
+        color: #243143;
+        font-size: 1.25rem;
+    }
+    .profile-tahdit-table {
+        max-height: 320px;
+        overflow: auto;
+    }
+    .profile-tahdit-table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }

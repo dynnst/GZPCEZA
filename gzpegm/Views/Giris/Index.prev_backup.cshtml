@@ -1,0 +1,146 @@
+﻿@{
+    Layout = null;
+}
+
+<!doctype html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>T.C. İçişleri Bakanlığı Emniyet Genel Müdürlüğü - CEZAM Giriş</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="@Url.Content("~/files/logo/favicon-egm-32.png")" type="image/x-icon">
+    <link rel="stylesheet" href="@Url.Content("~/vendor/bootstrap/css/bootstrap.css")" />
+    <link rel="stylesheet" href="@Url.Content("~/vendor/font-awesome/css/fontawesome-all.min.css")" />
+
+    <link rel="stylesheet" href="@Url.Content("~/css/giris-index.css")?v=1.0" />
+</head>
+<body>
+    <div class="login-wrapper">
+        <div class="login-container">
+            <!-- Sol Bilgilendirme Alanı -->
+            <div class="brand-section">
+                <div class="badge-pill">
+                    <i class="fas fa-shield-alt"></i> Güvenli Hudut Platformu
+                </div>
+                <h1>
+                    Emniyet Genel Müdürlüğü
+                    <span>CEZAM Portalı</span>
+                </h1>
+                <p>
+                    Hudut kapıları ceza hesaplama, yasal tahdit kodu belirleme ve personel eğitim modüllerine güvenli erişim sağlayın.
+                </p>
+                <div class="feature-list">
+                    <div class="feature-item">
+                        <div class="feature-icon"><i class="fas fa-calculator"></i></div>
+                        <span>Otomatik Vize ve İkamet İhlal Hesaplama</span>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon"><i class="fas fa-file-contract"></i></div>
+                        <span>Tahdit Kodu Tespiti ve Resmi Tutanak Basımı</span>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon"><i class="fas fa-graduation-cap"></i></div>
+                        <span>Hudut Mevzuatı ve Personel Sınav Sistemi</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sağ Giriş Kartı -->
+            <div class="login-card">
+                <div class="card-header-custom">
+                    <div class="emblem-box">
+                        <i class="fas fa-fingerprint"></i>
+                    </div>
+                    <div class="emblem-text">
+                        <small>T.C. İçişleri Bakanlığı</small>
+                        <strong>Emniyet Eğitim Sistemi</strong>
+                    </div>
+                </div>
+
+                <div class="form-title">
+                    <h2>Kullanıcı Girişi</h2>
+                    <p>Sicil numaranız ve şifreniz ile oturum açın.</p>
+                </div>
+
+                <form id="login" action="@Url.Content("~/Login")" method="post" autocomplete="on">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
+
+                    <!-- Sicil Numarası -->
+                    <div class="form-group-custom">
+                        <div class="input-box">
+                            <span class="input-icon"><i class="fas fa-id-badge"></i></span>
+                            <input id="username" name="username" placeholder="Sicil Numarası" type="text"
+                                   class="login-input" required autocomplete="username"
+                                   inputmode="numeric" pattern="[0-9]*" maxlength="10"
+                                   autofocus aria-label="Sicil Numarası" />
+                        </div>
+                    </div>
+
+                    <!-- Şifre -->
+                    <div class="form-group-custom">
+                        <div class="input-box">
+                            <span class="input-icon"><i class="fas fa-lock"></i></span>
+                            <input id="pwd" name="pwd" placeholder="Şifre" type="password"
+                                   class="login-input" required autocomplete="current-password"
+                                   aria-label="Şifre" />
+                            <button type="button" class="btn-toggle-eye" onclick="togglePassword()"
+                                    aria-label="Şifreyi göster veya gizle" tabindex="-1">
+                                <i id="pwdEye" class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div id="capsWarning" class="caps-alert" role="alert">
+                            <i class="fas fa-exclamation-triangle"></i> Caps Lock açık!
+                        </div>
+                    </div>
+
+                    <!-- Kullanım Koşulları -->
+                    <div class="terms-row">
+                        <input id="AgreeTerms" name="agreeterms" type="checkbox" required />
+                        <label for="AgreeTerms" style="margin:0; cursor:pointer;">
+                            <a href="@Url.Content("~/kosullar")" target="_blank" rel="noopener">Kullanım koşullarını</a> kabul ediyorum.
+                        </label>
+                    </div>
+
+                    <!-- Giriş Butonu -->
+                    <button type="submit" class="btn-submit" id="btnLogin">
+                        GİRİŞ YAP
+                    </button>
+
+                    <!-- Ek Linkler -->
+                    <div class="link-grid">
+                        <a href="@Url.Action("ResetPasswordPage", "Giris")" class="btn-outline-custom" aria-label="Şifremi Unuttum">
+                            <i class="fas fa-key"></i> Şifremi Unuttum
+                        </a>
+                        <a href="@Url.Content("~/kayit")" class="btn-outline-custom" aria-label="Kayıt Ol">
+                            <i class="fas fa-user-plus"></i> Kayıt Ol
+                        </a>
+                    </div>
+
+                    <a href="@Url.Action("Index", "Landing")" class="btn-home" aria-label="Eğitim Anasayfası">
+                        <i class="fas fa-home"></i> Eğitim Anasayfasına Git
+                    </a>
+                </form>
+
+                <!-- Hata Mesajı -->
+                <div class="error-message" role="alert" aria-live="polite">
+                    @if (!string.IsNullOrEmpty(ViewBag.Error as string))
+                    {
+                        <strong>@ViewBag.Error</strong>
+                    }
+                </div>
+
+                <div class="footer-note">
+                    Güvenliğiniz için ortak terminallerde işlem sonrası oturumunuzu kapatınız.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Minimum ve Hızlı Scriptler -->
+    <script src="@Url.Content("~/vendor/jquery/jquery.js")"></script>
+    <script src="@Url.Content("~/vendor/bootstrap/js/bootstrap.js")"></script>
+
+    <script src="@Url.Content("~/js/giris-index.js")?v=1.0"></script>
+</body>
+</html>

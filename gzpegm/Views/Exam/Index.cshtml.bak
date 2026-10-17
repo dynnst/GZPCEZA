@@ -1,0 +1,843 @@
+﻿@model IEnumerable<gzpegm.Models.ViewModels.ExamViewModel>
+@{
+    ViewBag.Title = "Sınav Yönetimi";
+    Layout = "~/Views/Shared/_Master.cshtml";
+
+    // Model'den güvenli liste oluştur
+    var allExams = Model != null ? new List<gzpegm.Models.ViewModels.ExamViewModel>(Model) : new List<gzpegm.Models.ViewModels.ExamViewModel>();
+
+    // Son yayınlanan sınav sırasına göre sırala (en yeni önce)
+    var exams = allExams.OrderByDescending(e => e.CreatedDate).ToList();
+}
+
+<div class="page-wrapper">
+    <div class="container-fluid p-0">
+        <!-- BAŞLIK BÖLÜMÜ -->
+        <div class="page-heading mb-4">
+            <div class="d-flex justify-content-between align-items-center flex-wrap">
+                <div>
+                    <h2 class="page-title">
+                        <span class="me-2">📝</span> Sınav Yönetimi
+                    </h2>
+                    <p class="page-subtitle">Sınavları ekleyin, düzenleyin, sorularını ve sonuçlarını yönetin</p>
+                </div>
+                <div class="table-info">
+                    <span class="badge bg-primary">Toplam: @(exams?.Count() ?? 0)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- MESAJLAR -->
+        @if (TempData["msgSuccess"] != null)
+        {
+            <div class="alert alert-success">
+                <strong>✅ Başarılı!</strong> @TempData["msgSuccess"]
+            </div>
+        }
+        @if (TempData["msgError"] != null)
+        {
+            <div class="alert alert-danger">
+                <strong>❌ Hata!</strong> @TempData["msgError"]
+            </div>
+        }
+
+        <!-- Sınavlar Kartı -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
+                <div>
+                    <h4 class="card-title mb-0">📋 Sınav Listesi</h4>
+                    <p class="card-subtitle mt-1">Tüm sınavlar ve yönetim seçenekleri</p>
+                </div>
+                <button class="btn btn-primary btn-add" onclick="openAddModal()">➕ Yeni Sınav Ekle</button>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-toolbar p-3">
+                    <input type="text" id="examSearch" class="form-control" placeholder="🔍 Sınav, kurs veya açıklama ara" style="max-width: 350px;">
+                </div>
+                <div class="exam-card-grid" id="examCardGrid">
+                    @if (exams != null && exams.Any())
+                    {
+                        foreach (var exam in exams)
+                        {
+                            var coverImage = string.IsNullOrWhiteSpace(exam.CourseCoverImage)
+                                ? Url.Content("~/files/Egitim/91a7dd7d-56dc-41d3-a9bf-296a421966e2_155.jpg")
+                                : (exam.CourseCoverImage.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+                                    ? exam.CourseCoverImage
+                                    : Url.Content("~/files/Egitim/" + exam.CourseCoverImage));
+                            var searchText = ((exam.ExamTitle ?? "") + " " + (exam.ExamDescription ?? "") + " " + (exam.CourseTitle ?? "") + " " + (exam.CourseCreatorFullName ?? "")).ToLowerInvariant();
+
+                            <div class="exam-card-item" data-exam-id="@exam.ExamId" data-search="@searchText">
+                                <div class="exam-card">
+                                    <div class="exam-cover">
+                                        <img src="@coverImage" alt="@exam.CourseTitle" loading="lazy" onerror="this.closest('.exam-cover').classList.add('fallback-cover'); this.remove();" />
+                                        <span class="exam-status @(exam.IsActive ? "status-active" : "status-passive")">@(exam.IsActive ? "Aktif" : "Pasif")</span>
+                                    </div>
+                                    <div class="exam-panel">
+                                        <div>
+                                            <h5 class="exam-card-title">@exam.ExamTitle</h5>
+                                            <p class="exam-card-course">@exam.CourseTitle</p>
+                                            @if (!string.IsNullOrEmpty(exam.CourseCreatorFullName))
+                                            {
+                                                <small class="text-muted">@exam.CourseCreatorFullName</small>
+                                            }
+                                            <p class="exam-card-desc" title="@exam.ExamDescription">
+                                                @(string.IsNullOrEmpty(exam.ExamDescription) ? "Açıklama yok" :
+                                                    (exam.ExamDescription.Length > 85 ? exam.ExamDescription.Substring(0, 85) + "..." : exam.ExamDescription))
+                                            </p>
+                                        </div>
+                                        <div class="exam-meta">
+                                            <span>@exam.Duration dk</span>
+                                            <span>@exam.QuestionCount soru</span>
+                                            <span>Geçme @exam.PassingScore</span>
+                                        </div>
+                                        <div class="action-buttons exam-card-actions">
+                                            <a href="@Url.Action("Index", "Question", new { examId = exam.ExamId })" class="btn btn-info btn-sm">❓ Sorular</a>
+                                            <a href="@Url.Action("Results", "Exam", new { id = exam.ExamId })" class="btn btn-primary btn-sm">📊 Sonuçlar</a>
+                                            <button class="btn btn-warning btn-sm btn-edit" data-id="@exam.ExamId">✏️ Düzenle</button>
+                                            <form method="post" action="@Url.Action("Delete", "Exam")" class="d-inline delete-form" data-confirm="Bu sınavı silmek istediğinize emin misiniz?">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@exam.ExamId" />
+                                                <button type="submit" class="btn btn-danger btn-sm">🗑️ Sil</button>
+                                            </form>
+                                            <button type="button" class="btn btn-sm toggle-status-btn @(exam.IsActive ? "btn-success" : "btn-secondary")" data-id="@exam.ExamId">
+                                                @(exam.IsActive ? "🟢 Pasif Et" : "⚫ Aktif Et")
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+                <div id="examEmptyState" class="text-center py-5 @(exams != null && exams.Any() ? "d-none" : "")">
+                    <span class="empty-icon">📭</span>
+                    <h5 class="text-muted mt-2">Henüz sınav eklenmemiş</h5>
+                    <p class="text-muted">Yeni sınav eklemek için "Yeni Sınav Ekle" butonunu kullanın.</p>
+                </div>
+                <div class="exam-pagination" id="examPagination"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- YENİ SINAV EKLEME MODALI -->
+<div id="addExamModal" class="modal">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <h5 class="modal-title">➕ Yeni Sınav Ekle</h5>
+                <button type="button" class="close" onclick="closeModal('addExamModal')">&times;</button>
+            </div>
+            <form method="post" action="@Url.Action("Create", "Exam")" id="createForm">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">Sınav Başlığı <span class="text-danger">*</span></label>
+                            <input type="text" name="ExamTitle" class="form-control" placeholder="Sınav başlığını giriniz..." required maxlength="200" />
+                        </div>
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">Sınav Açıklaması</label>
+                            <textarea name="ExamDescription" class="form-control" placeholder="Sınav açıklamasını giriniz..." rows="3" maxlength="500"></textarea>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Kurs <span class="text-danger">*</span></label>
+                            <select name="CourseId" class="form-select" required>
+                                <option value="">Kurs Seçiniz</option>
+                                @if (ViewBag.Courses != null)
+                                {
+                                    foreach (var course in ViewBag.Courses)
+                                    {
+                                        <option value="@course.CourseId">@course.CourseTitle</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Süre (dakika) <span class="text-danger">*</span></label>
+                            <input type="number" name="Duration" class="form-control" value="60" min="1" max="300" required />
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Geçme Notu <span class="text-danger">*</span></label>
+                            <input type="number" name="PassingScore" class="form-control" value="60" min="0" max="100" required />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addExamModal')">İptal</button>
+                    <button type="submit" class="btn btn-primary">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- DÜZENLEME MODALLARI (her sınav için ayrı) -->
+@if (exams != null)
+{
+    foreach (var exam in exams)
+    {
+        <div id="editExamModal_@exam.ExamId" class="modal">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                        <h5 class="modal-title">✏️ Sınavı Düzenle</h5>
+                        <button type="button" class="close" onclick="closeModal('editExamModal_@exam.ExamId')">&times;</button>
+                    </div>
+                    <form method="post" action="@Url.Action("Edit", "Exam")">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="ExamId" value="@exam.ExamId" />
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label">Sınav Başlığı <span class="text-danger">*</span></label>
+                                    <input type="text" name="ExamTitle" value="@exam.ExamTitle" class="form-control" required maxlength="200" />
+                                </div>
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label">Sınav Açıklaması</label>
+                                    <textarea name="ExamDescription" class="form-control" rows="3" maxlength="500">@exam.ExamDescription</textarea>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Kurs <span class="text-danger">*</span></label>
+                                    <select name="CourseId" class="form-select" required>
+                                        <option value="">Kurs Seçiniz</option>
+                                        @if (ViewBag.Courses != null)
+                                        {
+                                            foreach (var course in ViewBag.Courses)
+                                            {
+                                                <option value="@course.CourseId" @(exam.CourseId == course.CourseId ? "selected" : "")>@course.CourseTitle</option>
+                                            }
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label">Süre (dakika) <span class="text-danger">*</span></label>
+                                    <input type="number" name="Duration" value="@exam.Duration" class="form-control" min="1" max="300" required />
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label">Geçme Notu <span class="text-danger">*</span></label>
+                                    <input type="number" name="PassingScore" value="@exam.PassingScore" class="form-control" min="0" max="100" required />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" onclick="closeModal('editExamModal_@exam.ExamId')">İptal</button>
+                            <button type="submit" class="btn btn-primary">Güncelle</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+<style>
+    /* ========== GENEL SAYFA YAPISI (Diğer sayfalarla uyumlu) ========== */
+    * { box-sizing: border-box; }
+    body {
+        background: #f5f7fb;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 0;
+    }
+    .page-wrapper {
+        padding: 20px;
+        background: #f5f7fb;
+        min-height: 100vh;
+    }
+    .container-fluid {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+    .page-heading {
+        margin-bottom: 30px;
+    }
+    .page-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: #333;
+        margin: 0 0 8px 0;
+    }
+    .page-subtitle {
+        font-size: 14px;
+        color: #999;
+        margin: 0;
+    }
+    .table-info {
+        background: white;
+        padding: 6px 12px;
+        border-radius: 30px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    /* KARTLAR */
+    .card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        background: white;
+        margin-bottom: 24px;
+    }
+    .card-header {
+        background: white;
+        border-bottom: 1px solid #eef2f7;
+        padding: 20px 25px;
+    }
+    .card-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin: 0;
+    }
+    .card-subtitle {
+        font-size: 12px;
+        margin-top: 4px;
+        color: #999;
+    }
+    .card-body {
+        padding: 0;
+    }
+    .exam-card-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 22px;
+        padding: 24px;
+    }
+    .exam-card-item {
+        min-width: 0;
+    }
+    .exam-card {
+        position: relative;
+        min-height: 410px;
+        border-radius: 14px;
+        overflow: hidden;
+        background: #eef2f7;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, .08);
+        transition: transform .2s ease, box-shadow .2s ease;
+    }
+    .exam-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 16px 32px rgba(15, 23, 42, .12);
+    }
+    .exam-cover {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, #1d9fb6, #4361ee);
+    }
+    .exam-cover img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+    .exam-cover::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(15, 23, 42, .04), rgba(15, 23, 42, .34));
+    }
+    .fallback-cover::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+            radial-gradient(circle at 22% 20%, rgba(255,255,255,.35), transparent 28%),
+            radial-gradient(circle at 80% 28%, rgba(255,255,255,.22), transparent 22%),
+            linear-gradient(135deg, #1d9fb6, #4361ee);
+    }
+    .exam-status {
+        position: absolute;
+        top: 14px;
+        right: 14px;
+        z-index: 2;
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #fff;
+        box-shadow: 0 8px 18px rgba(0,0,0,.14);
+    }
+    .status-active { background: #16a34a; }
+    .status-passive { background: #dc3545; }
+    .exam-panel {
+        position: absolute;
+        left: 18px;
+        right: 18px;
+        bottom: 18px;
+        z-index: 2;
+        min-height: 200px;
+        padding: 18px;
+        border-radius: 8px;
+        background: #fff;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, .14);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 12px;
+    }
+    .exam-card-title {
+        margin: 0 0 6px;
+        font-size: 18px;
+        font-weight: 700;
+        color: #111827;
+        line-height: 1.3;
+    }
+    .exam-card-course {
+        margin: 0 0 4px;
+        color: #4361ee;
+        font-weight: 600;
+        font-size: 13px;
+    }
+    .exam-card-desc {
+        margin: 10px 0 0;
+        color: #64748b;
+        font-size: 13px;
+        line-height: 1.45;
+    }
+    .exam-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .exam-meta span {
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: #eef2ff;
+        color: #334155;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    .exam-card-actions {
+        gap: 7px;
+    }
+    .exam-card-actions .btn {
+        flex: 1 1 auto;
+        justify-content: center;
+        white-space: nowrap;
+    }
+    .exam-card-actions form {
+        flex: 1 1 auto;
+    }
+    .exam-card-actions form .btn {
+        width: 100%;
+    }
+    .exam-pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        padding: 0 24px 24px;
+    }
+    .exam-page-btn {
+        min-width: 38px;
+        height: 38px;
+        border-radius: 999px;
+        border: 1px solid #e2e8f0;
+        background: #fff;
+        color: #334155;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all .2s ease;
+    }
+    .exam-page-btn:hover,
+    .exam-page-btn.active {
+        background: #4361ee;
+        color: #fff;
+        border-color: #4361ee;
+    }
+    /* BUTONLAR */
+    .action-buttons {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        font-size: 12px;
+        font-weight: 500;
+        border-radius: 6px;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+    .btn-sm {
+        padding: 5px 12px;
+        font-size: 12px;
+    }
+    .btn-primary {
+        background: #4361ee;
+        color: white;
+    }
+    .btn-primary:hover { background: #3a56d4; }
+    .btn-success {
+        background: #28a745;
+        color: white;
+    }
+    .btn-success:hover { background: #218838; }
+    .btn-danger {
+        background: #dc3545;
+        color: white;
+    }
+    .btn-danger:hover { background: #c82333; }
+    .btn-warning {
+        background: #ffc107;
+        color: #212529;
+    }
+    .btn-warning:hover { background: #e0a800; }
+    .btn-info {
+        background: #17a2b8;
+        color: white;
+    }
+    .btn-info:hover { background: #138496; }
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+    .btn-secondary:hover { background: #5a6268; }
+    .btn-add {
+        background: #4361ee;
+        color: white;
+        padding: 8px 18px;
+        font-size: 14px;
+    }
+    /* BADGE */
+    .badge {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+    .bg-success { background-color: #28a745; color: white; }
+    .bg-danger { background-color: #dc3545; color: white; }
+    .bg-info { background-color: #17a2b8; color: white; }
+    .bg-primary { background-color: #4361ee; color: white; }
+    /* ALERT */
+    .alert {
+        padding: 15px 20px;
+        border-radius: 10px;
+        background: white;
+        border-left: 4px solid;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        margin-bottom: 20px;
+    }
+    .alert-success {
+        border-left-color: #28a745;
+        background: #f0fff4;
+        color: #155724;
+    }
+    .alert-danger {
+        border-left-color: #dc3545;
+        background: #fff5f5;
+        color: #721c24;
+    }
+    /* FORM */
+    .form-label {
+        font-weight: 600;
+        font-size: 13px;
+        margin-bottom: 6px;
+        display: block;
+        color: #555;
+    }
+    .form-control, .form-select {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #e1e5eb;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: 0.2s;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #667eea;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+    }
+    /* MODAL */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1050;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0,0,0,0.5);
+        align-items: center;
+        justify-content: center;
+    }
+    .modal-dialog {
+        width: 800px;
+        max-width: 90%;
+        margin: 1.75rem auto;
+    }
+    .modal-content {
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    }
+    .modal-header {
+        padding: 20px 25px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .modal-title {
+        font-size: 20px;
+        font-weight: 600;
+        margin: 0;
+    }
+    .close {
+        background: none;
+        border: none;
+        font-size: 28px;
+        font-weight: 300;
+        cursor: pointer;
+        color: white;
+        opacity: 0.8;
+        line-height: 1;
+    }
+    .close:hover {
+        opacity: 1;
+    }
+    .modal-body {
+        padding: 25px;
+    }
+    .modal-footer {
+        background: #f8f9fa;
+        border-top: 1px solid #eef2f7;
+        padding: 15px 25px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+    /* RESPONSIVE */
+    @@media (max-width: 768px) {
+        .page-wrapper { padding: 15px; }
+        .page-title { font-size: 22px; }
+        .action-buttons { flex-direction: column; align-items: stretch; }
+        .action-buttons .btn { justify-content: center; }
+        .exam-card-grid { grid-template-columns: 1fr; padding: 16px; }
+        .exam-card { min-height: 430px; }
+        .modal-dialog { width: calc(100% - 20px); }
+        .card-header { flex-direction: column; gap: 10px; align-items: flex-start; }
+    }
+    .table-toolbar {
+        background: white;
+        border-bottom: 1px solid #eef2f7;
+        padding: 12px 16px;
+    }
+    .d-inline { display: inline-block; }
+    .d-none { display: none !important; }
+    .mt-1 { margin-top: 4px; }
+    .mt-2 { margin-top: 8px; }
+    .mb-0 { margin-bottom: 0; }
+    .mb-3 { margin-bottom: 16px; }
+    .mb-4 { margin-bottom: 24px; }
+    .me-2 { margin-right: 8px; }
+    .p-0 { padding: 0; }
+    .p-3 { padding: 16px; }
+    .text-center { text-align: center; }
+    .text-muted { color: #6c757d; }
+    .text-danger { color: #dc3545; }
+    .py-5 { padding-top: 3rem; padding-bottom: 3rem; }
+    .empty-icon { font-size: 48px; display: block; }
+</style>
+
+<script>
+    (function() {
+        const pageSize = 4;
+        let currentPage = 1;
+        let filteredCards = [];
+
+        const searchInput = document.getElementById('examSearch');
+        const cards = Array.from(document.querySelectorAll('.exam-card-item'));
+        const pagination = document.getElementById('examPagination');
+        const emptyState = document.getElementById('examEmptyState');
+
+        function applyExamPaging() {
+            const term = (searchInput ? searchInput.value : '').trim().toLowerCase();
+            filteredCards = cards.filter(card => (card.getAttribute('data-search') || '').includes(term));
+
+            const totalPages = Math.max(1, Math.ceil(filteredCards.length / pageSize));
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
+
+            cards.forEach(card => card.style.display = 'none');
+            filteredCards.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+                .forEach(card => card.style.display = '');
+
+            if (emptyState) {
+                emptyState.classList.toggle('d-none', filteredCards.length > 0);
+            }
+
+            renderPagination(totalPages);
+        }
+
+        function renderPagination(totalPages) {
+            if (!pagination) return;
+            pagination.innerHTML = '';
+            if (filteredCards.length <= pageSize) return;
+
+            const prev = createPageButton('‹', currentPage - 1, currentPage === 1);
+            pagination.appendChild(prev);
+
+            for (let i = 1; i <= totalPages; i++) {
+                const btn = createPageButton(i, i, false);
+                if (i === currentPage) btn.classList.add('active');
+                pagination.appendChild(btn);
+            }
+
+            const next = createPageButton('›', currentPage + 1, currentPage === totalPages);
+            pagination.appendChild(next);
+        }
+
+        function createPageButton(text, page, disabled) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'exam-page-btn';
+            btn.textContent = text;
+            btn.disabled = disabled;
+            btn.addEventListener('click', function() {
+                if (disabled) return;
+                currentPage = page;
+                applyExamPaging();
+            });
+            return btn;
+        }
+
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                currentPage = 1;
+                applyExamPaging();
+            });
+        }
+        applyExamPaging();
+
+        // ---------- MODAL YÖNETİMİ (saf JS) ----------
+        window.openAddModal = function() {
+            openModal('addExamModal');
+        };
+        window.openEditModal = function(id) {
+            openModal('editExamModal_' + id);
+        };
+        window.openModal = function(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) modal.style.display = 'flex';
+        };
+        window.closeModal = function(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'none';
+                modal.dispatchEvent(new CustomEvent('modalClosed'));
+            }
+        };
+        // Arka plana tıklama ile kapat
+        window.onclick = function(event) {
+            if (event.target.classList && event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        };
+
+        // Düzenle butonlarına event (her bir buton için)
+        const editBtns = document.querySelectorAll('.btn-edit');
+        editBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                openModal('editExamModal_' + id);
+            });
+        });
+
+        // ---------- DURUM DEĞİŞTİRME (fetch ile) ----------
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+        const toggleBtns = document.querySelectorAll('.toggle-status-btn');
+        toggleBtns.forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const examId = this.getAttribute('data-id');
+                const originalText = this.innerHTML;
+                this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> İşleniyor...';
+                this.disabled = true;
+
+                try {
+                    const formData = new FormData();
+                    formData.append('__RequestVerificationToken', token);
+                    formData.append('id', examId);
+                    const response = await fetch('@Url.Action("ToggleStatus", "Exam")', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const res = await response.json();
+                    if (res.success) {
+                        // Butonu güncelle
+                        const isActive = res.isActive;
+                        this.classList.remove('btn-success', 'btn-secondary');
+                        this.classList.add(isActive ? 'btn-success' : 'btn-secondary');
+                        this.innerHTML = isActive ? '🟢 Pasif Et' : '⚫ Aktif Et';
+                        const card = this.closest('.exam-card');
+                        const statusBadge = card ? card.querySelector('.exam-status') : null;
+                        if (statusBadge) {
+                            statusBadge.textContent = isActive ? 'Aktif' : 'Pasif';
+                            statusBadge.classList.toggle('status-active', isActive);
+                            statusBadge.classList.toggle('status-passive', !isActive);
+                        }
+                    } else {
+                        alert(res.message || 'Durum değiştirilemedi.');
+                        this.innerHTML = originalText;
+                        this.disabled = false;
+                    }
+                } catch (err) {
+                    alert('Sunucu hatası: ' + err.message);
+                    this.innerHTML = originalText;
+                    this.disabled = false;
+                } finally {
+                    this.disabled = false;
+                }
+            });
+        });
+
+        // ---------- FORM RESET (Ekleme modalı) ----------
+        const addModal = document.getElementById('addExamModal');
+        if (addModal) {
+            addModal.addEventListener('modalClosed', function() {
+                const form = document.getElementById('createForm');
+                if (form) form.reset();
+            });
+        }
+
+        // Silme formlarına loading efekti
+        const deleteForms = document.querySelectorAll('.delete-form');
+        deleteForms.forEach(form => {
+            form.addEventListener('submit', function(e) {
+                const message = this.getAttribute('data-confirm');
+                if (message && !confirm(message)) {
+                    e.preventDefault();
+                    return;
+                }
+
+                const btn = this.querySelector('button[type="submit"]');
+                if (btn) {
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Siliniyor...';
+                    btn.disabled = true;
+                }
+            });
+        });
+
+        // Otomatik alert kapatma (5 sn)
+        setTimeout(() => {
+            document.querySelectorAll('.alert').forEach(alert => {
+                alert.style.display = 'none';
+            });
+        }, 5000);
+    })();
+</script>
+@if (ViewBag.EditExamId != null)
+{
+    <script>
+        $(function () { openModal('editExamModal_@ViewBag.EditExamId'); });
+    </script>
+}

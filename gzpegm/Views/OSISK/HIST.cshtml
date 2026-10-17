@@ -1,0 +1,230 @@
+@model IEnumerable<gzpegm.Models.E_History>
+@{
+    Layout = "~/Views/Shared/_Master.cshtml";
+    ViewBag.UseDataTables = true;
+    ViewBag.UseDataTablesExport = true;
+    ViewBag.Title = "Eski Hesaplamalar";
+
+    var fromVal = ViewBag.From != null ? ((DateTime)ViewBag.From).ToString("yyyy-MM-dd") : "";
+    var toVal = ViewBag.To != null ? ((DateTime)ViewBag.To).ToString("yyyy-MM-dd") : "";
+    var searchText = ViewBag.SearchText as string ?? "";
+    var selectedBorder = ViewBag.SelectedBorder as string ?? "";
+    var selectedUser = ViewBag.SelectedUser as string ?? "";
+    var baseUrl = Url.Action("HIST", "OSISK");
+    var currentParams = "";
+    if (!string.IsNullOrEmpty(fromVal)) { currentParams += (currentParams == "" ? "?" : "&") + "from=" + fromVal;
+}
+    if (!string.IsNullOrEmpty(toVal)) { currentParams += (currentParams == "" ? "?" : "&") + "to=" + toVal; }
+    if (!string.IsNullOrEmpty(searchText)) { currentParams += (currentParams == "" ? "?" : "&") + "q=" + HttpUtility.UrlEncode(searchText); }
+    if (!string.IsNullOrEmpty(selectedBorder)) { currentParams += (currentParams == "" ? "?" : "&") + "border=" + HttpUtility.UrlEncode(selectedBorder); }
+    if (!string.IsNullOrEmpty(selectedUser)) { currentParams += (currentParams == "" ? "?" : "&") + "user=" + HttpUtility.UrlEncode(selectedUser); }
+    var exportPdfUrl = baseUrl + currentParams + (currentParams == "" ? "?" : "&") + "export=pdf";
+    var exportXlsUrl = baseUrl + currentParams + (currentParams == "" ? "?" : "&") + "export=excel";
+    var tahditStats = ViewBag.TahditStats as gzpegm.Models.ViewModels.TahditStatisticsViewModel ?? new gzpegm.Models.ViewModels.TahditStatisticsViewModel();
+    Func<string, string> formatMoney = value =>
+    {
+        if (string.IsNullOrWhiteSpace(value)) return "0";
+        var cleaned = System.Text.RegularExpressions.Regex.Replace(value, "[^0-9,.-]", "");
+        if (string.IsNullOrWhiteSpace(cleaned)) return "0";
+        var lastComma = cleaned.LastIndexOf(',');
+        var lastDot = cleaned.LastIndexOf('.');
+        var decimalIndex = Math.Max(lastComma, lastDot);
+        cleaned = decimalIndex >= 0
+            ? cleaned.Substring(0, decimalIndex).Replace(",", "").Replace(".", "")
+            : cleaned.Replace(",", "").Replace(".", "");
+        long parsed;
+        return long.TryParse(cleaned, out parsed) ? parsed.ToString("N0", new System.Globalization.CultureInfo("tr-TR")) : "0";
+    };
+}
+
+<div class="page-wrapper history-admin-page">
+    <div class="page-heading mb-4">
+        <h1 class="page-title">
+            <i class="fas fa-history me-2"></i>Ceza Hesaplaması Yapılan Yolcular
+        </h1>
+        <p class="text-muted">Tüm hesaplama kayıtları ve genel istatistikler</p>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-6 col-xl-3 mb-3">
+            <div class="stat-card stat-card-primary">
+                <div class="stat-icon"><i class="fas fa-calculator"></i></div>
+                <div class="stat-content">
+                    <h5>Toplam Hesaplama</h5>
+                    <h2>@ViewBag.ToplamHesaplama</h2>
+                    <small>genel kayıt</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3 mb-3">
+            <div class="stat-card stat-card-success">
+                <div class="stat-icon"><i class="fas fa-lira-sign"></i></div>
+                <div class="stat-content">
+                    <h5>Toplam Ceza Miktarı</h5>
+                    <h2>@ViewBag.ToplamMiktar</h2>
+                    <small>TL</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3 mb-3">
+            <div class="stat-card stat-card-info">
+                <div class="stat-icon"><i class="fas fa-user-check"></i></div>
+                <div class="stat-content">
+                    <h5>En Çok Hesaplayan</h5>
+                    <h2>@ViewBag.EnCokHesaplayanPersonel</h2>
+                    <small>@ViewBag.EnCokHesaplayanAdi</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3 mb-3">
+            <div class="stat-card stat-card-warning">
+                <div class="stat-icon"><i class="fas fa-globe"></i></div>
+                <div class="stat-content">
+                    <h5>En Çok Hesaplanan Ülke</h5>
+                    <h2>@ViewBag.EnCokUlkeSayi</h2>
+                    <small>@ViewBag.EnCokUlke</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-6 col-xl-3 mb-3">
+            <div class="mini-stat">
+                <span><i class="fas fa-calendar-day"></i> Bugünkü Hesaplama</span>
+                <strong>@ViewBag.BugunHesaplama</strong>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3 mb-3">
+            <div class="mini-stat">
+                <span><i class="fas fa-chart-line"></i> Ortalama Ceza</span>
+                <strong>@ViewBag.OrtalamaMiktar TL</strong>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3 mb-3">
+            <div class="mini-stat">
+                <span><i class="fas fa-arrow-up"></i> En Yüksek Ceza</span>
+                <strong>@ViewBag.EnYuksekMiktar TL</strong>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3 mb-3">
+            <div class="mini-stat">
+                <span><i class="fas fa-exclamation-triangle"></i> En Sık Ceza Türü</span>
+                <strong>@ViewBag.EnCokCezaTuruSayi</strong>
+                <small>@ViewBag.EnCokCezaTuru</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-lg-4 mb-3">
+            <div class="mini-stat">
+                <span><i class="fas fa-ban"></i> Seçili Aralık Tahdit Formu</span>
+                <strong>@tahditStats.AllTotal</strong>
+            </div>
+        </div>
+        <div class="col-lg-8 mb-3">
+            <div class="card">
+                <div class="card-header"><h4 class="card-title mb-0">Tahdit Kodu Dağılımı</h4></div>
+                <div class="card-body p-0">
+                    <div class="table-responsive tahdit-code-table-wrap">
+                        <table class="table table-sm mb-0">
+                            <thead><tr><th>Tahdit</th><th>İdari</th><th class="text-right">Adet</th></tr></thead>
+                            <tbody>
+                                @if (tahditStats.AllByCode.Any())
+                                {
+                                    foreach (var item in tahditStats.AllByCode)
+                                    {
+                                        <tr><td>@item.TahditCode</td><td>@item.IdariTahditCode</td><td class="text-right">@item.Count</td></tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr><td colspan="3" class="text-center text-muted">Seçili aralıkta tahdit formu yok.</td></tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header d-flex align-items-center justify-content-between flex-wrap">
+            <div>
+                <h4 class="card-title mb-0">
+                    <i class="fas fa-list me-2"></i>Hesaplama Listesi
+                </h4>
+                <p class="card-subtitle">Hesaplama geçmişini filtreleyebilir, dışa aktarabilir ve kayıt silebilirsiniz.</p>
+            </div>
+            <form method="get" action="@Url.Action("HIST", "OSISK")" class="filter-form">
+                <input type="text" name="q" value="@searchText" class="form-control" placeholder="Ülke, kullanıcı, kapı veya ceza ara" />
+                <select name="border" class="form-control populate" data-plugin-selectTwo data-width="220px">
+                    <option value="">Tüm Kapılar</option>
+                    @foreach (var item in (ViewBag.BorderList as List<string> ?? new List<string>()))
+                    {
+                        <option value="@item" @(selectedBorder == item ? "selected" : "")>@item</option>
+                    }
+                </select>
+                <select name="user" class="form-control populate" data-plugin-selectTwo data-width="220px">
+                    <option value="">Tüm Kullanıcılar</option>
+                    @foreach (var item in (ViewBag.UserList as List<string> ?? new List<string>()))
+                    {
+                        <option value="@item" @(selectedUser == item ? "selected" : "")>@item</option>
+                    }
+                </select>
+                <input type="date" name="from" value="@fromVal" class="form-control" />
+                <input type="date" name="to" value="@toVal" class="form-control" />
+                <button type="submit" class="btn btn-primary">Tarih Aralığı Filtrele</button>
+                <a href="@Url.Action("HIST", "OSISK")" class="btn btn-outline-dark">Tüm Kayıtlar</a>
+                <a href="@exportPdfUrl" class="btn btn-outline-secondary">PDF</a>
+                <a href="@exportXlsUrl" class="btn btn-outline-secondary">Excel</a>
+            </form>
+        </div>
+        <div class="card-body p-0">
+            <div class="px-4 py-2 text-muted small">@(ViewBag.ResultInfo ?? "Son 100 kayıt gösteriliyor.")</div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="datatable-hist-admin">
+                    <thead>
+                        <tr>
+                            <th>Ülke</th>
+                            <th>Kullanıcı</th>
+                            <th>İşlem Tarihi</th>
+                            <th>Kapı</th>
+                            <th>Ceza Türü</th>
+                            <th>Miktar</th>
+                            <th class="text-center">İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var data in Model)
+                        {
+                            <tr>
+                                <td><span class="badge-soft">@data.fldCountry</span></td>
+                                <td>@data.fldUser</td>
+                                <td>@(data.fldDatetime.HasValue ? data.fldDatetime.Value.ToString("dd.MM.yyyy HH:mm") : "")</td>
+                                <td>@data.fldBorder</td>
+                                <td>@data.fldPenalty</td>
+                                <td class="money-cell">@formatMoney(data.fldPMoney) TL</td>
+                                <td class="actions text-center">
+                                    <a onclick="deleterecordhist('@data.fldId')" class="btn btn-sm btn-outline-danger" title="Sil"><i class="fas fa-trash-alt"></i></a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link href="@Url.Content("~/css/hist-admin.css")?v=1.0" rel="stylesheet" />
+}
+
+@section Scripts {
+    <script src="@Url.Content("~/vendor/datatables/media/js/jquery.dataTables.min.js")"></script>
+    <script src="@Url.Content("~/vendor/datatables/media/js/dataTables.bootstrap4.min.js")"></script>
+    <script src="@Url.Content("~/js/hist-admin.js")?v=1.0"></script>
+}

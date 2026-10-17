@@ -1,0 +1,657 @@
+@model gzpegm.Models.DocumentTerms
+@{
+    ViewBag.Title = "Yeni Terim Ekle";
+    Layout = "~/Views/Shared/_Master.cshtml";
+    ViewBag.UseSummernote = true;
+}
+
+<div class="row wrapper border-bottom white-bg page-heading">
+    <div class="col-lg-10">
+        <h2>Yeni Terim Ekle</h2>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="/Home/Index">Anasayfa</a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="/DocumentTerms/Index">Terimler</a>
+            </li>
+            <li class="breadcrumb-item active">
+                <strong>Yeni Terim Ekle</strong>
+            </li>
+        </ol>
+    </div>
+    <div class="col-lg-2">
+        <div class="title-action">
+            <a href="@Url.Action("Index", "DocumentTerms")" class="btn btn-default">
+                <i class="fa fa-arrow-left"></i> Listeye Dön
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="wrapper wrapper-content animated fadeInRight">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="ibox">
+                <div class="ibox-title">
+                    <h5><i class="fa fa-plus-circle text-primary"></i> Yeni Terim Ekleme Formu</h5>
+                    <div class="ibox-tools">
+                        <a class="collapse-link">
+                            <i class="fa fa-chevron-up"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="ibox-content">
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                            <h5 class="alert-heading">
+                                <i class="fa fa-times-circle"></i> Hata! Lütfen hataları düzeltiniz
+                            </h5>
+                            <hr>
+                            <div id="errorList">
+                                @foreach (var key in ViewData.ModelState.Keys)
+                                {
+                                    var modelState = ViewData.ModelState[key];
+                                    foreach (var error in modelState.Errors)
+                                    {
+                                        <div class="alert-item">
+                                            <i class="fa fa-arrow-right"></i>
+                                            <strong>@key:</strong> @error.ErrorMessage
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    @using (Html.BeginForm("Create", "DocumentTerms", FormMethod.Post, new { enctype = "multipart/form-data", @class = "form-horizontal", id = "termForm" }))
+                    {
+                        @Html.AntiForgeryToken()
+
+                        <!-- Temel Bilgiler -->
+                        <div class="panel panel-primary">
+                            <div class="panel-heading">
+                                <h5 class="panel-title"><i class="fa fa-info-circle"></i> Temel Bilgiler</h5>
+                            </div>
+                            <div class="panel-body">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <div class="form-group">
+                                            @Html.LabelFor(m => m.Term, new { @class = "control-label" })
+                                            <span class="text-danger">*</span>
+                                            <div class="input-group">
+                                                <span class="input-group-prepend">
+                                                    <span class="input-group-text">
+                                                        <i class="fa fa-font"></i>
+                                                    </span>
+                                                </span>
+                                                @Html.TextBoxFor(m => m.Term, new
+                                                {
+                                                    @class = "form-control" + (ViewData.ModelState.ContainsKey("Term") && ViewData.ModelState["Term"].Errors.Count > 0 ? " is-invalid" : ""),
+                                                    placeholder = "Terim başlığı giriniz",
+                                                    maxlength = "200",
+                                                    required = "required"
+                                                })
+                                            </div>
+                                            @if (ViewData.ModelState.ContainsKey("Term") && ViewData.ModelState["Term"].Errors.Count > 0)
+                                            {
+                                                <div class="text-danger small mt-1">
+                                                    <i class="fa fa-exclamation-circle"></i> @ViewData.ModelState["Term"].Errors[0].ErrorMessage
+                                                </div>
+                                            }
+                                            <small class="form-text text-muted d-block mt-1">
+                                                <i class="fa fa-info-circle"></i> Maksimum 200 karakter, zorunlu alan
+                                            </small>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            @Html.LabelFor(m => m.Category, new { @class = "control-label" })
+                                            <span class="text-danger">*</span>
+                                            <div class="input-group">
+                                                <span class="input-group-prepend">
+                                                    <span class="input-group-text">
+                                                        <i class="fa fa-folder"></i>
+                                                    </span>
+                                                </span>
+                                                <select id="Category" name="Category" class="form-control @(ViewData.ModelState.ContainsKey("Category") && ViewData.ModelState["Category"].Errors.Count > 0 ? "is-invalid" : "")" style="background-color: white;" required>
+                                                    <option value="">-- Kategori Seçiniz --</option>
+                                                    @foreach (var cat in (List<string>)ViewBag.Categories ?? new List<string>())
+                                                    {
+                                                        <option value="@cat">@cat</option>
+                                                    }
+                                                </select>
+                                                <span class="input-group-append">
+                                                    <button type="button" class="btn btn-outline-primary" id="btnNewCategory" data-toggle="modal" data-target="#newCategoryModal" title="Yeni kategori ekle">
+                                                        <i class="fa fa-plus"></i> Yeni Ekle
+                                                    </button>
+                                                </span>
+                                            </div>
+                                            @if (ViewData.ModelState.ContainsKey("Category") && ViewData.ModelState["Category"].Errors.Count > 0)
+                                            {
+                                                <div class="text-danger small mt-1">
+                                                    <i class="fa fa-exclamation-circle"></i> @ViewData.ModelState["Category"].Errors[0].ErrorMessage
+                                                </div>
+                                            }
+                                            <small class="form-text text-muted d-block mt-1">
+                                                <i class="fa fa-info-circle"></i> Mevcut kategorilerden seçiniz, zorunlu alan
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="form-group">
+                                            <label class="control-label">Durum</label>
+                                            <div class="input-group">
+                                                <span class="input-group-prepend">
+                                                    <span class="input-group-text">
+                                                        <i class="fa fa-power-off"></i>
+                                                    </span>
+                                                </span>
+                                                <div class="form-control border-0 bg-transparent">
+                                                    <label class="mb-0">
+                                                        @Html.CheckBoxFor(m => m.IsActive)
+                                                        <i></i> Aktif
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <small class="form-text text-muted d-block mt-1">
+                                                <i class="fa fa-info-circle"></i> Terimi aktif duruma getirmek için işaretleyin
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tanımlar -->
+                        <div class="panel panel-success mt-3">
+                            <div class="panel-heading">
+                                <h5 class="panel-title"><i class="fa fa-file-text"></i> Tanımlar</h5>
+                            </div>
+                            <div class="panel-body">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.Definition, new { @class = "control-label" })
+                                    <span class="text-danger">*</span>
+                                    <div class="input-group">
+                                        <span class="input-group-prepend">
+                                            <span class="input-group-text">
+                                                <i class="fa fa-align-left"></i>
+                                            </span>
+                                        </span>
+                                        @Html.TextAreaFor(m => m.Definition, new
+                                        {
+                                            @class = "form-control" + (ViewData.ModelState.ContainsKey("Definition") && ViewData.ModelState["Definition"].Errors.Count > 0 ? " is-invalid" : ""),
+                                            placeholder = "Kısa ve net tanım giriniz",
+                                            rows = "3",
+                                            required = "required"
+                                        })
+                                    </div>
+                                    @if (ViewData.ModelState.ContainsKey("Definition") && ViewData.ModelState["Definition"].Errors.Count > 0)
+                                    {
+                                        <div class="text-danger small mt-1">
+                                            <i class="fa fa-exclamation-circle"></i> @ViewData.ModelState["Definition"].Errors[0].ErrorMessage
+                                        </div>
+                                    }
+                                    <small class="form-text text-muted d-block mt-1">
+                                        <i class="fa fa-info-circle"></i> Zorunlu alan - Terimin tanımını açık ve net şekilde yazınız
+                                    </small>
+                                </div>
+
+                                <!-- Ayrıntılı Açıklama (Summernote) -->
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.DetailedDescription, new { @class = "control-label" })
+                                    @Html.TextAreaFor(m => m.DetailedDescription, new
+                                    {
+                                        @class = "form-control summernote",
+                                        id = "DetailedDescription",
+                                        placeholder = "Detaylı açıklama giriniz (isteğe bağlı)"
+                                    })
+                                    <small class="form-text text-muted d-block mt-2">
+                                        <i class="fa fa-info-circle"></i> İsteğe bağlı - Resim ve metin ekleyebilirsiniz.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- İlişkili Alanlar -->
+                        <div class="panel panel-info mt-3">
+                            <div class="panel-heading">
+                                <h5 class="panel-title"><i class="fa fa-sitemap"></i> İlişkili Alanlar</h5>
+                            </div>
+                            <div class="panel-body">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.RelatedTerms, new { @class = "control-label" })
+                                    <div class="input-group">
+                                        <span class="input-group-prepend">
+                                            <span class="input-group-text">
+                                                <i class="fa fa-tags"></i>
+                                            </span>
+                                        </span>
+                                        @Html.TextBoxFor(m => m.RelatedTerms, new
+                                        {
+                                            @class = "form-control",
+                                            placeholder = "terim1, terim2, terim3",
+                                            maxlength = "500"
+                                        })
+                                    </div>
+                                    <small class="form-text text-muted d-block mt-1">
+                                        <i class="fa fa-info-circle"></i> İsteğe bağlı - Maksimum 500 karakter. Virgüllerle ayrılmış terim isimleri yazınız
+                                    </small>
+                                </div>
+
+                              
+                            </div>
+                        </div>
+
+                        <!-- Resim Yükleme -->
+                        <div class="panel panel-warning mt-3">
+                            <div class="panel-heading">
+                                <h5 class="panel-title"><i class="fa fa-image"></i> Ana Resim (Başlık Resmi)</h5>
+                            </div>
+                            <div class="panel-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label class="control-label">Dosyadan Yükle</label>
+                                            <div class="custom-file">
+                                                <input type="file" name="imageFile" class="custom-file-input" id="imageFile" accept="image/*">
+                                                <label class="custom-file-label" for="imageFile">Dosya seçin...</label>
+                                            </div>
+                                            <small class="form-text text-muted d-block mt-1">
+                                                <i class="fa fa-info-circle"></i> İsteğe bağlı - Maksimum 5MB, JPG/PNG formatı
+                                            </small>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label class="control-label">Veya URL Girin</label>
+                                            <div class="input-group">
+                                                <span class="input-group-prepend">
+                                                    <span class="input-group-text">
+                                                        <i class="fa fa-globe"></i>
+                                                    </span>
+                                                </span>
+                                                @Html.TextBoxFor(m => m.ImageUrl, new
+                                                {
+                                                    @class = "form-control",
+                                                    placeholder = "https://...",
+                                                    maxlength = "500"
+                                                })
+                                            </div>
+                                            <small class="form-text text-muted d-block mt-1">
+                                                <i class="fa fa-info-circle"></i> İsteğe bağlı - Maksimum 500 karakter. Resim URL'sini yazınız
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Butonlar -->
+                        <div class="row mt-4">
+                            <div class="col-md-12">
+                                <div class="form-group text-center">
+                                    <button type="submit" class="btn btn-primary btn-lg">
+                                        <i class="fa fa-save"></i> Terimi Kaydet
+                                    </button>
+                                    <a href="@Url.Action("Index", "DocumentTerms")" class="btn btn-default btn-lg ml-2">
+                                        <i class="fa fa-times"></i> İptal
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Yeni Kategori Modal -->
+<div class="modal fade" id="newCategoryModal" tabindex="-1" role="dialog" aria-labelledby="newCategoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="newCategoryModalLabel">
+                    <i class="fa fa-plus-circle"></i> Yeni Kategori Ekle
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Kapat">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="newCategoryName">Kategori Adı <span class="text-danger">*</span></label>
+                    <input type="text" id="newCategoryName" class="form-control" placeholder="Kategori adını giriniz" maxlength="100" required />
+                    <small class="form-text text-muted d-block mt-1">
+                        <i class="fa fa-info-circle"></i> Maksimum 100 karakter, zorunlu alan
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fa fa-times"></i> Kapat
+                </button>
+                <button type="button" class="btn btn-primary" id="btnSaveNewCategory">
+                    <i class="fa fa-save"></i> Kaydet
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .panel {
+            border: 1px solid #e7eaec;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,.05);
+        }
+
+        .panel-heading {
+            background: linear-gradient(to right, #f8f9fa, #ffffff);
+            border-bottom: 1px solid #e7eaec;
+            padding: 15px 20px;
+            border-radius: 5px 5px 0 0;
+        }
+
+        .panel-title {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .panel-body {
+            padding: 20px;
+            background-color: #fff;
+        }
+
+        .panel-primary .panel-heading {
+            border-left: 4px solid #1ab394;
+        }
+
+        .panel-success .panel-heading {
+            border-left: 4px solid #1c84c6;
+        }
+
+        .panel-info .panel-heading {
+            border-left: 4px solid #23c6c8;
+        }
+
+        .panel-warning .panel-heading {
+            border-left: 4px solid #f8ac59;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .control-label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0;
+        }
+
+        .input-group-text {
+            background-color: #f8f9fa;
+            border-color: #e7eaec;
+            color: #555;
+        }
+
+        .btn-lg {
+            padding: 12px 30px;
+            font-size: 16px;
+        }
+
+        .title-action {
+            margin-top: 20px;
+        }
+
+        .is-invalid {
+            border-color: #dc3545 !important;
+        }
+
+        .alert {
+            border-radius: 3px;
+        }
+
+        .alert-danger {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #f5c6cb;
+        }
+
+            .alert-item:last-child {
+                border-bottom: none;
+            }
+
+        .text-danger {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        small.form-text {
+            display: block;
+            margin-top: 5px;
+        }
+
+        .form-group .text-danger {
+            display: inline;
+            margin-left: 3px;
+        }
+
+        .note-editor.note-frame {
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .custom-file {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .custom-file-input {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            margin: 0;
+            opacity: 0;
+        }
+
+        .custom-file-label {
+            position: absolute;
+            top: 0;
+            right: 0;
+            left: 0;
+            z-index: 1;
+            display: block;
+            padding: 0.375rem 0.75rem;
+            line-height: 1.5;
+            color: #495057;
+            background-color: #e9ecef;
+            border: 1px solid #ced4da;
+            border-radius: 0.25rem;
+        }
+
+        /* Summernote Modal Z-Index Düzeltmesi */
+        .note-popover {
+            z-index: 2000 !important;
+        }
+
+        .note-handle {
+            z-index: 2000 !important;
+        }
+
+        .mce-tooltip {
+            z-index: 2000 !important;
+        }
+
+        /* Magnific Popup overlay'ını azalt */
+        .mfp-bg {
+            z-index: 1040 !important;
+        }
+
+        .mfp-wrap {
+            z-index: 1050 !important;
+        }
+    </style>
+    <link href="~/css/Summernote/summernote-bs4.css" rel="stylesheet" />
+}
+
+@section Scripts {
+    <script src="~/css/Summernote/summernote-bs4.js"></script>
+    <script src="~/css/Summernote/lang/summernote-tr-TR.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            $('#imageFile').on('change', function (e) {
+                var fileName = e.target.files[0] ? e.target.files[0].name : "Dosya seçin...";
+                $(this).next('.custom-file-label').text(fileName);
+            });
+
+            $('.summernote').summernote({
+                lang: 'tr-TR',
+                height: 300,
+                minHeight: 200,
+                maxHeight: 500,
+                dialogsInBody: true,
+                toolbar: [
+                    ['style', ['style']],
+                    ['font', ['bold', 'underline', 'clear']],
+                    ['fontname', ['fontname']],
+                    ['color', ['color']],
+                    ['para', ['ul', 'ol', 'paragraph']],
+                    ['table', ['table']],
+                    ['insert', ['link', 'picture', 'video']],
+                    ['view', ['fullscreen', 'codeview', 'help']]
+                ],
+                callbacks: {
+                    onImageUpload: function (files) {
+                        for (let i = 0; i < files.length; i++) {
+                            uploadImage(files[i], this);
+                        }
+                    }
+                }
+            });
+
+            function uploadImage(file, editor) {
+                let data = new FormData();
+                data.append("file", file);
+                data.append("__RequestVerificationToken", $('input[name="__RequestVerificationToken"]').val());
+
+                $.ajax({
+                    data: data,
+                    type: "POST",
+                    url: '@Url.Action("UploadImage", "DocumentTerms")',
+                    cache: false,
+                    contentType: false,
+                    processData: false,
+                    success: function (result) {
+                        if (result.success) {
+                            $(editor).summernote('insertImage', result.url);
+                        } else {
+                            alert('Resim yükleme başarısız: ' + result.message);
+                        }
+                    },
+                    error: function () {
+                        alert('Resim yükleme başarısız oldu!');
+                    }
+                });
+            }
+
+            $('#newCategoryModal').on('hidden.bs.modal', function () {
+                $('#newCategoryName').val('');
+            });
+
+            $('#btnSaveNewCategory').click(function (e) {
+                e.preventDefault();
+                var categoryName = $('#newCategoryName').val().trim();
+
+                if (!categoryName) {
+                    alert('Lütfen kategori adı giriniz!');
+                    $('#newCategoryName').focus();
+                    return;
+                }
+
+                $(this).prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Kaydediliyor...');
+
+                $.ajax({
+                    url: '@Url.Action("AddCategory", "DocumentTerms")',
+                    type: 'POST',
+                    data: {
+                        categoryName: categoryName,
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    dataType: 'json',
+                    success: function (result) {
+                        if (result.success) {
+                            $('#Category').append('<option value="' + result.name + '">' + result.name + '</option>');
+                            $('#Category').val(result.name);
+                            $('#newCategoryModal').modal('hide');
+                            $('#btnSaveNewCategory').prop('disabled', false).html('<i class="fa fa-save"></i> Kaydet');
+                            alert('Kategori başarıyla eklendi!');
+                        } else {
+                            alert('Hata: ' + result.message);
+                            $('#btnSaveNewCategory').prop('disabled', false).html('<i class="fa fa-save"></i> Kaydet');
+                        }
+                    },
+                    error: function () {
+                        alert('Kategori eklenirken bir hata oluştu!');
+                        $('#btnSaveNewCategory').prop('disabled', false).html('<i class="fa fa-save"></i> Kaydet');
+                    }
+                });
+            });
+
+            $('#newCategoryName').keypress(function (e) {
+                if (e.which === 13) {
+                    e.preventDefault();
+                    $('#btnSaveNewCategory').click();
+                }
+            });
+
+            $('#termForm').on('submit', function (e) {
+                var term = $('#Term').val().trim();
+                var category = $('#Category').val().trim();
+                var definition = $('#Definition').val().trim();
+
+                if (!term) {
+                    e.preventDefault();
+                    alert('Terim adı boş olamaz!');
+                    $('#Term').focus();
+                    return false;
+                }
+
+                if (!category) {
+                    e.preventDefault();
+                    alert('Kategori seçilmelidir!');
+                    $('#Category').focus();
+                    return false;
+                }
+
+                if (!definition) {
+                    e.preventDefault();
+                    alert('Tanım boş olamaz!');
+                    $('#Definition').focus();
+                    return false;
+                }
+
+                return true;
+            });
+        });
+    </script>
+}

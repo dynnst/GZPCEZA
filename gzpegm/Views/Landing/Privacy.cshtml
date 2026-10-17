@@ -1,0 +1,218 @@
+@{
+    ViewBag.Title = "Gizlilik Politikası";
+}
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Gizlilik Politikası - Hudut Kapıları Eğitim Merkezi</title>
+    <link href="/AdminTemplate/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/AdminTemplate/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .navbar {
+            background-color: #2f4050;
+            padding: 15px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .navbar-brand {
+            color: white !important;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .page-header {
+            background: linear-gradient(135deg, #1ab394 0%, #0d8f73 100%);
+            color: white;
+            padding: 40px 0;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+            .page-header h1 {
+                font-weight: 700;
+                margin: 0;
+                font-size: 2.5rem;
+            }
+
+        .content-section {
+            background: #fff;
+            padding: 30px;
+            margin-bottom: 30px;
+            border-radius: 5px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border-left: 4px solid #1ab394;
+        }
+
+            .content-section h2 {
+                color: #2f4050;
+                font-weight: 700;
+                margin-bottom: 15px;
+                font-size: 1.5rem;
+            }
+
+            .content-section h3 {
+                color: #1ab394;
+                font-weight: 600;
+                margin-top: 20px;
+                margin-bottom: 10px;
+            }
+
+            .content-section ul, .content-section ol {
+                margin-left: 20px;
+                margin-bottom: 15px;
+            }
+
+            .content-section li {
+                margin-bottom: 8px;
+            }
+
+        .back-button {
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+            .back-button a {
+                color: #1ab394;
+                text-decoration: none;
+            }
+
+                .back-button a:hover {
+                    text-decoration: underline;
+                }
+
+        footer {
+            background: #2f4050;
+            color: #c7d0d9;
+            padding: 30px 0;
+            text-align: center;
+            margin-top: 50px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <span class="navbar-brand"><i class="fa fa-shield"></i> Hudut Kapıları Eğitim Merkezi</span>
+        </div>
+    </nav>
+
+    <div class="page-header">
+        <div class="container">
+            <h1><i class="fa fa-lock"></i> Gizlilik Politikası</h1>
+            <p>Kişisel Verilerinizin Korunması Hakkında</p>
+        </div>
+    </div>
+
+    <div class="container" style="max-width: 900px;">
+        <div class="back-button">
+            <a href="@Url.Action("Index", "Landing")"><i class="fa fa-arrow-left"></i> Ana Sayfaya Dön</a>
+        </div>
+
+        <div class="content-section">
+            <h2><i class="fa fa-info-circle"></i> Gizlilik Politikası Hakkında</h2>
+            <p>
+                Hudut Kapıları Eğitim Merkezi ("Biz", "Bizim" veya "Platform"), kişisel verilerinizin gizliliğini çok ciddiye alır.
+                Bu gizlilik politikası, Platform'u kullanırken topladığımız, kullandığımız ve koruyduğumuz bilgiler hakkında açıklama yapmaktadır.
+            </p>
+        </div>
+
+        <div class="content-section">
+            <h2><i class="fa fa-database"></i> Topladığımız Bilgiler</h2>
+            <h3>1. Doğrudan Sağlanan Bilgiler:</h3>
+            <ul>
+                <li>Adı ve Soyadı</li>
+                <li>E-posta Adresi</li>
+                <li>Telefon Numarası</li>
+                <li>Profil Resmi</li>
+                <li>Eğitim Geçmişi</li>
+                <li>Sertifikalar</li>
+            </ul>
+
+            <h3>2. Otomatik Olarak Toplanan Bilgiler:</h3>
+            <ul>
+                <li>IP Adresi</li>
+                <li>Tarayıcı Türü ve Sürümü</li>
+                <li>İşletim Sistemi</li>
+                <li>Sayfa Ziyaret Geçmişi</li>
+                <li>Tıklanan Bağlantılar</li>
+            </ul>
+        </div>
+
+        <div class="content-section">
+            <h2><i class="fa fa-cog"></i> Bilgilerinizi Nasıl Kullanırız</h2>
+            <p>Topladığımız bilgileri aşağıdaki amaçlar için kullanırız:</p>
+            <ul>
+                <li>Hizmetleri sağlamak ve geliştirmek</li>
+                <li>Kişiselleştirilmiş öğrenme deneyimi sunmak</li>
+                <li>İletişim ve destek hizmetleri vermek</li>
+                <li>Güvenlik ve gizlilik ihlallerini tespit etmek</li>
+                <li>Yasal yükümlülükleri yerine getirmek</li>
+                <li>Pazarlama ve tanıtım faaliyetleri (izniniz ile)</li>
+            </ul>
+        </div>
+
+        <div class="content-section">
+            <h2><i class="fa fa-shield"></i> Verilerinizin Güvenliği</h2>
+            <p>
+                Platform, kişisel verilerinizi yetkisiz erişime, değiştirilmeye, ifşa edilmeye veya imhaya karşı korumak için
+                endüstri standardı güvenlik önlemleri alır. Ancak hiçbir internet üzerinden iletim yöntemi %100 güvenli değildir.
+            </p>
+        </div>
+
+        <div class="content-section">
+            <h2><i class="fa fa-link"></i> Üçüncü Taraf Bağlantıları</h2>
+            <p>
+                Platform, üçüncü taraf web sitelelerine bağlantılar içerebilir. Bu gizlilik politikası yalnızca Platform'a uygulanır.
+                Diğer web sitelerine eriştiğinizde, onların gizlilik politikalarına tabi olursunuz.
+            </p>
+        </div>
+
+        <div class="content-section">
+            <h2><i class="fa fa-user"></i> Haklarınız</h2>
+            <p>Şu hakları saklı tutarsınız:</p>
+            <ul>
+                <li>Kişisel verilerinize erişme hakkı</li>
+                <li>Verilerinizi düzeltme hakkı</li>
+                <li>Verilerinizin silinmesini talep etme hakkı</li>
+                <li>Veri işlemeye itiraz etme hakkı</li>
+                <li>Veri taşınabilirliği hakkı</li>
+            </ul>
+        </div>
+
+        <div class="content-section">
+            <h2><i class="fa fa-envelope"></i> İletişim</h2>
+            <p>Bu gizlilik politikası hakkında sorularınız varsa, lütfen aşağıdaki adresten bize ulaşın:</p>
+            <p>
+                <strong>E-posta:</strong> <a href="mailto:privacy@hudutkapilari.gov.tr">privacy@hudutkapilari.gov.tr</a><br>
+                <strong>Adres:</strong> Emniyet Genel Müdürlüğü, Ankara<br>
+                <strong>Telefon:</strong> (312) 555-0123
+            </p>
+        </div>
+
+        <div class="content-section" style="background-color: #f8f9fa; border-left-color: #6c757d;">
+            <p style="margin: 0; color: #6c757d;">
+                <strong>Son Güncelleme:</strong> 2 Şubat 2026<br>
+                Bu politika önceden haber verilmeksizin değiştirilebilir. Lütfen düzenli olarak kontrol edin.
+            </p>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Hudut Kapıları Eğitim Sistemi. Tüm Hakları Saklıdır.</p>
+        </div>
+    </footer>
+
+    <script src="/AdminTemplate/js/jquery-3.1.1.min.js"></script>
+    <script src="/AdminTemplate/js/bootstrap.js"></script>
+</body>
+</html>

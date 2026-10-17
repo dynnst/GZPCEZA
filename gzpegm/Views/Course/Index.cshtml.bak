@@ -1,0 +1,1487 @@
+@model IEnumerable<gzpegm.Models.Courses>
+@using System
+@{
+    ViewBag.Title = "Dersler";
+    Layout = "~/Views/Shared/_Master.cshtml";
+    ViewBag.UseBootstrapFileUpload = true;
+
+    var currentUser = ViewBag.CurrentUser as gzpegm.Models.E_User;
+
+    // Model'den güvenli liste oluştur
+    var allCourses = Model != null ? new List<gzpegm.Models.Courses>(Model) : new List<gzpegm.Models.Courses>();
+
+    // Rol bazlı filtre
+    IEnumerable<gzpegm.Models.Courses> courses;
+    if (currentUser != null && string.Equals(currentUser.Role, "Admin", StringComparison.OrdinalIgnoreCase))
+    {
+        courses = allCourses;
+}
+    else if (currentUser != null && string.Equals(currentUser.Role, "Teacher", StringComparison.OrdinalIgnoreCase))
+    {
+        var tmp = new List<gzpegm.Models.Courses>();
+        foreach (var c in allCourses)
+        {
+            if (c.CreatedBy == currentUser.fldId)
+            {
+                tmp.Add(c);
+            }
+        }
+        courses = tmp;
+    }
+    else
+    {
+        courses = new List<gzpegm.Models.Courses>();
+    }
+
+    // Son yayınlanan kurs sırasına göre sırala (en yeni önce)
+    courses = courses.OrderByDescending(c => c.CreatedDate).ToList();
+}
+
+<!-- SAYFA YAPISI -->
+<div class="page-wrapper">
+    <div class="container-fluid p-0">
+        <!-- BAŞLIK BÖLÜMÜ -->
+        <div class="page-heading mb-4 d-flex justify-content-between flex-wrap">
+            <div>
+                <h2 class="page-title">📚 Dersler</h2>
+                <p class="page-subtitle">Derslerinizi yönetin, içerik ekleyin ve öğrencileri takip edin</p>
+            </div>
+            @if (currentUser != null && (string.Equals(currentUser.Role, "Admin", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(currentUser.Role, "Teacher", StringComparison.OrdinalIgnoreCase)))
+            {
+                <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#addCourseModal">
+                    <i class="fas fa-plus me-2"></i>Yeni Ders Ekle
+                </button>
+            }
+        </div>
+
+        <!-- MESAJLAR -->
+        @if (TempData["msgSuccess"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                <i class="fas fa-check-circle me-2"></i>
+                <strong>Başarılı!</strong> @TempData["msgSuccess"]
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        }
+        @if (TempData["msgError"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                <strong>Hata!</strong> @TempData["msgError"]
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        }
+
+        <!-- DERSLER LİSTESİ -->
+        <div class="card">
+            <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <h4 class="card-title mb-0">📝 Ders Listesi</h4>
+                <p class="card-subtitle mt-1" style="color: rgba(255,255,255,0.8);">Toplam @courses.Count() ders</p>
+            </div>
+            <div class="card-body">
+                @{
+                    var courseUsers = ViewBag.CourseUsers as Dictionary<int, string> ?? new Dictionary<int, string>();
+                    var list = courses as List<gzpegm.Models.Courses> ?? new List<gzpegm.Models.Courses>(courses);
+}
+
+                @if (list.Count > 0)
+                {
+                    <div class="course-toolbar">
+                        <div>
+                            <h5 class="mb-0">Ders Kartları</h5>
+                            <small class="text-muted">Her sayfada 4 ders gösterilir</small>
+                        </div>
+                        <div class="course-search-wrap">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="courseSearch" class="form-control" placeholder="Ders, kategori veya oluşturan ara..." />
+                        </div>
+                    </div>
+
+                    <div id="courseCardGrid" class="course-card-grid">
+                        @foreach (var course in list)
+                        {
+                            bool canEdit = currentUser != null &&
+                                           (string.Equals(currentUser.Role, "Admin", StringComparison.OrdinalIgnoreCase)
+                                            || (string.Equals(currentUser.Role, "Teacher", StringComparison.OrdinalIgnoreCase) && course.CreatedBy == currentUser.fldId));
+
+                            var enrollmentCounts = ViewBag.EnrollmentCounts as Dictionary<int, int>;
+                            int enrollmentCount = 0;
+                            if (enrollmentCounts != null && enrollmentCounts.ContainsKey(course.CourseId))
+                            {
+                                enrollmentCount = enrollmentCounts[course.CourseId];
+                            }
+                            else
+                            {
+                                enrollmentCount = course.CourseEnrollments?.Count() ?? 0;
+                            }
+
+                            var creatorName = courseUsers.ContainsKey(course.CreatedBy) ? courseUsers[course.CreatedBy] : course.CreatedBy.ToString();
+                            var categoryName = course.Categories != null ? course.Categories.CategoryName : "Kategori yok";
+                            var defaultCoverImage = Url.Content("~/files/Egitim/91a7dd7d-56dc-41d3-a9bf-296a421966e2_155.jpg");
+                            var coverImage = string.IsNullOrWhiteSpace(course.CoverImage) || course.CoverImage.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+                                ? defaultCoverImage
+                                : Url.Content("~/files/Egitim/" + course.CoverImage);
+                            var searchText = ((course.CourseTitle ?? "") + " " + (course.CourseDescription ?? "") + " " + categoryName + " " + creatorName).ToLowerInvariant();
+
+                            <div class="course-card-item" data-search="@searchText">
+                                <article class="course-card">
+                                    <div class="course-cover">
+                                        <img src="@coverImage" alt="@course.CourseTitle" loading="lazy" />
+                                        <span class="course-status @(course.IsActive ? "status-active" : "status-passive")">
+                                            @(course.IsActive ? "Aktif" : "Pasif")
+                                        </span>
+                                    </div>
+                                    <div class="course-panel">
+                                        <div class="course-card-head">
+                                            <div>
+                                                <span class="course-id">#@course.CourseId</span>
+                                                <h5 title="@course.CourseTitle">@course.CourseTitle</h5>
+                                            </div>
+                                            <a href="@Url.Action("Details", "Course", new { id = course.CourseId })" 
+                                               class="course-arrow" 
+                                               title="Kurs detaylarını görüntüle">→</a>
+                                        </div>
+
+                                        <div class="course-meta-grid">
+                                            <div>
+                                                <span>Kategori</span>
+                                                <strong>@categoryName</strong>
+                                            </div>
+                                            <div>
+                                                <span>Öğrenci</span>
+                                                <strong>@enrollmentCount</strong>
+                                            </div>
+                                            <div>
+                                                <span>Oluşturan</span>
+                                                <strong>@creatorName</strong>
+                                            </div>
+                                            <div>
+                                                <span>Tarih</span>
+                                                <strong>@(course.CreatedDate.HasValue ? course.CreatedDate.Value.ToString("dd.MM.yyyy") : "—")</strong>
+                                            </div>
+                                        </div>
+
+                                        <div class="course-card-actions">
+                                            <div class="action-buttons-inline">
+                                                <div class="action-item">
+                                                    <span class="action-label">Görüntüle</span>
+                                                    <a href="@Url.Action("Details", "Course", new { id = course.CourseId })"
+                                                       class="btn btn-action btn-success">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                </div>
+
+                                                <div class="action-item">
+                                                    <button type="button"
+                                                            class="btn btn-action @(canEdit ? "btn-warning" : "btn-secondary")"
+                                                            data-toggle="modal"
+                                                            data-target="#editCourseModal_@course.CourseId"
+                                                            @(canEdit ? "" : "disabled")>
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                </div>
+
+                                                <div class="action-item">
+                                                    <span class="action-label">Öğrenciler</span>
+                                                    <div class="action-btn-with-count">
+                                                        <div class="student-count-text">@enrollmentCount</div>
+                                                        @if (canEdit)
+                                                        {
+                                                            <a href="@Url.Action("Enrollments", "Course", new { courseId = course.CourseId })"
+                                                               class="btn btn-action btn-info student-btn">
+                                                                <i class="fas fa-users"></i>
+                                                            </a>
+                                                        }
+                                                        else
+                                                        {
+                                                            <button class="btn btn-action btn-secondary student-btn" disabled>
+                                                                <i class="fas fa-users"></i>
+                                                            </button>
+                                                        }
+                                                    </div>
+                                                </div>
+
+                                                <div class="action-item">
+                                                    <span class="action-label">Sil</span>
+                                                    @if (canEdit)
+                                                    {
+                                                        <form method="post" action="@Url.Action("Delete", "Course")" class="d-inline"
+                                                              onsubmit="return confirmDeleteWithEnrollments(this, @enrollmentCount);">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="id" value="@course.CourseId" />
+                                                            <button type="submit" class="btn btn-action btn-danger">
+                                                                <i class="fas fa-trash-alt"></i>
+                                                            </button>
+                                                        </form>
+                                                    }
+                                                    else
+                                                    {
+                                                        <button class="btn btn-action btn-secondary" disabled>
+                                                            <i class="fas fa-trash-alt"></i>
+                                                        </button>
+                                                    }
+                                                </div>
+
+                                                <div class="action-item">
+                                                    <span class="action-label">@(course.IsActive ? "Pasif Et" : "Aktif Et")</span>
+                                                    <button type="button"
+                                                            class="btn btn-action @(course.IsActive ? "btn-success" : "btn-secondary") toggle-status-btn"
+                                                            data-id="@course.CourseId">
+                                                        <i class="fas @(course.IsActive ? "fa-check-circle" : "fa-ban")"></i>
+                                                    </button>
+                                                </div>
+
+                                                <div class="action-item">
+                                                    <span class="action-label">İçerikler</span>
+                                                    @if (canEdit)
+                                                    {
+                                                        <a href="@Url.Action("ManageContents", "Course", new { courseId = course.CourseId })"
+                                                           class="btn btn-action btn-primary">
+                                                            <i class="fas fa-file-alt"></i>
+                                                        </a>
+                                                    }
+                                                    else
+                                                    {
+                                                        <button class="btn btn-action btn-secondary" disabled>
+                                                            <i class="fas fa-file-alt"></i>
+                                                        </button>
+                                                    }
+                                                </div>
+
+                                                <div class="action-item">
+                                                    <span class="action-label">Sınav Ekle</span>
+                                                    @if (canEdit)
+                                                    {
+                                                        <button type="button"
+                                                                class="btn btn-action btn-info"
+                                                                data-toggle="modal"
+                                                                data-target="#addExamModalForCourse_@course.CourseId"
+                                                                title="Bu kursa sınav ekle">
+                                                            <i class="fas fa-plus-circle"></i>
+                                                        </button>
+                                                    }
+                                                    else
+                                                    {
+                                                        <button class="btn btn-action btn-secondary" disabled title="Yalnızca kurs oluşturanlar sınav ekleyebilir">
+                                                            <i class="fas fa-plus-circle"></i>
+                                                        </button>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </article>
+                            </div>
+                        }
+                    </div>
+
+                    <div id="courseEmptyState" class="text-center py-5" style="display:none;">
+                        <span class="empty-icon">🔎</span>
+                        <h5 class="text-muted mt-2">Aramanıza uygun ders bulunamadı</h5>
+                    </div>
+
+                    <div id="coursePagination" class="course-pagination"></div>
+                }
+                else
+                {
+                    <div class="text-center py-5">
+                        <span class="empty-icon">📭</span>
+                        <h5 class="text-muted mt-2">Görüntüleyebileceğiniz ders bulunmamaktadır</h5>
+                        @if (currentUser != null && (currentUser.Role == "Admin" || currentUser.Role == "Teacher"))
+                        {
+                            <p class="text-muted">Yeni ders eklemek için yukarıdaki butonu kullanabilirsiniz.</p>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Yeni Ders Ekleme Modalı -->
+    <div class="modal fade" id="addCourseModal" tabindex="-1">
+        <div class="modal-dialog modal-xl" style="max-width: 90%; width: 1200px;">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    <h5 class="modal-title">
+                        <i class="fas fa-plus-circle me-2"></i>Yeni Ders Ekle
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <form method="post" action="@Url.Action("Create", "Course")" enctype="multipart/form-data" id="createForm">
+                    @Html.AntiForgeryToken()
+                    <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                        <div class="row g-3">
+                            <div class="col-md-12">
+                                <label class="form-label">Ders Başlığı <span class="text-danger">*</span></label>
+                                <input type="text" name="CourseTitle" class="form-control" placeholder="Ders başlığını giriniz..." required maxlength="200" />
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label">Ders Açıklaması</label>
+                                <textarea name="CourseDescription" class="form-control" placeholder="Ders açıklamasını giriniz..." rows="3" maxlength="500"></textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Kategori <span class="text-danger">*</span></label>
+                                <select name="CategoryId" class="form-select" required>
+                                    <option value="">Kategori Seçiniz</option>
+                                    @if (ViewBag.Categories != null)
+                                    {
+                                        foreach (var cat in ViewBag.Categories)
+                                        {
+                                            <option value="@cat.CategoryId">@cat.CategoryName</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Kapak Görseli</label>
+                                <input type="file" name="CoverImageFile" class="form-control" accept=".jpg,.jpeg,.png,.gif,.bmp" />
+                                <small class="text-muted">İzin verilen formatlar: JPG, JPEG, PNG, GIF, BMP (Max: 10MB)</small>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label">Ek İçerik (Summernote)</label>
+                                <textarea id="ResourceEditorAdd" name="ResourceHtml" class="form-control resource-editor" rows="8"></textarea>
+                                <small class="text-muted">Resim eklemek için resim simgesini kullanabilirsiniz.</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                            <i class="fas fa-times me-1"></i>İptal
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Kaydet
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kurs Başına Sınav Ekleme Modalları -->
+    @if (courses != null)
+    {
+        foreach (var course in courses)
+        {
+            <div class="modal fade" id="addExamModalForCourse_@course.CourseId" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                            <h5 class="modal-title">
+                                <i class="fas fa-plus-circle me-2"></i>@course.CourseTitle - Yeni Sınav Ekle
+                            </h5>
+                            <button type="button" class="close text-white" data-dismiss="modal">
+                                <span>&times;</span>
+                            </button>
+                        </div>
+                        <form method="post" action="@Url.Action("Create", "Exam")">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="CourseId" value="@course.CourseId" />
+                            <div class="modal-body">
+                                <div class="row">
+                                    <div class="col-md-12 mb-3">
+                                        <label class="form-label">Sınav Başlığı <span class="text-danger">*</span></label>
+                                        <input type="text" name="ExamTitle" class="form-control" placeholder="Sınav başlığını giriniz..." required maxlength="200" />
+                                    </div>
+                                    <div class="col-md-12 mb-3">
+                                        <label class="form-label">Sınav Açıklaması</label>
+                                        <textarea name="ExamDescription" class="form-control" placeholder="Sınav açıklamasını giriniz..." rows="3" maxlength="500"></textarea>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Süre (dakika) <span class="text-danger">*</span></label>
+                                        <input type="number" name="Duration" class="form-control" value="60" min="1" max="300" required />
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Geçme Notu <span class="text-danger">*</span></label>
+                                        <input type="number" name="PassingScore" class="form-control" value="60" min="0" max="100" required />
+                                    </div>
+                                    <div class="col-md-12">
+                                        <p class="text-muted" style="font-size: 12px;">
+                                            <i class="fas fa-info-circle me-1"></i>Bu sınav <strong>@course.CourseTitle</strong> kursuna eklenecektir.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                                    <i class="fas fa-times me-1"></i>İptal
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-1"></i>Sınavı Oluştur
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+
+    <!-- Düzenleme Modalları -->
+    @if (courses != null)
+    {
+        foreach (var course in courses)
+        {
+            <div class="modal fade" id="editCourseModal_@course.CourseId" tabindex="-1">
+                <div class="modal-dialog modal-xl" style="max-width: 90%; width: 1200px;">
+                    <div class="modal-content">
+                        <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                            <h5 class="modal-title">
+                                <i class="fas fa-edit me-2"></i>Dersi Düzenle
+                            </h5>
+                            <button type="button" class="close text-white" data-dismiss="modal">
+                                <span>&times;</span>
+                            </button>
+                        </div>
+                        <form method="post" action="@Url.Action("Edit", "Course")" enctype="multipart/form-data" class="edit-form">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="CourseId" value="@course.CourseId" />
+                            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                                <div class="row g-3">
+                                    <div class="col-md-12">
+                                        <label class="form-label">Ders Başlığı <span class="text-danger">*</span></label>
+                                        <input type="text" name="CourseTitle" value="@course.CourseTitle" class="form-control" required maxlength="200" />
+                                    </div>
+                                    <div class="col-md-12">
+                                        <label class="form-label">Ders Açıklaması (Kısa)</label>
+                                        <textarea name="CourseDescription" class="form-control" rows="3" maxlength="500">@(string.IsNullOrEmpty(course.CourseDescription) ? "" : System.Text.RegularExpressions.Regex.Replace(course.CourseDescription, "<[^>]*>", ""))</textarea>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Kategori <span class="text-danger">*</span></label>
+                                        <select name="CategoryId" class="form-select" required>
+                                            <option value="">Kategori Seçiniz</option>
+                                            @if (ViewBag.Categories != null)
+                                            {
+                                                foreach (var cat in ViewBag.Categories)
+                                                {
+                                                    <option value="@cat.CategoryId" @(course.CategoryId == cat.CategoryId ? "selected" : "")>@cat.CategoryName</option>
+                                                }
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Kapak Görseli</label>
+                                        <input type="file" name="CoverImageFile" class="form-control" accept=".jpg,.jpeg,.png,.gif,.bmp" />
+                                        <small class="text-muted">Mevcut: @(string.IsNullOrEmpty(course.CoverImage) ? "Yok" : course.CoverImage)</small>
+                                    </div>
+                                    <div class="col-md-12">
+                                        <label class="form-label">Ek İçerik (Summernote)</label>
+                                        <textarea id="ResourceEditor_@course.CourseId" name="ResourceHtml" class="form-control resource-editor" rows="8">@Html.Raw(course.CourseDescription ?? "")</textarea>
+                                        <small class="text-muted">Summernote ile resim/HTML ekleyebilirsiniz.</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                                    <i class="fas fa-times me-1"></i>İptal
+                                </button>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-save me-1"></i>Güncelle
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+
+    @section Styles {
+        <link href="@Url.Content("~/AdminTemplate/css/bootstrap.min.css")" rel="stylesheet" />
+        <link href="@Url.Content("~/AdminTemplate/font-awesome/css/font-awesome.css")" rel="stylesheet" />
+        <link href="@Url.Content("~/AdminTemplate/css/plugins/dataTables/datatables.min.css")" rel="stylesheet" />
+        <link href="@Url.Content("~/AdminTemplate/css/animate.css")" rel="stylesheet" />
+        <link href="@Url.Content("~/AdminTemplate/css/style.css")" rel="stylesheet" />
+        <link href="~/css/Summernote/summernote-bs4.css" rel="stylesheet" />
+
+        <style>
+            * {
+                box-sizing: border-box;
+            }
+
+            body {
+                background: #f5f7fb;
+                font-family: 'Segoe UI', sans-serif;
+                margin: 0;
+            }
+
+            .page-wrapper {
+                padding: 20px;
+                background: #f5f7fb;
+                min-height: 100vh;
+            }
+
+            .container-fluid {
+                max-width: 1400px;
+                margin: 0 auto;
+            }
+
+            .page-title {
+                font-size: 28px;
+                font-weight: 700;
+                color: #333;
+                margin: 0 0 8px;
+            }
+
+            .page-subtitle {
+                font-size: 14px;
+                color: #999;
+            }
+
+            .page-heading {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 16px;
+            }
+
+            .card {
+                border: none;
+                border-radius: 12px;
+                box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+                background: white;
+                margin-bottom: 24px;
+            }
+
+            .card-header {
+                padding: 20px 25px;
+                border-bottom: 1px solid #eef2f7;
+            }
+
+            .card-title {
+                font-size: 18px;
+                font-weight: 600;
+                margin: 0;
+            }
+
+            .card-subtitle {
+                font-size: 12px;
+                margin-top: 4px;
+                color: rgba(0, 0, 0, 0.6);
+            }
+
+            .card-body {
+                padding: 25px;
+            }
+
+            .course-toolbar {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 16px;
+                margin-bottom: 22px;
+            }
+
+            .course-search-wrap {
+                position: relative;
+                width: min(360px, 100%);
+            }
+
+            .course-search-wrap i {
+                position: absolute;
+                left: 13px;
+                top: 50%;
+                transform: translateY(-50%);
+                color: #8a94a6;
+                pointer-events: none;
+            }
+
+            .course-search-wrap .form-control {
+                padding-left: 38px;
+                height: 42px;
+            }
+
+            .course-card-grid {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 24px;
+            }
+
+            .course-card {
+                position: relative;
+                min-height: 390px;
+                border-radius: 14px;
+                overflow: hidden;
+                background: #eef2f7;
+                box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+            }
+
+            .course-cover {
+                position: absolute;
+                inset: 0;
+            }
+
+            .course-cover img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                display: block;
+            }
+
+            .course-cover::after {
+                content: "";
+                position: absolute;
+                inset: 0;
+                background: linear-gradient(180deg, rgba(15, 23, 42, 0.05) 0%, rgba(15, 23, 42, 0.46) 100%);
+            }
+
+            .course-status {
+                position: absolute;
+                top: 16px;
+                right: 16px;
+                z-index: 2;
+                display: inline-flex;
+                align-items: center;
+                border-radius: 999px;
+                padding: 6px 12px;
+                font-size: 12px;
+                font-weight: 700;
+                color: #fff;
+                box-shadow: 0 8px 18px rgba(0,0,0,0.16);
+            }
+
+            .course-status.status-active {
+                background: #28a745;
+            }
+
+            .course-status.status-passive {
+                background: #dc3545;
+            }
+
+            .course-panel {
+                position: absolute;
+                left: 18px;
+                right: 18px;
+                bottom: 18px;
+                z-index: 2;
+                background: #fff;
+                border-radius: 8px;
+                padding: 18px;
+                box-shadow: 0 12px 26px rgba(15, 23, 42, 0.12);
+            }
+
+            .course-card-head {
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: 12px;
+                margin-bottom: 14px;
+            }
+
+            .course-card-head h5 {
+                margin: 4px 0 0;
+                color: #111827;
+                font-size: 18px;
+                font-weight: 700;
+                line-height: 1.3;
+                overflow: hidden;
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+            }
+
+            .course-id {
+                color: #667eea;
+                font-size: 12px;
+                font-weight: 700;
+            }
+
+            .course-arrow {
+                color: #111827;
+                font-size: 22px;
+                line-height: 1;
+            }
+
+            .course-meta-grid {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 10px;
+                margin-bottom: 16px;
+            }
+
+            .course-meta-grid div {
+                min-width: 0;
+                background: #f8fafc;
+                border: 1px solid #eef2f7;
+                border-radius: 8px;
+                padding: 8px 10px;
+            }
+
+            .course-meta-grid span {
+                display: block;
+                color: #8a94a6;
+                font-size: 11px;
+                margin-bottom: 3px;
+            }
+
+            .course-meta-grid strong {
+                display: block;
+                color: #1f2937;
+                font-size: 12px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .course-card-actions {
+                display: flex;
+                align-items: flex-end;
+                justify-content: space-between;
+                gap: 12px;
+                flex-wrap: wrap;
+            }
+
+            .course-pagination {
+                display: flex;
+                justify-content: center;
+                gap: 8px;
+                margin-top: 24px;
+                flex-wrap: wrap;
+            }
+
+            .course-pagination .page-btn {
+                min-width: 38px;
+                height: 38px;
+                border: 1px solid #e1e5eb;
+                border-radius: 8px;
+                background: #fff;
+                color: #333;
+                font-weight: 600;
+                cursor: pointer;
+                transition: 0.2s;
+            }
+
+            .course-pagination .page-btn:hover,
+            .course-pagination .page-btn.active {
+                background: #667eea;
+                border-color: #667eea;
+                color: #fff;
+            }
+
+            .course-pagination .page-btn:disabled {
+                opacity: 0.45;
+                cursor: not-allowed;
+            }
+
+            .table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-bottom: 0;
+            }
+
+                .table thead th {
+                    background: #f8f9fa;
+                    border-bottom: 2px solid #eef2f7;
+                    font-weight: 600;
+                    color: #666;
+                    font-size: 13px;
+                    padding: 15px;
+                }
+
+                .table tbody tr {
+                    border-bottom: 1px solid #eef2f7;
+                    transition: 0.2s;
+                }
+
+                    .table tbody tr:hover {
+                        background: #fafbfc;
+                    }
+
+                .table tbody td {
+                    padding: 15px;
+                    vertical-align: middle;
+                }
+
+            .course-title-cell {
+                display: flex;
+                align-items: center;
+                font-weight: 500;
+                color: #333;
+            }
+
+            .course-title-text {
+                display: inline-block;
+                max-width: 360px; /* reduce width to keep table compact */
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .action-item {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                width: 78px;
+            }
+
+            .action-label {
+                font-size: 11px;
+                color: #666;
+                margin-bottom: 6px;
+                text-align: center;
+            }
+
+            .btn-action {
+                width: 52px !important;
+                height: 52px !important;
+                padding: 0 !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                border-radius: 6px !important;
+                font-size: 16px !important;
+            }
+
+            .action-buttons-inline {
+                display: flex;
+                gap: 8px;
+                flex-wrap: wrap;
+                align-items: center;
+                justify-content: flex-start;
+            }
+
+            .action-buttons-inline .btn {
+                position: relative;
+            }
+
+            /* uniform sizing for action buttons in the işlemler area */
+            .action-buttons-inline > * {
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+            }
+
+            .action-buttons-inline .btn,
+            .action-buttons-inline form .btn,
+            .action-buttons-inline .student-btn {
+                width: 52px !important;
+                height: 52px !important;
+                padding: 0 !important;
+                font-size: 16px !important;
+                border-radius: 8px !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+            }
+
+            .action-btn-with-count {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                width: 64px;
+                gap: 6px;
+            }
+
+            .student-count-text {
+                font-size: 12px !important;
+                color: #fff !important;
+                margin: 0 !important;
+                font-weight: 700 !important;
+                background: #17a2b8 !important;
+                padding: 3px 8px !important;
+                border-radius: 12px !important;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.12) !important;
+                min-width: 28px;
+                text-align: center;
+            }
+
+            .action-buttons-inline .btn i,
+            .student-btn i {
+                margin: 0 !important;
+                font-size: 20px !important;
+            }
+
+            .btn {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 6px 14px;
+                font-size: 12px;
+                font-weight: 500;
+                border-radius: 6px;
+                border: none;
+                cursor: pointer;
+                text-decoration: none;
+                transition: 0.2s;
+            }
+
+            .btn-sm {
+                padding: 5px 12px;
+                font-size: 12px;
+            }
+
+            .btn-secondary {
+                background: #6c757d;
+                color: white;
+            }
+
+                .btn-secondary:hover {
+                    background: #5a6268;
+                }
+
+            .btn-info {
+                background: #17a2b8;
+                color: white;
+            }
+
+                .btn-info:hover {
+                    background: #138496;
+                }
+
+            .btn-primary {
+                background: #667eea;
+                color: white;
+            }
+
+                .btn-primary:hover {
+                    background: #5568d3;
+                }
+
+            .btn-warning {
+                background: #ffc107;
+                color: #333;
+            }
+
+                .btn-warning:hover {
+                    background: #e0a800;
+                }
+
+            .btn-success {
+                background: #28a745;
+                color: white;
+            }
+
+                .btn-success:hover {
+                    background: #218838;
+                }
+
+            .btn-danger {
+                background: #dc3545;
+                color: white;
+            }
+
+                .btn-danger:hover {
+                    background: #c82333;
+                }
+
+            .btn:disabled {
+                opacity: 0.65;
+                cursor: not-allowed;
+            }
+
+            .student-count-badge {
+                position: absolute;
+                top: -6px;
+                right: -6px;
+                background: #dc3545;
+                color: #fff;
+                font-size: 11px;
+                line-height: 1;
+                padding: 2px 6px;
+                border-radius: 12px;
+                min-width: 20px;
+                text-align: center;
+                box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+            }
+
+            .badge {
+                display: inline-block;
+                padding: 6px 12px;
+                border-radius: 6px;
+                font-size: 11px;
+                font-weight: 600;
+            }
+
+            .bg-success {
+                background: #28a745;
+                color: white;
+            }
+
+            .bg-danger {
+                background: #dc3545;
+                color: white;
+            }
+
+            .bg-light {
+                background: #f8f9fa;
+                color: #333;
+            }
+
+            .text-muted {
+                color: #6c757d;
+            }
+
+            .py-5 {
+                padding: 3rem 0;
+            }
+
+            .mt-1 {
+                margin-top: 4px;
+            }
+
+            .mt-2 {
+                margin-top: 8px;
+            }
+
+            .mb-0 {
+                margin-bottom: 0;
+            }
+
+            .mb-4 {
+                margin-bottom: 24px;
+            }
+
+            .me-2 {
+                margin-right: 8px;
+            }
+
+            .me-1 {
+                margin-right: 4px;
+            }
+
+            .empty-icon {
+                font-size: 48px;
+                display: block;
+            }
+
+            .text-center {
+                text-align: center;
+            }
+
+            .d-inline {
+                display: inline;
+            }
+
+            .p-0 {
+                padding: 0;
+            }
+
+            .table-responsive {
+                overflow-x: auto;
+            }
+
+            /* MODAL STİLLERİ */
+            .modal-content {
+                border: none;
+                border-radius: 16px;
+                overflow: hidden;
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            }
+
+            .modal-header {
+                border: none;
+                padding: 20px 25px;
+            }
+
+                .modal-header .close {
+                    color: white;
+                    opacity: 0.8;
+                    font-size: 28px;
+                    font-weight: 300;
+                }
+
+                    .modal-header .close:hover {
+                        opacity: 1;
+                    }
+
+            .modal-title {
+                font-weight: 600;
+                font-size: 20px;
+            }
+
+            .modal-body {
+                padding: 25px;
+                background: #fff;
+            }
+
+            .modal-footer {
+                background: #f8f9fa;
+                border-top: 1px solid #eef2f7;
+                padding: 15px 25px;
+            }
+
+            /* FORM STİLLERİ */
+            .form-label {
+                font-weight: 600;
+                font-size: 13px;
+                margin-bottom: 8px;
+                color: #555;
+            }
+
+            .form-control, .form-select {
+                border-radius: 8px;
+                border: 1px solid #e1e5eb;
+                padding: 10px 12px;
+                transition: all 0.3s ease;
+            }
+
+                .form-control:focus, .form-select:focus {
+                    border-color: #667eea;
+                    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+                    outline: none;
+                }
+
+            .text-danger {
+                color: #dc3545;
+            }
+
+            .text-primary {
+                color: #667eea;
+            }
+
+            /* ALERT STİLLERİ */
+            .alert {
+                border-radius: 10px;
+                border: none;
+                padding: 15px 20px;
+            }
+
+            .alert-success {
+                background: #d4edda;
+                color: #155724;
+            }
+
+            .alert-danger {
+                background: #f8d7da;
+                color: #721c24;
+            }
+
+            .close {
+                cursor: pointer;
+            }
+
+            /* SUMMERNOTE DÜZENLEMELERİ */
+            .note-editor {
+                border-radius: 8px;
+                border: 1px solid #e1e5eb;
+            }
+
+                .note-editor.note-frame {
+                    border-color: #e1e5eb;
+                }
+
+            /* RESPONSİVE */
+            @@media (max-width: 768px) {
+                .page-wrapper {
+                    padding: 15px;
+                }
+
+                .page-title {
+                    font-size: 22px;
+                }
+
+                .page-heading {
+                    flex-direction: column;
+                    align-items: flex-start;
+                }
+
+                .btn-sm {
+                    padding: 4px 10px;
+                    font-size: 11px;
+                }
+
+                .course-toolbar {
+                    align-items: stretch;
+                    flex-direction: column;
+                }
+
+                .course-search-wrap {
+                    width: 100%;
+                }
+
+                .course-card-grid {
+                    grid-template-columns: 1fr;
+                    gap: 18px;
+                }
+
+                .course-card {
+                    min-height: 430px;
+                }
+
+                .course-card-actions {
+                    align-items: flex-start;
+                    flex-direction: column;
+                }
+
+                .course-meta-grid {
+                    grid-template-columns: 1fr;
+                }
+
+                .modal-dialog {
+                    margin: 0.5rem;
+                    width: calc(100% - 1rem);
+                    max-width: none;
+                }
+
+                    .modal-dialog.modal-xl {
+                        max-width: none;
+                    }
+            }
+
+            @@media (min-width: 992px) {
+                .modal-dialog.modal-xl {
+                    max-width: 1200px;
+                }
+            }
+
+        </style>
+    }
+
+    @section Scripts {
+        <script src="@Url.Content("~/AdminTemplate/js/plugins/dataTables/datatables.min.js")"></script>
+        <script src="@Url.Content("~/AdminTemplate/js/plugins/dataTables/dataTables.bootstrap4.min.js")"></script>
+        <script src="~/css/Summernote/summernote-bs4.js"></script>
+        <script src="~/css/Summernote/lang/summernote-tr-TR.js"></script>
+
+        <script>
+            window.confirmDeleteWithEnrollments = function (form, enrollmentCount) {
+                if (enrollmentCount > 0) {
+                    alert('⚠️ Uyarı!\n\nBu kursa ' + enrollmentCount + ' öğrenci kayıtlı.\n\n' +
+                        'Kursu silmeden önce tüm öğrenci kayıtlarını silmelisiniz.\n\n' +
+                        'Önce "Öğrenciler" sekmesine gidin ve kayıtları temizleyin.');
+                    return false;
+                }
+                return confirm('Bu dersi silmek istediğinizden emin misiniz?\nBu işlem geri alınamaz!');
+            };
+
+            $(document).ready(function () {
+                var coursePageSize = 4;
+                var currentCoursePage = 1;
+
+                function getFilteredCourseCards() {
+                    var query = ($('#courseSearch').val() || '').toLocaleLowerCase('tr-TR').trim();
+                    return $('.course-card-item').filter(function () {
+                        var text = ($(this).data('search') || '').toString().toLocaleLowerCase('tr-TR');
+                        return !query || text.indexOf(query) !== -1;
+                    });
+                }
+
+                function renderCourseCards() {
+                    var $cards = $('.course-card-item');
+                    var $filtered = getFilteredCourseCards();
+                    var totalPages = Math.max(1, Math.ceil($filtered.length / coursePageSize));
+
+                    if (currentCoursePage > totalPages) {
+                        currentCoursePage = totalPages;
+                    }
+
+                    $cards.hide();
+                    $('#courseEmptyState').toggle($filtered.length === 0);
+
+                    if ($filtered.length > 0) {
+                        var start = (currentCoursePage - 1) * coursePageSize;
+                        $filtered.slice(start, start + coursePageSize).show();
+                    }
+
+                    renderCoursePagination(totalPages, $filtered.length);
+                }
+
+                function renderCoursePagination(totalPages, itemCount) {
+                    var $pagination = $('#coursePagination');
+                    $pagination.empty();
+
+                    if (itemCount <= coursePageSize) {
+                        return;
+                    }
+
+                    $('<button type="button" class="page-btn">‹</button>')
+                        .prop('disabled', currentCoursePage === 1)
+                        .on('click', function () {
+                            if (currentCoursePage > 1) {
+                                currentCoursePage--;
+                                renderCourseCards();
+                            }
+                        })
+                        .appendTo($pagination);
+
+                    for (var i = 1; i <= totalPages; i++) {
+                        $('<button type="button" class="page-btn"></button>')
+                            .text(i)
+                            .toggleClass('active', i === currentCoursePage)
+                            .on('click', (function (page) {
+                                return function () {
+                                    currentCoursePage = page;
+                                    renderCourseCards();
+                                };
+                            })(i))
+                            .appendTo($pagination);
+                    }
+
+                    $('<button type="button" class="page-btn">›</button>')
+                        .prop('disabled', currentCoursePage === totalPages)
+                        .on('click', function () {
+                            if (currentCoursePage < totalPages) {
+                                currentCoursePage++;
+                                renderCourseCards();
+                            }
+                        })
+                        .appendTo($pagination);
+                }
+
+                $('#courseSearch').on('input', function () {
+                    currentCoursePage = 1;
+                    renderCourseCards();
+                });
+
+                renderCourseCards();
+
+                function initResourceEditors($container) {
+                    $container = ($container && $container.length) ? $container : $(document);
+$container.find('.resource-editor').each(function () {
+                        var $el = $(this);
+                        if ($el.data('sn-init')) return;
+
+                        try {
+                            $el.summernote({
+                                lang: 'tr-TR',
+                                height: 300,
+                                minHeight: 200,
+                                maxHeight: 500,
+                                dialogsInBody: true,
+                                toolbar: [
+                                    ['style', ['style']],
+                                    ['font', ['bold', 'underline', 'clear']],
+                                    ['fontname', ['fontname']],
+                                    ['color', ['color']],
+                                    ['para', ['ul', 'ol', 'paragraph']],
+                                    ['table', ['table']],
+                                    ['insert', ['link', 'picture', 'video']],
+                                    ['view', ['fullscreen', 'codeview', 'help']]
+                                ],
+                                callbacks: {
+                                    onImageUpload: function (files) {
+                                        for (var i = 0; i < files.length; i++) {
+                                            uploadImage(files[i], this);
+                                        }
+                                    }
+                                }
+                            });
+                            $el.data('sn-init', true);
+                        } catch (err) {
+                            console.warn('Summernote init hatası:', err);
+                        }
+                    });
+                }
+
+                window.initResourceEditors = initResourceEditors;
+
+                function executePartialScripts($container) {
+                    $container.find('script').each(function () {
+                        if (this.src) {
+                            $.getScript(this.src);
+                        } else {
+                            $.globalEval(this.textContent || this.innerText || '');
+                        }
+                    });
+                }
+
+                window.executePartialScripts = executePartialScripts;
+
+                try { initResourceEditors($(document)); } catch (e) { console.warn(e); }
+
+                function uploadImage(file, editor) {
+                    var data = new FormData();
+                    data.append('file', file);
+                    var token = $('input[name="__RequestVerificationToken"]').first().val();
+                    if (token) data.append('__RequestVerificationToken', token);
+
+                    $.ajax({
+                        url: '@Url.Action("UploadImage", "Course")',
+                        method: 'POST',
+                        data: data,
+                        cache: false,
+                        contentType: false,
+                        processData: false
+                    }).done(function (res) {
+                        if (res && res.success) {
+                            $(editor).summernote('insertImage', res.url);
+                        } else {
+                            alert('Resim yükleme başarısız: ' + (res ? res.message : 'Bilinmeyen hata'));
+                        }
+                    }).fail(function () {
+                        alert('Resim yükleme sırasında hata oluştu!');
+                    });
+                }
+
+                $('#addCourseModal').on('hidden.bs.modal', function () {
+                    var f = $(this).find('form')[0];
+                    if (f) f.reset();
+                    if ($('#ResourceEditorAdd').length && $('#ResourceEditorAdd').data('sn-init')) {
+                        try { $('#ResourceEditorAdd').summernote('reset'); } catch (e) { }
+                    }
+                });
+
+                $(document).on('submit', '.edit-form', function (e) {
+                    var $form = $(this);
+                    var $editor = $form.find('.resource-editor');
+                    if ($editor.length) {
+                        $editor.each(function () {
+                            var $el = $(this);
+                            if ($el.data('sn-init') && $el.summernote) {
+                                $el.val($el.summernote('code'));
+                            }
+                        });
+                    }
+                    if (!this.checkValidity()) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }
+                    $form.addClass('was-validated');
+                });
+
+                $('#createForm').on('submit', function () {
+                    $('.resource-editor').each(function () {
+                        var $el = $(this);
+                        if ($el.length && $el.data('sn-init') && $el.summernote) {
+                            try { $el.val($el.summernote('code')); } catch (e) { }
+                        }
+                    });
+                });
+
+                setTimeout(function () { $('.alert').alert('close'); }, 5000);
+
+                $(document).on('click', '.toggle-status-btn', function () {
+                    var btn = $(this);
+                    var courseId = btn.data('id');
+
+                    $.post('@Url.Action("ToggleStatus", "Course")', {
+                        id: courseId,
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').first().val()
+                    })
+                        .done(function (res) {
+                            if (res && res.success) {
+                                var isActive = res.isActive;
+                                btn.removeClass('btn-success btn-secondary').addClass(isActive ? 'btn-success' : 'btn-secondary');
+                                btn.html('<i class="fas ' + (isActive ? 'fa-check-circle' : 'fa-ban') + '"></i>');
+                                btn.closest('.action-item').find('.action-label').text(isActive ? 'Pasif Et' : 'Aktif Et');
+                                var badge = btn.closest('.course-card').find('.course-status');
+                                if (badge.length) {
+                                    badge.removeClass('status-active status-passive').addClass(isActive ? 'status-active' : 'status-passive').text(isActive ? 'Aktif' : 'Pasif');
+                                }
+                            } else {
+                                alert((res && res.message) ? res.message : 'Durum değiştirilemedi.');
+                                if (res && res.reviewUrl) window.location.href = res.reviewUrl;
+                            }
+                        })
+                        .fail(function () {
+                            alert('Sunucu ile iletişim kurulamadı.');
+                        });
+                });
+
+            });
+</script>
+@if (ViewBag.EditCourseId != null)
+{
+    <script>
+        $(function () { $('#editCourseModal_@ViewBag.EditCourseId').modal('show'); });
+    </script>
+}
+    }

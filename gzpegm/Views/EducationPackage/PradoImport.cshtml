@@ -1,0 +1,232 @@
+@model gzpegm.Models.ViewModels.PradoCourseImportViewModel
+@{
+    ViewBag.Title = "Web Sayfası ZIP'inden Türkçe Kurs Oluştur";
+    Layout = "~/Views/Shared/_Master.cshtml";
+}
+
+<style>
+    .prado-header {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: #ffffff;
+        border-radius: 12px;
+        padding: 24px 28px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 16px rgba(30, 60, 114, 0.12);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+    .prado-header h1 {
+        font-size: 20px;
+        font-weight: 700;
+        margin: 0;
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .prado-card {
+        background: #ffffff;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+        padding: 28px;
+    }
+    .workflow-step {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 16px;
+        height: 100%;
+        text-align: center;
+    }
+    .step-number {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: #1e3c72;
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 14px;
+        margin: 0 auto 10px auto;
+    }
+    .zip-dropzone {
+        border: 2px dashed #94a3b8;
+        border-radius: 12px;
+        padding: 30px 20px;
+        text-align: center;
+        background: #f8fafc;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .zip-dropzone:hover {
+        border-color: #f59e0b;
+        background: #fffbeb;
+    }
+</style>
+
+<div class="prado-header">
+    <div>
+        <h1><i class="fas fa-magic"></i> Web Sayfası ZIP'inden Türkçe Kurs & Sınav Oluştur</h1>
+        <small style="color: rgba(255,255,255,0.85); font-size: 13px;">
+            PRADO, Regula Forensics veya EdisonTD sayfalarından kaydedilen HTML ve görselleri tek tıkla kurs ve sınava dönüştürün.
+        </small>
+    </div>
+    <div>
+        <a href="@Url.Action("Index")" class="btn btn-outline-light btn-sm">
+            <i class="fas fa-arrow-left"></i> Hub'a Dön
+        </a>
+    </div>
+</div>
+
+<!-- 4 Adımlı Rehber Kartları -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-2">
+        <div class="workflow-step">
+            <div class="step-number">1</div>
+            <strong class="d-block text-dark font-weight-bold mb-1">Türkçeye Çevirin</strong>
+            <small class="text-muted">PRADO veya Regula sayfasını Chrome/Edge'de sağ tıklayıp Türkçeye çevirin.</small>
+        </div>
+    </div>
+    <div class="col-md-3 mb-2">
+        <div class="workflow-step">
+            <div class="step-number">2</div>
+            <strong class="d-block text-dark font-weight-bold mb-1">Web Sayfası, Tamamı</strong>
+            <small class="text-muted">Ctrl+S ile <strong>"Web sayfası, tamamı"</strong> seçeneğini belirleyerek kaydedin.</small>
+        </div>
+    </div>
+    <div class="col-md-3 mb-2">
+        <div class="workflow-step">
+            <div class="step-number">3</div>
+            <strong class="d-block text-dark font-weight-bold mb-1">ZIP Arşivi Yapın</strong>
+            <small class="text-muted">Kaydedilen .html dosyası ile yanındaki görsel klasörünü birlikte ZIP'leyin.</small>
+        </div>
+    </div>
+    <div class="col-md-3 mb-2">
+        <div class="workflow-step">
+            <div class="step-number">4</div>
+            <strong class="d-block text-dark font-weight-bold mb-1">Yükleyin & Üretin</strong>
+            <small class="text-muted">Aşağıdaki alana yükleyin; sistem Türkçe içerik modülleri ve sorular oluşturur.</small>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="prado-card mb-4">
+            @using (Html.BeginForm("PradoImport", "EducationPackage", FormMethod.Post, new { enctype = "multipart/form-data" }))
+            {
+                @Html.AntiForgeryToken()
+                if (!ViewData.ModelState.IsValid)
+                {
+                    @Html.ValidationSummary(false, "", new { @class = "alert alert-danger mb-4 rounded-lg" })
+                }
+
+                <div class="form-group mb-4">
+                    <label class="font-weight-bold"><i class="fas fa-file-archive text-warning mr-1"></i> Web Sayfası HTML & Görsel ZIP Dosyası <span class="text-danger">*</span></label>
+                    <div class="zip-dropzone" id="zipDropzone" onclick="document.getElementById('zipFileInput').click();">
+                        <i class="fas fa-file-zipper fa-3x text-warning mb-2 d-block"></i>
+                        <h5 class="font-weight-bold text-dark mb-1" id="zipPromptText">ZIP dosyasını seçmek için tıklayın veya sürükleyin</h5>
+                        <p class="text-muted small mb-0" id="zipInfoText">
+                            İçinde en az bir .html dosyası ve görseller bulunmalıdır &bull; Azami: @ViewBag.MaximumPackageMb MB
+                        </p>
+                        <input type="file" id="zipFileInput" name="ZipFile" accept=".zip,application/zip" style="display:none;" required />
+                    </div>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label class="font-weight-bold">Eğitim Başlığı <small class="text-muted">(Boş bırakılırsa HTML içinden otomatik alınır)</small></label>
+                    @Html.TextBoxFor(x => x.CourseTitle, new { @class = "form-control", placeholder = "Örn. Danimarka Pasaportu Belge Güvenlik Eğitimi" })
+                </div>
+
+                <div class="form-group mb-3">
+                    <label class="font-weight-bold">Otomatik Üretilecek Soru Sayısı</label>
+                    @Html.TextBoxFor(x => x.QuestionCount, new { @class = "form-control", type = "number", min = "5", max = "30", placeholder = "10" })
+                    <small class="form-text text-muted">HTML içinde özel soru formatı bulunamazsa metinden akıllı olarak üretilecek soru sayısıdır (5-30 arası).</small>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label class="font-weight-bold">Kapak Görseli Modu</label>
+                    <select id="CoverMode" name="CoverMode" class="form-control">
+                        <option value="1" @(Model.CoverMode == gzpegm.Models.ViewModels.CourseCoverMode.Automatic ? "selected" : "")>Otomatik profesyonel kapak oluştur (önerilen)</option>
+                        <option value="2" @(Model.CoverMode == gzpegm.Models.ViewModels.CourseCoverMode.SourceImage ? "selected" : "")>Kaynak sayfadaki ilk uygun görseli kullan</option>
+                        <option value="3" @(Model.CoverMode == gzpegm.Models.ViewModels.CourseCoverMode.CustomUpload ? "selected" : "")>Kendi kapak görselimi yükle</option>
+                    </select>
+                </div>
+
+                <div id="customCoverArea" class="form-group mb-4" style="display:none; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 16px;">
+                    <label class="font-weight-bold"><i class="fas fa-image mr-1"></i> Özel Kapak Görseli Seçin</label>
+                    <input type="file" name="CustomCoverFile" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" class="form-control-file" />
+                    <small class="form-text text-muted">Önerilen ölçü: 1200×675 piksel (16:9), azami 10 MB.</small>
+                </div>
+
+                <div class="alert alert-info small mb-4">
+                    <i class="fas fa-shield-alt mr-1"></i> <strong>Güvenlik Garantisi:</strong> Sistem dış sitenin JavaScript kodlarını çalıştırmaz; yalnızca metin, tablo ve görselleri temizleyerek güvenli bir Türkçe eğitim modülü oluşturur.
+                </div>
+
+                <div class="d-flex align-items-center justify-content-between pt-3 border-top">
+                    <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+                        <i class="fas fa-times mr-1"></i> İptal
+                    </a>
+                    <button type="submit" class="btn btn-warning px-4 py-2 font-weight-bold text-dark shadow-sm">
+                        <i class="fas fa-wand-magic-sparkles mr-1"></i> Türkçe Kurs ve Sınavı Oluştur
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="prado-card mb-4" style="background: #f8fafc;">
+            <h5 class="font-weight-bold text-dark mb-3"><i class="fas fa-robot text-primary mr-1"></i> Özel Soru Formatı İpucu</h5>
+            <p class="small text-muted mb-3" style="line-height: 1.6;">
+                Eğer HTML dosyasını ChatGPT veya Gemini ile hazırlıyorsanız, aşağıdaki yapıyı kullanarak soruları önceden tanımlayabilirsiniz:
+            </p>
+            <div class="bg-white p-2 border rounded small mb-3">
+                <code style="font-size: 11px; color: #0284c7;">
+                    &lt;section data-exam="true"&gt;<br />
+                    &nbsp;&nbsp;&lt;div class="question" data-correct="B"&gt;<br />
+                    &nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;Soru metni...&lt;/p&gt;<br />
+                    &nbsp;&nbsp;&nbsp;&nbsp;&lt;div class="opt" data-key="A"&gt;A şıkkı&lt;/div&gt;<br />
+                    &nbsp;&nbsp;&nbsp;&nbsp;&lt;div class="opt" data-key="B"&gt;B şıkkı&lt;/div&gt;<br />
+                    &nbsp;&nbsp;&lt;/div&gt;<br />
+                    &lt;/section&gt;
+                </code>
+            </div>
+            <p class="small text-muted mb-0">
+                Bu etiketler mevcut olduğunda sistem doğrudan hazır sorularınızı sınav olarak tanımlar.
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        var mode = document.getElementById('CoverMode');
+        var area = document.getElementById('customCoverArea');
+        function updateCoverArea() { area.style.display = mode.value === '3' ? 'block' : 'none'; }
+        mode.addEventListener('change', updateCoverArea);
+        updateCoverArea();
+
+        var zipInput = document.getElementById('zipFileInput');
+        var zipPrompt = document.getElementById('zipPromptText');
+        var zipInfo = document.getElementById('zipInfoText');
+        var dropzone = document.getElementById('zipDropzone');
+
+        zipInput.addEventListener('change', function () {
+            if (this.files && this.files.length > 0) {
+                var f = this.files[0];
+                var mb = (f.size / (1024 * 1024)).toFixed(2);
+                zipPrompt.innerHTML = '<span class="text-success"><i class="fas fa-check-circle mr-1"></i> ' + f.name + '</span>';
+                zipInfo.innerHTML = 'Boyut: <strong>' + mb + ' MB</strong> &bull; ZIP hazır';
+                dropzone.style.borderColor = '#16a34a';
+                dropzone.style.background = '#f0fdf4';
+            }
+        });
+    })();
+</script>

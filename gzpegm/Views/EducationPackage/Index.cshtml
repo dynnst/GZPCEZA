@@ -1,0 +1,314 @@
+@model gzpegm.Models.ViewModels.EducationPackageIndexViewModel
+@{
+    ViewBag.Title = "Eğitim Paketleri & Çevrimdışı Aktarım Merkezi";
+    Layout = "~/Views/Shared/_Master.cshtml";
+}
+
+<style>
+    .ep-hero {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: #ffffff;
+        border-radius: 12px;
+        padding: 28px 32px;
+        margin-bottom: 24px;
+        box-shadow: 0 8px 24px rgba(30, 60, 114, 0.15);
+        position: relative;
+        overflow: hidden;
+    }
+    .ep-hero::after {
+        content: '\f49e';
+        font-family: 'Font Awesome 5 Free';
+        font-weight: 900;
+        position: absolute;
+        right: 25px;
+        bottom: -20px;
+        font-size: 130px;
+        color: rgba(255, 255, 255, 0.06);
+        pointer-events: none;
+    }
+    .ep-hero h1 {
+        font-size: 24px;
+        font-weight: 700;
+        margin: 0 0 8px 0;
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .ep-hero p {
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.85);
+        margin: 0;
+        max-width: 820px;
+        line-height: 1.6;
+    }
+
+    .ep-stat-card {
+        background: #ffffff;
+        border-radius: 12px;
+        padding: 20px 22px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        height: 100%;
+    }
+    .ep-stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 18px rgba(30, 60, 114, 0.1);
+    }
+    .ep-stat-info .ep-stat-label {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #64748b;
+        margin-bottom: 4px;
+    }
+    .ep-stat-info .ep-stat-value {
+        font-size: 26px;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1;
+    }
+    .ep-stat-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+    }
+    .icon-navy { background: #e0e7ff; color: #3730a3; }
+    .icon-amber { background: #fef3c7; color: #b45309; }
+    .icon-emerald { background: #d1fae5; color: #065f46; }
+    .icon-blue { background: #dbeafe; color: #1d4ed8; }
+
+    .ep-action-card {
+        background: #ffffff;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        padding: 24px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+        transition: all 0.2s ease;
+        position: relative;
+    }
+    .ep-action-card:hover {
+        border-color: #3b82f6;
+        box-shadow: 0 8px 24px rgba(59, 130, 246, 0.12);
+        transform: translateY(-3px);
+    }
+    .ep-card-badge {
+        position: absolute;
+        top: 18px;
+        right: 18px;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 20px;
+    }
+    .ep-action-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        margin-bottom: 16px;
+    }
+    .ep-action-title {
+        font-size: 17px;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 8px;
+    }
+    .ep-action-desc {
+        font-size: 13px;
+        color: #64748b;
+        line-height: 1.5;
+        margin-bottom: 20px;
+        flex-grow: 1;
+    }
+    .ep-btn {
+        font-weight: 600;
+        font-size: 14px;
+        padding: 10px 16px;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.15s ease;
+        text-decoration: none !important;
+    }
+</style>
+
+<!-- Hero Banner -->
+<div class="ep-hero">
+    <h1>
+        <i class="fas fa-boxes"></i> Eğitim Paketleri & Çevrimdışı Aktarım Merkezi
+    </h1>
+    <p>
+        Geliştirme ortamı ile internetsiz POLNET canlı sunucuları arasında eğitimleri, içerik modüllerini, sınavları,
+        soruları, şıkları ve görsel/medya varlıklarını tek bir güvenli <strong>.cezapkg</strong> dosya formatıyla taşıyın ve yönetin.
+    </p>
+</div>
+
+@if (ViewBag.SchemaMissing == true)
+{
+    <div class="alert alert-warning border-0 shadow-sm rounded-lg d-flex align-items-center mb-4 p-3">
+        <i class="fas fa-exclamation-triangle fa-2x mr-3 text-warning"></i>
+        <div>
+            <strong>Dikkat: Import Log Tablosu Eksik</strong><br />
+            Eğitim paketi geçmişi tablosu henüz veritabanında oluşturulmamış. Veritabanı yöneticisiyle irtibata geçerek aktarım log scriptini çalıştırınız.
+        </div>
+    </div>
+}
+
+<!-- Metrik Kartları -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="ep-stat-card">
+            <div class="ep-stat-info">
+                <div class="ep-stat-label">Toplam Eğitim</div>
+                <div class="ep-stat-value">@Model.CourseCount</div>
+            </div>
+            <div class="ep-stat-icon icon-navy">
+                <i class="fas fa-graduation-cap"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="ep-stat-card">
+            <div class="ep-stat-info">
+                <div class="ep-stat-label">Kontrol Bekleyen Taslak</div>
+                <div class="ep-stat-value text-warning">@Model.DraftCount</div>
+            </div>
+            <div class="ep-stat-icon icon-amber">
+                <i class="fas fa-clipboard-list"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="ep-stat-card">
+            <div class="ep-stat-info">
+                <div class="ep-stat-label">Aktarım İşlemi</div>
+                <div class="ep-stat-value">@Model.ImportCount</div>
+            </div>
+            <div class="ep-stat-icon icon-emerald">
+                <i class="fas fa-file-import"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="ep-stat-card">
+            <div class="ep-stat-info">
+                <div class="ep-stat-label">Son Aktarım</div>
+                <div class="ep-stat-value" style="font-size: 16px; font-weight: 700; color: #334155; margin-top: 4px;">
+                    @(Model.LastImportDate.HasValue ? Model.LastImportDate.Value.ToString("dd.MM.yyyy HH:mm") : "Kayıt Yok")
+                </div>
+            </div>
+            <div class="ep-stat-icon icon-blue">
+                <i class="fas fa-history"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ana Aksiyon Kartları (2x2 Grid) -->
+<div class="row">
+    <!-- Dışa Aktar -->
+    <div class="col-lg-6 mb-4">
+        <div class="ep-action-card">
+            <span class="ep-card-badge badge-primary text-white">Çevrimdışı İhraç</span>
+            <div>
+                <div class="ep-action-icon bg-primary text-white">
+                    <i class="fas fa-file-export"></i>
+                </div>
+                <div class="ep-action-title">Eğitim Paketi Dışa Aktar (.cezapkg)</div>
+                <div class="ep-action-desc">
+                    Mevcut bir eğitimi tüm içerikleri, sınavları, soruları, şık verileri ve gömülü görselleriyle birlikte
+                    şifreli ve taşınabilir bir <strong>.cezapkg</strong> arşivine dönüştürün.
+                </div>
+            </div>
+            <a href="@Url.Action("Export")" class="btn btn-primary ep-btn">
+                <i class="fas fa-download"></i> Kurs Seç ve Paket Oluştur
+            </a>
+        </div>
+    </div>
+
+    <!-- İçe Aktar -->
+    <div class="col-lg-6 mb-4">
+        <div class="ep-action-card">
+            <span class="ep-card-badge badge-success text-white">Canlıya Giriş</span>
+            <div>
+                <div class="ep-action-icon bg-success text-white">
+                    <i class="fas fa-file-import"></i>
+                </div>
+                <div class="ep-action-title">Eğitim Paketi İçe Aktar</div>
+                <div class="ep-action-desc">
+                    Harici ortamdan temin edilen doğrulanmış bir <strong>.cezapkg</strong> dosyasını sisteme yükleyin.
+                    Paket içerisindeki eğitim taslak olarak yüklenir ve onayınızdan sonra yayına alınır.
+                </div>
+            </div>
+            <a href="@Url.Action("Import")" class="btn btn-success ep-btn">
+                <i class="fas fa-upload"></i> Paketi İncele ve İçe Aktar
+            </a>
+        </div>
+    </div>
+
+    <!-- Web Sayfası / PRADO ZIP'inden Kurs Oluştur -->
+    <div class="col-lg-6 mb-4">
+        <div class="ep-action-card">
+            <span class="ep-card-badge badge-warning text-dark">Akıllı Çevirici</span>
+            <div>
+                <div class="ep-action-icon bg-warning text-dark">
+                    <i class="fas fa-magic"></i>
+                </div>
+                <div class="ep-action-title">Web Sayfası ZIP'inden Türkçe Kurs Oluştur</div>
+                <div class="ep-action-desc">
+                    PRADO, Regula Forensics veya EdisonTD sayfalarından kaydedilmiş HTML ve görsel arşivini yükleyin.
+                    Sistem otomatik içerik modülleri ve sorular oluşturup taslak kurs hazırlar.
+                </div>
+            </div>
+            <a href="@Url.Action("PradoImport")" class="btn btn-warning ep-btn text-dark font-weight-bold">
+                <i class="fas fa-wand-magic-sparkles"></i> Web ZIP'inden Eğitim Üret
+            </a>
+        </div>
+    </div>
+
+    <!-- Kontrol Bekleyen Taslaklar -->
+    <div class="col-lg-6 mb-4">
+        <div class="ep-action-card">
+            <span class="ep-card-badge @(Model.DraftCount > 0 ? "badge-danger" : "badge-secondary") text-white">
+                @(Model.DraftCount > 0 ? Model.DraftCount.ToString() + " Taslak Bekliyor" : "Güncel")
+            </span>
+            <div>
+                <div class="ep-action-icon bg-dark text-white">
+                    <i class="fas fa-clipboard-check"></i>
+                </div>
+                <div class="ep-action-title">Kontrol Bekleyen Taslaklar & Yayın Onayı</div>
+                <div class="ep-action-desc">
+                    İçe aktarılmış veya yeni hazırlanmış taslak kursları inceleyin. İçerik, sınav ve soru bütünlük
+                    kontrollerini tamamlayarak tek tıkla kursiyerlerin erişimine açın.
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="@Url.Action("Drafts")" class="btn btn-dark ep-btn flex-fill mr-2">
+                    <i class="fas fa-list-ul"></i> Taslak Listesi (@Model.DraftCount)
+                </a>
+                <a href="@Url.Action("Logs")" class="btn btn-outline-secondary ep-btn">
+                    <i class="fas fa-history"></i> Aktarım Geçmişi
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,325 @@
+@model gzpegm.Models.ViewModels.EducationPackageExportViewModel
+@{
+    ViewBag.Title = "Eğitim Paketi Dışa Aktar (.cezapkg)";
+    Layout = "~/Views/Shared/_Master.cshtml";
+}
+
+<style>
+    .ep-export-header {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: #ffffff;
+        border-radius: 12px;
+        padding: 24px 28px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 16px rgba(30, 60, 114, 0.12);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+    .ep-export-header h1 {
+        font-size: 20px;
+        font-weight: 700;
+        margin: 0;
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .ep-card {
+        background: #ffffff;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+    .course-select-table th {
+        background: #f8fafc;
+        color: #475569;
+        font-weight: 700;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        border-top: none !important;
+    }
+    .course-select-table tbody tr {
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+    }
+    .course-select-table tbody tr:hover {
+        background-color: #f1f5f9 !important;
+    }
+    .course-select-table tbody tr.row-selected {
+        background-color: #e0f2fe !important;
+        border-left: 4px solid #0284c7;
+        font-weight: 600;
+    }
+    #courseTableWrapper {
+        max-height: 360px;
+        overflow-y: auto;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+    }
+    #selectedCourseAlert {
+        display: none;
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        border-radius: 8px;
+        padding: 14px 18px;
+        margin-bottom: 20px;
+        color: #166534;
+    }
+    .badge-ready {
+        background: #dcfce7;
+        color: #15803d;
+        border: 1px solid #bbf7d0;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 700;
+    }
+    .badge-partial {
+        background: #fef9c3;
+        color: #854d0e;
+        border: 1px solid #fef08a;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 700;
+    }
+    .section-label {
+        font-size: 14px;
+        font-weight: 700;
+        color: #1e293b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border-bottom: 2px solid #f1f5f9;
+        padding-bottom: 8px;
+    }
+</style>
+
+<div class="ep-export-header">
+    <div>
+        <h1><i class="fas fa-file-export"></i> Eğitim Paketi Dışa Aktar (.cezapkg)</h1>
+        <small style="color: rgba(255,255,255,0.85); font-size: 13px;">
+            Canlı / POLNET ortamına taşınacak eğitimi seçip tek tıkla şifreli ve doğrulanmış arşiv dosyası oluşturun.
+        </small>
+    </div>
+    <div>
+        <a href="@Url.Action("Index")" class="btn btn-outline-light btn-sm">
+            <i class="fas fa-arrow-left"></i> Hub'a Dön
+        </a>
+    </div>
+</div>
+
+<div class="ep-card">
+    @using (Html.BeginForm("Export", "EducationPackage", FormMethod.Post, new { id = "exportForm" }))
+    {
+        @Html.AntiForgeryToken()
+        @Html.ValidationSummary(false, "", new { @class = "alert alert-danger mb-4 rounded-lg" })
+        @Html.HiddenFor(x => x.CourseId, new { id = "CourseId" })
+
+        <!-- Adım 1: Kurs Seçimi -->
+        <div class="section-label">
+            <i class="fas fa-1 text-primary"></i> 1. Adım: Dışa Aktarılacak Eğitimi Seçin
+        </div>
+
+        <div class="form-group mb-3">
+            <div class="input-group">
+                <div class="input-group-prepend">
+                    <span class="input-group-text bg-light border-right-0"><i class="fas fa-search text-muted"></i></span>
+                </div>
+                <input type="text" id="courseSearch" class="form-control border-left-0" placeholder="Kurs başlığına göre filtreleyin..." autocomplete="off" />
+            </div>
+            <small class="form-text text-muted mt-1">
+                Toplam <strong id="visibleCount">@(Model.CourseSummaries != null ? Model.CourseSummaries.Count : 0)</strong> kurs listeleniyor. Tablodan dışa aktarmak istediğiniz satıra tıklayınız.
+            </small>
+        </div>
+
+        if (Model.CourseSummaries != null && Model.CourseSummaries.Any())
+        {
+            <div id="courseTableWrapper" class="mb-3">
+                <table class="table table-sm course-select-table mb-0" id="courseTable">
+                    <thead>
+                        <tr>
+                            <th>Kurs Adı</th>
+                            <th style="width: 100px;">Durum</th>
+                            <th style="width: 80px;" class="text-center">İçerik</th>
+                            <th style="width: 80px;" class="text-center">Sınav</th>
+                            <th style="width: 80px;" class="text-center">Soru</th>
+                            <th style="width: 120px;" class="text-center">Paket Uygunluğu</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.CourseSummaries)
+                        {
+                            var ready = item.ContentCount > 0 && item.ExamCount > 0 && item.QuestionCount > 0;
+                            <tr data-id="@item.CourseId"
+                                data-title="@item.CourseTitle"
+                                data-ready="@ready.ToString().ToLower()"
+                                class="@(item.CourseId == Model.CourseId ? "row-selected" : "")">
+                                <td>
+                                    <strong class="text-dark">@item.CourseTitle</strong>
+                                    <div class="text-muted small">Kurs Kimliği: #@item.CourseId</div>
+                                </td>
+                                <td>
+                                    <span class="badge @(item.IsActive ? "badge-success" : "badge-warning")">
+                                        @(item.IsActive ? "Yayında" : "Taslak")
+                                    </span>
+                                </td>
+                                <td class="text-center font-weight-bold">@item.ContentCount</td>
+                                <td class="text-center font-weight-bold">@item.ExamCount</td>
+                                <td class="text-center font-weight-bold">@item.QuestionCount</td>
+                                <td class="text-center">
+                                    @if (ready)
+                                    {
+                                        <span class="badge-ready"><i class="fas fa-check-circle mr-1"></i> Tam Hazır</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-partial"><i class="fas fa-exclamation-triangle mr-1"></i> Kısmi</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-warning mb-4">Sistemde dışa aktarılacak kayıtlı eğitim bulunmuyor.</div>
+        }
+
+        <!-- Seçili Kurs Kutusu -->
+        <div id="selectedCourseAlert">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <i class="fas fa-check-circle fa-lg mr-2"></i>
+                    <strong>Seçilen Eğitim:</strong> <span id="selectedCourseTitle" class="font-weight-bold text-dark"></span>
+                </div>
+                <span class="badge badge-success px-2 py-1">Seçim Aktif</span>
+            </div>
+        </div>
+
+        <!-- Adım 2: Paket Kimlik ve Metadata Bilgileri -->
+        <div class="section-label mt-4">
+            <i class="fas fa-2 text-primary"></i> 2. Adım: Paket Meta Bilgileri
+        </div>
+
+        <div class="row">
+            <div class="form-group col-md-6">
+                <label class="font-weight-bold">Paket Kodu <span class="text-danger">*</span></label>
+                @Html.TextBoxFor(x => x.PackageCode, new { @class = "form-control", placeholder = "Örn. DNK-AO-06001", required = "required" })
+                <small class="form-text text-muted">Canlı sisteme içe aktarılırken tekil kimlik olarak kontrol edilir.</small>
+            </div>
+            <div class="form-group col-md-3">
+                <label class="font-weight-bold">Sürüm <span class="text-danger">*</span></label>
+                @Html.TextBoxFor(x => x.PackageVersion, new { @class = "form-control", placeholder = "1.0.0", required = "required" })
+            </div>
+            <div class="form-group col-md-3">
+                <label class="font-weight-bold">Dil</label>
+                @Html.TextBoxFor(x => x.Language, new { @class = "form-control", placeholder = "tr-TR" })
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="form-group col-md-4">
+                <label class="font-weight-bold">Kaynak</label>
+                @Html.TextBoxFor(x => x.Source, new { @class = "form-control", placeholder = "PRADO / Regula / Edison / AI" })
+            </div>
+            <div class="form-group col-md-4">
+                <label class="font-weight-bold">Belge Kodu</label>
+                @Html.TextBoxFor(x => x.DocumentCode, new { @class = "form-control", placeholder = "Örn. P-12345" })
+            </div>
+            <div class="form-group col-md-4">
+                <label class="font-weight-bold">Ülke</label>
+                @Html.TextBoxFor(x => x.CountryName, new { @class = "form-control", placeholder = "Örn. Danimarka" })
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="form-group col-md-8">
+                <label class="font-weight-bold">Kaynak URL <small class="text-muted font-weight-normal">(Referans amaçlıdır)</small></label>
+                @Html.TextBoxFor(x => x.SourceUrl, new { @class = "form-control", placeholder = "https://..." })
+            </div>
+            <div class="form-group col-md-4">
+                <label class="font-weight-bold">Belge Türü</label>
+                @Html.TextBoxFor(x => x.DocumentType, new { @class = "form-control", placeholder = "Pasaport / Kimlik Kartı" })
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center justify-content-between pt-3 border-top mt-3">
+            <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+                <i class="fas fa-times mr-1"></i> İptal / Geri
+            </a>
+            <button type="submit" id="exportBtn" class="btn btn-primary px-4 py-2 font-weight-bold shadow-sm">
+                <i class="fas fa-download mr-1"></i> Paketi Hazırla ve İndir (.cezapkg)
+            </button>
+        </div>
+    }
+</div>
+
+<script>
+    (function () {
+        var $rows = $('#courseTable tbody tr');
+        var $search = $('#courseSearch');
+        var $courseId = $('#CourseId');
+        var $selectedBox = $('#selectedCourseAlert');
+        var $selectedTitle = $('#selectedCourseTitle');
+        var $visibleCount = $('#visibleCount');
+
+        // Mevcut seçili kurs varsa
+        var preselected = $rows.filter('.row-selected');
+        if (preselected.length) {
+            $selectedTitle.text(preselected.data('title'));
+            $selectedBox.slideDown(150);
+        }
+
+        // Satır tıklama
+        $rows.on('click', function () {
+            $rows.removeClass('row-selected');
+            $(this).addClass('row-selected');
+
+            var id = $(this).data('id');
+            var title = $(this).data('title');
+
+            $courseId.val(id);
+            $selectedTitle.text(title);
+            $selectedBox.slideDown(150);
+        });
+
+        // Canlı arama
+        $search.on('input', function () {
+            var q = $(this).val().toLowerCase().trim();
+            var visible = 0;
+            $rows.each(function () {
+                var title = ($(this).data('title') || '').toLowerCase();
+                var show = !q || title.indexOf(q) !== -1;
+                $(this).toggle(show);
+                if (show) visible++;
+            });
+            $visibleCount.text(visible);
+        });
+
+        // Form kontrolü
+        $('#exportForm').on('submit', function (e) {
+            var id = parseInt($courseId.val(), 10);
+            if (!id || id <= 0) {
+                e.preventDefault();
+                alert('Lütfen listeden dışa aktarmak istediğiniz eğitimi seçin.');
+                $search.focus();
+                return false;
+            }
+        });
+    })();
+</script>

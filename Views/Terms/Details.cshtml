@@ -1,0 +1,46 @@
+@model gzpegm.Controllers.TermDetailVM
+
+@{
+    ViewBag.Title = Model?.Term ?? "Terim Detayý";
+}
+
+<h1>@Model.Term</h1>
+<p><strong>Kategori:</strong> @Model.Category</p>
+
+@if (!string.IsNullOrEmpty(Model.ImageUrl))
+{
+    <p><img src="@Model.ImageUrl" alt="@Model.Term" style="max-width:300px;" /></p>
+}
+
+<h3>Kýsa Taným</h3>
+<p>@Html.Raw(Model.Definition)</p>
+
+@if (!string.IsNullOrEmpty(Model.DetailedDescription))
+{
+    <h3>Detaylý Açýklama</h3>
+    <p>@Html.Raw(Model.DetailedDescription)</p>
+}
+
+@if (!string.IsNullOrEmpty(Model.VerificationTips))
+{
+    <h3>Doðrulama Ýpuçlarý</h3>
+    <p>@Html.Raw(Model.VerificationTips)</p>
+}
+
+<p>
+    <small>Oluþturulma: @Model.CreatedAt?.ToString("g")</small><br />
+    <small>Güncellenme: @Model.UpdatedAt?.ToString("g")</small>
+</p>
+
+@if (Model.RelatedTerms != null && Model.RelatedTerms.Any())
+{
+    <h4>Ýlgili Terimler</h4>
+    <ul>
+        @foreach (var r in Model.RelatedTerms)
+        {
+            <li>
+                <a href="@Url.Action("Details", "Terms", new { slug = r.Slug })">@r.Term</a>
+            </li>
+        }
+    </ul>
+}

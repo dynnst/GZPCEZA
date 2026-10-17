@@ -1,0 +1,225 @@
+@using System.Linq
+@model gzpegm.Models.ViewModels.ExamResultViewModel
+
+@{
+    ViewBag.Title = "Sınav Sonucu - " + (Model?.ExamTitle ?? "Sonuç");
+    Layout = "~/Views/Shared/_Master.cshtml";
+}
+
+@section Styles {
+    <link href="~/Content/exam-result.css" rel="stylesheet" />
+    <link href="~/Content/font-awesome.min.css" rel="stylesheet" />
+}
+
+<div class="wrapper wrapper-content animated fadeInRight">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="ibox">
+                <div class="ibox-title">
+                    <h3>Sınav Sonucu</h3>
+                    <div class="ibox-tools">
+                        <a href="@Url.Action("AvailableExams", "StudentExam")" class="btn btn-primary btn-xs">
+                            <i class="fa fa-arrow-left"></i> Sınavlara Dön
+                        </a>
+                    </div>
+                </div>
+
+                <div class="ibox-content">
+                    @if (Model != null)
+                    {
+                        <div class="row mb-4">
+                            <div class="col-md-8">
+                                <h4>@Model.ExamTitle</h4>
+                                <p class="text-muted mb-1"><strong>Kurs:</strong> @(Model.CourseTitle ?? "-")</p>
+                                <p class="text-muted mb-1"><strong>Süre:</strong> @Model.Duration.ToString(@"hh\:mm\:ss")</p>
+                                <p class="text-muted mb-0"><strong>Tarih:</strong> @Model.StartTime.ToString("dd.MM.yyyy HH:mm")</p>
+                            </div>
+
+                            <div class="col-md-4 text-center">
+                                <div class="score-circle @(Model.IsPassed ? "score-passed" : "score-failed")">
+                                    <h2 class="score-percentage">@Model.Percentage.ToString("F1")%</h2>
+                                    <div class="score-text">
+                                        <strong>@Model.TotalScore / @Model.MaxScore</strong>
+                                    </div>
+                                </div>
+
+                                <div class="mt-2">
+                                    @if (Model.IsPassed)
+                                    {
+                                        <span class="badge bg-success">
+                                            <i class="fa fa-check"></i> BAŞARILI
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">
+                                            <i class="fa fa-times"></i> BAŞARISIZ
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr />
+
+                        <h5 class="mb-3"><i class="fa fa-list-alt"></i> Soru Detayları</h5>
+
+                        if (Model.Answers != null && Model.Answers.Count > 0)
+                        {
+                            <div class="answers-container">
+                                @for (int i = 0; i < Model.Answers.Count; i++)
+                                {
+                                    var answer = Model.Answers[i];
+                                    if (answer == null) { continue; }
+
+                                    <div class="answer-card card mb-3 @(answer.IsCorrect ? "border-success" : "border-danger")">
+                                        <div class="card-header @(answer.IsCorrect ? "bg-success text-white" : "bg-danger text-white")">
+                                            <strong>Soru @(i + 1)</strong>
+                                            <span class="float-end">
+                                                @answer.PointsEarned / @answer.MaxPoints Puan
+                                            </span>
+                                        </div>
+
+                                        <div class="card-body">
+                                            <strong>Soru:</strong>
+                                            <p>@Html.Raw(answer.QuestionText ?? "")</p>
+
+                                            @if (answer.MediaFiles != null && answer.MediaFiles.Count(m => !string.IsNullOrEmpty(m?.MediaPath)) > 0)
+                                            {
+                                                <div class="row mt-3">
+                                                    @foreach (var m in answer.MediaFiles.Where(m => m != null && !string.IsNullOrEmpty(m.MediaPath)))
+                                                    {
+                                                        string mediaPath = m.MediaPath;
+                                                        // Geçerli bir yol oluştur
+                                                        if (!mediaPath.StartsWith("http", StringComparison.OrdinalIgnoreCase) && !mediaPath.StartsWith("/") && !mediaPath.StartsWith("~/"))
+                                                        {
+                                                            mediaPath = "~/files/Egitim/" + mediaPath;
+                                                        }
+                                                        mediaPath = Url.Content(mediaPath);
+
+                                                        if (m.MediaType == 1)
+                                                        {
+                                                            <div class="col-md-3 mb-2">
+                                                                <img src="@mediaPath" class="img-fluid rounded" alt="Soru görseli" onerror="this.style.display='none'" />
+                                                            </div>
+                                                        }
+                                                        else if (m.MediaType == 2)
+                                                        {
+                                                            <div class="col-12 mb-2">
+                                                                <video controls class="w-100" preload="none">
+                                                                    <source src="@mediaPath" type="video/mp4" />
+                                                                </video>
+                                                            </div>
+                                                        }
+                                                    }
+                                                </div>
+                                            }
+
+                                            <div class="row mt-3">
+                                                <div class="col-md-6">
+                                                    <strong>Verdiğiniz Cevap:</strong>
+                                                    <div class="p-2 mt-1 rounded @(answer.IsCorrect ? "bg-success bg-opacity-10" : "bg-danger bg-opacity-10")">
+                                                        @{
+                                                            string userAnswerDisplay = "";
+                                                            if (!string.IsNullOrEmpty(answer.UserAnswer))
+                                                            {
+                                                                userAnswerDisplay = answer.UserAnswer;
+                                                            }
+                                                            else if (answer.SelectedOptionId.HasValue && answer.Options != null && answer.Options.Any())
+                                                            {
+                                                                var selectedOption = answer.Options.FirstOrDefault(o => o?.OptionId == answer.SelectedOptionId.Value);
+                                                                userAnswerDisplay = selectedOption?.OptionText ?? "Cevap verilmedi";
+                                                            }
+                                                            else
+                                                            {
+                                                                userAnswerDisplay = "Cevap verilmedi";
+                                                            }
+                                                        }
+                                                        @if (!string.IsNullOrEmpty(userAnswerDisplay) && userAnswerDisplay != "Cevap verilmedi")
+                                                        {
+                                                            @Html.Raw(userAnswerDisplay)
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="text-muted">@userAnswerDisplay</span>
+                                                        }
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <strong>Şıklar / Doğru Şık</strong>
+                                                    @if (answer.Options != null && answer.Options.Count(o => o != null) > 0)
+                                                    {
+                                                        var orderedOptions = answer.Options.Where(o => o != null).OrderBy(o => o.SortOrder).ToList();
+                                                        <ul class="list-group mt-2">
+                                                            @foreach (var opt in orderedOptions)
+                                                            {
+                                                                if (opt == null) { continue; }
+                                                                var isSelected = answer.SelectedOptionId.HasValue && answer.SelectedOptionId.Value == opt.OptionId;
+                                                                var isCorrect = opt.IsCorrect;
+                                                                <li class="list-group-item d-flex justify-content-between align-items-center @(isCorrect ? "list-group-item-success" : "")">
+                                                                    <div>@Html.Raw(opt.OptionText ?? "")</div>
+                                                                    <div>
+                                                                        @if (isCorrect)
+                                                                        {<span class="badge bg-success">✓</span>}
+                                                                        @if (isSelected)
+                                                                        {<span class="badge bg-primary">👤</span>}
+                                                                    </div>
+                                                                </li>
+                                                            }
+                                                        </ul>
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="p-2 bg-success bg-opacity-10 rounded mt-2">
+                                                            @(answer.CorrectAnswer ?? "Doğru cevap bilgisi yok")
+                                                        </div>
+                                                    }
+                                                </div>
+                                            </div>
+
+                                            <div class="text-center mt-3">
+                                                @if (answer.IsCorrect)
+                                                {
+                                                    <span class="badge bg-success">DOĞRU</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-danger">YANLIŞ</span>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning text-center">
+                                <i class="fa fa-info-circle"></i> Bu sınava ait cevap detayı bulunamadı. Sınavı tamamladıysanız lütfen sistem yöneticinize başvurun.
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="alert alert-danger text-center">
+                            Sınav sonucu bilgisi yüklenemedi. Lütfen daha sonra tekrar deneyin.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(function () {
+            $('img').on('error', function () { $(this).hide(); });
+            $('video').on('error', function () {
+                $(this).after('<p class="text-danger small">Video yüklenemedi</p>');
+                $(this).hide();
+            });
+        });
+    </script>
+}

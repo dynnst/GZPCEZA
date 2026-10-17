@@ -1,0 +1,248 @@
+/* ==========================================================================
+   İstatistik Sayfası Özel Stilleri (istatistik-index.css)
+   ========================================================================== */
+
+.istatistik-page {
+    color: #676a6c;
+    background: #f3f3f4;
+    margin: -30px -40px 0;
+    min-height: calc(100vh - 70px);
+    padding-bottom: 35px;
+}
+
+.istatistik-page .page-heading {
+    background: #ffffff;
+    border-bottom: 1px solid #e7eaec;
+    margin: 0 0 20px;
+    padding: 22px 25px 18px;
+}
+
+.istatistik-page .page-heading h2 {
+    color: #676a6c;
+    font-size: 26px;
+    font-weight: 400;
+    margin: 0 0 12px;
+}
+
+.istatistik-page .breadcrumb {
+    background: transparent;
+    margin-bottom: 0;
+    padding: 0;
+}
+
+.istatistik-page .wrapper-content {
+    padding: 0 25px 25px;
+}
+
+.istatistik-page .ibox {
+    clear: both;
+    margin-bottom: 25px;
+    margin-top: 0;
+    padding: 0;
+}
+
+.istatistik-page .ibox-title {
+    background-color: #ffffff;
+    border-color: #e7eaec;
+    border-style: solid solid none;
+    border-width: 1px 0 0;
+    color: #676a6c;
+    margin-bottom: 0;
+    min-height: 48px;
+    padding: 14px 15px 7px;
+}
+
+.istatistik-page .ibox-title h5 {
+    display: inline-block;
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 7px;
+    padding: 0;
+}
+
+.istatistik-page .ibox-title small {
+    color: #888888;
+    font-size: 11px;
+    font-weight: 400;
+    margin-left: 4px;
+}
+
+.istatistik-page .ibox-content {
+    background-color: #ffffff;
+    border-color: #e7eaec;
+    border-style: solid solid none;
+    border-width: 1px 0;
+    color: #676a6c;
+    padding: 15px 20px 20px;
+}
+
+.istatistik-page .no-margins {
+    color: #676a6c;
+    font-size: 30px;
+    font-weight: 400;
+    line-height: 1.2;
+    margin: 0;
+}
+
+.istatistik-page .stat-percent {
+    float: right;
+    font-size: 16px;
+    margin-top: 4px;
+}
+
+.istatistik-page small,
+.istatistik-page .text-muted {
+    color: #888888;
+}
+
+.istatistik-page .chart-container,
+.istatistik-page .text-center {
+    position: relative;
+}
+
+.istatistik-page canvas {
+    max-width: 100%;
+}
+
+.istatistik-page .chart-data-summary {
+    border-top: 1px solid #f0f0f0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 10px;
+}
+
+.istatistik-page .chart-data-summary span {
+    background: #f8f8f8;
+    border: 1px solid #e7eaec;
+    border-radius: 3px;
+    color: #676a6c;
+    font-size: 11px;
+    padding: 4px 7px;
+}
+
+.istatistik-page .label {
+    border-radius: .25em;
+    color: #ffffff;
+    display: inline;
+    font-size: 75%;
+    font-weight: 700;
+    line-height: 1;
+    padding: .2em .6em .3em;
+    text-align: center;
+    vertical-align: baseline;
+    white-space: nowrap;
+}
+
+.istatistik-page .label-primary {
+    background-color: #1ab394;
+}
+
+.istatistik-page .label-success {
+    background-color: #1c84c6;
+}
+
+.istatistik-page .label-warning {
+    background-color: #f8ac59;
+}
+
+.istatistik-page .label-danger {
+    background-color: #ed5565;
+}
+
+.istatistik-page .label-info {
+    background-color: #23c6c8;
+}
+
+.istatistik-page .float-right {
+    float: right !important;
+}
+
+.istatistik-page .font-bold {
+    font-weight: 600;
+}
+
+.istatistik-page .text-navy {
+    color: #1ab394;
+}
+
+.istatistik-page .text-success {
+    color: #1c84c6 !important;
+}
+
+.istatistik-page .text-warning {
+    color: #f8ac59 !important;
+}
+
+.istatistik-page .text-danger {
+    color: #ed5565 !important;
+}
+
+.istatistik-page .text-info {
+    color: #23c6c8 !important;
+}
+
+.istatistik-page .m-t-md {
+    margin-top: 20px;
+}
+
+.istatistik-page .m-t-sm {
+    margin-top: 10px;
+}
+
+.istatistik-page .p-lg {
+    padding: 30px;
+}
+
+.istatistik-page .ibox-tools {
+    float: right;
+    margin-top: -3px;
+}
+
+.istatistik-page .btn-chart-export {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 4px;
+    border: 1px solid #1ab394;
+    color: #1ab394;
+    background: #ffffff;
+    transition: all 0.2s ease-in-out;
+    cursor: pointer;
+}
+
+.istatistik-page .btn-chart-export:hover {
+    background-color: #1ab394;
+    color: #ffffff;
+    box-shadow: 0 2px 5px rgba(26, 179, 148, 0.3);
+}
+
+.istatistik-page .btn-chart-export.exporting {
+    background-color: #23c6c8;
+    border-color: #23c6c8;
+    color: #ffffff;
+}
+
+@media (max-width: 767px) {
+    .istatistik-page {
+        margin-left: -20px;
+        margin-right: -20px;
+    }
+
+    .istatistik-page .page-heading,
+    .istatistik-page .wrapper-content {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+}
+
+@media print {
+    .btn-chart-export, .page-heading .btn, .breadcrumb, .navbar-static-side, #page-wrapper > .row.border-bottom {
+        display: none !important;
+    }
+    .istatistik-page {
+        margin: 0 !important;
+        background: #ffffff !important;
+    }
+}

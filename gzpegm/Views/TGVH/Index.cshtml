@@ -1,0 +1,82 @@
+@model IEnumerable <gzpegm.Models.E_TGVH>
+
+@{
+    Layout = "~/Views/Shared/_Master.cshtml";
+    ViewBag.UseSelect2 = true;
+}
+<section class="card">
+    <header class="card-header">
+        <div class="card-actions">
+            <a href="#" class="card-action card-action-toggle" data-card-toggle></a>
+        </div>
+        <h2 class="card-title">Aylık Ülke Harçları Listesi</h2>
+        <p class="card-subtitle">Bu bölümde aylık ülke harçları oluşturma ve düzenleme işlemi yapılabilir.</p>
+    </header>
+    <div class="card-body">
+        <table class="table table-bordered table-striped mb-0" id="datatable-default">
+            <thead>
+                <tr>
+                    <th>Yıl</th>
+                    <th>Miktar (TL)</th>
+                    <th>Eylemler</th>
+                </tr>
+            </thead>
+            <tbody>
+
+                @foreach (var data in Model)
+                {
+                    <tr>
+                        <td>@data.fldYear</td>
+                        <td>@data.fldPrice</td>
+                        <td class="actions">
+                            <a onclick="deletetgvh('@data.fldId')" class="btn btn-default"><i class="fas fa-trash-alt"></i></a>
+                        </td>
+                </tr>
+            }
+
+                </tbody>
+            </table>
+        <a class="modal-with-form btn btn-default" href="#AddTGVHmodalForm"><i class="fas fa-plus"></i>  Yeni Ekle</a>
+
+    </div>
+</section>
+<div id="AddTGVHmodalForm" class="modal-block modal-block-primary mfp-hide">
+    <section class="card">
+        <form method="post" action="/AddTGVH">
+            <header class="card-header">
+                <h2 class="card-title">Yeni Tek Giriş Vşze Harcı</h2>
+            </header>
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="form-group col-md-12">
+                        <label for="miktar">Miktar (TL)</label>
+                        <input type="text" maxlength="25" class="form-control" id="miktar" name="miktar" required>
+                    </div>
+                   
+                </div>
+                <div class="form-row">
+                    <div class="form-group col-md-12">
+                        <label for="tarihi">Tarihi</label>
+                        <div class="input-group">
+                            <span class="input-group-prepend">
+                                <span class="input-group-text">
+                                    <i class="fas fa-calendar-alt"></i>
+                                </span>
+                            </span>
+                            <input autocomplete="off" id="tarihi" name="tarihi" type="text" data-plugin-datepicker data-date-min-view-mode="years" data-plugin-options='{"format":"yyyy","autoclose":"true","weekStart":"1","language":"tr","orientation":"bottom"}' class="form-control">
+                        </div>
+                    </div>
+                </div>
+                </div>
+                <footer class="card-footer">
+                    <div class="row">
+                        <div class="col-md-12 text-right">
+                            <button type="submit" name="submit" value="Submit" class="btn btn-primary">Kaydet</button>
+                            <button class="btn btn-default modal-dismiss">Kapat</button>
+                        </div>
+                    </div>
+                </footer>
+</form>
+    </section>
+</div>
+

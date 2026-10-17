@@ -1,0 +1,327 @@
+﻿@model gzpegm.Models.E_Inad
+
+@{
+    Layout = null;
+
+    if (Model == null)
+    {
+        <p>Form verisi bulunamadı.</p>
+        return;
+    }
+
+    // Ad Soyad'ı ayır
+    string ad = "";
+    string soyad = "";
+    if (!string.IsNullOrWhiteSpace(Model.AdSoyad))
+    {
+        var adParcalari = Model.AdSoyad.Split(' ');
+        if (adParcalari.Length > 0)
+        {
+            soyad = adParcalari[0];
+            if (adParcalari.Length > 1)
+            {
+                // Ad kısmını birleştir
+                for (int i = 1; i < adParcalari.Length; i++)
+                {
+                    ad += adParcalari[i];
+                    if (i < adParcalari.Length - 1)
+                    {
+                        ad += " ";
+                    }
+                }
+            }
+        }
+    }
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Kabul Edilemez Yolcu Takip Formu</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 10pt;
+            margin: 10px;
+            line-height: 1.2;
+        }
+
+        .form-title {
+            font-weight: bold;
+            text-align: center;
+            font-size: 12pt;
+            margin-bottom: 15px;
+            text-decoration: underline;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 8px;
+        }
+
+        td {
+            padding: 3px 5px;
+            vertical-align: top;
+            border: 1px solid #000;
+        }
+
+        .label-cell {
+            font-weight: bold;
+            background-color: #f0f0f0;
+            width: 30%;
+        }
+
+        .value-cell {
+            width: 70%;
+        }
+
+        .sub-title {
+            font-weight: bold;
+            text-align: center;
+            background-color: #e0e0e0;
+            padding: 4px;
+        }
+
+        .dual-column-table {
+            width: 100%;
+            margin-top: 10px;
+        }
+
+            .dual-column-table td {
+                width: 50%;
+                border: 1px solid #000;
+            }
+
+        .section-title {
+            font-weight: bold;
+            margin-top: 10px;
+            margin-bottom: 5px;
+            border-bottom: 1px solid #000;
+            padding-bottom: 2px;
+        }
+
+        .notes-box {
+            width: 100%;
+            border: none; /* Çerçeve kaldırıldı */
+            margin-top: 5px;
+            padding: 6px;
+            box-sizing: border-box;
+            background: #fff;
+        }
+
+        /* Notlar için sıralı çizgiler (numaralı) */
+        .notes-list {
+            counter-reset: notes-counter;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+            .notes-list li {
+                counter-increment: notes-counter;
+                position: relative;
+                padding-left: 28px; /* numara için boşluk */
+                height: 1.6em;
+                line-height: 1.6em;
+                border-bottom: 0.5px solid #000; /* Çok ince çizgi */
+                margin-bottom: 4px;
+                font-size: 10pt;
+                color: #000;
+            }
+
+                .notes-list li::before {
+                    content: counter(notes-counter) ".";
+                    position: absolute;
+                    left: 6px;
+                    top: 0;
+                    width: 18px;
+                    text-align: right;
+                    font-weight: bold;
+                }
+
+        .companions-table {
+            width: 100%;
+            margin-top: 10px;
+        }
+
+            .companions-table td {
+                border: 1px solid #000;
+                padding: 5px;
+            }
+
+        .companion-number {
+            width: 30px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .companion-details {
+            text-align: center;
+        }
+
+        .inner-table {
+            width: 100%;
+            border: none;
+        }
+
+            .inner-table td {
+                border: none;
+                padding: 2px;
+            }
+
+        .inner-label {
+            width: 40%;
+            font-weight: bold;
+        }
+
+        /* Yeni: iki hücre arasındaki ':' sonrası değerler için 1 cm boşluk */
+        .inner-table td.colon {
+            text-align: center;
+            width: 10px;
+            padding-right: 0;
+        }
+
+        .inner-table td.value-after-colon {
+            padding-left: 1cm;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="form-title">KABUL EDİLEMEZ YOLCUNUN TAKİP FORMU</div>
+
+    <!-- Yolcu Bilgileri -->
+    <table>
+        <tr>
+            <td class="label-cell">Adı</td>
+            <td class="value-cell">@ad</td>
+        </tr>
+        <tr>
+            <td class="label-cell">Soyadı</td>
+            <td class="value-cell">@soyad</td>
+        </tr>
+        <tr>
+            <td class="label-cell">Doğum Tarihi</td>
+            <td class="value-cell">@(Model.DogumT?.ToString("dd.MM.yyyy") ?? "")</td>
+        </tr>
+        <tr>
+            <td class="label-cell">Doğum Yeri</td>
+            <td class="value-cell">@(Model.DogumY ?? "")</td>
+        </tr>
+        <tr>
+            <td class="label-cell">Ülkesi</td>
+            <td class="value-cell">@(Model.Uyruk ?? "")</td>
+        </tr>
+        <tr>
+            <td class="label-cell">Pasaport Numarası</td>
+            <td class="value-cell">@(Model.BelgeNo ?? "")</td>
+        </tr>
+        <tr>
+            <td class="label-cell">İnad Edilme Sebebi</td>
+            <td class="value-cell">@(Model.InadSebep ?? "")</td>
+        </tr>
+        <tr>
+            <td class="label-cell">Şirket Adı</td>
+            <td class="value-cell">@(Model.YerHizmetleri ?? "")</td>
+        </tr>
+    </table>
+
+    <!-- Geliş ve Gidiş Bilgileri -->
+    <div class="section-title">UÇUŞ BİLGİLERİ</div>
+
+    <table class="dual-column-table">
+        <tr>
+            <td class="sub-title">GELİŞ BİLGİLERİ</td>
+            <td class="sub-title">GİDİŞ BİLGİLERİ</td>
+        </tr>
+        <tr>
+            <td>
+                <table class="inner-table">
+                    <tr>
+                        <td class="inner-label">UÇAK ŞİRKETİ</td>
+                        <td class="colon">:</td>
+                        <td class="value-after-colon">@(Model.GelenHavayolu ?? "")</td>
+                    </tr>
+                    <tr>
+                        <td class="inner-label">SEFER NO</td>
+                        <td class="colon">:</td>
+                        <td class="value-after-colon">@(Model.GelenUcusNo ?? "")</td>
+                    </tr>
+                    <tr>
+                        <td class="inner-label">GELDİĞİ ÜLKE</td>
+                        <td class="colon">:</td>
+                        <td class="value-after-colon">@(Model.GeldigiYer ?? "")</td>
+                    </tr>
+                    <tr>
+                        <td class="inner-label">SAAT</td>
+                        <td class="colon">:</td>
+                        <td class="value-after-colon">@(Model.GeldigiTarihSaat?.ToString("HH:mm") ?? "")</td>
+                    </tr>
+                    <tr>
+                        <td class="inner-label">TARİH</td>
+                        <td class="colon">:</td>
+                        <td class="value-after-colon">@(Model.GeldigiTarihSaat?.ToString("dd.MM.yyyy") ?? "")</td>
+                    </tr>
+                </table>
+            </td>
+            <td>
+                <table class="inner-table">
+                    <tr>
+                        <td class="inner-label">UÇAK ŞİRKETİ</td>
+                        <td class="colon">:</td>
+                        <td class="value-after-colon">@(Model.GidenHavayolu ?? "")</td>
+                    </tr>
+                    <tr>
+                        <td class="inner-label">SEFER NO</td>
+                        <td class="colon">:</td>
+                        <td class="value-after-colon">@(Model.GidisUcusNo ?? "")</td>
+                    </tr>
+                    <tr>
+                        <td class="inner-label">GİTTİĞİ ÜLKE</td>
+                        <td class="colon">:</td>
+                        <td class="value-after-colon">@(Model.GidisYer ?? "")</td>
+                    </tr>
+                    <tr>
+                        <td class="inner-label">SAAT</td>
+                        <td class="colon">:</td>
+                        <td class="value-after-colon">@(Model.GidisTarihSaat?.ToString("HH:mm") ?? "")</td>
+                    </tr>
+                    <tr>
+                        <td class="inner-label">TARİH</td>
+                        <td class="colon">:</td>
+                        <td class="value-after-colon">@(Model.GidisTarihSaat?.ToString("dd.MM.yyyy") ?? "")</td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- Birlikte Dönen Şahıslar -->
+    <div class="section-title">KABUL EDİLEMEZ YOLCUYLA BİRLİKTE KENDİ İSTEKLERİ İLE GERİ DÖNMEK İSTEYEN ŞAHISLAR</div>
+
+    <table class="companions-table">
+        <tr>
+            <td class="companion-number">1-</td>
+            <td class="companion-details">@Model.Refakat</td>
+        </tr>
+    </table>
+
+    <!-- Notlar -->
+    <div class="section-title">NOTLAR</div>
+    <div class="notes-box">
+        <ol class="notes-list">
+            @for (int i = 0; i < 15; i++)
+            {
+                <li></li>
+            }
+        </ol>
+    </div>
+
+</body>
+</html>
+
+<script>
+    window.print();
+</script>

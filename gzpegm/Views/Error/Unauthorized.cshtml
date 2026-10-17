@@ -1,0 +1,23 @@
+@{
+    Layout = "~/Views/Shared/_Master.cshtml";
+    ViewBag.Title = "Oturum Açılmadı";
+}
+
+<section class="card">
+    <header class="card-header">
+        <h2 class="card-title"><i class="fas fa-user-lock"></i> 401 - Oturum Açılmadı</h2>
+    </header>
+    <div class="card-body">
+        <div class="alert alert-info">
+            <strong>Bilgi!</strong> Bu işlem için oturum açmanız gereklidir.
+        </div>
+        <p class="lead">
+            Lütfen giriş yapınız veya hesabınız yoksa kaydolunuz.
+        </p>
+        <p>
+            <a href="@Url.Action("Index", "Giris")" class="btn btn-primary btn-lg">
+                <i class="fas fa-sign-in-alt"></i> Giriş Yap
+            </a>
+        </p>
+    </div>
+</section>

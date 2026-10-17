@@ -1,0 +1,1122 @@
+@model gzpegm.Models.ViewModels.CourseViewModel
+@using System
+@using System.Collections.Generic
+@using System.IO
+@using System.Linq
+@using System.Text.RegularExpressions
+@using System.Web
+@{
+    ViewBag.Title = (Model != null ? Model.CourseTitle : "Kurs") + " - Kurs Detayı";
+    Layout = "~/Views/Shared/_Master.cshtml";
+
+    var currentUser = ViewBag.CurrentUser as gzpegm.Models.E_User;
+    bool canManage = ViewBag.CanManageCourse is bool && (bool)ViewBag.CanManageCourse;
+    if (!canManage && currentUser != null)
+    {
+        canManage = string.Equals(currentUser.Role, "Admin", StringComparison.OrdinalIgnoreCase) ||
+                    (string.Equals(currentUser.Role, "Teacher", StringComparison.OrdinalIgnoreCase) && Model.CreatedBy == currentUser.fldId);
+    }
+
+    var detailExams = new List<gzpegm.Models.ViewModels.ExamViewModel>();
+    if (ViewBag.CourseExams is IEnumerable<gzpegm.Models.ViewModels.ExamViewModel> detailExamSource)
+    {
+        detailExams = detailExamSource as List<gzpegm.Models.ViewModels.ExamViewModel> ?? new List<gzpegm.Models.ViewModels.ExamViewModel>(detailExamSource);
+    }
+
+    var detailContents = Model.Contents ?? new List<gzpegm.Models.CourseContents>();
+    var sortedContents = detailContents.OrderBy(c => c.CreatedDate ?? DateTime.MinValue).ToList();
+    var firstContent = sortedContents.FirstOrDefault();
+
+    var detailQuestionCount = detailExams.Sum(e => e.QuestionCount);
+    var detailCompletedExamCount = detailExams.Count(e => e.ExamResultId.HasValue);
+    var detailIntro = ToPlainText(Model.CourseDescription, 320);
+
+    bool allExamsDone = ViewBag.AllExamsCompleted is bool && (bool)ViewBag.AllExamsCompleted;
+    byte certStatus = ViewBag.CertificateStatus is byte ? (byte)ViewBag.CertificateStatus : (byte)255;
+}
+
+<div class="course-details-container">
+
+    <!-- ÜST NAVİGASYON / BREADCRUMB -->
+    <div class="details-nav-bar mb-3">
+        <div class="row align-items-center">
+            <div class="col-md-7">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb bg-transparent p-0 mb-0">
+                        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Dashboard")"><i class="fas fa-home"></i> Ana Sayfa</a></li>
+                        @if (canManage)
+                        {
+                            <li class="breadcrumb-item"><a href="@Url.Action("Index", "Course")">Eğitim Yönetimi</a></li>
+                        }
+                        else
+                        {
+                            <li class="breadcrumb-item"><a href="@Url.Action("StudentIndex", "Course")">Kurslarım</a></li>
+                        }
+                        <li class="breadcrumb-item active text-truncate font-weight-bold" style="max-width: 320px;" aria-current="page">@Model.CourseTitle</li>
+                    </ol>
+                </nav>
+            </div>
+            <div class="col-md-5 text-md-right mt-2 mt-md-0">
+                <div class="btn-group btn-group-sm shadow-sm" role="group">
+                    @if (canManage)
+                    {
+                        <a href="@Url.Action("ManageContents", "Course", new { courseId = Model.CourseId })" class="btn btn-primary font-weight-bold">
+                            <i class="fas fa-folder-open mr-1"></i> İçerikleri Yönet
+                        </a>
+                        <a href="@Url.Action("Index", "Course")" class="btn btn-outline-secondary">
+                            <i class="fas fa-th-large mr-1"></i> Tüm Dersler
+                        </a>
+                    }
+                    else
+                    {
+                        <a href="@Url.Action("StudentIndex", "Course")" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left mr-1"></i> Kurslarıma Dön
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BİLDİRİM MESAJLARI -->
+    @if (TempData["msgSuccess"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm mb-4" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-check-circle fa-lg mr-2 text-success"></i>
+                <div>
+                    <strong>İşlem Başarılı!</strong> @TempData["msgSuccess"]
+                </div>
+            </div>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Kapat">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+    @if (TempData["msgError"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-4" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-exclamation-triangle fa-lg mr-2 text-danger"></i>
+                <div>
+                    <strong>Uyarı:</strong> @TempData["msgError"]
+                </div>
+            </div>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Kapat">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
+    <!-- HERO BANNER -->
+    <div class="course-hero-banner mb-4">
+        <div class="row align-items-center">
+            <div class="col-lg-8 col-md-7">
+                <div class="d-flex align-items-start">
+                    <div class="hero-icon-box mr-3 d-none d-sm-flex">
+                        <i class="fas fa-book-reader"></i>
+                    </div>
+                    <div>
+                        <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                            <span class="badge badge-category mr-2">
+                                <i class="fas fa-tag mr-1"></i> @Model.CategoryName
+                            </span>
+                            @if (Model.IsActive)
+                            {
+                                <span class="badge badge-status-active mr-2">
+                                    <i class="fas fa-check-circle mr-1"></i> Yayında
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-status-passive mr-2">
+                                    <i class="fas fa-eye-slash mr-1"></i> Taslak / Pasif
+                                </span>
+                            }
+                            @if (Model.CreatedDate.HasValue)
+                            {
+                                <span class="badge badge-date">
+                                    <i class="far fa-calendar-alt mr-1"></i> @Model.CreatedDate.Value.ToString("dd.MM.yyyy")
+                                </span>
+                            }
+                        </div>
+                        <h2 class="hero-title mb-2">@Model.CourseTitle</h2>
+                        <p class="hero-desc mb-0">
+                            @(string.IsNullOrWhiteSpace(detailIntro) ? "Bu eğitim paketi için hazırlanan interaktif dersleri, dokümanları ve sınavları aşağıdan inceleyebilirsiniz." : detailIntro)
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4 col-md-5 text-md-right mt-3 mt-md-0">
+                <div class="hero-action-group">
+                    @if (firstContent != null)
+                    {
+                        <a href="@Url.Action("ContentDetail", "Course", new { id = firstContent.ContentId })" class="btn btn-warning btn-lg btn-start-course shadow-sm">
+                            <i class="fas fa-play-circle mr-2"></i> Eğitime Başla
+                        </a>
+                    }
+                    @if (canManage)
+                    {
+                        <div class="mt-2">
+                            <a href="@Url.Action("ManageContents", "Course", new { courseId = Model.CourseId })" class="btn btn-outline-light btn-sm">
+                                <i class="fas fa-edit mr-1"></i> İçerikleri Düzenle (@detailContents.Count)
+                            </a>
+                        </div>
+                    }
+                    @if (currentUser != null && !string.Equals(currentUser.Role, "Admin", StringComparison.OrdinalIgnoreCase) && !string.Equals(currentUser.Role, "Teacher", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <div class="mt-2">
+                            <form id="teacherRequestFormCourse" style="display:inline;">@Html.AntiForgeryToken()</form>
+                            <button id="teacherRequestBtnCourse" type="button" class="btn btn-outline-light btn-sm">
+                                <i class="fas fa-user-tie mr-1"></i> Eğitmen Olmak İçin Başvur
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- İSTATİSTİK METRİK KARTLARI -->
+    <div class="row stat-cards-row mb-4">
+        <div class="col-xl-3 col-sm-6 mb-3 mb-xl-0">
+            <div class="metric-card stat-blue">
+                <div class="metric-icon">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+                <div class="metric-body">
+                    <div class="metric-value">@detailContents.Count</div>
+                    <div class="metric-label">Ders & İçerik Sayısı</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-sm-6 mb-3 mb-xl-0">
+            <div class="metric-card stat-purple">
+                <div class="metric-icon">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <div class="metric-body">
+                    <div class="metric-value">@detailExams.Count</div>
+                    <div class="metric-label">Kursa Ait Sınav</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-sm-6 mb-3 mb-xl-0">
+            <div class="metric-card stat-teal">
+                <div class="metric-icon">
+                    <i class="fas fa-question-circle"></i>
+                </div>
+                <div class="metric-body">
+                    <div class="metric-value">@detailQuestionCount</div>
+                    <div class="metric-label">Toplam Soru Sayısı</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-sm-6 mb-3 mb-xl-0">
+            <div class="metric-card stat-emerald">
+                <div class="metric-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="metric-body">
+                    <div class="metric-value">@detailCompletedExamCount / @Math.Max(1, detailExams.Count)</div>
+                    <div class="metric-label">Tamamlanan Sınav</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ANA İÇERİK IZGARASI: SOL (8 KOLON) - SAĞ (4 KOLON) -->
+    <div class="row">
+        <!-- SOL KOLON: KURS DETAYI, MÜFREDAT VE YORUMLAR -->
+        <div class="col-lg-8">
+
+            <!-- KURS AÇIKLAMASI KARTI -->
+            <div class="card detail-content-card mb-4 shadow-sm">
+                <div class="card-header bg-white border-bottom py-3">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <h5 class="card-title mb-0 font-weight-bold text-dark">
+                            <i class="fas fa-info-circle text-primary mr-2"></i> Kurs Hakkında ve Açıklama
+                        </h5>
+                        @if (!string.IsNullOrEmpty(Model.ResourceFilePath))
+                        {
+                            <a href="@Model.ResourceFilePath" target="_blank" class="btn btn-xs btn-outline-info" download>
+                                <i class="fas fa-download mr-1"></i> Kaynak Dosyayı İndir
+                            </a>
+                        }
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if (!string.IsNullOrEmpty(Model.CoverImagePath))
+                    {
+                        <div class="course-cover-preview mb-3 text-center">
+                            <img src="@Model.CoverImagePath" alt="@Model.CourseTitle" class="img-fluid rounded shadow-sm" style="max-height: 280px; width: 100%; object-fit: cover;" onerror="this.style.display='none';" />
+                        </div>
+                    }
+
+                    <div class="course-description-text">
+                        @if (!string.IsNullOrWhiteSpace(Model.CourseDescription))
+                        {
+                            @Html.Raw(Model.CourseDescription)
+                        }
+                        else
+                        {
+                            <p class="text-muted font-italic mb-0">Bu kurs için henüz detaylı bir açıklama girilmemiş.</p>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- EĞİTİM PAKETİ İÇERİĞİ / MÜFREDAT -->
+            <div class="card detail-content-card mb-4 shadow-sm">
+                <div class="card-header bg-white border-bottom py-3">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <h5 class="card-title mb-0 font-weight-bold text-dark">
+                                <i class="fas fa-list-ul text-primary mr-2"></i> Eğitim Paketi İçeriği
+                            </h5>
+                            <span class="badge badge-pill badge-primary ml-2 px-2 py-1 font-weight-normal">@sortedContents.Count Ders</span>
+                        </div>
+                        @if (canManage)
+                        {
+                            <a href="@Url.Action("ManageContents", "Course", new { courseId = Model.CourseId })" class="btn btn-xs btn-primary font-weight-bold">
+                                <i class="fas fa-plus-circle mr-1"></i> Yeni İçerik Ekle
+                            </a>
+                        }
+                    </div>
+                </div>
+                <div class="card-body p-3">
+                    @if (sortedContents.Count > 0)
+                    {
+                        <div class="content-curriculum-list">
+                            @{ int counter = 1; }
+                            @foreach (var item in sortedContents)
+                            {
+                                var badgeClass = GetContentBadgeClass(item.ContentType);
+                                var typeName = GetContentTypeName(item.ContentType);
+                                var iconClass = GetContentIcon(item.ContentType);
+
+                                <div class="curriculum-item d-flex align-items-center justify-content-between p-3 mb-2 rounded border">
+                                    <div class="d-flex align-items-center flex-grow-1 mr-3">
+                                        <div class="curriculum-number-box mr-3 text-muted font-weight-bold">
+                                            #@counter
+                                        </div>
+                                        <div class="curriculum-icon-badge mr-3 @badgeClass">
+                                            <i class="fas @iconClass"></i>
+                                        </div>
+                                        <div class="curriculum-text-info">
+                                            <a href="@Url.Action("ContentDetail", "Course", new { id = item.ContentId })" class="curriculum-link text-dark font-weight-bold text-decoration-none d-block">
+                                                @item.ContentTitle
+                                            </a>
+                                            <div class="curriculum-meta small text-muted mt-1">
+                                                <span class="badge badge-light border mr-2">@typeName</span>
+                                                @if (item.CreatedDate.HasValue)
+                                                {
+                                                    <span class="mr-2"><i class="far fa-clock mr-1"></i> @item.CreatedDate.Value.ToString("dd.MM.yyyy HH:mm")</span>
+                                                }
+                                                @if (!string.IsNullOrWhiteSpace(item.ContentDescription))
+                                                {
+                                                    <span class="d-none d-md-inline text-truncate" style="max-width: 320px;">
+                                                        - @ToPlainText(item.ContentDescription, 80)
+                                                    </span>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="curriculum-action flex-shrink-0">
+                                        <a href="@Url.Action("ContentDetail", "Course", new { id = item.ContentId })" class="btn btn-sm btn-outline-primary px-3 font-weight-bold">
+                                            <i class="fas fa-external-link-alt mr-1"></i> İncele
+                                        </a>
+                                    </div>
+                                </div>
+                                counter++;
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <div class="mb-3 text-muted">
+                                <i class="fas fa-folder-open fa-3x"></i>
+                            </div>
+                            <h6 class="font-weight-bold text-dark">Bu kursta henüz eğitim içeriği bulunmuyor.</h6>
+                            <p class="text-muted small mb-3">Bu kursa ait ders metinleri, mevzuat maddeleri veya multimedya materyalleri eklendiğinde burada listelenecektir.</p>
+                            @if (canManage)
+                            {
+                                <a href="@Url.Action("ManageContents", "Course", new { courseId = Model.CourseId })" class="btn btn-primary btn-sm font-weight-bold">
+                                    <i class="fas fa-plus-circle mr-1"></i> İlk İçeriği Ekle
+                                </a>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- KURS YORUMLARI VE DEĞERLENDİRME -->
+            <div class="card detail-content-card mb-4 shadow-sm">
+                <div class="card-header bg-white border-bottom py-3">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <h5 class="card-title mb-0 font-weight-bold text-dark">
+                                <i class="fas fa-comments text-primary mr-2"></i> Kurs Değerlendirmeleri
+                            </h5>
+                            @if (Model.ApprovedReviews != null && Model.ApprovedReviews.Count > 0)
+                            {
+                                <span class="badge badge-pill badge-warning text-dark ml-2 px-2 py-1 font-weight-bold">
+                                    <i class="fas fa-star mr-1"></i> @Model.ApprovedReviews.Count Yorum
+                                </span>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- YORUM EKLEME FORMU -->
+                    <div class="review-form-wrapper p-3 mb-4 rounded bg-light border">
+                        <h6 class="font-weight-bold text-dark mb-2">
+                            <i class="fas fa-pen-alt text-muted mr-1"></i> Bu Kursu Değerlendirin
+                        </h6>
+                        <p class="small text-muted mb-3">
+                            <i class="fas fa-info-circle text-info"></i> Yaptığınız değerlendirmeler sistem yöneticisi onayından sonra diğer kursiyerlere görünür.
+                        </p>
+
+                        <form method="post" action="@Url.Action("AddReview", "Course")">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="courseId" value="@Model.CourseId" />
+
+                            <div class="form-row">
+                                <div class="form-group col-md-4">
+                                    <label for="rating" class="small font-weight-bold text-dark">Puanınız <span class="text-danger">*</span></label>
+                                    <select name="rating" id="rating" class="form-control form-control-sm custom-select" required>
+                                        <option value="">Puan Seçiniz...</option>
+                                        <option value="5" selected>⭐⭐⭐⭐⭐ 5 - Mükemmel</option>
+                                        <option value="4">⭐⭐⭐⭐ 4 - Çok İyi</option>
+                                        <option value="3">⭐⭐⭐ 3 - İyi</option>
+                                        <option value="2">⭐⭐ 2 - Orta</option>
+                                        <option value="1">⭐ 1 - Geliştirilmeli</option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-8">
+                                    <label for="comment" class="small font-weight-bold text-dark">Yorumunuz <span class="text-danger">*</span></label>
+                                    <textarea name="comment" id="comment" class="form-control form-control-sm" rows="3" maxlength="1000" placeholder="Eğitim içeriği, faydası ve anlatımı hakkındaki görüşleriniz..." required></textarea>
+                                    <div class="d-flex justify-content-between align-items-center mt-1">
+                                        <small class="text-muted">En az 10, en fazla 1000 karakter</small>
+                                        <button type="submit" class="btn btn-sm btn-primary px-3 font-weight-bold">
+                                            <i class="fas fa-paper-plane mr-1"></i> Gönder
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- YAYINLANAN YORUMLAR LİSTESİ -->
+                    @if (Model.ApprovedReviews != null && Model.ApprovedReviews.Count > 0)
+                    {
+                        <div class="reviews-list">
+                            @foreach (var r in Model.ApprovedReviews)
+                            {
+                                var replyMarker = "[[ADMIN_REPLY]]";
+                                string fullComment = r.Comment ?? "";
+                                string mainComment = fullComment;
+                                string replyMeta = null;
+                                if (fullComment.Contains(replyMarker))
+                                {
+                                    var parts = fullComment.Split(new[] { replyMarker }, 2, System.StringSplitOptions.None);
+                                    mainComment = parts[0].Trim();
+                                    replyMeta = parts[1];
+                                }
+
+                                <div class="review-item card mb-3 border-left-primary shadow-none bg-white">
+                                    <div class="card-body p-3">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <div class="d-flex align-items-center">
+                                                <div class="user-avatar-circle mr-2">
+                                                    @(string.IsNullOrWhiteSpace(r.UserFullName) ? "U" : r.UserFullName.Substring(0, 1).ToUpper())
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0 font-weight-bold text-dark" style="font-size: 0.95rem;">@r.UserFullName</h6>
+                                                    <small class="text-muted">
+                                                        <i class="far fa-calendar-alt mr-1"></i> @r.CreatedDate.ToString("dd MMMM yyyy HH:mm", new System.Globalization.CultureInfo("tr-TR"))
+                                                    </small>
+                                                </div>
+                                            </div>
+                                            <div class="rating-stars text-warning small font-weight-bold">
+                                                @for (int i = 1; i <= 5; i++)
+                                                {
+                                                    if (i <= r.Rating)
+                                                    {
+                                                        <i class="fas fa-star"></i>
+                                                    }
+                                                    else
+                                                    {
+                                                        <i class="far fa-star text-muted"></i>
+                                                    }
+                                                }
+                                                <span class="text-dark ml-1">(@r.Rating.ToString("0.0"))</span>
+                                            </div>
+                                        </div>
+
+                                        <p class="review-text text-dark mb-2" style="font-size: 0.92rem; line-height: 1.5;">
+                                            @Html.Raw(System.Web.HttpUtility.HtmlEncode(mainComment).Replace("\n", "<br/>"))
+                                        </p>
+
+                                        @if (!string.IsNullOrEmpty(replyMeta))
+                                        {
+                                            var metaParts = replyMeta.Split(new[] { "||" }, 3, System.StringSplitOptions.None);
+                                            var adminName = metaParts.Length > 0 ? metaParts[0] : "Yönetici";
+                                            var dateStr = metaParts.Length > 1 ? metaParts[1] : "";
+                                            var replyText = metaParts.Length > 2 ? metaParts[2] : "";
+                                            DateTime replyDate;
+                                            bool parsed = DateTime.TryParse(dateStr, out replyDate);
+
+                                            <div class="admin-reply-box p-2 mt-2 rounded border bg-light">
+                                                <div class="d-flex align-items-center mb-1 text-primary small font-weight-bold">
+                                                    <i class="fas fa-reply fa-flip-horizontal mr-1"></i>
+                                                    <span>@adminName</span>
+                                                    <span class="text-muted font-weight-normal ml-2">(@(parsed ? replyDate.ToString("dd.MM.yyyy HH:mm") : dateStr))</span>
+                                                </div>
+                                                <p class="mb-0 text-dark small">
+                                                    @Html.Raw(System.Web.HttpUtility.HtmlEncode(replyText).Replace("\n", "<br/>"))
+                                                </p>
+                                            </div>
+                                        }
+
+                                        @if (canManage)
+                                        {
+                                            <div class="mt-2 text-right">
+                                                <button type="button" class="btn btn-xs btn-outline-secondary" onclick="$('#replyBox_@r.ReviewId').slideToggle(150);">
+                                                    <i class="fas fa-reply mr-1"></i> Cevap Yaz
+                                                </button>
+                                                <div id="replyBox_@r.ReviewId" class="reply-input-wrap mt-2 text-left" style="display:none;">
+                                                    <form method="post" action="@Url.Action("ReplyReview", "Course")">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="reviewId" value="@r.ReviewId" />
+                                                        <input type="hidden" name="courseId" value="@Model.CourseId" />
+                                                        <div class="form-group mb-2">
+                                                            <textarea name="replyText" class="form-control form-control-sm" rows="2" maxlength="1000" placeholder="Kursiyere verilecek kurumsal cevabı yazın..." required></textarea>
+                                                        </div>
+                                                        <button type="submit" class="btn btn-xs btn-primary font-weight-bold">
+                                                            <i class="fas fa-check mr-1"></i> Yanıtı Yayınla
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4 text-muted">
+                            <i class="far fa-comment-dots fa-2x mb-2 d-block text-secondary"></i>
+                            <span class="small">Henüz bu kurs için onaylanmış bir yorum bulunmuyor. İlk değerlendirmeyi siz yapın!</span>
+                        </div>
+                    }
+                </div>
+            </div>
+
+        </div>
+
+        <!-- SAĞ KOLON: SINAVLAR, SERTİFİKA VE KURS BİLGİLERİ -->
+        <div class="col-lg-4">
+
+            <!-- SINAVLAR KARTI -->
+            <div class="card detail-content-card mb-4 shadow-sm">
+                <div class="card-header bg-white border-bottom py-3">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <h5 class="card-title mb-0 font-weight-bold text-dark">
+                            <i class="fas fa-graduation-cap text-warning mr-2"></i> Kurs Sınavları
+                        </h5>
+                        <span class="badge badge-pill badge-warning text-dark font-weight-bold">@detailExams.Count Sınav</span>
+                    </div>
+                </div>
+                <div class="card-body p-3">
+                    @if (detailExams.Count > 0)
+                    {
+                        <div class="exam-items-list">
+                            @foreach (var exam in detailExams)
+                            {
+                                <div class="exam-box p-3 mb-3 rounded border">
+                                    <div class="d-flex align-items-start justify-content-between mb-2">
+                                        <h6 class="font-weight-bold text-dark mb-0" style="font-size: 0.95rem;">
+                                            <i class="fas fa-file-signature text-warning mr-1"></i> @exam.ExamTitle
+                                        </h6>
+                                    </div>
+                                    @if (!string.IsNullOrWhiteSpace(exam.ExamDescription))
+                                    {
+                                        <p class="small text-muted mb-2">@exam.ExamDescription</p>
+                                    }
+                                    <div class="exam-meta-grid small text-muted mb-3 py-2 border-top border-bottom bg-light rounded px-2">
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <span><i class="far fa-clock text-info mr-1"></i> Süre:</span>
+                                            <strong class="text-dark">@exam.Duration dk</strong>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <span><i class="fas fa-tasks text-primary mr-1"></i> Soru Sayısı:</span>
+                                            <strong class="text-dark">@exam.QuestionCount adet</strong>
+                                        </div>
+                                        <div class="d-flex justify-content-between">
+                                            <span><i class="fas fa-award text-warning mr-1"></i> Geçme Notu:</span>
+                                            <strong class="text-dark">%@exam.PassingScore</strong>
+                                        </div>
+                                    </div>
+
+                                    @if (exam.ExamResultId.HasValue)
+                                    {
+                                        <a href="@Url.Action("ExamResult", "StudentExam", new { id = exam.ExamResultId.Value })" class="btn btn-info btn-sm btn-block font-weight-bold shadow-sm">
+                                            <i class="fas fa-chart-pie mr-1"></i> Sınav Sonucunu Gör
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <a href="@Url.Action("StartExam", "StudentExam", new { id = exam.ExamId })" class="btn btn-success btn-sm btn-block font-weight-bold shadow-sm">
+                                            <i class="fas fa-play mr-1"></i> Sınava Başla
+                                        </a>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4 text-muted">
+                            <i class="fas fa-clipboard-check fa-2x mb-2 d-block text-secondary"></i>
+                            <h6 class="font-weight-bold text-dark small mb-1">Aktif Sınav Bulunmuyor</h6>
+                            <p class="small text-muted mb-0">Bu kurs için şu anda tanımlı bir değerlendirme sınavı yer almamaktadır.</p>
+                        </div>
+                    }
+
+                    <div class="alert alert-light border small text-muted mt-2 mb-0">
+                        <i class="fas fa-lightbulb text-warning mr-1"></i>
+                        <strong>Bilgi:</strong> Sınav esnasında verdiğiniz cevaplar anlık olarak sisteme kaydedilir.
+                    </div>
+                </div>
+            </div>
+
+            <!-- SERTİFİKA KARTI -->
+            <div class="card detail-content-card mb-4 shadow-sm text-center">
+                <div class="card-header bg-white border-bottom py-3 text-left">
+                    <h5 class="card-title mb-0 font-weight-bold text-dark">
+                        <i class="fas fa-certificate text-warning mr-2"></i> Başarı Sertifikası
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    @if (certStatus == 1)
+                    {
+                        <div class="cert-status-badge text-success mb-2">
+                            <i class="fas fa-award fa-3x"></i>
+                        </div>
+                        <h6 class="font-weight-bold text-success mb-1">Tebrikler, Sertifikanız Hazır!</h6>
+                        <p class="small text-muted mb-3">Bu eğitimi başarıyla tamamladınız ve sertifikanız düzenlendi.</p>
+                        <a href="@Url.Action("MyCertificates", "Certificate")" class="btn btn-success btn-sm btn-block font-weight-bold">
+                            <i class="fas fa-download mr-1"></i> Sertifikamı Görüntüle
+                        </a>
+                    }
+                    else if (certStatus == 0)
+                    {
+                        <div class="cert-status-badge text-warning mb-2">
+                            <i class="fas fa-hourglass-half fa-3x"></i>
+                        </div>
+                        <h6 class="font-weight-bold text-warning mb-1">Talebiniz İnceleniyor</h6>
+                        <p class="small text-muted mb-0">Sertifika talebiniz yöneticiler tarafından kontrol edildikten sonra onaylanacaktır.</p>
+                    }
+                    else if (certStatus == 2)
+                    {
+                        <div class="cert-status-badge text-danger mb-2">
+                            <i class="fas fa-times-circle fa-3x"></i>
+                        </div>
+                        <h6 class="font-weight-bold text-danger mb-1">Sertifika Talebi Onaylanmadı</h6>
+                        <p class="small text-muted mb-0">Eksik sınav veya değerlendirme nedeniyle sertifika oluşturulamadı.</p>
+                    }
+                    else if (allExamsDone)
+                    {
+                        <div class="cert-status-badge text-primary mb-2">
+                            <i class="fas fa-user-graduate fa-3x"></i>
+                        </div>
+                        <h6 class="font-weight-bold text-dark mb-1">Sertifika Almaya Hak Kazandınız!</h6>
+                        <p class="small text-muted mb-3">Tüm sınavları başarıyla tamamladınız. Hemen sertifikanızı talep edebilirsiniz.</p>
+                        <form method="post" action="@Url.Action("RequestCertificate", "Course")" onsubmit="return confirm('Sertifika talebinde bulunmak istediğinize emin misiniz?');">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="courseId" value="@Model.CourseId" />
+                            <button type="submit" class="btn btn-primary btn-sm btn-block font-weight-bold shadow-sm">
+                                <i class="fas fa-stamp mr-1"></i> Sertifika Talep Et
+                            </button>
+                        </form>
+                    }
+                    else
+                    {
+                        int completedCount = detailExams.Count(e => e.ExamResultId.HasValue);
+                        int totalCount = detailExams.Count;
+                        <div class="cert-status-badge text-muted mb-2">
+                            <i class="fas fa-lock fa-3x"></i>
+                        </div>
+                        <h6 class="font-weight-bold text-secondary mb-1">Sertifika Kilitli</h6>
+                        <p class="small text-muted mb-2">Sertifika alabilmek için bu kursa ait tüm sınavları başarıyla tamamlamalısınız.</p>
+                        if (totalCount > 0)
+                        {
+                            <div class="progress mb-2" style="height: 10px; border-radius: 6px;">
+                                <div class="progress-bar bg-primary progress-bar-striped progress-bar-animated" role="progressbar" style="width: @(completedCount * 100 / totalCount)%;"></div>
+                            </div>
+                            <small class="text-muted font-weight-bold">@completedCount / @totalCount sınav tamamlandı</small>
+                        }
+                    }
+                </div>
+            </div>
+
+            <!-- KURS ÖZET BİLGİ KARTI -->
+            <div class="card detail-content-card mb-4 shadow-sm">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h5 class="card-title mb-0 font-weight-bold text-dark">
+                        <i class="fas fa-info-circle text-primary mr-2"></i> Kurs Özeti
+                    </h5>
+                </div>
+                <div class="card-body p-3">
+                    <ul class="list-group list-group-flush small">
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
+                            <span class="text-muted"><i class="fas fa-tag mr-2 text-secondary"></i> Kategori:</span>
+                            <span class="font-weight-bold text-dark">@Model.CategoryName</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
+                            <span class="text-muted"><i class="fas fa-layer-group mr-2 text-secondary"></i> Toplam İçerik:</span>
+                            <span class="font-weight-bold text-dark">@detailContents.Count Ders</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
+                            <span class="text-muted"><i class="fas fa-graduation-cap mr-2 text-secondary"></i> Sınav Sayısı:</span>
+                            <span class="font-weight-bold text-dark">@detailExams.Count Sınav</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
+                            <span class="text-muted"><i class="fas fa-calendar-alt mr-2 text-secondary"></i> Yayın Tarihi:</span>
+                            <span class="font-weight-bold text-dark">@(Model.CreatedDate.HasValue ? Model.CreatedDate.Value.ToString("dd.MM.yyyy") : "-")</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
+                            <span class="text-muted"><i class="fas fa-toggle-on mr-2 text-secondary"></i> Durum:</span>
+                            @if (Model.IsActive)
+                            {
+                                <span class="badge badge-success px-2 py-1"><i class="fas fa-check mr-1"></i> Yayında</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-secondary px-2 py-1"><i class="fas fa-pause mr-1"></i> Pasif</span>
+                            }
+                        </li>
+                    </ul>
+
+                    @if (canManage)
+                    {
+                        <div class="mt-3 pt-3 border-top">
+                            <a href="@Url.Action("ManageContents", "Course", new { courseId = Model.CourseId })" class="btn btn-outline-primary btn-sm btn-block font-weight-bold">
+                                <i class="fas fa-cogs mr-1"></i> İçerikleri & Müfredatı Yönet
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+@functions {
+    public string ToPlainText(string html, int maxLength)
+    {
+        if (string.IsNullOrWhiteSpace(html))
+            return "";
+
+        var text = Regex.Replace(html, "<[^>]+>", " ");
+        text = HttpUtility.HtmlDecode(text ?? "");
+        text = Regex.Replace(text, "\\s+", " ").Trim();
+
+        if (text.Length <= maxLength)
+            return text;
+
+        return text.Substring(0, Math.Max(0, maxLength - 3)).TrimEnd() + "...";
+    }
+
+    public string GetContentIcon(string contentType)
+    {
+        if (string.IsNullOrEmpty(contentType))
+            return "fa-file-alt";
+
+        string type = contentType.ToLower().Trim();
+
+        if (type == "video" || type == "mp4" || type == "webm") return "fa-video";
+        if (type == "pdf") return "fa-file-pdf";
+        if (type == "document" || type == "doc" || type == "docx") return "fa-file-word";
+        if (type == "presentation" || type == "ppt" || type == "pptx") return "fa-file-powerpoint";
+        if (type == "spreadsheet" || type == "xls" || type == "xlsx") return "fa-file-excel";
+        if (type == "image" || type == "jpg" || type == "jpeg" || type == "png" || type == "gif") return "fa-file-image";
+        if (type == "audio" || type == "mp3" || type == "wav") return "fa-file-audio";
+        if (type == "archive" || type == "zip" || type == "rar") return "fa-file-archive";
+        if (type == "html" || type == "mevzuat" || type == "kanun") return "fa-file-code";
+
+        return "fa-file-alt";
+    }
+
+    public string GetContentBadgeClass(string contentType)
+    {
+        if (string.IsNullOrEmpty(contentType))
+            return "badge-icon-default";
+
+        string type = contentType.ToLower().Trim();
+
+        if (type == "video" || type == "mp4") return "badge-icon-purple";
+        if (type == "pdf") return "badge-icon-red";
+        if (type == "document" || type == "doc" || type == "docx") return "badge-icon-blue";
+        if (type == "html" || type == "mevzuat" || type == "kanun") return "badge-icon-cyan";
+        if (type == "image" || type == "jpg" || type == "png") return "badge-icon-green";
+
+        return "badge-icon-default";
+    }
+
+    public string GetContentTypeName(string contentType)
+    {
+        if (string.IsNullOrEmpty(contentType))
+            return "Ders İçeriği";
+
+        string type = contentType.ToLower().Trim();
+
+        if (type == "video") return "Video Ders";
+        if (type == "pdf") return "PDF Belgesi";
+        if (type == "document" || type == "doc" || type == "docx") return "Word / Doküman";
+        if (type == "html") return "İnteraktif / Kanun Metni";
+        if (type == "presentation" || type == "ppt") return "Sunum";
+        if (type == "spreadsheet" || type == "xls") return "Tablo / Excel";
+        if (type == "image") return "Görsel / Şema";
+
+        return contentType.ToUpper();
+    }
+}
+
+@section Styles {
+    <style>
+        /* ============================================================ */
+        /* KURS DETAY SAYFASI MODERN TASARIM VE PORTO UYUMLULUK STİLLERİ */
+        /* ============================================================ */
+        .course-details-container {
+            padding: 10px 0 40px;
+        }
+
+        /* HERO BANNER */
+        .course-hero-banner {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #ffffff;
+            border-radius: 14px;
+            padding: 26px 30px;
+            box-shadow: 0 8px 24px rgba(30, 60, 114, 0.22);
+        }
+
+        .hero-icon-box {
+            width: 60px;
+            height: 60px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.16);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: #ffffff;
+            flex-shrink: 0;
+            backdrop-filter: blur(4px);
+        }
+
+        .hero-title {
+            font-size: 1.65rem;
+            font-weight: 700;
+            color: #ffffff;
+            line-height: 1.25;
+            letter-spacing: -0.3px;
+        }
+
+        .hero-desc {
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 0.88);
+            line-height: 1.5;
+            max-width: 780px;
+        }
+
+        .badge-category {
+            background: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            font-size: 0.8rem;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .badge-status-active {
+            background: rgba(40, 167, 69, 0.25);
+            border: 1px solid rgba(40, 167, 69, 0.45);
+            color: #75f096;
+            font-size: 0.8rem;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .badge-status-passive {
+            background: rgba(255, 193, 7, 0.25);
+            border: 1px solid rgba(255, 193, 7, 0.45);
+            color: #ffe082;
+            font-size: 0.8rem;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .badge-date {
+            background: rgba(255, 255, 255, 0.14);
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 0.8rem;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+
+        .btn-start-course {
+            padding: 10px 24px;
+            font-size: 1.05rem;
+            border-radius: 8px;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-start-course:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+        }
+
+        /* METRİK STAT KARTLARI */
+        .metric-card {
+            border-radius: 12px;
+            padding: 18px 20px;
+            display: flex;
+            align-items: center;
+            color: #ffffff;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.14);
+        }
+
+        .metric-card.stat-blue {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        }
+
+        .metric-card.stat-purple {
+            background: linear-gradient(135deg, #6b21a8 0%, #9333ea 100%);
+        }
+
+        .metric-card.stat-teal {
+            background: linear-gradient(135deg, #0e7490 0%, #06b6d4 100%);
+        }
+
+        .metric-card.stat-emerald {
+            background: linear-gradient(135deg, #065f46 0%, #10b981 100%);
+        }
+
+        .metric-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.18);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-right: 16px;
+            flex-shrink: 0;
+        }
+
+        .metric-value {
+            font-size: 1.7rem;
+            font-weight: 700;
+            line-height: 1.1;
+        }
+
+        .metric-label {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.85);
+            font-weight: 500;
+            margin-top: 2px;
+        }
+
+        /* KARTLAR VE İÇERİK YAPISI */
+        .detail-content-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .detail-content-card .card-header {
+            background: #ffffff;
+            border-bottom: 1px solid #eef2f6;
+        }
+
+        /* MÜFREDAT LİSTESİ */
+        .curriculum-item {
+            background: #ffffff;
+            border: 1px solid #e8ecf1 !important;
+            transition: all 0.2s ease;
+        }
+
+        .curriculum-item:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1 !important;
+            transform: translateX(3px);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.04);
+        }
+
+        .curriculum-number-box {
+            font-size: 1.05rem;
+            min-width: 32px;
+            color: #64748b;
+        }
+
+        .curriculum-icon-badge {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .badge-icon-blue {
+            background: #e0f2fe;
+            color: #0284c7;
+        }
+
+        .badge-icon-cyan {
+            background: #ecfeff;
+            color: #0891b2;
+        }
+
+        .badge-icon-purple {
+            background: #f3e8ff;
+            color: #9333ea;
+        }
+
+        .badge-icon-red {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .badge-icon-green {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .badge-icon-default {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        .curriculum-link {
+            font-size: 1rem;
+            color: #1e293b;
+        }
+
+        .curriculum-link:hover {
+            color: #0284c7;
+        }
+
+        /* YORUM VE KULLANICI KARTLARI */
+        .user-avatar-circle {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            color: #334155;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .border-left-primary {
+            border-left: 4px solid #1e3c72 !important;
+        }
+
+        .border-left-warning {
+            border-left: 4px solid #f59e0b !important;
+        }
+
+        .exam-box {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s ease;
+        }
+
+        .exam-box:hover {
+            border-color: #cbd5e1;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        /* RESPONSIVE */
+        @@media (max-width: 767.98px) {
+            .hero-title {
+                font-size: 1.35rem;
+            }
+            .course-hero-banner {
+                padding: 20px;
+            }
+            .metric-card {
+                padding: 14px 16px;
+            }
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        $(function () {
+            // Eğitmenlik Başvuru Butonu
+            $('#teacherRequestBtnCourse').on('click', function (e) {
+                e.preventDefault();
+                var btn = $(this);
+                btn.prop('disabled', true);
+                var token = $('#teacherRequestFormCourse').find('input[name="__RequestVerificationToken"]').val();
+
+                $.ajax({
+                    url: '@Url.Action("TeacherRequest", "Landing")',
+                    type: 'POST',
+                    data: { __RequestVerificationToken: token },
+                    success: function (res) {
+                        btn.prop('disabled', false);
+                        if (!res) { alert('Beklenmeyen cevap.'); return; }
+                        if (res.status === 'notLogin') {
+                            window.location.href = '@Url.Action("Index", "Giris")';
+                        } else if (res.status === 'ok') {
+                            alert('Başvurunuz başarıyla alındı. Yönetici onayına gönderildi.');
+                        } else if (res.status === 'alreadyRequested') {
+                            alert('Zaten bir başvurunuz inceleme aşamasında beklemektedir.');
+                        } else if (res.status === 'alreadyTeacher') {
+                            alert('Zaten eğitmen yetkisine sahipsiniz.');
+                        } else {
+                            alert('Hata: ' + (res.message || res.status));
+                        }
+                    },
+                    error: function () {
+                        btn.prop('disabled', false);
+                        alert('İstek gönderilirken bir hata oluştu.');
+                    }
+                });
+            });
+        });
+    </script>
+}

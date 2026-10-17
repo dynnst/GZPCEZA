@@ -1,0 +1,85 @@
+﻿<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8"/>
+<title>Ceza Hesaplama Projesi — Brifing</title>
+<style>
+  body{font-family: Calibri, Arial, sans-serif; line-height:1.45; color:#222; margin:24px;}
+  h1{font-size:20px; margin-bottom:8px;}
+  h2{font-size:14px; margin-top:14px; margin-bottom:6px;}
+  p, li{font-size:12pt; color:#111;}
+  .muted{color:#555;}
+  .section{margin-bottom:12px;}
+  ul{margin-top:6px;}
+  pre{background:#f5f5f5;padding:8px;border:1px solid #ddd;white-space:pre-wrap;}
+</style>
+</head>
+<body>
+  <h1>Ceza Hesaplama Projesi — Kısa Brifing</h1>
+  <p class="muted"><strong>Proje:</strong> gzpegm — Ceza Hesaplama Modülü</p>
+
+  <div class="section">
+    <h2>Amaç</h2>
+    <p>Kullanıcının ülke, pasaport ve vize bilgilerine göre ikamet/çıkış tarihlerinden ceza (gün/ay ve tutar) hesaplamak; tahdit kodu seçmek, form oluşturmak ve kayıt/özet tutmak.</p>
+  </div>
+
+  <div class="section">
+    <h2>Mimari / Bileşenler</h2>
+    <ul>
+      <li><strong>Controller:</strong> <code>gzpegm\Controllers\AjaxController.cs</code>
+        <ul>
+          <li>Endpoint’ler: <code>/Calculate1</code>, <code>/Calculate2</code>, <code>/Kodgetir</code>, <code>/addhistory</code>, <code>/getanons</code></li>
+          <li>Sorumluluk: tarih/sefer işleme, UVR/AUH/Exchange kontrolleri, ceza ve ücret hesaplama, tahdit kodu eşleştirme, geçmiş kaydı.</li>
+        </ul>
+      </li>
+      <li><strong>UI:</strong> <code>gzpegm\Views\Calculate\Index.cshtml</code> — Çoklu giriş-çıkış tarihleri, seçimler, sonuçlar, form oluşturma.</li>
+      <li><strong>İstemci:</strong> <code>gzpegm\js\custom.js</code> — Tarih parse, dinamik satır yönetimi, diff hesaplama, AJAX çağrıları, vize tipi mantığı.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>İşlem Adımları (kısa)</h2>
+    <ol>
+      <li>Kullanıcı tarihleri ve bilgileri girer; ön kontroller JS tarafında yapılır (boş alan, start > end, aynı gün = 1).</li>
+      <li><strong>hesapla1()</strong>: Form serialize edilip <code>/Calculate1</code> çağrılır — sunucu seferleri parse eder, Visaday/UVR kurallarını uygular, ceza gün/ay hesaplar ve JSON döner.</li>
+      <li>Arayüz sunucu cevabıyla (`Day`, `OneTime`, `ShoulExtiTime`, `FarkAy`, `FarkGun`) güncellenir.</li>
+      <li><strong>hesapla2()</strong>: Kullanıcı yaş/ödeyen seçimine göre <code>/Calculate2</code> çağrılır — ücret, kur dönüşümü, defter/vize/idari ceza hesaplanır; toplam döner ve arayüze yazılır; <code>/addhistory</code> ile geçmişe kayıt eklenir.</li>
+      <li><strong>tahdit1()</strong>: Seçilen ödeme/tahdit tipine göre <code>/Kodgetir</code> çağrılıp uygun tahdit kodu ve açıklama alınır.</li>
+      <li><strong>hesapla3()</strong>: Gizli form alanları doldurulur; kullanıcı formu göndererek belge (PDF/print) oluşturur.</li>
+    </ol>
+  </div>
+
+  <div class="section">
+    <h2>Önemli Kurallar & Kenar Durumlar</h2>
+    <ul>
+      <li>Vize tipleri özel: V=3 → manuel <code>Visaday</code>; V=4/10/12/13/14/15 → ikamet/testarihi kullanımı; V-137 (13) için testarihi JS’de özel ele alınıyor.</li>
+      <li>Beyaz Rusya: bir seferde max 30 gün; 365 gün içinde toplam 90 gün; ceza = per-entry aşım veya yıllık aşımın büyüğü.</li>
+      <li>Günübirlik (Ctype==4): her sefer 1 gün kabul edilir.</li>
+      <li>Tarih formatı: kesinlikle <code>dd.MM.yyyy</code> — hem JS hem sunucuda uyum zorunlu.</li>
+      <li>Yetkilendirme: Kullanıcı token-cookie ile çekiliyor; oturum/izin kontrolleri güçlendirilmeli.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>Canlıya Geçiş İçin Kısa Kontrol Listesi</h2>
+    <ul>
+      <li>__Build Solution__ (Release) ve birim testlerin çalışması.</li>
+      <li>AJAX POST isteklerine anti-forgery token eklenmesi.</li>
+      <li>Controller’larda input validation, try/catch ve merkezi loglama (örn. Serilog).</li>
+      <li>Dosya yüklemelerde MIME/uzantı/boyut kontrolleri.</li>
+      <li>HTTPS zorunlu, HSTS, uygun CORS ve gizli ayarlar güvenliği (connection string/secret management).</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>Sunumda Gösterilecek Örnek Senaryolar</h2>
+    <ul>
+      <li>Basit: Tek sefer 10 gün, vizesiz — hangi endpoint çağrılır, sunucuda nasıl hesaplanır, dönen JSON.</li>
+      <li>Beyaz Rusya: İki sefer (40 ve 10 gün) — per-entry ve yıllık hesaplama örneği.</li>
+      <li>V-137 (Visa==13): testarihi kullanımı ve ödeme seçenekleri (PayCalculate) açıklaması.</li>
+    </ul>
+  </div>
+
+  <p class="muted">Not: Bu belgeyi Word’e dönüştürmek için dosyayı <strong>UTF-8</strong> olarak kaydedin, Word ile açıp __File → Save As → Word Document (.docx)__ seçin.</p>
+</body>
+</html>

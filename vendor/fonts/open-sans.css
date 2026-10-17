@@ -1,0 +1,67 @@
+/* Open Sans (300,400,600,700,800) ve Shadows Into Light - yerel olarak sunulacak */
+/* NOT: .woff2 prefer edilir; .woff fallback olarak eklenmiþtir. */
+
+/* Open Sans - Light 300 */
+@font-face {
+    font-family: 'Open Sans';
+    font-style: normal;
+    font-weight: 300;
+    src: url('/vendor/fonts/open-sans/OpenSans-Light.woff2') format('woff2'),
+         url('/vendor/fonts/open-sans/OpenSans-Light.woff') format('woff');
+    font-display: swap;
+}
+
+/* Open Sans - Regular 400 */
+@font-face {
+    font-family: 'Open Sans';
+    font-style: normal;
+    font-weight: 400;
+    src: url('/vendor/fonts/open-sans/OpenSans-Regular.woff2') format('woff2'),
+         url('/vendor/fonts/open-sans/OpenSans-Regular.woff') format('woff');
+    font-display: swap;
+}
+
+/* Open Sans - SemiBold 600 */
+@font-face {
+    font-family: 'Open Sans';
+    font-style: normal;
+    font-weight: 600;
+    src: url('/vendor/fonts/open-sans/OpenSans-SemiBold.woff2') format('woff2'),
+         url('/vendor/fonts/open-sans/OpenSans-SemiBold.woff') format('woff');
+    font-display: swap;
+}
+
+/* Open Sans - Bold 700 */
+@font-face {
+    font-family: 'Open Sans';
+    font-style: normal;
+    font-weight: 700;
+    src: url('/vendor/fonts/open-sans/OpenSans-Bold.woff2') format('woff2'),
+         url('/vendor/fonts/open-sans/OpenSans-Bold.woff') format('woff');
+    font-display: swap;
+}
+
+/* Open Sans - ExtraBold 800 */
+@font-face {
+    font-family: 'Open Sans';
+    font-style: normal;
+    font-weight: 800;
+    src: url('/vendor/fonts/open-sans/OpenSans-ExtraBold.woff2') format('woff2'),
+         url('/vendor/fonts/open-sans/OpenSans-ExtraBold.woff') format('woff');
+    font-display: swap;
+}
+
+/* Shadows Into Light (baþlýk veya dekoratif font olarak) */
+@font-face {
+    font-family: 'Shadows Into Light';
+    font-style: normal;
+    font-weight: 400;
+    src: url('/vendor/fonts/shadows/ShadowsIntoLight-Regular.woff2') format('woff2'),
+         url('/vendor/fonts/shadows/ShadowsIntoLight-Regular.woff') format('woff');
+    font-display: swap;
+}
+
+/* Örnek: global font-family ayarý (isteðe baðlý) */
+body {
+    font-family: 'Open Sans', Arial, sans-serif;
+}

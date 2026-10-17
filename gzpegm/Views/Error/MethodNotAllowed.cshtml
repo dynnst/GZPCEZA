@@ -1,0 +1,32 @@
+@{
+    Layout = "~/Views/Shared/_Master.cshtml";
+    ViewBag.Title = "Metod Desteklenmiyor";
+}
+
+<section class="card">
+    <header class="card-header">
+        <h2 class="card-title"><i class="fas fa-ban"></i> 405 - Metod Desteklenmiyor</h2>
+    </header>
+    <div class="card-body">
+        <div class="alert alert-warning">
+            <strong>İstek Başarısız!</strong> İstek attığınız HTTP metodu bu endpoint tarafından desteklenmemektedir.
+        </div>
+        <p class="lead">
+            Lütfen doğru HTTP metodunu kullanarak tekrar deneyiniz.
+        </p>
+        @if (Request.HttpMethod != null && Request.Url != null)
+        {
+            <p>
+                <small class="text-muted">
+                    <strong>Yöntem:</strong> @Request.HttpMethod<br>
+                    <strong>URL:</strong> @Request.Url.PathAndQuery
+                </small>
+            </p>
+        }
+        <p>
+            <a href="@Url.Action("Index", "Home")" class="btn btn-primary">
+                <i class="fas fa-home"></i> Ana Sayfaya Dön
+            </a>
+        </p>
+    </div>
+</section>

@@ -1,0 +1,58 @@
+@model IList<gzpegm.Controllers.ChatController.ChatConversationDto>
+@{
+    Layout = "~/Views/Shared/_Master.cshtml";
+    ViewBag.Title = "Ortak Sohbet Geçmişi";
+    var total = Model != null && Model.Any() ? Model.First().MessageCount : 0;
+}
+
+<section class="card">
+    <header class="card-header">
+        <h2 class="card-title"><i class="fas fa-comments"></i> Ortak Sohbet Geçmişi</h2>
+        <p class="card-subtitle">Admin, ortak sohbet havuzunda yazılan mesajları ve gönderilen resimleri buradan denetleyebilir.</p>
+    </header>
+    <div class="card-body">
+        <div class="alert alert-info">
+            Toplam kayıtlı ortak sohbet mesajı: <strong>@total</strong>
+        </div>
+
+        <div id="chatHistoryMessages" class="border rounded p-3" style="min-height:420px; max-height:620px; overflow:auto;">
+            <div class="text-muted text-center mt-5">Mesajlar yükleniyor...</div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        (function () {
+            function esc(value) { return $('<div/>').text(value || '').html(); }
+            function formatMessageText(value) {
+                var html = esc(value).replace(/\r?\n/g, '<br />');
+                return html.replace(/(https?:\/\/[^\s<]+)/g, function (url) {
+                    var cleanUrl = url.replace(/[.,;:!?)]$/, '');
+                    var suffix = url.substring(cleanUrl.length);
+                    return '<a href="' + cleanUrl + '" target="_blank" rel="noopener noreferrer">' + cleanUrl + '</a>' + suffix;
+                });
+            }
+
+            $.getJSON('@Url.Action("AdminMessages", "Chat")').done(function (res) {
+                if (!res || !res.success) {
+                    $('#chatHistoryMessages').html('<div class="alert alert-danger">Mesajlar yüklenemedi.</div>');
+                    return;
+                }
+
+                var html = [];
+                $.each(res.messages || [], function (_, m) {
+                    html.push(
+                        '<div class="mb-3 p-2 border rounded bg-light">' +
+                        '<div><strong>' + esc(m.sender) + '</strong> <small class="text-muted">' + esc(m.time) + '</small></div>' +
+                        (m.text ? '<div class="mt-1">' + formatMessageText(m.text) + '</div>' : '') +
+                        (m.image ? '<div class="mt-2"><a href="' + esc(m.image) + '" target="_blank"><img src="' + esc(m.image) + '" style="max-width:220px;max-height:180px;border-radius:8px;" /></a></div>' : '') +
+                        '</div>'
+                    );
+                });
+
+                $('#chatHistoryMessages').html(html.join('') || '<div class="text-muted text-center mt-5">Henüz ortak sohbet mesajı yok.</div>');
+            });
+        })();
+    </script>
+}

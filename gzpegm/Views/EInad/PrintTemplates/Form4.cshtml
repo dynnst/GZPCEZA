@@ -1,0 +1,314 @@
+﻿@model gzpegm.Models.E_Inad
+@{
+    Layout = null;
+
+    // Varsayılan tarih/saat (günün tarihi ve saati)
+    string tutanakTarihi = DateTime.Now.ToString("dd.MM.yyyy");
+    string saat = DateTime.Now.ToString("HH:mm");
+
+    // Güvenli model okuma helper'ı (Model'de olmayan özellikler hata üretmez)
+    Func<string, string, string, string> getField = (name, dateFormat, def) =>
+    {
+        var prop = Model == null ? null : Model.GetType().GetProperty(name);
+        if (prop == null) return def;
+        var val = prop.GetValue(Model, null);
+        if (val == null) return def;
+        if (val is DateTime)
+        {
+            var d = (DateTime)val;
+            return string.IsNullOrEmpty(dateFormat) ? d.ToString() : d.ToString(dateFormat);
+        }
+        return val.ToString();
+    };
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Tutanak (Manuel Doldurma)</title>
+    <style>
+
+        @@media print {
+            .screen-only {
+                display: none !important;
+            }
+
+            .print-only {
+                display: inline !important;
+            }
+
+            input.field-input, textarea.field-textarea {
+                display: none !important;
+            }
+
+            /* Yazdırma sırasında yazdır butonunu gizle */
+            .print-button-container {
+                display: none !important;
+            }
+        }
+
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 12pt;
+            margin: 40px;
+            line-height: 1.5;
+        }
+
+        .tutanak-title {
+            text-align: center;
+            font-weight: bold;
+            font-size: 14pt;
+            margin-bottom: 20px;
+            text-decoration: underline;
+        }
+
+        .content {
+            text-align: justify;
+            margin-bottom: 30px;
+        }
+
+        .field-input {
+            border: none;
+            border-bottom: 1px solid #000;
+            padding: 2px 4px;
+            font-family: inherit;
+            font-size: inherit;
+            min-width: 120px;
+        }
+
+        .field-textarea {
+            width: 100%;
+            min-height: 60px;
+            border: none;
+            border-bottom: 1px solid #000;
+            font-family: inherit;
+            font-size: inherit;
+            padding: 2px 4px;
+        }
+
+        .print-only {
+            display: none;
+        }
+
+        .screen-only {
+            display: inline;
+        }
+
+        @@media print {
+            .screen-only {
+                display: none !important;
+            }
+
+            .print-only {
+                display: inline !important;
+            }
+
+            input.field-input, textarea.field-textarea {
+                display: none !important;
+            }
+        }
+
+        .signature-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 40px;
+        }
+
+        .signature-cell {
+            text-align: center;
+            width: 50%;
+            padding-top: 60px;
+        }
+
+        .signature-name {
+            font-weight: bold;
+            border-top: 1px solid #000;
+            padding-top: 5px;
+            width: 200px;
+            margin: 0 auto;
+        }
+
+        .signature-title {
+            font-size: 10pt;
+            margin-top: 5px;
+        }
+
+        /* Modal stil */
+        #manualEditModal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #manualEditModalContent {
+            background: #fff;
+            padding: 20px 30px;
+            border-radius: 8px;
+            max-width: 400px;
+            text-align: center;
+        }
+
+            #manualEditModalContent p {
+                font-size: 14pt;
+                margin-bottom: 20px;
+            }
+
+            #manualEditModalContent button {
+                padding: 6px 12px;
+                font-size: 12pt;
+                cursor: pointer;
+            }
+
+        /* Yazdır butonu stil */
+        .print-button-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+            .print-button-container button {
+                padding: 10px 20px;
+                font-size: 12pt;
+                cursor: pointer;
+            }
+    </style>
+    <script>
+        // Sayfa yazdırılmadan önce input değerlerini print-only span'lara kopyala.
+        function updatePrintFields() {
+            var fields = [
+                'TarihSaat', 'GelenHavayolu', 'GelenUcusNo', 'GeldigiYer',
+                'DogumT', 'AdSoyad', 'InadSebep', 'GidisYer', 'Durum',
+                'Personel', 'Sicil', 'EkNot'
+            ];
+            fields.forEach(function (f) {
+                var inp = document.getElementById('inp_' + f);
+                var sp = document.getElementById('sp_' + f);
+                if (inp && sp) {
+                    sp.innerText = inp.value || '';
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            var inputs = document.querySelectorAll('.field-input, .field-textarea');
+            inputs.forEach(function (el) {
+                el.addEventListener('input', updatePrintFields);
+            });
+
+            if (window.matchMedia) {
+                var mediaQueryList = window.matchMedia('print');
+                if (mediaQueryList.addListener) {
+                    mediaQueryList.addListener(function (mql) {
+                        if (mql.matches) updatePrintFields();
+                    });
+                } else if (mediaQueryList.addEventListener) {
+                    mediaQueryList.addEventListener('change', function (e) {
+                        if (e.matches) updatePrintFields();
+                    });
+                }
+            }
+            window.onbeforeprint = updatePrintFields;
+
+            // Modal göster
+            var modal = document.getElementById('manualEditModal');
+            var btnClose = document.getElementById('closeModal');
+            modal.style.display = 'flex';
+
+            btnClose.addEventListener('click', function () {
+                modal.style.display = 'none';
+            });
+        });
+    </script>
+</head>
+<body>
+
+    <!-- Modal -->
+    <div id="manualEditModal">
+        <div id="manualEditModalContent">
+            <p>Veriler üzerinde Manuel Düzenleme veya ekleme yapabilirsiniz</p>
+            <button id="closeModal">Tamam</button>
+        </div>
+    </div>
+
+    <div class="tutanak-title">TUTANAK</div>
+
+    <div class="content">
+        <p style="text-indent: 1cm;">
+            <input id="inp_TarihSaat" class="field-input screen-only" type="text" value="@(getField("TarihSaat", null, tutanakTarihi))" />
+            <span id="sp_TarihSaat" class="print-only">@(getField("TarihSaat", null, tutanakTarihi))</span>
+            sıralarında
+            <input id="inp_GelenHavayolu" class="field-input screen-only" type="text" value="@(getField("GelenHavayolu", null, "Pobeda Havayolları"))" />
+            <span id="sp_GelenHavayolu" class="print-only">@(getField("GelenHavayolu", null, "Pobeda Havayolları"))</span>
+            Havayollarının
+            <input id="inp_GelenUcusNo" class="field-input screen-only" type="text" value="@(getField("GelenUcusNo", null, "DP-735"))" />
+            <span id="sp_GelenUcusNo" class="print-only">@(getField("GelenUcusNo", null, "DP-735"))</span>
+            sefer sayılı uçağı ile
+            <input id="inp_GeldigiYer" class="field-input screen-only" type="text" value="@(getField("GeldigiYer", null, "Rusya"))" />
+            <span id="sp_GeldigiYer" class="print-only">@(getField("GeldigiYer", null, "Rusya"))</span>
+            'dan gelerek Hudut Kapımızdan giriş yapmak isteyen
+            <input id="inp_DogumT" class="field-input screen-only" type="text" value="@(getField("DogumT", "dd/MM/yyyy", "21/01/1986"))" />
+            <span id="sp_DogumT" class="print-only">@(getField("DogumT", "dd/MM/yyyy", "21/01/1986"))</span>
+            doğumlu
+            <span class="highlight">
+                <input id="inp_AdSoyad" class="field-input screen-only" type="text" value="@(getField("AdSoyad", null, "Mokhıra SALIMOVA"))" />
+                <span id="sp_AdSoyad" class="print-only">@(getField("AdSoyad", null, "Mokhıra SALIMOVA"))</span>
+            </span>
+            isimli şahsın yapılan pasaport kontrolünde;
+            <input id="inp_InadSebep" class="field-input screen-only" type="text" value="@(getField("InadSebep", null, ""))" />
+            <span id="sp_InadSebep" class="print-only">@(getField("InadSebep", null, ""))</span>
+            giriş yasağının bulunduğu tarafımızca tespit edilmiştir.
+        </p>
+
+        <p style="text-indent: 1cm;">
+            İNAD yolcu kapsamında şahıs ülkemize kabul edilmeyerek
+            <input id="inp_GidisYer" class="field-input screen-only" type="text" value="@(getField("GidisYer", null, ""))" />
+            <span id="sp_GidisYer" class="print-only">@(getField("GidisYer", null, ""))</span>
+            <input id="inp_Durum" class="field-input screen-only" type="text" value="@(getField("Durum", null, ""))" />
+            <span id="sp_Durum" class="print-only">@(getField("Durum", null, ""))</span>.
+        </p>
+
+        <p style="text-indent: 1cm;">
+            Tutanak tarafımızdan tanzim edilerek altı birlikte imza altına alınmıştır.
+            <input id="inp_TarihSaat2" class="field-input screen-only" type="text" value="@(getField("TarihSaat", null, tutanakTarihi + " " + saat))" />
+            <span id="sp_TarihSaat2" class="print-only">@(getField("TarihSaat", null, tutanakTarihi + " " + saat))</span>
+        </p>
+
+        <p style="margin-top:10px;">
+            Ek Notlar:<br />
+            <textarea id="inp_EkNot" class="field-textarea screen-only">@(getField("EkNot", null, ""))</textarea>
+            <div id="sp_EkNot" class="print-only" style="white-space: pre-wrap;">@(getField("EkNot", null, ""))</div>
+        </p>
+    </div>
+
+    <table class="signature-table">
+        <tr>
+            <td class="signature-cell">
+                <div class="signature-name">
+                    <input id="inp_Personel" class="field-input screen-only" type="text" value="@(getField("Personel", null, ""))" />
+                    <span id="sp_Personel" class="print-only">@(getField("Personel", null, ""))</span>
+                </div>
+                <div class="signature-title">Polis Memuru</div>
+            </td>
+            <td class="signature-cell">
+                <div class="signature-name">
+                    <input id="inp_Sicil" class="field-input screen-only" type="text" value="@(getField("Sicil", null, ""))" />
+                    <span id="sp_Sicil" class="print-only">@(getField("Sicil", null, ""))</span>
+                </div>
+                <div class="signature-title">Polis Memuru</div>
+            </td>
+        </tr>
+    </table>
+
+    <!-- Yazdır Butonu -->
+    <div class="print-button-container">
+        <button onclick="window.print()">Yazdır</button>
+    </div>
+
+</body>
+</html>

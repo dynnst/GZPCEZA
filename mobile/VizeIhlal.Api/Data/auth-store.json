@@ -1,0 +1,106 @@
+{
+  "users": [
+    {
+      "id": "271765dfebf24b8c8b1cdf5981670e27",
+      "email": "standard@test.local",
+      "passwordHash": "100000.2E1aQsKdHnGR3zXhAHtvaA==.foqIT2SvQKyDsuVEeLchJVC0YCL0Oyczj2EfG2\u002BX8jA=",
+      "planCode": "standard",
+      "role": "user",
+      "subscriptionExpiresAtUtc": "2026-07-25T21:49:08.2280642+00:00",
+      "usageByDate": {
+        "2026-06-26": 1
+      }
+    },
+    {
+      "id": "08c3c38fa89a4cf2b45598e1664a98ee",
+      "email": "gumus@test.local",
+      "passwordHash": "100000.euPQORNR2wDnpvISLikzGQ==.6K\u002BxgVaCOYtNKGQeRh7oz1bfmJ25N2jEk4IXfHspl7E=",
+      "planCode": "silver",
+      "role": "user",
+      "subscriptionExpiresAtUtc": "2026-07-25T23:10:26.4209778+00:00",
+      "usageByDate": {
+        "2026-06-26": 3
+      }
+    },
+    {
+      "id": "94099ee98e4947b3af1319ca48dd74c1",
+      "email": "altin@test.local",
+      "passwordHash": "100000.pY/sJk9RrQpYPUYsSfg6iw==.ehWPp0FRkCSJRmD5kCv0gXlqZTmVdoZEpU9mrayCHGI=",
+      "planCode": "gold",
+      "role": "user",
+      "subscriptionExpiresAtUtc": "2026-07-25T21:29:14.8745264+00:00",
+      "usageByDate": {
+        "2026-06-26": 5
+      }
+    },
+    {
+      "id": "9eca2dfda9ef432aaf163a37ad722001",
+      "email": "admin@test.local",
+      "passwordHash": "100000.R1EowLnzNst\u002BXbay8YJlnA==.lJIgAerlgiaSf51oLIKDHXCIlcI5mbx\u002BpQD\u002BT1TzaLg=",
+      "planCode": "gold",
+      "role": "admin",
+      "subscriptionExpiresAtUtc": "2026-07-25T21:36:38.8866074+00:00",
+      "usageByDate": {
+        "2026-06-26": 5
+      }
+    }
+  ],
+  "sessions": {
+    "kRLze5vaWhtZcMqgLiYVPVBpZts9Kue06N18SCd_gHw": {
+      "userId": "94099ee98e4947b3af1319ca48dd74c1",
+      "expiresAtUtc": "2026-07-25T21:29:14.9423949+00:00"
+    },
+    "pRrMjkJffxppC9ZVCmyHcIJh2Vsm9nAWeqzN8t6rONo": {
+      "userId": "271765dfebf24b8c8b1cdf5981670e27",
+      "expiresAtUtc": "2026-07-25T21:29:43.9602604+00:00"
+    },
+    "2fRb5Hs4oLotpJvVLBe7BhbrzhML6qv92aj9RsAtwIg": {
+      "userId": "94099ee98e4947b3af1319ca48dd74c1",
+      "expiresAtUtc": "2026-07-25T21:31:00.8817443+00:00"
+    },
+    "vD9RvwLIWzMS9SDvJH9Ichmfiq0NWYBeHH2bM2drHx0": {
+      "userId": "9eca2dfda9ef432aaf163a37ad722001",
+      "expiresAtUtc": "2026-07-25T21:36:38.9403088+00:00"
+    },
+    "lcAu_oI3CNWDZEFzvacVye1hGnkxFZ7Js23Qi_MJA-8": {
+      "userId": "271765dfebf24b8c8b1cdf5981670e27",
+      "expiresAtUtc": "2026-07-25T21:36:39.0719699+00:00"
+    },
+    "C8JTqSCEs0MoeqBo9fhlBTxR_EUjcIRvC7SnNyON6kc": {
+      "userId": "08c3c38fa89a4cf2b45598e1664a98ee",
+      "expiresAtUtc": "2026-07-25T21:43:45.4099748+00:00"
+    },
+    "GntBL1afIPZaQKNf9ykUrTibdu1_vTiWve0fqlDClww": {
+      "userId": "9eca2dfda9ef432aaf163a37ad722001",
+      "expiresAtUtc": "2026-07-25T21:44:42.8940033+00:00"
+    },
+    "ynt9MvdnV3t1hJUaojmpht_84eicTQUmAUVVcH04XxY": {
+      "userId": "9eca2dfda9ef432aaf163a37ad722001",
+      "expiresAtUtc": "2026-07-25T21:49:02.4641581+00:00"
+    },
+    "KDt734AWA9W2cSbjCDPqzKZIpdWUlsIbelQIhWpjseE": {
+      "userId": "9eca2dfda9ef432aaf163a37ad722001",
+      "expiresAtUtc": "2026-07-25T21:49:08.1845525+00:00"
+    },
+    "qOp9T5LY4jKNMNtA1TSZUKPYAeAW00fBVMdqfsyVhFc": {
+      "userId": "9eca2dfda9ef432aaf163a37ad722001",
+      "expiresAtUtc": "2026-07-25T21:58:16.7568255+00:00"
+    },
+    "QZ4jP4w46eaNha2PapFXIebtFIPXwsO2umfMVapkCww": {
+      "userId": "94099ee98e4947b3af1319ca48dd74c1",
+      "expiresAtUtc": "2026-07-25T23:03:51.5495304+00:00"
+    },
+    "SqpDer_5r4t6gJ1JGSQ-_nS7Of1RBoxYFwaqJojOeYc": {
+      "userId": "9eca2dfda9ef432aaf163a37ad722001",
+      "expiresAtUtc": "2026-07-25T23:04:10.6080516+00:00"
+    },
+    "OXBm2dtApnQhMvCo0ilLVZ7p5DBvVBEHQm4eWZVnPds": {
+      "userId": "9eca2dfda9ef432aaf163a37ad722001",
+      "expiresAtUtc": "2026-07-25T23:09:36.9210427+00:00"
+    },
+    "_4Rlg7_ua_2T1sVBb5HKmSN4CXepcxf2xLFnDVW2Xco": {
+      "userId": "08c3c38fa89a4cf2b45598e1664a98ee",
+      "expiresAtUtc": "2026-07-25T23:10:45.1871998+00:00"
+    }
+  }
+}

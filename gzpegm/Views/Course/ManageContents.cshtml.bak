@@ -1,0 +1,333 @@
+﻿@model gzpegm.Models.ViewModels.CourseContentViewModel
+@using System
+@{
+    ViewBag.Title = "İçerik Yönetimi";
+    Layout = "~/Views/Shared/_Master.cshtml";
+    ViewBag.UseSummernote = true;
+}
+
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    <div>
+                        <h3 class="card-title mb-0"><i class="fas fa-file-alt mr-2"></i>İçerik Yönetimi</h3>
+                        <small class="text-white-50">@ViewBag.CourseTitle</small>
+                    </div>
+                    <button type="button" class="btn btn-light btn-sm" data-toggle="modal" data-target="#addContentModal">
+                        <i class="fas fa-plus mr-1"></i>Yeni İçerik Ekle
+                    </button>
+                </div>
+
+                <div class="card-body">
+                    @if (TempData["msgSuccess"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fas fa-check-circle me-2"></i>@TempData["msgSuccess"]
+                            <button type="button" class="close" data-dismiss="alert">
+                                <span>&times;</span>
+                            </button>
+                        </div>
+                    }
+
+                    @if (TempData["msgError"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-circle me-2"></i>@TempData["msgError"]
+                            <button type="button" class="close" data-dismiss="alert">
+                                <span>&times;</span>
+                            </button>
+                        </div>
+                    }
+
+                    @if (Model.Contents == null || Model.Contents.Count == 0)
+                    {
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>Bu kursa ait içerik bulunmamaktadır.
+                        </div>
+                    }
+                    else
+                    {
+                        <form method="post" action="@Url.Action("UpdateContentsList", "Course")">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="courseId" value="@Model.CourseId" />
+
+                            <div class="table-responsive">
+                                <table class="table table-hover table-bordered">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width: 5%;">No</th>
+                                            <th style="width: 30%;">Başlık</th>
+                                            <th style="width: 30%;">Açıklama</th>
+                                            <th style="width: 15%;">İçerik Türü</th>
+                                            <th style="width: 15%;">Dosya</th>
+                                            <th style="width: 5%;">İşlem</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @{
+                                            int counter = 1;
+                                            foreach (var content in Model.Contents)
+                                            {
+                                                <tr>
+                                                    <td>@counter</td>
+                                                    <td>
+                                                        <input type="hidden" name="contents[@counter - 1].ContentId" value="@content.ContentId" />
+                                                        <input type="text" name="contents[@counter - 1].ContentTitle" value="@content.ContentTitle" class="form-control form-control-sm" />
+                                                    </td>
+                                                    <td>
+                                                        <textarea name="contents[@counter - 1].ContentDescription" class="form-control form-control-sm" rows="2" maxlength="500">@content.ContentDescription</textarea>
+                                                    </td>
+                                                    <td>
+                                                        <select name="contents[@counter - 1].ContentType" class="form-control form-control-sm">
+                                                            <option value="HTML" @(string.Equals(content.ContentType, "HTML", StringComparison.OrdinalIgnoreCase) ? "selected" : "")>HTML</option>
+                                                            <option value="PDF" @(string.Equals(content.ContentType, "PDF", StringComparison.OrdinalIgnoreCase) ? "selected" : "")>PDF</option>
+                                                            <option value="Video" @(string.Equals(content.ContentType, "Video", StringComparison.OrdinalIgnoreCase) ? "selected" : "")>Video</option>
+                                                            <option value="Doküman" @(string.Equals(content.ContentType, "Doküman", StringComparison.OrdinalIgnoreCase) ? "selected" : "")>Doküman</option>
+                                                            <option value="Sunum" @(string.Equals(content.ContentType, "Sunum", StringComparison.OrdinalIgnoreCase) ? "selected" : "")>Sunum</option>
+                                                            <option value="Resim" @(string.Equals(content.ContentType, "Resim", StringComparison.OrdinalIgnoreCase) ? "selected" : "")>Resim</option>
+                                                        </select>
+                                                    </td>
+                                                    <td>
+                                                        @if (!string.IsNullOrEmpty(content.FilePath))
+                                                        {
+                                                            <small>@System.IO.Path.GetFileName(content.FilePath)</small>
+                                                        }
+                                                        else
+                                                        {
+                                                            <small class="text-muted">-</small>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        <a href="@Url.Action("ContentDetail", "Course", new { id = content.ContentId })" class="btn btn-sm btn-info" title="İçeriği Düzenle">
+                                                            <i class="fas fa-eye"></i>
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                                counter++;
+                                            }
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="mt-4">
+                                <button type="submit" class="btn btn-success btn-lg">
+                                    <i class="fas fa-save me-2"></i>Değişiklikleri Kaydet
+                                </button>
+                                <a href="@Url.Action("Details", "Course", new { id = Model.CourseId })" class="btn btn-secondary btn-lg">
+                                    <i class="fas fa-arrow-left me-2"></i>Geri Dön
+                                </a>
+                            </div>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .form-control-sm {
+        font-size: 0.875rem;
+    }
+
+    table.table {
+        margin-bottom: 0;
+    }
+
+    .card-header small {
+        display: block;
+        margin-top: 0.25rem;
+    }
+</style>
+
+<!-- ========== YENİ İÇERİK EKLEME MODAL ========== -->
+<div class="modal fade" id="addContentModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-plus-circle mr-2"></i>Yeni İçerik Ekle</h5>
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div id="addContentAlert" class="alert" style="display:none"></div>
+                <div class="form-group">
+                    <label class="font-weight-bold">Başlık <span class="text-danger">*</span></label>
+                    <input type="text" id="ac_title" class="form-control" placeholder="İçerik başlığı..." maxlength="200" />
+                </div>
+                <div class="form-group">
+                    <label class="font-weight-bold">Açıklama</label>
+                    <textarea id="ac_desc" class="form-control" rows="5"></textarea>
+                    <small class="text-muted">Summernote ile resim, video ve metin ekleyebilirsiniz.</small>
+                </div>
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label class="font-weight-bold">İçerik Türü</label>
+                        <select id="ac_type" class="form-control">
+                            <option value="HTML">HTML</option>
+                            <option value="PDF">PDF</option>
+                            <option value="Video">Video</option>
+                            <option value="Doküman">Doküman</option>
+                            <option value="Sunum">Sunum</option>
+                            <option value="Resim">Resim</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label class="font-weight-bold">Dosya Yükle</label>
+                        <input type="file" id="ac_file" class="form-control" />
+                        <small class="text-muted">PDF, video, resim veya doküman yükleyebilirsiniz.</small>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i>İptal
+                </button>
+                <button type="button" class="btn btn-primary" id="saveContentBtn">
+                    <i class="fas fa-save mr-1"></i>Kaydet
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+$(function () {
+    var courseId  = @Model.CourseId;
+    var saveUrl   = '@Url.Action("CreateContentFromModal", "Course")';
+    var pageUrl   = '@Url.Action("ManageContents", "Course", new { courseId = Model.CourseId })';
+    var token     = $('input[name="__RequestVerificationToken"]').first().val();
+
+    $('#saveContentBtn').on('click', function () {
+        var title = $.trim($('#ac_title').val());
+        if (!title) {
+            showAlert('Başlık alanı zorunludur.', 'danger');
+            return;
+        }
+
+        var btn = $(this).prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i>Kaydediliyor...');
+        var formData = new FormData();
+        formData.append('CourseId',            courseId);
+        formData.append('ContentTitle',        title);
+        formData.append('ContentDescription',  $('#ac_desc').summernote('code'));
+        formData.append('ContentHtml',         $('#ac_desc').summernote('code'));
+        formData.append('ContentType',         $('#ac_type').val());
+        formData.append('__RequestVerificationToken', token);
+
+        var file = $('#ac_file')[0].files[0];
+        if (file) { formData.append('FileUpload', file); }
+
+        $.ajax({
+            url:         saveUrl,
+            type:        'POST',
+            data:        formData,
+            cache:       false,
+            contentType: false,
+            processData: false,
+            timeout:     30000
+        })
+        .done(function (res) {
+            console.log('Başarı:', res);
+            if (res && res.success) {
+                showAlert('İçerik başarıyla eklendi. Sayfa yenileniyor...', 'success');
+                setTimeout(function () { window.location.href = pageUrl; }, 1200);
+            } else {
+                showAlert((res && res.message) ? res.message : 'Hata oluştu.', 'danger');
+                btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i>Kaydet');
+            }
+        })
+        .fail(function (jqXHR, textStatus, errorThrown) {
+            console.error('AJAX Hatası:', {
+                status: jqXHR.status,
+                statusText: jqXHR.statusText,
+                textStatus: textStatus,
+                error: errorThrown,
+                responseText: jqXHR.responseText
+            });
+            var errorMsg = 'Sunucu hatası. Lütfen tekrar deneyin.';
+            if (jqXHR.status === 500 && jqXHR.responseText) {
+                errorMsg = 'Sunucu hatası: ' + jqXHR.responseText.substring(0, 200);
+            }
+            showAlert(errorMsg, 'danger');
+            btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i>Kaydet');
+        });
+    });
+
+    // Modal açılınca formu sıfırla
+    $('#addContentModal').on('show.bs.modal', function () {
+        $('#ac_title').val('');
+        $('#ac_desc').summernote('reset');
+        $('#ac_type').val('HTML');
+        $('#ac_file').val('');
+        $('#addContentAlert').hide().removeClass('alert-success alert-danger');
+        $('#saveContentBtn').prop('disabled', false).html('<i class="fas fa-save mr-1"></i>Kaydet');
+    });
+
+    // Summernote başlat
+    var uploadUrl = '@Url.Action("UploadImage", "Course")';
+    var csrfToken = $('input[name="__RequestVerificationToken"]').first().val();
+
+    $('#ac_desc').summernote({
+        height: 200,
+        lang: 'tr-TR',
+        dialogsInBody: true,   // Modal içinde modal sorunununu çözer
+        dialogsFade: false,    // Fade animasyonu iç içe modalde bozuluyor
+        toolbar: [
+            ['style',  ['bold', 'italic', 'underline', 'clear']],
+            ['para',   ['ul', 'ol', 'paragraph']],
+            ['insert', ['link', 'picture', 'video']],
+            ['view',   ['fullscreen', 'codeview']]
+        ],
+        callbacks: {
+            onImageUpload: function (files) {
+                var file = files[0];
+                var fd = new FormData();
+                fd.append('file', file);
+                fd.append('__RequestVerificationToken', csrfToken);
+
+                $.ajax({
+                    url:         uploadUrl,
+                    type:        'POST',
+                    data:        fd,
+                    cache:       false,
+                    contentType: false,
+                    processData: false
+                })
+                .done(function (res) {
+                    if (res && res.success) {
+                        $('#ac_desc').summernote('insertImage', res.url, file.name);
+                    } else {
+                        alert((res && res.message) ? res.message : 'Resim yüklenemedi.');
+                    }
+                })
+                .fail(function () {
+                    alert('Resim yüklenirken sunucu hatası oluştu.');
+                });
+            }
+        }
+    });
+
+    // Bootstrap modal içinde Summernote dialog z-index sorunu için
+    $(document).on('focusin', function (e) {
+        if ($(e.target).closest('.note-editor, .note-popover, .note-modal').length) {
+            e.stopImmediatePropagation();
+        }
+    });
+
+    function showAlert(msg, type) {
+        $('#addContentAlert')
+            .removeClass('alert-success alert-danger')
+            .addClass('alert-' + type)
+            .html(msg)
+            .show();
+    }
+});
+</script>
+}

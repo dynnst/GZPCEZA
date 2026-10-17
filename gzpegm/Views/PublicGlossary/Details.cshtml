@@ -1,0 +1,221 @@
+@model gzpegm.Models.DocumentTerms
+@{
+    ViewBag.Title = Model.Term + " - Terimler Sözlüğü";
+    Layout = "~/Views/Shared/_Master.cshtml";
+
+    // Oturum açan kullanıcı bilgisini al - CONTROLLER'dan gelecek
+    string userName = (Session["fldName"] ?? "").ToString();
+    string userSurname = (Session["fldLastName"] ?? "").ToString();
+    string userSicil = (Session["fldSicil"] ?? "").ToString();
+
+    // XSS koruması ile JavaScript için encode edilmiş değerler
+    string jsUserName = HttpUtility.JavaScriptStringEncode(userName);
+    string jsUserSurname = HttpUtility.JavaScriptStringEncode(userSurname);
+    string jsUserSicil = HttpUtility.JavaScriptStringEncode(userSicil);
+}
+
+<!-- CSS Dosyası -->
+<link href="@Url.Content("~/Content/glossary-details.css")" rel="stylesheet" />
+
+<!-- Image Modal Overlay -->
+<div class="image-modal-overlay" id="imageModalOverlay">
+    <div class="image-modal-content">
+        <button class="image-modal-close" onclick="closeImageModal()">&times;</button>
+        <div class="image-modal-wrapper">
+            <img id="modalImage" class="image-modal-image" alt="Büyütülmüş Görüntü" />
+            <div class="image-modal-watermark-layer" id="modalWatermarkLayer"></div>
+        </div>
+        <div class="image-modal-info">
+            <p id="modalImageInfo">Kapatmak için ESC tuşuna basın veya tıklayın</p>
+        </div>
+    </div>
+</div>
+
+<!-- Header -->
+<div class="glossary-detail-header">
+    <div class="header-container">
+        <nav class="breadcrumb-nav">
+            <a href="@Url.Action("Index", "Home")">Anasayfa</a>
+            <span> / </span>
+            <a href="@Url.Action("Index", "PublicGlossary")">Terimler Sözlüğü</a>
+            <span> / </span>
+            <span>@Model.Term</span>
+        </nav>
+        <h1>@Model.Term</h1>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="glossary-detail-wrapper">
+    <!-- Left Column -->
+    <div class="glossary-detail-main">
+        <!-- Definition Image -->
+        @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
+        {
+            <div class="definition-image" onclick="openImageModal('@Model.ImageUrl', '@Model.Term')">
+                <div class="definition-image-container">
+                    <img src="@Model.ImageUrl" alt="@Model.Term"
+                         ondragstart="return false;"
+                         oncontextmenu="return false;"
+                         draggable="false"
+                         loading="lazy" />
+                    <!-- SVG Watermark -->
+                    <div class="watermark-container">
+                        <svg class="watermark-svg" preserveAspectRatio="none" viewBox="0 0 1000 1000">
+                            <defs>
+                                <pattern id="diagonalPattern-@Model.Id" patternUnits="userSpaceOnUse" width="200" height="200" patternTransform="rotate(-45)">
+                                    <text x="0" y="30" font-family="'Segoe UI', Arial, sans-serif" font-size="30" font-weight="700" fill="white" opacity="0.8">
+                                        @Html.Raw(jsUserName) @Html.Raw(jsUserSurname) (@Html.Raw(jsUserSicil))
+                                    </text>
+                                </pattern>
+                            </defs>
+                            <rect width="1000" height="1000" fill="url(#diagonalPattern-@Model.Id)" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Definition Section -->
+        <div class="content-section">
+            <h2 class="section-title definition">Tanım</h2>
+            <div class="section-content">
+                @Html.Raw(Model.Definition)
+            </div>
+        </div>
+
+        <!-- Detailed Description -->
+        @if (!string.IsNullOrWhiteSpace(Model.DetailedDescription))
+        {
+            <div class="content-section">
+                <h2 class="section-title description">Ayrıntılı Açıklama</h2>
+                <div class="section-content">
+                    @Html.Raw(Model.DetailedDescription)
+                </div>
+            </div>
+        }
+
+     
+
+        <!-- Meta Information -->
+        <div class="meta-info-box">
+            <div class="meta-item">
+                <span class="meta-label">Kategori:</span>
+                <span class="meta-value">@Model.Category</span>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(Model.AdSoyad))
+            {
+                <div class="meta-item">
+                    <span class="meta-label">Ekleyen:</span>
+                    <span class="meta-value">
+                        <i class="fas fa-user" style="margin-right: 6px;"></i>
+                        @Model.AdSoyad
+                        @if (!string.IsNullOrWhiteSpace(Model.Sicil))
+                        {
+                            <span style="color: #9ca3af; font-size: 0.9em;"> (@Model.Sicil)</span>
+                        }
+                    </span>
+                </div>
+            }
+            @if (Model.CreatedAt.HasValue)
+            {
+                <div class="meta-item">
+                    <span class="meta-label">Yayın Tarihi:</span>
+                    <span class="meta-value">@Model.CreatedAt.Value.ToString("dd.MM.yyyy")</span>
+                </div>
+            }
+            @if (Model.UpdatedAt.HasValue)
+            {
+                <div class="meta-item">
+                    <span class="meta-label">Son Güncelleme:</span>
+                    <span class="meta-value">@Model.UpdatedAt.Value.ToString("dd.MM.yyyy")</span>
+                </div>
+            }
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <a href="@Url.Action("Index", "PublicGlossary")" class="btn-action btn-back">
+                Geri Dön
+            </a>
+          
+        </div>
+    </div>
+
+    <!-- Right Sidebar -->
+    <aside class="glossary-detail-sidebar">
+        <!-- Category Card -->
+        <div class="info-card">
+            <div class="info-card-title">Kategori</div>
+            <div class="category-info">
+                <span class="category-badge">@Model.Category</span>
+            </div>
+        </div>
+
+        <!-- Creator Information Card -->
+        @if (!string.IsNullOrWhiteSpace(Model.AdSoyad))
+        {
+            <div class="info-card">
+                <div class="info-card-title">
+                    <i class="fas fa-user-circle"></i> Terim Ekleyen
+                </div>
+                <div class="creator-info">
+                    <div class="creator-name">@Model.AdSoyad</div>
+                    @if (!string.IsNullOrWhiteSpace(Model.Sicil))
+                    {
+                        <div class="creator-sicil">
+                            <span class="sicil-label">Sicil:</span>
+                            <span class="sicil-value">@Model.Sicil</span>
+                        </div>
+                    }
+                    @if (Model.CreatedAt.HasValue)
+                    {
+                        <div class="creator-date">
+                            <span class="date-label">Tarih:</span>
+                            <span class="date-value">@Model.CreatedAt.Value.ToString("dd.MM.yyyy")</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- Related Terms -->
+        @if (ViewBag.RelatedTerms != null && ViewBag.RelatedTerms.Count > 0)
+        {
+            <div class="related-terms-sidebar">
+                <h3>İlişkili Terimler</h3>
+                <nav class="related-terms-list">
+                    @foreach (var relatedTerm in ViewBag.RelatedTerms)
+                    {
+                        <a href="@Url.Action("Details", "PublicGlossary", new { id = relatedTerm.Id })"
+                           class="related-term-link"
+                           title="@relatedTerm.Term">
+                            @relatedTerm.Term
+                        </a>
+                    }
+                </nav>
+            </div>
+        }
+        else
+        {
+            <div class="related-terms-sidebar">
+                <h3>İlişkili Terimler</h3>
+                <div class="no-related-terms">
+                    İlişkili terim bulunamadı
+                </div>
+            </div>
+        }
+    </aside>
+</div>
+
+<!-- JavaScript Değişkenleri (View'dan) -->
+<script>
+    // XSS korumalı kullanıcı bilgileri - JS dosyası için global değişkenler
+    var watermarkUserName = '@Html.Raw(jsUserName)';
+    var watermarkUserSurname = '@Html.Raw(jsUserSurname)';
+    var watermarkUserSicil = '@Html.Raw(jsUserSicil)';
+</script>
+
+<!-- JavaScript Dosyası -->
+<script src="@Url.Content("~/js/glossary-details.js")"></script>
+

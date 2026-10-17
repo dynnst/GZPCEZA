@@ -1,0 +1,376 @@
+@model gzpegm.ViewModels.DashboardViewModel
+@using System.Linq
+@{
+    ViewBag.Title = "Yönetim Paneli";
+    Layout = "~/Views/Shared/_Master.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="@Url.Content("~/Content/dashboard-v2.css")" />
+}
+
+<div class="wrapper wrapper-content animated fadeInRight dashboard-v2">
+    @if (Model != null && Model.CurrentUser != null && (Model.CurrentUser.Role == "Admin" || Model.CurrentUser.Role == "Teacher"))
+    {
+        <div class="row">
+            <div class="col-lg-4">
+                <div class="ibox">
+                    <div class="ibox-title">
+                        <span class="label label-warning float-right">@Model.PendingCourseReviewsCount</span>
+                        <h5>Kurs Yorumları</h5>
+                    </div>
+                    <div class="ibox-content">
+                        <h3><i class="fa fa-star"></i> Bekleyen Yorumlar</h3>
+                        <p>Öğrencilerin kurs yorumlarını onayla veya sil.</p>
+                        <a class="btn btn-warning btn-sm" href="@Url.Action("PendingReviews", "Course")">Yorumları Yönet</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="ibox">
+                    <div class="ibox-title">
+                        <span class="label label-info float-right">@Model.PendingLandingCommentsCount</span>
+                        <h5>Anasayfa Yorumları</h5>
+                    </div>
+                    <div class="ibox-content">
+                        <h3><i class="fa fa-comments"></i> Bekleyen Yorumlar</h3>
+                        <p>Kullanıcı yorumlarını onayla veya sil.</p>
+                        <a class="btn btn-info btn-sm" href="@Url.Action("PendingComments", "Landing")">Yorumları Yönet</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="ibox">
+                    <div class="ibox-title">
+                        <span class="label label-success float-right">@Model.PendingCertificateRequestsCount</span>
+                        <h5>Sertifika Talepleri</h5>
+                    </div>
+                    <div class="ibox-content">
+                        <h3><i class="fa fa-certificate"></i> Bekleyen Talepler</h3>
+                        <p>Öğrencilerin sertifika taleplerini onayla veya reddet.</p>
+                        <a class="btn btn-success btn-sm" href="@Url.Action("PendingRequests", "Certificate")">Talepleri Yönet</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="row">
+        <div class="col-lg-3">
+            <div class="ibox">
+                <div class="ibox-title">
+                    <span class="label label-success float-right">Aktif</span>
+                    <h5>Toplam Kurs</h5>
+                </div>
+                <div class="ibox-content">
+                    <h1 class="no-margins">@Model.TotalCourses</h1>
+                    <div class="stat-percent font-bold text-success"><i class="fa fa-book"></i></div>
+                    <small>Aktif kurslar</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3">
+            <div class="ibox">
+                <div class="ibox-title">
+                    <span class="label label-info float-right">Aktif</span>
+                    <h5>Toplam Sınav</h5>
+                </div>
+                <div class="ibox-content">
+                    <h1 class="no-margins">@Model.TotalExams</h1>
+                    <div class="stat-percent font-bold text-info"><i class="fa fa-graduation-cap"></i></div>
+                    <small>Aktif sınavlar</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3">
+            <div class="ibox">
+                <div class="ibox-title">
+                    <span class="label label-primary float-right">Kayıtlı</span>
+                    <h5>Toplam Öğrenci</h5>
+                </div>
+                <div class="ibox-content">
+                    <h1 class="no-margins">@Model.TotalStudents</h1>
+                    <div class="stat-percent font-bold text-navy"><i class="fa fa-users"></i></div>
+                    <small>Kayıtlı öğrenciler</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3">
+            <div class="ibox">
+                <div class="ibox-title">
+                    <span class="label label-danger float-right">Toplam</span>
+                    <h5>Kurs Kayıtları</h5>
+                </div>
+                <div class="ibox-content">
+                    <h1 class="no-margins">@Model.TotalEnrollments</h1>
+                    <div class="stat-percent font-bold text-danger"><i class="fa fa-list"></i></div>
+                    <small>Tüm kurs kayıtları</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="ibox">
+                <div class="ibox-title">
+                    <h5>Son 30 Gün Kurs Kayıtları</h5>
+                    <div class="float-right">
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-xs btn-white active">30 Gün</button>
+                            <button type="button" class="btn btn-xs btn-white">Kurs</button>
+                            <button type="button" class="btn btn-xs btn-white">Sınav</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="ibox-content">
+                    <div class="row">
+                        <div class="col-lg-9">
+                            <canvas id="enrollmentChart" height="120"></canvas>
+                        </div>
+                        <div class="col-lg-3">
+                            <ul class="stat-list">
+                                <li>
+                                    <h2 class="no-margins">@Model.TotalEnrollments</h2>
+                                    <small>Toplam kurs kaydı</small>
+                                    <div class="stat-percent"><i class="fa fa-level-up text-navy"></i></div>
+                                    <div class="progress progress-mini">
+                                        <div style="width: 100%;" class="progress-bar"></div>
+                                    </div>
+                                </li>
+                                <li>
+                                    <h2 class="no-margins">@Model.ActiveStudentsLast7Days</h2>
+                                    <small>Son 7 gün aktif öğrenci</small>
+                                    <div class="stat-percent"><i class="fa fa-bolt text-navy"></i></div>
+                                    <div class="progress progress-mini">
+                                        <div style="width: @(Model.ActiveStudentsLast7Days > 0 ? 65 : 5)%;" class="progress-bar"></div>
+                                    </div>
+                                </li>
+                                <li>
+                                    <h2 class="no-margins">@Model.AverageExamDurationMinutes dk</h2>
+                                    <small>Ortalama sınav süresi</small>
+                                    <div class="stat-percent"><i class="fa fa-clock-o text-navy"></i></div>
+                                    <div class="progress progress-mini">
+                                        <div style="width: @(Model.AverageExamDurationMinutes > 0 ? 45 : 5)%;" class="progress-bar"></div>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="ibox">
+                <div class="ibox-title">
+                    <h5>En Başarılı Öğrenciler</h5>
+                </div>
+                <div class="ibox-content ibox-heading">
+                    <h3><i class="fa fa-trophy"></i> Başarı Listesi</h3>
+                    <small>Sınav sonuçlarına göre en yüksek ortalamaya sahip öğrenciler.</small>
+                </div>
+                <div class="ibox-content">
+                    <div class="feed-activity-list">
+                        @if (Model.TopStudents != null && Model.TopStudents.Count > 0)
+                        {
+                            foreach (var student in Model.TopStudents)
+                            {
+                                <div class="feed-element">
+                                    <div>
+                                        <small class="float-right text-navy">@student.Avg%</small>
+                                        <strong>@student.Name</strong>
+                                        <div>Ortalama başarı puanı</div>
+                                        <small class="text-muted">Sınav performansı</small>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-muted">Veri yok.</div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="row">
+                <div class="col-lg-6">
+                    <div class="ibox">
+                        <div class="ibox-title">
+                            <h5>En Popüler Kurslar</h5>
+                        </div>
+                        <div class="ibox-content">
+                            <canvas id="popularCoursesChart" height="170"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="ibox">
+                        <div class="ibox-title">
+                            <h5>Sınav Başarı Oranları</h5>
+                        </div>
+                        <div class="ibox-content">
+                            <canvas id="examStatsChart" height="170"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="ibox">
+                        <div class="ibox-title">
+                            <h5>Son Sınav Sonuçları</h5>
+                        </div>
+                        <div class="ibox-content table-responsive">
+                            <table class="table table-hover no-margins">
+                                <thead>
+                                    <tr>
+                                        <th>Durum</th>
+                                        <th>Tarih</th>
+                                        <th>Öğrenci</th>
+                                        <th>Sınav</th>
+                                        <th class="text-right">Puan</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Model.RecentActivities != null && Model.RecentActivities.Count > 0)
+                                    {
+                                        foreach (var activity in Model.RecentActivities)
+                                        {
+                                            var finishedAtText = activity.FinishedAt.HasValue ? activity.FinishedAt.Value.ToString("dd.MM.yyyy HH:mm") : "—";
+                                            <tr>
+                                                <td><span class="label label-primary">Tamamlandı</span></td>
+                                                <td><i class="fa fa-clock-o"></i> @finishedAtText</td>
+                                                <td>@activity.UserName</td>
+                                                <td>@activity.ExamTitle</td>
+                                                <td class="text-right">
+                                                    <span class="label label-info">@activity.Score / @activity.MaxScore</span>
+                                                    <small class="text-navy">(@String.Format("{0:F1}%", activity.Percentage))</small>
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted">Henüz sınav sonucu bulunmuyor.</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="@Url.Content("~/AdminTemplate/js/plugins/chartjs/chart.min.js")"></script>
+
+<script>
+    (function () {
+        if (typeof Chart === 'undefined') {
+            return;
+        }
+
+        // Chart.js 2.x ve 3.x / 4.x tam geriye dönük uyumluluk
+        if (Chart.defaults && Chart.defaults.global) {
+            Chart.defaults.global.defaultFontColor = '#6c757d';
+            Chart.defaults.global.defaultFontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+            Chart.defaults.global.defaultFontSize = 13;
+        } else if (Chart.defaults && Chart.defaults.font) {
+            Chart.defaults.color = '#6c757d';
+            Chart.defaults.font.family = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+            Chart.defaults.font.size = 13;
+        }
+
+        var enrollmentCanvas = document.getElementById('enrollmentChart');
+        if (enrollmentCanvas) {
+            var enrollmentLabels = @Html.Raw(Model.EnrollmentDatesJson ?? "[]");
+            var enrollmentData = @Html.Raw(Model.EnrollmentCountsJson ?? "[]");
+            var hasEnrollments = enrollmentLabels && enrollmentLabels.length > 0;
+
+            new Chart(enrollmentCanvas.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: hasEnrollments ? enrollmentLabels : ['Son 30 Gün (Kayıt Yok)'],
+                    datasets: [{
+                        label: 'Kayıtlar',
+                        data: hasEnrollments ? enrollmentData : [0],
+                        borderColor: 'rgb(26, 179, 148)',
+                        backgroundColor: 'rgba(26, 179, 148, 0.12)',
+                        lineTension: 0.35,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
+        var popularCanvas = document.getElementById('popularCoursesChart');
+        if (popularCanvas) {
+            var popularLabels = @Html.Raw(Model.PopularCourseTitlesJson ?? "[]");
+            var popularData = @Html.Raw(Model.PopularCourseCountsJson ?? "[]");
+            var hasPopular = popularLabels && popularLabels.length > 0;
+
+            new Chart(popularCanvas.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: hasPopular ? popularLabels : ['Kayıtlı Kurs Yok'],
+                    datasets: [{
+                        label: 'Kayıt Sayısı',
+                        data: hasPopular ? popularData : [0],
+                        backgroundColor: 'rgba(28, 132, 198, 0.8)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    legend: { display: false }
+                }
+            });
+        }
+
+        var examCanvas = document.getElementById('examStatsChart');
+        if (examCanvas) {
+            var examLabels = @Html.Raw(Model.ExamTitlesJson ?? "[]");
+            var examPassed = @Html.Raw(Model.ExamPassedCountsJson ?? "[]");
+            var examFailed = @Html.Raw(Model.ExamFailedCountsJson ?? "[]");
+            var hasExams = examLabels && examLabels.length > 0;
+
+            new Chart(examCanvas.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: hasExams ? examLabels : ['Sınav Sonucu Yok'],
+                    datasets: [{
+                        label: 'Başarılı',
+                        data: hasExams ? examPassed : [0],
+                        backgroundColor: 'rgba(26, 179, 148, 0.8)'
+                    }, {
+                        label: 'Başarısız',
+                        data: hasExams ? examFailed : [0],
+                        backgroundColor: 'rgba(237, 85, 101, 0.8)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        xAxes: [{ stacked: true }],
+                        yAxes: [{ stacked: true }]
+                    }
+                }
+            });
+        }
+    })();
+</script>

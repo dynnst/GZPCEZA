@@ -1,0 +1,390 @@
+@model List<gzpegm.Models.E_User>
+@{
+    Layout = "~/Views/Shared/_Master.cshtml";
+    ViewBag.Title = "Tüm Öğretmenler & Eğitmen Kadrosu";
+    var courseCountDict = ViewBag.CourseCount as Dictionary<int, int> ?? new Dictionary<int, int>();
+    var studentCountDict = ViewBag.StudentCount as Dictionary<int, int> ?? new Dictionary<int, int>();
+}
+
+<div class="page-wrapper">
+    <!-- EGM Hero Başlık -->
+    <div class="instructor-hero mb-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h1 class="hero-title">
+                    <i class="fas fa-chalkboard-teacher mr-2"></i>Eğitmen Kadrosu & Uzman Personel
+                </h1>
+                <p class="hero-subtitle">
+                    Hudut Kapıları eğitim sisteminde içerik hazırlayan ve sınav düzenleyen uzman eğitmen ve yöneticilerimiz.
+                </p>
+            </div>
+            <div class="d-flex align-items-center flex-wrap gap-2">
+                <span class="badge badge-light px-3 py-2 font-weight-bold" style="font-size: 13px; color: #1e3c72;">
+                    Toplam @(Model?.Count ?? 0) Eğitmen
+                </span>
+                <a href="@Url.Action("StudentIndex", "Course")" class="btn btn-hero-action">
+                    <i class="fas fa-arrow-left mr-1"></i> Kurs Kataloğuna Dön
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Arama ve Toolbar -->
+    <div class="instructor-toolbar mb-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div class="input-group" style="max-width: 420px;">
+                <div class="input-group-prepend">
+                    <span class="input-group-text bg-light border-right-0"><i class="fas fa-search text-muted"></i></span>
+                </div>
+                <input type="text" id="instructorSearch" class="form-control border-left-0" placeholder="Eğitmen adı veya e-posta ile arayın..." autocomplete="off" />
+            </div>
+            <div class="text-muted small">
+                Sayfa <strong>@(ViewBag.CurrentPage ?? 1)</strong> / @(ViewBag.TotalPages ?? 1)
+            </div>
+        </div>
+    </div>
+
+    <!-- Eğitmenler Kart Izgarası -->
+    <div class="row" id="instructorGrid">
+        @if (Model != null && Model.Count > 0)
+        {
+            foreach (var instructor in Model)
+            {
+                int cCount = courseCountDict.ContainsKey(instructor.fldId) ? courseCountDict[instructor.fldId] : 0;
+                int sCount = studentCountDict.ContainsKey(instructor.fldId) ? studentCountDict[instructor.fldId] : 0;
+                string fullName = (instructor.fldName ?? "") + " " + (instructor.fldLastName ?? "");
+                string initials = ((instructor.fldName != null && instructor.fldName.Length > 0 ? instructor.fldName.Substring(0, 1) : "") +
+                                  (instructor.fldLastName != null && instructor.fldLastName.Length > 0 ? instructor.fldLastName.Substring(0, 1) : "")).ToUpper();
+
+                var searchText = (fullName + " " + (instructor.fldEmail ?? "") + " " + (instructor.Role ?? "")).ToLowerInvariant();
+
+                <div class="col-xl-3 col-lg-4 col-md-6 mb-4 instructor-col" data-search="@searchText">
+                    <div class="instructor-card">
+                        <div class="instructor-avatar-wrap">
+                            @if (!string.IsNullOrEmpty(instructor.fldPicture))
+                            {
+                                <img src="@Url.Content("~/files/User/" + instructor.fldPicture)" alt="@fullName" class="avatar-img" />
+                            }
+                            else
+                            {
+                                <div class="avatar-initials">
+                                    @(string.IsNullOrEmpty(initials) ? "E" : initials)
+                                </div>
+                            }
+                            <span class="badge instructor-role-badge">
+                                @(instructor.Role == "Admin" ? "Yönetici" : "Eğitmen")
+                            </span>
+                        </div>
+
+                        <div class="instructor-body">
+                            <h5 class="instructor-name" title="@fullName">@fullName</h5>
+                            <p class="instructor-email" title="@instructor.fldEmail">
+                                <i class="far fa-envelope mr-1"></i>@(instructor.fldEmail ?? "Belirtilmemiş")
+                            </p>
+
+                            <div class="instructor-stats-grid">
+                                <div class="stat-box">
+                                    <span class="stat-num">@cCount</span>
+                                    <span class="stat-lbl"><i class="fas fa-book-open mr-1"></i>Aktif Kurs</span>
+                                </div>
+                                <div class="stat-box">
+                                    <span class="stat-num">@sCount</span>
+                                    <span class="stat-lbl"><i class="fas fa-user-graduate mr-1"></i>Kursiyer</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="instructor-footer">
+                            <a class="btn btn-view-courses w-100"
+                               href="@Url.Action("InstructorCourses", "Course", new { teacherId = instructor.fldId })">
+                                <i class="fas fa-graduation-cap mr-2"></i>Eğitmenin Kursları
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-12">
+                <div class="text-center py-5 bg-white rounded-lg border shadow-sm">
+                    <i class="fas fa-chalkboard-teacher fa-4x text-muted mb-3" style="color: #cbd5e1 !important;"></i>
+                    <h4 class="text-muted font-weight-bold">Henüz Eğitmen Bulunmuyor</h4>
+                    <p class="text-muted small">Platforma kayıtlı aktif eğitmen veya yönetici bulunmamaktadır.</p>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div id="noInstructorMatch" class="text-center py-5" style="display:none;">
+        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+        <h5 class="text-muted font-weight-bold">Aramanıza uygun eğitmen bulunamadı</h5>
+        <p class="text-muted small">Lütfen aradığınız ismi veya e-postayı kontrol ediniz.</p>
+    </div>
+
+    <!-- Sayfalandırma -->
+    @if (ViewBag.TotalPages != null && ViewBag.TotalPages > 1)
+    {
+        <div class="row mt-3">
+            <div class="col-12">
+                <nav aria-label="Sayfa navigasyonu">
+                    <ul class="pagination justify-content-center instructor-pagination">
+                        @{
+                            int current = ViewBag.CurrentPage ?? 1;
+                            int totalPages = ViewBag.TotalPages ?? 1;
+                            int startPage = Math.Max(1, current - 2);
+                            int endPage = Math.Min(totalPages, current + 2);
+
+                            if (startPage > 1)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Action("AllInstructors", "Course", new { page = 1 })">&laquo;</a>
+                                </li>
+                            }
+
+                            if (current > 1)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Action("AllInstructors", "Course", new { page = current - 1 })">&lsaquo;</a>
+                                </li>
+                            }
+
+                            for (int i = startPage; i <= endPage; i++)
+                            {
+                                <li class="page-item @(i == current ? "active" : "")">
+                                    <a class="page-link" href="@Url.Action("AllInstructors", "Course", new { page = i })">@i</a>
+                                </li>
+                            }
+
+                            if (current < totalPages)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Action("AllInstructors", "Course", new { page = current + 1 })">&rsaquo;</a>
+                                </li>
+                            }
+
+                            if (endPage < totalPages)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Action("AllInstructors", "Course", new { page = totalPages })">&raquo;</a>
+                                </li>
+                            }
+                        }
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        $(function () {
+            $('#instructorSearch').on('input', function () {
+                var q = $(this).val().toLocaleLowerCase('tr-TR').trim();
+                var visible = 0;
+                $('.instructor-col').each(function () {
+                    var s = ($(this).data('search') || '').toString().toLocaleLowerCase('tr-TR');
+                    var match = !q || s.indexOf(q) !== -1;
+                    $(this).toggle(match);
+                    if (match) visible++;
+                });
+                $('#noInstructorMatch').toggle(visible === 0);
+            });
+        });
+    </script>
+}
+
+@section Styles {
+    <style>
+        .page-wrapper {
+            padding: 10px 0;
+        }
+
+        /* HERO BANNER */
+        .instructor-hero {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #ffffff;
+            border-radius: 12px;
+            padding: 24px 28px;
+            box-shadow: 0 4px 16px rgba(30, 60, 114, 0.12);
+        }
+        .hero-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #ffffff;
+            margin: 0 0 6px 0;
+            display: flex;
+            align-items: center;
+        }
+        .hero-subtitle {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.85);
+            margin: 0;
+            max-width: 700px;
+        }
+        .btn-hero-action {
+            background: rgba(255, 255, 255, 0.15);
+            color: #ffffff !important;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            font-size: 13px;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            text-decoration: none !important;
+        }
+        .btn-hero-action:hover {
+            background: #ffffff;
+            color: #1e3c72 !important;
+            transform: translateY(-1px);
+        }
+
+        /* TOOLBAR */
+        .instructor-toolbar {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 14px 20px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+        }
+
+        /* INSTRUCTOR CARD */
+        .instructor-card {
+            background: #ffffff;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            transition: all 0.2s ease;
+            overflow: hidden;
+            text-align: center;
+            padding: 22px 18px 18px 18px;
+        }
+        .instructor-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(30, 60, 114, 0.12);
+            border-color: #93c5fd;
+        }
+
+        .instructor-avatar-wrap {
+            position: relative;
+            margin: 0 auto 14px auto;
+            width: 84px;
+            height: 84px;
+        }
+        .avatar-img {
+            width: 84px;
+            height: 84px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #e2e8f0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .avatar-initials {
+            width: 84px;
+            height: 84px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #ffffff;
+            font-size: 26px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid #e2e8f0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .instructor-role-badge {
+            position: absolute;
+            bottom: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e3c72;
+            color: #ffffff;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 12px;
+            white-space: nowrap;
+            letter-spacing: 0.3px;
+        }
+
+        .instructor-body {
+            flex-grow: 1;
+            margin-bottom: 14px;
+        }
+        .instructor-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 8px 0 2px 0;
+            line-height: 1.3;
+        }
+        .instructor-email {
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .instructor-stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 10px 8px;
+            border: 1px solid #f1f5f9;
+        }
+        .stat-box .stat-num {
+            display: block;
+            font-size: 16px;
+            font-weight: 800;
+            color: #1e3c72;
+            line-height: 1.1;
+        }
+        .stat-box .stat-lbl {
+            font-size: 11px;
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .btn-view-courses {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #ffffff !important;
+            border: none;
+            border-radius: 8px;
+            padding: 9px 14px;
+            font-size: 13px;
+            font-weight: 700;
+            transition: all 0.2s ease;
+            text-decoration: none !important;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-view-courses:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(30, 60, 114, 0.3);
+        }
+
+        /* PAGINATION */
+        .instructor-pagination .page-link {
+            color: #1e3c72;
+            font-weight: 600;
+            font-size: 13px;
+            padding: 8px 14px;
+            border-color: #cbd5e1;
+        }
+        .instructor-pagination .page-item.active .page-link {
+            background-color: #1e3c72;
+            border-color: #1e3c72;
+            color: #ffffff;
+        }
+    </style>
+}

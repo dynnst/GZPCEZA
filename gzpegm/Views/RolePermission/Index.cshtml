@@ -1,0 +1,192 @@
+@model gzpegm.Controllers.RolePermissionPageViewModel
+@using System
+@using System.Linq
+
+@{
+    Layout = "~/Views/Shared/_Master.cshtml";
+    ViewBag.Title = "Rol / Yetki Yönetimi";
+    ViewBag.UseDataTables = true;
+}
+
+<section class="card">
+    <header class="card-header">
+        <h2 class="card-title"><i class="fas fa-user-shield"></i> Rol / Yetki Yönetimi</h2>
+        <p class="card-subtitle">Admin, Teacher ve Student rollerinin uygulama yetkilerini buradan düzenleyebilirsiniz.</p>
+    </header>
+    <div class="card-body">
+        @if (TempData["msgSuccess"] != null)
+        {
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i> @TempData["msgSuccess"]
+            </div>
+        }
+        @if (TempData["msgError"] != null)
+        {
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle"></i> @TempData["msgError"]
+            </div>
+        }
+
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle"></i>
+            Bu ekran mevcut kullanıcıların <strong>fldAuth</strong> yetki kodlarını günceller. Toplu rol uygulaması seçilen roldeki tüm kullanıcıları etkiler.
+        </div>
+
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i>
+            Yetkiler ekranda alan adıyla gösterilir; sistem içinde aynı mevcut kodlar kullanılmaya devam eder.
+            Örnek: <strong>3</strong> kodu ceza, tahdit ve şartlı vize işlem ekranlarını; <strong>6</strong> kodu eğitim düzenleme ekranlarını temsil eder.
+        </div>
+
+        <div class="row">
+            @foreach (var role in Model.Roles)
+            {
+                <div class="col-lg-4 mb-4">
+                    <div class="card h-100 border">
+                        <div class="card-header bg-light">
+                            <h4 class="mb-0">@role.RoleName</h4>
+                            <small class="text-muted">@role.UserCount kullanıcı</small>
+                        </div>
+                        <form method="post" action="@Url.Action("Apply", "RolePermission")">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="roleName" value="@role.RoleName" />
+                            <div class="card-body">
+                                @foreach (var permission in Model.Permissions)
+                                {
+                                    var checkedAttr = role.CurrentCodes.Contains(permission.Code) ? "checked" : "";
+                                    <div class="custom-control custom-checkbox mb-2">
+                                        <input type="checkbox" class="custom-control-input" id="role_@role.RoleName@permission.Code" name="permissionCodes" value="@permission.Code" @checkedAttr />
+                                        <label class="custom-control-label" for="role_@role.RoleName@permission.Code">
+                                            <strong>@permission.Code - @permission.Name</strong>
+                                            <small class="d-block text-muted">@permission.Description</small>
+                                        </label>
+                                    </div>
+                                }
+                            </div>
+                            <div class="card-footer text-right">
+                                <button type="submit" class="btn btn-primary" onclick="return confirm('@role.RoleName rolündeki tüm kullanıcıların yetkileri güncellenecek. Devam edilsin mi?');">
+                                    <i class="fas fa-save"></i> Bu Role Uygula
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+<section class="card">
+    <header class="card-header">
+        <h2 class="card-title"><i class="fas fa-list"></i> Yetki Kodları</h2>
+        <p class="card-subtitle">Şartlı vize, tahdit, eğitim düzenleme gibi alanların bağlı olduğu yetki grupları.</p>
+    </header>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Kod</th>
+                        <th>Grup</th>
+                        <th>Yetki</th>
+                        <th>Açıklama</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Permissions)
+                    {
+                        <tr>
+                            <td><span class="badge badge-dark">@item.Code</span></td>
+                            <td>@item.Group</td>
+                            <td><strong>@item.Name</strong></td>
+                            <td>@item.Description</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<section class="card">
+    <header class="card-header">
+        <h2 class="card-title"><i class="fas fa-users-cog"></i> Kullanıcı Bazlı Yetki Düzenleme</h2>
+        <p class="card-subtitle">Tek bir kullanıcının yetkisini rolünden bağımsız olarak düzenleyebilirsiniz.</p>
+    </header>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table id="rolePermissionUsersTable" class="table table-striped table-bordered">
+                <thead>
+                    <tr>
+                        <th>Sicil</th>
+                        <th>Ad Soyad</th>
+                        <th>Rol</th>
+                        <th>Mevcut Yetki</th>
+                        <th style="min-width:360px;">Düzenle</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in Model.Users)
+                    {
+                        var userCodes = (user.AuthCodes ?? "")
+                            .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                            .Select(x => x.Trim())
+                            .ToList();
+
+                        <tr>
+                            <td>@user.Sicil</td>
+                            <td>@user.FullName</td>
+                            <td>@user.Role</td>
+                            <td>@user.AuthCodes</td>
+                            <td>
+                                <form method="post" action="@Url.Action("UpdateUserPermissions", "RolePermission")" class="mb-0">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="userId" value="@user.UserId" />
+                                    <div class="d-flex flex-wrap align-items-center">
+                                        @foreach (var permission in Model.Permissions)
+                                        {
+                                            var checkedAttr = userCodes.Contains(permission.Code) ? "checked" : "";
+                                            <label class="mr-3 mb-2">
+                                                <input type="checkbox" name="permissionCodes" value="@permission.Code" @checkedAttr />
+                                                @permission.Code - @permission.Name
+                                            </label>
+                                        }
+                                        <button type="submit" class="btn btn-sm btn-success ml-auto">
+                                            <i class="fas fa-save"></i> Kaydet
+                                        </button>
+                                    </div>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        $(function () {
+            if ($.fn.DataTable) {
+                $('#rolePermissionUsersTable').DataTable({
+                    pageLength: 25,
+                    order: [[2, 'asc'], [1, 'asc']],
+                    language: {
+                        search: 'Ara:',
+                        lengthMenu: 'Sayfada _MENU_ kayıt göster',
+                        info: '_TOTAL_ kayıttan _START_ - _END_ arası gösteriliyor',
+                        infoEmpty: 'Kayıt yok',
+                        zeroRecords: 'Eşleşen kayıt bulunamadı',
+                        paginate: {
+                            first: 'İlk',
+                            last: 'Son',
+                            next: 'Sonraki',
+                            previous: 'Önceki'
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+}

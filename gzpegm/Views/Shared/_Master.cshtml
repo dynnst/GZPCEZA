@@ -1,0 +1,297 @@
+@{
+    Layout = null;
+}
+<!doctype html>
+<html class="fixed has-top-menu" lang="tr">
+<head>
+    <meta charset="utf-8" />
+
+    <!-- Basic -->
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+    <title>T.C. İçişleri Bakanlığı Emniyet Genel Müdürlüğü</title>
+    <meta name="title" content="T.C. İçişleri Bakanlığı Emniyet Genel Müdürlüğü">
+    <meta name="description" content="T.C. İçişleri Bakanlığı Emniyet Genel Müdürlüğü">
+    <meta name="keywords" content="Polis, Emniyet, Özel harekat, Terör,Asayiş, trafik, narkotik, interpol, suç, hırsızlık, kapkaç, dolandırıcılık, ruhsat, ceza, ihbar, suçlu, güvenlik, göçmen, kaçakçılık, ">
+    <meta name="google-site-verification" />
+    <meta name="classification" />
+    <meta name="author" content="T.C. İçişleri Bakanlığı Bilgi İşlem Dairesi Başkanlığı">
+    <meta name="copyright" content="T.C. İçişleri Bakanlığı ">
+    <meta name="revisit-after" content="7 days">
+    <meta name="language" content="tr">
+    <link rel="icon" href="@Url.Content("~/files/logo/favicon-egm-32.png")" type="image/x-icon">
+
+    @{
+        bool useJqueryUi = Convert.ToBoolean(ViewBag.UseJqueryUi ?? false);
+        bool useDataTables = Convert.ToBoolean(ViewBag.UseDataTables ?? false);
+        bool useDataTablesExport = Convert.ToBoolean(ViewBag.UseDataTablesExport ?? false);
+        bool useSelect2 = Convert.ToBoolean(ViewBag.UseSelect2 ?? false);
+        bool useSummernote = Convert.ToBoolean(ViewBag.UseSummernote ?? false);
+        bool useBootstrapMultiselect = Convert.ToBoolean(ViewBag.UseBootstrapMultiselect ?? false);
+        bool useBootstrapFileUpload = Convert.ToBoolean(ViewBag.UseBootstrapFileUpload ?? false);
+        bool useAdvancedFormExamples = Convert.ToBoolean(ViewBag.UseAdvancedFormExamples ?? false);
+        bool useDashboardExamples = Convert.ToBoolean(ViewBag.UseDashboardExamples ?? false);
+    }
+
+    <!-- Mobile Metas -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+    <!-- Web Fonts (yerel olarak sağlanıyor) -->
+    <!-- Sistem fontları kullanılıyor (çevrimdışı tam uyumlu) -->
+
+    <!-- Vendor CSS -->
+    <link rel="stylesheet" href="@Url.Content("~/vendor/bootstrap/css/bootstrap.css")" />
+    <link rel="stylesheet" href="@Url.Content("~/vendor/animate/animate.css")" />
+    <link rel="stylesheet" href="@Url.Content("~/vendor/font-awesome/css/fontawesome-all.min.css")" />
+    <link rel="stylesheet" href="@Url.Content("~/vendor/magnific-popup/magnific-popup.css")" />
+    <link rel="stylesheet" href="@Url.Content("~/vendor/bootstrap-datepicker/css/bootstrap-datepicker3.css")" />
+
+    <!-- Specific Page Vendor CSS -->
+    @if (useJqueryUi)
+    {
+        <link rel="stylesheet" href="@Url.Content("~/vendor/jquery-ui/jquery-ui.css")" />
+        <link rel="stylesheet" href="@Url.Content("~/vendor/jquery-ui/jquery-ui.theme.css")" />
+    }
+    @if (useDataTables)
+    {
+        <link rel="stylesheet" href="@Url.Content("~/vendor/datatables/media/css/dataTables.bootstrap4.css")" />
+    }
+    @if (useDataTablesExport)
+    {
+        <link rel="stylesheet" href="@Url.Content("~/vendor/datatables/extras/TableTools/Buttons-1.4.2/css/buttons.bootstrap4.min.css")" />
+    }
+    @if (useBootstrapMultiselect)
+    {
+        <link rel="stylesheet" href="@Url.Content("~/vendor/bootstrap-multiselect/bootstrap-multiselect.css")" />
+    }
+    @if (useSummernote)
+    {
+        <link rel="stylesheet" href="@Url.Content("~/vendor/summernote/summernote-bs4.css")" />
+    }
+    @if (useSelect2)
+    {
+        <link rel="stylesheet" href="@Url.Content("~/vendor/select2/css/select2.css")" />
+        <link rel="stylesheet" href="@Url.Content("~/vendor/select2-bootstrap-theme/select2-bootstrap.min.css")" />
+    }
+    @if (useBootstrapFileUpload)
+    {
+        <link rel="stylesheet" href="@Url.Content("~/vendor/bootstrap-fileupload/bootstrap-fileupload.min.css")" />
+    }
+
+    <!-- Theme CSS -->
+    <link rel="stylesheet" href="@Url.Content("~/css/theme.css")" />
+
+    <!-- Skin CSS -->
+    <link rel="stylesheet" href="@Url.Content("~/css/skins/default.css")" />
+
+    <!-- Theme Custom CSS -->
+    <link rel="stylesheet" href="@Url.Content("~/css/custom.css")" />
+
+    @* View-specific styles (optional) *@
+    @RenderSection("Styles", required: false)
+
+    <!-- Head Libs -->
+    <script src="@Url.Content("~/vendor/modernizr/modernizr.js")"></script>
+    <script src="@Url.Content("~/vendor/jquery/jquery.js")"></script>
+</head>
+
+    <body>
+        @if (gzpegm.Helpers.ServerFailoverHelper.IsOperatingInFailoverMode())
+        {
+            <div class="alert alert-warning mb-0 text-center font-weight-bold server-failover-banner" style="border-radius:0; border-bottom: 2px solid #d97706; background-color: #fffbeb; color: #92400e; padding: 10px 15px; position: sticky; top: 0; z-index: 99999; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                <i class="fas fa-exclamation-triangle mr-2 text-warning"></i>
+                DİKKAT: Ana sunucuya (10.7.202.75) ulaşılamadığı için sistem otomatik olarak <strong>YEDEK SUNUCU (10.7.202.76)</strong> üzerinden çalışmaktadır.
+            </div>
+        }
+
+        <section class="body">
+            @Html.Action("Index", "UserBox")
+            <div class="inner-wrapper">
+                <section role="main" class="content-body">
+                    <a id="general-warning" class="mb-1 mt-1 mr-1 modal-basic btn btn-warning hidden" href="#modalGeneralWarning">Warning</a>
+                    <a id="general-success" class="mb-1 mt-1 mr-1 modal-basic btn btn-success hidden" href="#modalGeneralSuccess">Success</a>
+
+                    <!-- start: page -->
+                    @RenderBody()
+                    <!-- end: page -->
+                </section>
+            </div>
+        </section>
+
+        <form id="cezamChatToken" style="display:none;"></form>
+
+        <div id="modalGeneralWarning" class="modal-block modal-header-color modal-block-warning mfp-hide">
+            <section class="card">
+                <header class="card-header">
+                    <h2 class="card-title">Uyarı!</h2>
+                </header>
+                <div class="card-body">
+                    <div class="modal-wrapper">
+                        <div class="modal-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="modal-text">
+                            <h4>Uyarı</h4>
+                            <p>@ViewBag.GeneralWarningMessage</p>
+                        </div>
+                    </div>
+                </div>
+                <footer class="card-footer">
+                    <div class="row">
+                        <div class="col-md-12 text-right">
+                            <button class="btn btn-warning modal-dismiss">TAMAM</button>
+                        </div>
+                    </div>
+                </footer>
+            </section>
+        </div>
+
+        <div id="modalGeneralSuccess" class="modal-block modal-header-color modal-block-success mfp-hide">
+            <section class="card">
+                <header class="card-header">
+                    <h2 class="card-title">Başarılı!</h2>
+                </header>
+                <div class="card-body">
+                    <div class="modal-wrapper">
+                        <div class="modal-icon">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <div class="modal-text">
+                            <h4>Başarılı</h4>
+                            <p>@ViewBag.GeneralSuccessMessage</p>
+                        </div>
+                    </div>
+                </div>
+                <footer class="card-footer">
+                    <div class="row">
+                        <div class="col-md-12 text-right">
+                            <button class="btn btn-success modal-dismiss">TAMAM</button>
+                        </div>
+                    </div>
+                </footer>
+            </section>
+        </div>
+
+        <!-- Vendor -->
+        <script src="@Url.Content("~/vendor/jquery-browser-mobile/jquery.browser.mobile.js")"></script>
+        <script src="@Url.Content("~/vendor/popper/umd/popper.min.js")"></script>
+        <script src="@Url.Content("~/vendor/bootstrap/js/bootstrap.js")"></script>
+        <script src="@Url.Content("~/vendor/bootstrap-datepicker/js/bootstrap-datepicker.js")"></script>
+        <script src="@Url.Content("~/vendor/bootstrap-datepicker/locales/bootstrap-datepicker.tr.min.js")"></script>
+        <script src="@Url.Content("~/vendor/common/common.js")"></script>
+        <script src="@Url.Content("~/vendor/nanoscroller/nanoscroller.js")"></script>
+        <script src="@Url.Content("~/vendor/magnific-popup/jquery.magnific-popup.js")"></script>
+        <script src="@Url.Content("~/vendor/jquery-placeholder/jquery-placeholder.js")"></script>
+
+        <!-- Specific Page Vendor -->
+        @if (useJqueryUi)
+        {
+            <script src="@Url.Content("~/vendor/jquery-ui/jquery-ui.js")"></script>
+        }
+        @if (useSelect2)
+        {
+            <script src="@Url.Content("~/vendor/select2/js/select2.js")"></script>
+        }
+        @if (useDataTables)
+        {
+            <script src="@Url.Content("~/vendor/datatables/media/js/jquery.dataTables.min.js")"></script>
+            <script src="@Url.Content("~/vendor/datatables/media/js/dataTables.bootstrap4.min.js")"></script>
+        }
+        @if (useDataTablesExport)
+        {
+            <script src="@Url.Content("~/vendor/datatables/extras/TableTools/Buttons-1.4.2/js/dataTables.buttons.min.js")"></script>
+            <script src="@Url.Content("~/vendor/datatables/extras/TableTools/Buttons-1.4.2/js/buttons.bootstrap4.min.js")"></script>
+            <script src="@Url.Content("~/vendor/datatables/extras/TableTools/Buttons-1.4.2/jszip.min.js")"></script>
+            <script src="@Url.Content("~/vendor/datatables/extras/TableTools/Buttons-1.4.2/pdfmake.min.js")"></script>
+            <script src="@Url.Content("~/vendor/datatables/extras/TableTools/Buttons-1.4.2/vfs_fonts.js")"></script>
+            <script src="@Url.Content("~/vendor/datatables/extras/TableTools/Buttons-1.4.2/buttons.html5.min.js")"></script>
+            <script src="@Url.Content("~/vendor/datatables/extras/TableTools/Buttons-1.4.2/buttons.print.min.js")"></script>
+        }
+        @if (useBootstrapMultiselect)
+        {
+            <script charset="UTF-8" src="@Url.Content("~/vendor/bootstrap-multiselect/bootstrap-multiselect.js")"></script>
+        }
+        @if (useSummernote)
+        {
+            <script src="@Url.Content("~/vendor/summernote/summernote-bs4.js")"></script>
+        }
+        @if (useBootstrapFileUpload)
+        {
+            <script src="@Url.Content("~/vendor/bootstrap-fileupload/bootstrap-fileupload.min.js")"></script>
+        }
+
+        <!-- Theme Base, Components and Settings -->
+        <script src="@Url.Content("~/js/theme.js")"></script>
+
+        <!-- Theme Custom -->
+        <script src="@Url.Content("~/js/custom.js")?v=@System.IO.File.GetLastWriteTime(Server.MapPath("~/js/custom.js")).Ticks"></script>
+
+        @{
+            var generalDynamicScripts = (ViewBag.GeneralDynamicScripts as string ?? "").Trim();
+            var showGeneralWarning = string.Equals(generalDynamicScripts, "$('#general-warning').click();", StringComparison.Ordinal);
+            var showGeneralSuccess = string.Equals(generalDynamicScripts, "$('#general-success').click();", StringComparison.Ordinal);
+        }
+        <script>
+        $(document).ready(function () {
+            if (@Html.Raw(System.Web.Helpers.Json.Encode(showGeneralWarning))) {
+                $('#general-warning').click();
+            }
+            if (@Html.Raw(System.Web.Helpers.Json.Encode(showGeneralSuccess))) {
+                $('#general-success').click();
+            }
+        });
+        </script>
+
+        @* TempData -> modal gösterme script'i *@
+        @{
+            var generalSuccess = TempData["msgSuccess"] as string;
+            var generalError = TempData["msgError"] as string;
+        }
+        <script>
+        (function () {
+            try {
+                var success = @Html.Raw(System.Web.Helpers.Json.Encode(generalSuccess ?? ""));
+                var error = @Html.Raw(System.Web.Helpers.Json.Encode(generalError ?? ""));
+
+                $(function () {
+                    if (success && success.length > 0) {
+                        // Set modal text and open success modal
+                        $('#modalGeneralSuccess .modal-text p').text(success);
+                        $.magnificPopup.open({ items: { src: '#modalGeneralSuccess' }, type: 'inline' });
+                    } else if (error && error.length > 0) {
+                        // Set modal text and open warning modal
+                        $('#modalGeneralWarning .modal-text p').text(error);
+                        $.magnificPopup.open({ items: { src: '#modalGeneralWarning' }, type: 'inline' });
+                    }
+                });
+            } catch (e) {
+                // fallback: nothing
+                console && console.error(e);
+            }
+        })();
+        </script>
+
+        <!--Theme Initialization Files -->
+        <script src="@Url.Content("~/js/theme.init.js")"></script>
+
+        <!-- Examples -->
+        <script src="@Url.Content("~/js/examples/examples.header.menu.js")"></script>
+        @if (useDashboardExamples)
+        {
+            <script src="@Url.Content("~/js/examples/examples.dashboard.js")"></script>
+        }
+        <script src="@Url.Content("~/js/examples/examples.modals.js")"></script>
+        @if (useDataTables)
+        {
+            <script src="@Url.Content("~/js/examples/examples.datatables.default.js")"></script>
+        }
+        @if (useAdvancedFormExamples)
+        {
+            <script src="@Url.Content("~/js/examples/examples.advanced.form.js")"></script>
+        }
+
+        @* Render optional per-view Scripts section *@
+        @RenderSection("Scripts", required: false)
+
+    </body>
+</html>

@@ -1,0 +1,929 @@
+@model gzpegm.Models.ViewModels.CourseContentViewModel
+@using System
+@using System.IO
+@using System.Linq
+@using System.Collections.Generic
+@{
+    ViewBag.Title = (Model != null ? Model.ContentTitle : "Ders") + " - " + (ViewBag.CourseTitle ?? "Kurs Detayı");
+    Layout = "~/Views/Shared/_Master.cshtml";
+
+    var currentUser = ViewBag.CurrentUser as gzpegm.Models.E_User;
+    bool canModifyContent = ViewBag.CanModifyContent is bool && (bool)ViewBag.CanModifyContent;
+
+    // Dosya URL'si - normalizasyon
+    string fileUrl = null;
+    if (ViewBag.FilePath != null)
+    {
+        string raw = ViewBag.FilePath.ToString() ?? "";
+        raw = raw.Trim();
+
+        if (!string.IsNullOrEmpty(raw))
+        {
+            if (raw.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+            {
+                fileUrl = raw;
+            }
+            else if (raw.StartsWith("~") || raw.StartsWith("/"))
+            {
+                fileUrl = Url.Content(raw);
+            }
+            else
+            {
+                fileUrl = Url.Content("~/files/Egitim/" + raw.TrimStart('/', '~'));
+            }
+        }
+    }
+
+    // İçerik türü tespiti
+    bool isVideo = false;
+    bool isPdf = false;
+    bool isImage = false;
+    bool isHtml = false;
+
+    if (!string.IsNullOrEmpty(Model?.ContentType))
+    {
+        string contentType = Model.ContentType;
+        isVideo = contentType.IndexOf("video", StringComparison.OrdinalIgnoreCase) >= 0
+                  || contentType.IndexOf("mp4", StringComparison.OrdinalIgnoreCase) >= 0
+                  || contentType.IndexOf("webm", StringComparison.OrdinalIgnoreCase) >= 0;
+        isPdf = contentType.IndexOf("pdf", StringComparison.OrdinalIgnoreCase) >= 0;
+        isImage = contentType.IndexOf("image", StringComparison.OrdinalIgnoreCase) >= 0
+                  || contentType.IndexOf("jpg", StringComparison.OrdinalIgnoreCase) >= 0
+                  || contentType.IndexOf("png", StringComparison.OrdinalIgnoreCase) >= 0;
+        isHtml = contentType.IndexOf("html", StringComparison.OrdinalIgnoreCase) >= 0
+                 || contentType.IndexOf("mevzuat", StringComparison.OrdinalIgnoreCase) >= 0
+                 || contentType.IndexOf("kanun", StringComparison.OrdinalIgnoreCase) >= 0;
+    }
+
+    if (!isVideo && !isPdf && !isImage && !isHtml && !string.IsNullOrEmpty(fileUrl))
+    {
+        var ext = Path.GetExtension(fileUrl)?.ToLowerInvariant() ?? "";
+        var imgExts = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".svg" };
+        var vidExts = new[] { ".mp4", ".webm", ".ogg" };
+
+        if (Array.IndexOf(imgExts, ext) >= 0) { isImage = true; }
+        else if (Array.IndexOf(vidExts, ext) >= 0) { isVideo = true; }
+        else if (ext == ".pdf") { isPdf = true; }
+        else if (ext == ".html" || ext == ".htm") { isHtml = true; }
+    }
+
+    var allContents = ViewBag.AllContents as List<gzpegm.Models.CourseContents> ?? new List<gzpegm.Models.CourseContents>();
+    var contentExams = ViewBag.ContentExams as List<gzpegm.Models.ViewModels.ExamViewModel> ?? new List<gzpegm.Models.ViewModels.ExamViewModel>();
+
+    int? prevId = ViewBag.PreviousContentId as int?;
+    int? nextId = ViewBag.NextContentId as int?;
+}
+
+<div class="content-detail-page-container">
+
+    <!-- ÜST BREADCRUMB VE YÖNETİCİ KISAYOLLARI -->
+    <div class="content-nav-bar mb-3">
+        <div class="row align-items-center">
+            <div class="col-lg-7">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb bg-transparent p-0 mb-0">
+                        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Dashboard")"><i class="fas fa-home"></i> Ana Sayfa</a></li>
+                        @if (canModifyContent)
+                        {
+                            <li class="breadcrumb-item"><a href="@Url.Action("Index", "Course")">Eğitim Yönetimi</a></li>
+                        }
+                        else
+                        {
+                            <li class="breadcrumb-item"><a href="@Url.Action("StudentIndex", "Course")">Kurslarım</a></li>
+                        }
+                        <li class="breadcrumb-item"><a href="@Url.Action("Details", "Course", new { id = Model.CourseId })">@(ViewBag.CourseTitle ?? "Kurs Detayı")</a></li>
+                        <li class="breadcrumb-item active text-truncate font-weight-bold" style="max-width: 280px;" aria-current="page">@Model.ContentTitle</li>
+                    </ol>
+                </nav>
+            </div>
+            <div class="col-lg-5 text-lg-right mt-2 mt-lg-0">
+                <div class="btn-group btn-group-sm shadow-sm" role="group">
+                    <a href="@Url.Action("Details", "Course", new { id = Model.CourseId })" class="btn btn-outline-secondary">
+                        <i class="fas fa-list mr-1"></i> Kurs Detayı
+                    </a>
+                    @if (canModifyContent)
+                    {
+                        <a href="@Url.Action("ManageContents", "Course", new { courseId = Model.CourseId })" class="btn btn-outline-primary">
+                            <i class="fas fa-cogs mr-1"></i> İçerikleri Yönet
+                        </a>
+                        <button type="button" class="btn btn-warning font-weight-bold" data-toggle="collapse" data-target="#contentEditFormPanel" aria-expanded="false">
+                            <i class="fas fa-edit mr-1"></i> Bu İçeriği Düzenle
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BİLDİRİM MESAJLARI -->
+    @if (TempData["msgSuccess"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm mb-4" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-check-circle fa-lg mr-2 text-success"></i>
+                <div>
+                    <strong>İşlem Başarılı!</strong> @TempData["msgSuccess"]
+                </div>
+            </div>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Kapat">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+    @if (TempData["msgError"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-4" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-exclamation-triangle fa-lg mr-2 text-danger"></i>
+                <div>
+                    <strong>Hata:</strong> @TempData["msgError"]
+                </div>
+            </div>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Kapat">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
+    <!-- İÇERİK BAŞLIK VE METADATA BANNERI -->
+    <div class="content-header-banner mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-9">
+                <div class="d-flex align-items-center flex-wrap gap-2 mb-2">
+                    <span class="badge badge-course-title mr-2">
+                        <i class="fas fa-graduation-cap mr-1"></i> @(ViewBag.CourseTitle ?? "Eğitim Paketi")
+                    </span>
+                    <span class="badge badge-content-type mr-2 @GetContentTypeBadge(Model.ContentType)">
+                        <i class="fas @GetContentTypeIcon(Model.ContentType) mr-1"></i> @Model.ContentType
+                    </span>
+                    @if (ViewBag.CreatedDate != null)
+                    {
+                        <span class="badge badge-date">
+                            <i class="far fa-calendar-alt mr-1"></i> @(((DateTime)ViewBag.CreatedDate).ToString("dd.MM.yyyy HH:mm"))
+                        </span>
+                    }
+                </div>
+                <h2 class="content-main-title mb-2">@Model.ContentTitle</h2>
+                @if (!string.IsNullOrWhiteSpace(Model.ContentDescription))
+                {
+                    <div class="content-main-desc">
+                        @Html.Raw(Model.ContentDescription)
+                    </div>
+                }
+            </div>
+            <div class="col-md-3 text-md-right mt-3 mt-md-0">
+                @if (!string.IsNullOrEmpty(fileUrl))
+                {
+                    <a href="@fileUrl" target="_blank" download class="btn btn-outline-light btn-sm shadow-sm">
+                        <i class="fas fa-download mr-1"></i> Dosyayı İndir
+                    </a>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- YÖNETİCİ HIZLI DÜZENLEME PANELİ (COLLAPSIBLE) -->
+    @if (canModifyContent)
+    {
+        <div id="contentEditFormPanel" class="collapse mb-4">
+            <div class="card shadow-sm border-warning">
+                <div class="card-header bg-warning text-dark font-weight-bold d-flex justify-content-between align-items-center py-2">
+                    <span><i class="fas fa-edit mr-1"></i> İçeriği Hızlı Düzenle</span>
+                    <button type="button" class="close" data-toggle="collapse" data-target="#contentEditFormPanel">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="card-body p-3">
+                    <form method="post" action="@Url.Action("EditContent", "Course")" enctype="multipart/form-data">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="ContentId" value="@Model.ContentId" />
+                        <input type="hidden" name="CourseId" value="@Model.CourseId" />
+                        <input type="hidden" name="ReturnToContentDetail" value="true" />
+
+                        <div class="form-row">
+                            <div class="form-group col-md-8">
+                                <label class="small font-weight-bold text-dark">İçerik / Ders Başlığı <span class="text-danger">*</span></label>
+                                <input type="text" name="ContentTitle" value="@Model.ContentTitle" class="form-control form-control-sm" required maxlength="200" />
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label class="small font-weight-bold text-dark">İçerik Türü</label>
+                                <select name="ContentType" class="form-control form-control-sm custom-select">
+                                    @foreach (var type in new[] { "HTML", "PDF", "Video", "Doküman", "Sunum", "Resim", "Diğer" })
+                                    {
+                                        <option value="@type" @(string.Equals(Model.ContentType, type, StringComparison.OrdinalIgnoreCase) ? "selected" : "")>@type</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="small font-weight-bold text-dark">İçerik Açıklaması</label>
+                            <textarea name="ContentDescription" class="form-control form-control-sm" rows="2" maxlength="500">@Model.ContentDescription</textarea>
+                        </div>
+
+                        @if (isHtml)
+                        {
+                            <div class="form-group">
+                                <label class="small font-weight-bold text-dark">HTML Kanun / Ders Metni Kaynağı</label>
+                                <div class="html-editor-tabs mb-2">
+                                    <button type="button" class="btn btn-xs btn-primary html-editor-tab" data-target="visual">
+                                        <i class="fas fa-eye mr-1"></i> Görsel Düzenle
+                                    </button>
+                                    <button type="button" class="btn btn-xs btn-outline-secondary html-editor-tab" data-target="source">
+                                        <i class="fas fa-code mr-1"></i> Kaynak Kodu
+                                    </button>
+                                </div>
+
+                                <div id="htmlVisualPane" class="html-editor-pane">
+                                    <div class="html-editor-toolbar p-2 border rounded-top bg-light d-flex flex-wrap gap-1">
+                                        <button type="button" class="btn btn-xs btn-light html-command" data-command="bold"><i class="fas fa-bold"></i></button>
+                                        <button type="button" class="btn btn-xs btn-light html-command" data-command="italic"><i class="fas fa-italic"></i></button>
+                                        <button type="button" class="btn btn-xs btn-light html-command" data-command="underline"><i class="fas fa-underline"></i></button>
+                                        <button type="button" class="btn btn-xs btn-light html-command" data-command="insertUnorderedList"><i class="fas fa-list-ul"></i></button>
+                                        <button type="button" class="btn btn-xs btn-light html-command" data-command="insertOrderedList"><i class="fas fa-list-ol"></i></button>
+                                        <button type="button" class="btn btn-xs btn-light html-command" data-command="formatBlock" data-value="h2">Başlık</button>
+                                        <button type="button" class="btn btn-xs btn-light html-command" data-command="formatBlock" data-value="p">Paragraf</button>
+                                    </div>
+                                    <iframe id="htmlVisualEditor" class="html-visual-frame w-100" style="min-height: 480px; border: 1px solid #dfe5ea; border-top: 0; background:#fff;" title="Görsel HTML Düzenleyici"></iframe>
+                                </div>
+
+                                <div id="htmlSourcePane" class="html-editor-pane d-none">
+                                    <textarea id="htmlSourceEditor" name="ContentHtml" class="form-control form-control-sm font-monospace" rows="18">@Model.ContentHtml</textarea>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="form-group">
+                                <label class="small font-weight-bold text-dark">Yeni Dosya Yükle (İsteğe Bağlı)</label>
+                                <input type="file" name="FileUpload" class="form-control-file border p-2 rounded" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip,.rar,.mp4,.avi,.mov,.wmv,.webm,.jpg,.jpeg,.png,.html,.htm" />
+                                <small class="text-muted d-block mt-1">Yeni dosya seçilmezse mevcut materyal korunur.</small>
+                            </div>
+                        }
+
+                        <div class="text-right mt-3">
+                            <button type="button" class="btn btn-sm btn-secondary mr-2" data-toggle="collapse" data-target="#contentEditFormPanel">Vazgeç</button>
+                            <button type="submit" class="btn btn-sm btn-success font-weight-bold px-3">
+                                <i class="fas fa-save mr-1"></i> Değişiklikleri Kaydet
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- ANA GÖRÜNTÜLEME ALANI (SOL 8-9 KOLON) - SAĞ BİLGİ VE MÜFREDAT (3-4 KOLON) -->
+    <div class="row">
+        <!-- SOL PANEL: MATERYAL OKUYUCU / OYNATICI -->
+        <div class="col-lg-8 col-xl-9">
+
+            <div class="card reader-card mb-4 shadow-sm">
+                <!-- OKUYUCU ARAÇ ÇUBUĞU -->
+                <div class="reader-toolbar p-2 px-3 border-bottom bg-light d-flex justify-content-between align-items-center flex-wrap">
+                    <div class="d-flex align-items-center">
+                        <span class="badge badge-pill badge-primary mr-2">
+                            <i class="fas @GetContentTypeIcon(Model.ContentType) mr-1"></i> @Model.ContentType
+                        </span>
+                        <strong class="text-dark small text-truncate" style="max-width: 400px;">@Model.ContentTitle</strong>
+                    </div>
+
+                    <div class="reader-actions d-flex align-items-center gap-1 mt-1 mt-sm-0">
+                        @if (isHtml)
+                        {
+                            <button type="button" class="btn btn-xs btn-outline-secondary" id="btnFullscreenIframe" title="Tam Ekran Oku">
+                                <i class="fas fa-expand mr-1"></i> Tam Ekran
+                            </button>
+                            <button type="button" class="btn btn-xs btn-outline-secondary" id="btnPrintIframe" title="Yazdır">
+                                <i class="fas fa-print mr-1"></i> Yazdır
+                            </button>
+                            if (!string.IsNullOrEmpty(fileUrl))
+                            {
+                                <a href="@fileUrl" target="_blank" class="btn btn-xs btn-outline-info" title="Yeni Sekmede Aç">
+                                    <i class="fas fa-external-link-alt mr-1"></i> Yeni Sekme
+                                </a>
+                                <a href="@Url.Action("DownloadContent", "Course", new { id = Model.ContentId })" class="btn btn-xs btn-primary font-weight-bold" title="Görsellerle Birlikte ZIP İndir">
+                                    <i class="fas fa-file-archive mr-1"></i> ZIP İndir
+                                </a>
+                            }
+                        }
+                        else if (isPdf && !string.IsNullOrEmpty(fileUrl))
+                        {
+                            <a href="@fileUrl" target="_blank" class="btn btn-xs btn-outline-secondary">
+                                <i class="fas fa-external-link-alt mr-1"></i> Yeni Sekmede Aç
+                            </a>
+                            <a href="@fileUrl" download class="btn btn-xs btn-primary font-weight-bold">
+                                <i class="fas fa-download mr-1"></i> PDF İndir
+                            </a>
+                        }
+                        else if (!string.IsNullOrEmpty(fileUrl))
+                        {
+                            <a href="@fileUrl" download class="btn btn-xs btn-primary font-weight-bold">
+                                <i class="fas fa-download mr-1"></i> İndir
+                            </a>
+                        }
+                    </div>
+                </div>
+
+                <!-- OKUYUCU GÖVDESİ -->
+                <div class="card-body p-0 reader-body-wrap">
+                    @if (!string.IsNullOrEmpty(fileUrl) || (isHtml && !string.IsNullOrEmpty(Model.ContentHtml)))
+                    {
+                        if (isHtml)
+                        {
+                            <div id="htmlReaderWrapper" class="html-reader-container position-relative">
+                                <iframe id="htmlContentFrame" src="@fileUrl" srcdoc="@Model.ContentHtml" title="@Model.ContentTitle" class="w-100" style="min-height: 800px; border: 0; background: #ffffff;"></iframe>
+                            </div>
+                        }
+                        else if (isPdf)
+                        {
+                            <div class="pdf-reader-container p-2">
+                                <iframe src="@fileUrl" class="w-100" style="min-height: 750px; border: 0; border-radius: 6px;" frameborder="0"></iframe>
+                            </div>
+                        }
+                        else if (isVideo)
+                        {
+                            <div class="video-reader-container p-3 text-center bg-dark">
+                                <video controls controlsList="nodownload" class="w-100 rounded shadow" style="max-height: 640px; background: #000;">
+                                    <source src="@fileUrl" type="video/mp4">
+                                    <source src="@fileUrl" type="video/webm">
+                                    Tarayıcınız video etiketini desteklemiyor.
+                                </video>
+                            </div>
+                        }
+                        else if (isImage)
+                        {
+                            <div class="image-reader-container p-3 text-center bg-light">
+                                <img src="@fileUrl" alt="@Model.ContentTitle" class="img-fluid rounded shadow-sm content-image-preview" data-fullscreen-image="true" style="max-height: 720px; cursor: zoom-in;" onerror="this.style.display='none'; document.getElementById('imgFallbackAlert').style.display='block';" />
+                                <div id="imgFallbackAlert" class="alert alert-warning text-center mt-3" style="display:none;">
+                                    <i class="fas fa-exclamation-triangle mr-1"></i> Görsel yüklenemedi veya dosya bulunamadı.
+                                    <a href="@fileUrl" target="_blank" class="ml-2 font-weight-bold">Yeni sekmede açmayı deneyin</a>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="file-download-box text-center p-5 bg-white">
+                                <div class="file-icon-wrap mb-3 text-primary">
+                                    <i class="fas @GetContentTypeIcon(Model.ContentType) fa-4x"></i>
+                                </div>
+                                <h4 class="font-weight-bold text-dark mb-2">@Model.ContentTitle</h4>
+                                <p class="text-muted small mb-4" style="max-width: 500px; margin: 0 auto;">
+                                    Bu içerik tarayıcı içinde önizlenemeyen bir dosya formatındadır (@Model.ContentType). Dosyayı bilgisayarınıza indirerek inceleyebilirsiniz.
+                                </p>
+                                <a href="@fileUrl" download class="btn btn-primary px-4 py-2 font-weight-bold shadow-sm">
+                                    <i class="fas fa-download mr-2"></i> Dosyayı İndir
+                                </a>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning text-center m-4 p-5">
+                            <i class="fas fa-exclamation-circle fa-3x text-warning mb-3 d-block"></i>
+                            <h5 class="font-weight-bold text-dark">Dosya Bağlantısı Bulunamadı</h5>
+                            <p class="text-muted small mb-0">Bu içeriğe atanmış fiziksel bir dosya veya medya yolu sistemde bulunmuyor.</p>
+                        </div>
+                    }
+                </div>
+
+                <!-- ALT DERS NAVİGASYONU (ÖNCEKİ / SONRAKİ) -->
+                <div class="card-footer bg-white border-top py-3">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div>
+                            @if (prevId.HasValue)
+                            {
+                                <a href="@Url.Action("ContentDetail", "Course", new { id = prevId.Value })" class="btn btn-outline-primary font-weight-bold">
+                                    <i class="fas fa-chevron-left mr-1"></i> Önceki Ders
+                                </a>
+                            }
+                            else
+                            {
+                                <button type="button" class="btn btn-outline-secondary" disabled>
+                                    <i class="fas fa-chevron-left mr-1"></i> İlk Ders
+                                </button>
+                            }
+                        </div>
+
+                        <div>
+                            <a href="@Url.Action("Details", "Course", new { id = Model.CourseId })" class="btn btn-outline-secondary font-weight-bold">
+                                <i class="fas fa-th-list mr-1"></i> Kurs Müfredatına Dön
+                            </a>
+                        </div>
+
+                        <div>
+                            @if (nextId.HasValue)
+                            {
+                                <a href="@Url.Action("ContentDetail", "Course", new { id = nextId.Value })" class="btn btn-primary font-weight-bold shadow-sm">
+                                    Sonraki Ders <i class="fas fa-chevron-right ml-1"></i>
+                                </a>
+                            }
+                            else
+                            {
+                                <a href="@Url.Action("Details", "Course", new { id = Model.CourseId })" class="btn btn-success font-weight-bold shadow-sm">
+                                    Kursu Tamamla <i class="fas fa-check-circle ml-1"></i>
+                                </a>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- SAĞ PANEL: KURS MÜFREDATI VE SINAVLAR -->
+        <div class="col-lg-4 col-xl-3">
+
+            <!-- KURS MÜFREDATI LİSTESİ -->
+            <div class="card sidebar-card mb-4 shadow-sm">
+                <div class="card-header bg-white border-bottom py-3">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <h6 class="card-title mb-0 font-weight-bold text-dark">
+                            <i class="fas fa-list-ul text-primary mr-2"></i> Kurs Müfredatı
+                        </h6>
+                        <span class="badge badge-pill badge-primary">@allContents.Count Ders</span>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    @if (allContents.Count > 0)
+                    {
+                        <div class="list-group list-group-flush curriculum-list-sidebar">
+                            @{ int cIndex = 1; }
+                            @foreach (var c in allContents)
+                            {
+                                bool isCurrent = c.ContentId == Model.ContentId;
+                                <a href="@Url.Action("ContentDetail", "Course", new { id = c.ContentId })" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between p-3 @(isCurrent ? "active-lesson" : "")">
+                                    <div class="d-flex align-items-center text-truncate mr-2">
+                                        <div class="lesson-num-pill mr-2 font-weight-bold @(isCurrent ? "text-primary" : "text-muted")">
+                                            #@cIndex
+                                        </div>
+                                        <div class="text-truncate">
+                                            <div class="lesson-title font-weight-bold text-truncate @(isCurrent ? "text-primary" : "text-dark")" style="font-size: 0.92rem;">
+                                                @c.ContentTitle
+                                            </div>
+                                            <small class="text-muted">
+                                                <i class="fas @GetContentTypeIcon(c.ContentType) mr-1"></i> @c.ContentType
+                                            </small>
+                                        </div>
+                                    </div>
+                                    @if (isCurrent)
+                                    {
+                                        <span class="badge badge-primary badge-pill font-weight-bold flex-shrink-0">
+                                            Aktif
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <i class="fas fa-chevron-right text-muted small flex-shrink-0"></i>
+                                    }
+                                </a>
+                                cIndex++;
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4 text-muted small">
+                            İçerik listesi yüklenemedi.
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- KURSA AİT SINAVLAR -->
+            <div class="card sidebar-card mb-4 shadow-sm">
+                <div class="card-header bg-white border-bottom py-3">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <h6 class="card-title mb-0 font-weight-bold text-dark">
+                            <i class="fas fa-graduation-cap text-warning mr-2"></i> Değerlendirme Sınavı
+                        </h6>
+                        @if (contentExams.Count > 0)
+                        {
+                            <span class="badge badge-pill badge-warning text-dark font-weight-bold">@contentExams.Count</span>
+                        }
+                    </div>
+                </div>
+                <div class="card-body p-3">
+                    @if (contentExams.Count > 0)
+                    {
+                        foreach (var exam in contentExams)
+                        {
+                            <div class="exam-mini-box p-3 mb-2 rounded border bg-light">
+                                <div class="font-weight-bold text-dark mb-1" style="font-size: 0.95rem;">
+                                    <i class="fas fa-pencil-alt text-warning mr-1"></i> @exam.ExamTitle
+                                </div>
+                                <div class="exam-mini-meta small text-muted mb-2">
+                                    <span><i class="far fa-clock mr-1"></i> @exam.Duration dk</span> &nbsp;|&nbsp;
+                                    <span><i class="fas fa-tasks mr-1"></i> @exam.QuestionCount Soru</span> &nbsp;|&nbsp;
+                                    <span><i class="fas fa-award text-warning mr-1"></i> %@exam.PassingScore</span>
+                                </div>
+
+                                @if (exam.ExamResultId.HasValue)
+                                {
+                                    <a href="@Url.Action("ExamResult", "StudentExam", new { id = exam.ExamResultId.Value })" class="btn btn-info btn-xs btn-block font-weight-bold shadow-sm">
+                                        <i class="fas fa-chart-pie mr-1"></i> Sonucu Gör
+                                    </a>
+                                }
+                                else
+                                {
+                                    <a href="@Url.Action("StartExam", "StudentExam", new { id = exam.ExamId })" class="btn btn-success btn-xs btn-block font-weight-bold shadow-sm">
+                                        <i class="fas fa-play mr-1"></i> Sınava Başla
+                                    </a>
+                                }
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center text-muted py-3">
+                            <i class="fas fa-info-circle fa-2x mb-2 d-block text-secondary"></i>
+                            <p class="small mb-0">Bu kurs için aktif sınav tanımlanmamış.</p>
+                        </div>
+                    }
+
+                    <div class="alert alert-light border small text-muted mt-2 mb-0">
+                        <i class="fas fa-lightbulb text-warning mr-1"></i>
+                        Ders tamamlandıktan sonra sınava girilmesi tavsiye edilir.
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<!-- RESİM TAM EKRAN LIGHTBOX MODAL -->
+<div id="imageLightboxModal" class="image-lightbox-overlay" style="display:none;" aria-hidden="true">
+    <button type="button" class="image-lightbox-close-btn" aria-label="Kapat">&times;</button>
+    <img id="imageLightboxTarget" src="" alt="Tam Ekran Önizleme" />
+    <div class="image-lightbox-caption">Kapatmak için ESC tuşuna veya boşluğa tıklayın</div>
+</div>
+
+@functions {
+    public string GetContentTypeIcon(string contentType)
+    {
+        if (string.IsNullOrEmpty(contentType)) return "fa-file-alt";
+        string type = contentType.ToLower().Trim();
+        if (type == "video" || type == "mp4" || type == "webm") return "fa-video";
+        if (type == "pdf") return "fa-file-pdf";
+        if (type == "html" || type == "mevzuat" || type == "kanun") return "fa-file-code";
+        if (type == "image" || type == "jpg" || type == "png") return "fa-file-image";
+        if (type == "document" || type == "doc" || type == "docx") return "fa-file-word";
+        if (type == "presentation" || type == "ppt" || type == "pptx") return "fa-file-powerpoint";
+        if (type == "spreadsheet" || type == "xls" || type == "xlsx") return "fa-file-excel";
+        return "fa-file-alt";
+    }
+
+    public string GetContentTypeBadge(string contentType)
+    {
+        if (string.IsNullOrEmpty(contentType)) return "badge-secondary";
+        string type = contentType.ToLower().Trim();
+        if (type == "video" || type == "mp4") return "badge-type-purple";
+        if (type == "pdf") return "badge-type-red";
+        if (type == "html" || type == "mevzuat" || type == "kanun") return "badge-type-cyan";
+        if (type == "image" || type == "jpg" || type == "png") return "badge-type-green";
+        return "badge-type-blue";
+    }
+}
+
+@section Styles {
+    <style>
+        /* ============================================================ */
+        /* CONTENT DETAIL PORTO / BOOTSTRAP 4 TEMİZ OKUYUCU STİLLERİ   */
+        /* ============================================================ */
+        .content-detail-page-container {
+            padding: 10px 0 40px;
+        }
+
+        /* HEADER BANNER */
+        .content-header-banner {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #ffffff;
+            border-radius: 14px;
+            padding: 24px 28px;
+            box-shadow: 0 8px 24px rgba(30, 60, 114, 0.22);
+        }
+
+        .content-main-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #ffffff;
+            line-height: 1.25;
+            letter-spacing: -0.2px;
+        }
+
+        .content-main-desc {
+            font-size: 0.92rem;
+            color: rgba(255, 255, 255, 0.88);
+            line-height: 1.5;
+            max-width: 820px;
+        }
+
+        .badge-course-title {
+            background: rgba(255, 255, 255, 0.22);
+            color: #ffffff;
+            font-size: 0.82rem;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .badge-content-type {
+            font-size: 0.82rem;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .badge-type-cyan {
+            background: rgba(6, 182, 212, 0.35);
+            border: 1px solid rgba(6, 182, 212, 0.6);
+            color: #67e8f9;
+        }
+
+        .badge-type-purple {
+            background: rgba(168, 85, 247, 0.35);
+            border: 1px solid rgba(168, 85, 247, 0.6);
+            color: #e9d5ff;
+        }
+
+        .badge-type-red {
+            background: rgba(239, 68, 68, 0.35);
+            border: 1px solid rgba(239, 68, 68, 0.6);
+            color: #fca5a5;
+        }
+
+        .badge-type-green {
+            background: rgba(34, 197, 94, 0.35);
+            border: 1px solid rgba(34, 197, 94, 0.6);
+            color: #86efac;
+        }
+
+        .badge-type-blue {
+            background: rgba(59, 130, 246, 0.35);
+            border: 1px solid rgba(59, 130, 246, 0.6);
+            color: #93c5fd;
+        }
+
+        .badge-date {
+            background: rgba(255, 255, 255, 0.14);
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 0.82rem;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+
+        /* OKUYUCU KARTI */
+        .reader-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #ffffff;
+        }
+
+        .sidebar-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        /* MÜFREDAT YAN PANEL LİSTESİ */
+        .curriculum-list-sidebar .list-group-item {
+            border-left: 0;
+            border-right: 0;
+            transition: all 0.15s ease;
+        }
+
+        .curriculum-list-sidebar .list-group-item:hover {
+            background: #f8fafc;
+        }
+
+        .curriculum-list-sidebar .active-lesson {
+            background: #eff6ff !important;
+            border-left: 4px solid #1e3c72 !important;
+        }
+
+        .lesson-num-pill {
+            font-size: 0.85rem;
+            min-width: 24px;
+        }
+
+        /* RESİM LIGHTBOX OVERLAY */
+        .image-lightbox-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(6, 16, 32, 0.94);
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .image-lightbox-overlay img {
+            max-width: 95vw;
+            max-height: 90vh;
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+            object-fit: contain;
+            background: #ffffff;
+        }
+
+        .image-lightbox-close-btn {
+            position: fixed;
+            top: 20px;
+            right: 25px;
+            background: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            border: 0;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            font-size: 28px;
+            line-height: 44px;
+            text-align: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .image-lightbox-close-btn:hover {
+            background: rgba(255, 255, 255, 0.35);
+        }
+
+        .image-lightbox-caption {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 13px;
+        }
+
+        /* TAM EKRAN IFRAME */
+        .html-reader-container.is-fullscreen {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: 99999 !important;
+            background: #ffffff;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .html-reader-container.is-fullscreen iframe {
+            height: 100vh !important;
+            min-height: 100vh !important;
+        }
+
+        @@media (max-width: 767.98px) {
+            .content-main-title {
+                font-size: 1.3rem;
+            }
+            .content-header-banner {
+                padding: 18px 20px;
+            }
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        $(function () {
+            // Tam Ekran Oku Butonu
+            $('#btnFullscreenIframe').on('click', function () {
+                var $container = $('#htmlReaderWrapper');
+                $container.toggleClass('is-fullscreen');
+                var isFs = $container.hasClass('is-fullscreen');
+                $(this).html(isFs ? '<i class="fas fa-compress mr-1"></i> Tam Ekrandan Çık' : '<i class="fas fa-expand mr-1"></i> Tam Ekran');
+                if (isFs) {
+                    $('body').css('overflow', 'hidden');
+                } else {
+                    $('body').css('overflow', '');
+                }
+            });
+
+            // ESC tuşuna basınca tam ekrandan çık
+            $(document).on('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    if ($('#htmlReaderWrapper').hasClass('is-fullscreen')) {
+                        $('#btnFullscreenIframe').click();
+                    }
+                    if ($('#imageLightboxModal').is(':visible')) {
+                        closeLightbox();
+                    }
+                }
+            });
+
+            // Yazdır Butonu
+            $('#btnPrintIframe').on('click', function () {
+                var frame = document.getElementById('htmlContentFrame');
+                if (frame && frame.contentWindow) {
+                    frame.contentWindow.focus();
+                    frame.contentWindow.print();
+                } else {
+                    window.print();
+                }
+            });
+
+            // Resim Lightbox
+            function openLightbox(src) {
+                if (!src) return;
+                $('#imageLightboxTarget').attr('src', src);
+                $('#imageLightboxModal').fadeIn(150);
+                $('body').css('overflow', 'hidden');
+            }
+
+            function closeLightbox() {
+                $('#imageLightboxModal').fadeOut(150);
+                $('body').css('overflow', '');
+                $('#imageLightboxTarget').attr('src', '');
+            }
+
+            $('.content-image-preview, img[data-fullscreen-image="true"]').on('click', function () {
+                var src = $(this).attr('src');
+                openLightbox(src);
+            });
+
+            $('.image-lightbox-close-btn, #imageLightboxModal').on('click', function (e) {
+                if (e.target !== document.getElementById('imageLightboxTarget')) {
+                    closeLightbox();
+                }
+            });
+
+            // HTML Görsel vs Kaynak Editör Sekmeleri
+            var $sourceEditor = $('#htmlSourceEditor');
+            var visualFrame = document.getElementById('htmlVisualEditor');
+
+            if ($sourceEditor.length && visualFrame) {
+                var currentMode = 'visual';
+
+                function getFrameDoc() {
+                    return visualFrame.contentDocument || visualFrame.contentWindow.document;
+                }
+
+                function loadVisualFromSource() {
+                    var doc = getFrameDoc();
+                    if (!doc) return;
+                    doc.open();
+                    doc.write($sourceEditor.val() || '<!doctype html><html><head><meta charset="utf-8"></head><body></body></html>');
+                    doc.close();
+                    doc.designMode = 'on';
+                    if (doc.body) {
+                        doc.body.setAttribute('contenteditable', 'true');
+                    }
+                }
+
+                function syncSourceFromVisual() {
+                    var doc = getFrameDoc();
+                    if (!doc || !doc.documentElement) return;
+                    $sourceEditor.val('<!doctype html>\n' + doc.documentElement.outerHTML);
+                }
+
+                $('.html-editor-tab').on('click', function () {
+                    var mode = $(this).data('target');
+                    if (mode === currentMode) return;
+
+                    if (currentMode === 'visual') {
+                        syncSourceFromVisual();
+                    } else {
+                        loadVisualFromSource();
+                    }
+
+                    currentMode = mode;
+                    $('#htmlVisualPane').toggleClass('d-none', mode !== 'visual');
+                    $('#htmlSourcePane').toggleClass('d-none', mode !== 'source');
+
+                    $('.html-editor-tab').each(function () {
+                        var isActive = $(this).data('target') === mode;
+                        $(this).toggleClass('btn-primary', isActive).toggleClass('btn-outline-secondary', !isActive);
+                    });
+                });
+
+                $('.html-command').on('click', function () {
+                    var doc = getFrameDoc();
+                    if (!doc) return;
+                    var cmd = $(this).data('command');
+                    var val = $(this).data('value') || null;
+                    visualFrame.contentWindow.focus();
+                    doc.execCommand(cmd, false, val);
+                    syncSourceFromVisual();
+                });
+
+                $sourceEditor.closest('form').on('submit', function () {
+                    if (currentMode === 'visual') {
+                        syncSourceFromVisual();
+                    }
+                });
+
+                loadVisualFromSource();
+            }
+        });
+    </script>
+}

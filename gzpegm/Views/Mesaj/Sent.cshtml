@@ -1,0 +1,141 @@
+@model List<gzpegm.Models.ViewModels.MessageViewModel>
+@{
+    Layout = "~/Views/Shared/_Master.cshtml";
+    ViewBag.Title = "Gönderilen Mesajlar";
+}
+
+@section Styles {
+    <link href="@Url.Content("~/css/mesaj.css")?v=1.2" rel="stylesheet" />
+}
+
+<section class="card">
+    <header class="card-header">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h2 class="card-title">
+                    <i class="fas fa-paper-plane text-primary mr-1"></i> Gönderilen Mesajlar
+                </h2>
+                <p class="card-subtitle">Toplam <strong>@ViewBag.TotalMessages</strong> gönderilmiş mesaj</p>
+            </div>
+            <div class="col-md-6 text-right mt-2 mt-md-0">
+                <a href="@Url.Action("Compose", "Mesaj")" class="btn btn-primary mr-1">
+                    <i class="fas fa-plus"></i> Yeni Mesaj
+                </a>
+                <a href="@Url.Action("Inbox", "Mesaj")" class="btn btn-secondary">
+                    <i class="fas fa-inbox"></i> Gelen Kutusu
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <div class="card-body">
+        @Html.AntiForgeryToken()
+
+        @if (Model == null || !Model.Any())
+        {
+            <div class="alert alert-info mb-0">
+                <i class="fas fa-info-circle mr-1"></i> Henüz gönderdiğiniz bir mesaj bulunmamaktadır.
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive mesaj-table-wrapper">
+                <table class="table table-hover mb-0 mesaj-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 50px; text-align: center;">Durum</th>
+                            <th style="width: 20%;">Alıcı</th>
+                            <th style="width: 25%;">Konu</th>
+                            <th style="width: 35%;">Önizleme</th>
+                            <th style="width: 15%;">Tarih</th>
+                            <th style="width: 55px; text-align: center;">İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var message in Model)
+                        {
+                            <tr class="message-row"
+                                onclick="window.location='@Url.Action("Details", "Mesaj", new { id = message.MessageId })'">
+                                <td style="text-align: center;">
+                                    @if (message.IsRead)
+                                    {
+                                        <i class="fas fa-check-circle text-success" title="Alıcı tarafından okundu"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="fas fa-clock text-muted" title="Henüz okunmadı"></i>
+                                    }
+                                </td>
+                                <td class="cell-truncate">
+                                    <span class="recipient-name font-weight-bold">@message.RecipientName</span>
+                                    <br />
+                                    <small class="text-muted">@(string.IsNullOrWhiteSpace(message.RecipientRole) ? "Kullanıcı" : message.RecipientRole)</small>
+                                </td>
+                                <td class="cell-truncate">
+                                    <span>@message.Subject</span>
+                                    @if (message.ReplyCount > 0)
+                                    {
+                                        <span class="badge badge-info ml-1">@message.ReplyCount yanıt</span>
+                                    }
+                                </td>
+                                <td class="cell-truncate">
+                                    <span class="message-preview-text">@message.MessagePreview</span>
+                                </td>
+                                <td>
+                                    <small class="text-muted">@message.SentDateFormatted</small>
+                                    @if (message.IsRead && message.ReadDate.HasValue)
+                                    {
+                                        <br />
+                                        <small class="text-success"><i class="fas fa-check mr-1"></i>Okundu: @message.ReadDateFormatted</small>
+                                    }
+                                </td>
+                                <td style="text-align: center;">
+                                    <button type="button" class="btn btn-sm btn-outline-danger"
+                                            title="Mesajı Sil"
+                                            onclick="event.stopPropagation(); deleteMessage(@message.MessageId)">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            if (ViewBag.TotalPages > 1)
+            {
+                <nav aria-label="Sayfa navigasyonu">
+                    <ul class="pagination justify-content-center">
+                        @if (ViewBag.CurrentPage > 1)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" href="@Url.Action("Sent", new { page = ViewBag.CurrentPage - 1 })">Önceki</a>
+                            </li>
+                        }
+
+                        @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                        {
+                            <li class="page-item @(i == ViewBag.CurrentPage ? "active" : "")">
+                                <a class="page-link" href="@Url.Action("Sent", new { page = i })">@i</a>
+                            </li>
+                        }
+
+                        @if (ViewBag.CurrentPage < ViewBag.TotalPages)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" href="@Url.Action("Sent", new { page = ViewBag.CurrentPage + 1 })">Sonraki</a>
+                            </li>
+                        }
+                    </ul>
+                </nav>
+            }
+        }
+    </div>
+</section>
+
+@section Scripts {
+    <div id="mesaj-inbox-config"
+         data-url-delete="@Url.Action("Delete", "Mesaj")"
+         style="display:none;"></div>
+    <script src="@Url.Content("~/js/mesaj-inbox.js")?v=1.2"></script>
+}

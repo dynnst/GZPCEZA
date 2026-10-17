@@ -1,0 +1,308 @@
+﻿@model gzpegm.Models.E_Inad
+@{
+    Layout = null;
+
+    string tarih = DateTime.Now.ToString("dd/MM/yyyy");
+    string saat = DateTime.Now.ToString("HH:mm");
+
+    // 🔴 SADECE "İnad Edildi"
+    bool isInad = false;
+    if (Model != null && !string.IsNullOrWhiteSpace(Model.Durum))
+    {
+        isInad = Model.Durum.Trim() == "İnad Edildi";
+    }
+
+    Func<string, string, string, string> getField = (name, format, def) =>
+    {
+        var prop = Model?.GetType().GetProperty(name);
+        if (prop == null) return def;
+        var val = prop.GetValue(Model);
+        if (val == null) return def;
+        if (val is DateTime dt)
+            return string.IsNullOrEmpty(format) ? dt.ToString() : dt.ToString(format);
+        return val.ToString();
+    };
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Teslim Tesellüm Tutanağı</title>
+
+    <style>
+        body {
+            font-family: "Times New Roman";
+            font-size: 12pt;
+            margin: 40px;
+            line-height: 1.6;
+        }
+
+        .tutanak-title {
+            text-align: center;
+            font-size: 14pt;
+            font-weight: bold;
+            margin-bottom: 25px;
+            text-decoration: underline;
+        }
+
+        .content p {
+            text-align: justify;
+            margin-bottom: 14px;
+        }
+
+        .field-input {
+            border: none;
+            border-bottom: 1px solid #000;
+            padding: 2px 4px;
+            font-family: inherit;
+            font-size: inherit;
+            min-width: 120px;
+        }
+
+        .field-textarea {
+            width: 100%;
+            min-height: 90px;
+            border: none;
+            border-bottom: 1px solid #000;
+            resize: vertical;
+        }
+
+        .print-only {
+            display: none;
+        }
+
+        .screen-only {
+            display: inline;
+        }
+
+        .center-align {
+            text-align: center;
+        }
+
+        .signatures-table {
+            width: 100%;
+            margin-top: 40px;
+            border-collapse: collapse;
+            text-align: center;
+        }
+
+        .signature-title {
+            font-weight: bold;
+            padding-bottom: 10px;
+        }
+
+        .signature-name {
+            margin-top: 45px;
+            font-weight: bold;
+        }
+
+        .signature-role {
+            font-size: 10pt;
+            margin-top: 4px;
+        }
+
+        .print-button-container {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        button {
+            padding: 6px 14px;
+            cursor: pointer;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+            .modal-overlay.show {
+                display: flex;
+            }
+
+        .modal-dialog {
+            background: #fff;
+            padding: 20px;
+            max-width: 460px;
+            text-align: center;
+        }
+
+        .modal-actions {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+        }
+
+            .modal-actions .btn-primary {
+                background: #000;
+                color: #fff;
+                border: none;
+            }
+
+        .notes-box-print {
+            display: none;
+        }
+
+        @@media print {
+            .screen-only,
+            .print-button-container,
+            #printConfirmModal {
+                display: none !important;
+            }
+
+            .print-only {
+                display: inline !important;
+            }
+
+            textarea,
+            input {
+                display: none !important;
+            }
+
+            .notes-box-print {
+                display: block !important;
+                white-space: pre-wrap;
+                margin-top: 6px;
+            }
+        }
+    </style>
+
+    <script>
+        function updatePrintFields() {
+            var fields = [
+                'TarihSaat', 'GelenHavayolu', 'GelenUcusNo', 'GeldigiYer',
+                'PasaportNo', 'Uyruk', 'PasaportTuru', 'AdSoyad',
+                'InadSebep', 'Durum', 'Personel', 'Sicil', 'OzelGuvenlik',
+                'EkNot', 'tarih', 'saat'
+            ];
+
+            fields.forEach(f => {
+                var i = document.getElementById('inp_' + f);
+                var s = document.getElementById('sp_' + f);
+                if (i && s) s.innerText = i.value || '';
+            });
+        }
+
+        function showPrintConfirm() {
+            document.getElementById('printConfirmModal').classList.add('show');
+        }
+
+        function closePrintConfirm() {
+            document.getElementById('printConfirmModal').classList.remove('show');
+        }
+
+        function confirmAndPrint() {
+            closePrintConfirm();
+            updatePrintFields();
+            document.querySelector('.print-button-container').style.display = 'none';
+            window.print();
+        }
+    </script>
+</head>
+
+<body>
+
+    <div id="printConfirmModal" class="modal-overlay">
+        <div class="modal-dialog">
+            <h3>Bilgilendirme</h3>
+            <p>
+                Yazdırmaya geçmeden önce istersen bilgilerde düzenleme yapabilirsin.<br />
+                Hazırsan yazdırmaya devam edebilirsin.
+            </p>
+            <div class="modal-actions">
+                <button onclick="closePrintConfirm()">Düzenlemeye Dön</button>
+                <button class="btn-primary" onclick="confirmAndPrint()">Devam Et & Yazdır</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="tutanak-title">TESLİM TESELLÜM TUTANAĞI</div>
+
+    <div class="content">
+        <p>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <input id="inp_TarihSaat" class="field-input screen-only" value="@getField("TarihSaat","dd/MM/yyyy HH:mm",tarih+" "+saat)" />
+            <span id="sp_TarihSaat" class="print-only">@getField("TarihSaat", "dd/MM/yyyy HH:mm", tarih + " " + saat)</span>
+            sıralarında
+            <input id="inp_GelenHavayolu" class="field-input screen-only" value="@getField("GelenHavayolu",null,"")" />
+            <span id="sp_GelenHavayolu" class="print-only">@getField("GelenHavayolu", null, "")</span>
+            Havayollarının
+            <input id="inp_GelenUcusNo" class="field-input screen-only" value="@getField("GelenUcusNo",null,"")" />
+            <span id="sp_GelenUcusNo" class="print-only">@getField("GelenUcusNo", null, "")</span>
+            sefer sayılı uçağı ile
+            <input id="inp_GeldigiYer" class="field-input screen-only" value="@getField("GeldigiYer",null,"")" />
+            <span id="sp_GeldigiYer" class="print-only">@getField("GeldigiYer", null, "")</span>'dan
+            gelerek Hudut Kapımızdan giriş yapmak isteyen
+            <input id="inp_PasaportNo" class="field-input screen-only" value="@getField("PasaportNo",null,"")" />
+            <span id="sp_PasaportNo" class="print-only">@getField("PasaportNo", null, "")</span>
+            seri numaralı
+            <input id="inp_Uyruk" class="field-input screen-only" value="@getField("Uyruk",null,"")" />
+            <span id="sp_Uyruk" class="print-only">@getField("Uyruk", null, "")</span>
+            <input id="inp_PasaportTuru" class="field-input screen-only" value="@getField("PasaportTuru",null,"")" />
+            <span id="sp_PasaportTuru" class="print-only">@getField("PasaportTuru", null, "")</span>
+            hamili
+            <input id="inp_AdSoyad" class="field-input screen-only" value="@getField("AdSoyad",null,"")" />
+            <span id="sp_AdSoyad" class="print-only">@getField("AdSoyad", null, "")</span>
+            isimli şahsın
+            <input id="inp_InadSebep" class="field-input screen-only" value="@getField("InadSebep",null,"")" />
+            <span id="sp_InadSebep" class="print-only">@getField("InadSebep", null, "")</span>
+            nedeniyle
+            <input id="inp_Durum" class="field-input screen-only" value="@getField("Durum",null,"")" />
+            <span id="sp_Durum" class="print-only">@getField("Durum", null, "")</span>
+        </p>
+
+        <p>
+            Ek Notlar:<br />
+<textarea id="inp_EkNot" class="field-textarea screen-only">@getField("EkNot",null,"")</textarea>
+            <div id="sp_EkNot" class="print-only notes-box-print">@getField("EkNot", null, "")</div>
+        </p>
+
+        <p class="center-align">
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    Bu tutanak tarafımızca imza altına alınmıştır.@tarih @saat
+        </p>
+    </div>
+
+    <table class="signatures-table">
+        <tr>
+            <td class="signature-title">TESLİM EDEN</td>
+            <td class="signature-title">HAZURUN</td>
+            <td class="signature-title">TESLİM ALAN</td>
+        </tr>
+        <tr>
+            <td>
+                <input id="inp_Personel" class="field-input screen-only" value="@getField("Personel",null,"")" />
+                <div class="signature-name"><span id="sp_Personel" class="print-only">@Model.Personel</span></div>
+                <div class="signature-role">Polis Memuru</div>
+            </td>
+
+            <td>
+                <input id="inp_Sicil" class="field-input screen-only" value="@getField("Sicil",null,"")" />
+                <div class="signature-name"><span id="sp_Sicil" class="print-only">@Model.Sicil</span></div>
+                <div class="signature-role">Polis Memuru</div>
+            </td>
+
+            <td>
+                <input id="inp_OzelGuvenlik"
+                       class="field-input screen-only"
+                       value="@(isInad ? "" : getField("OzelGuvenlik",null,""))" />
+
+                <div class="signature-name">
+                    <span id="sp_OzelGuvenlik" class="print-only" style="@(isInad ? "display:none" : "")">@(isInad ? "" : Model.OzelGuvenlik)</span>
+                </div>
+
+                <div class="signature-role @(isInad ? "screen-only" : "")">Özel Güvenlik Görevlisi</div>
+            </td>
+        </tr>
+    </table>
+
+    <div class="print-button-container">
+        <button onclick="showPrintConfirm()">Yazdır</button>
+    </div>
+
+</body>
+</html>

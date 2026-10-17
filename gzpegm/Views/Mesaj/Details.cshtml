@@ -1,0 +1,175 @@
+@model gzpegm.Models.ViewModels.MessageDetailViewModel
+@{
+    Layout = "~/Views/Shared/_Master.cshtml";
+    ViewBag.Title = "Mesaj Detayı";
+}
+
+@section Styles {
+    <link href="@Url.Content("~/css/mesaj.css")?v=1.2" rel="stylesheet" />
+}
+
+<section class="card">
+    <header class="card-header">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h2 class="card-title">
+                    <i class="fas fa-envelope-open-text text-primary mr-1"></i> Mesaj Detayı
+                </h2>
+            </div>
+            <div class="col-md-6 text-right mt-2 mt-md-0">
+                <a href="@Url.Action("Inbox", "Mesaj")" class="btn btn-secondary mr-1">
+                    <i class="fas fa-arrow-left mr-1"></i> Gelen Kutusu
+                </a>
+                @if (Model.CanDelete)
+                {
+                    <button type="button" class="btn btn-danger" onclick="deleteMessage(@Model.MessageId)">
+                        <i class="fas fa-trash-alt mr-1"></i> Sil
+                    </button>
+                }
+            </div>
+        </div>
+    </header>
+
+    <div class="card-body">
+        @Html.AntiForgeryToken()
+
+        @if (TempData["msgSuccess"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fas fa-check-circle mr-1"></i> @TempData["msgSuccess"]
+                <button type="button" class="close" data-dismiss="alert" aria-label="Kapat">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        }
+
+        @if (TempData["msgError"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fas fa-exclamation-circle mr-1"></i> @TempData["msgError"]
+                <button type="button" class="close" data-dismiss="alert" aria-label="Kapat">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        }
+
+        <div class="message-header-card">
+            <div class="row">
+                <div class="col-md-6">
+                    <div>
+                        <span class="meta-label">Gönderen:</span>
+                        <span class="meta-value font-weight-bold ml-1">@Model.SenderName</span>
+                        <span class="badge badge-light border ml-1">@(string.IsNullOrWhiteSpace(Model.SenderRole) ? "Ziyaretçi / Dış Bildirim" : Model.SenderRole)</span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.SenderEmail))
+                    {
+                        <div class="mt-1">
+                            <span class="meta-label">E-Posta:</span>
+                            <span class="meta-value text-muted ml-1"><i class="fas fa-envelope mr-1"></i>@Model.SenderEmail</span>
+                        </div>
+                    }
+                </div>
+                <div class="col-md-6 text-md-right mt-2 mt-md-0">
+                    <div>
+                        <span class="meta-label">Tarih:</span>
+                        <span class="meta-value ml-1">@Model.SentDateFormatted</span>
+                    </div>
+                    <div class="mt-1">
+                        @if (Model.IsRead)
+                        {
+                            <span class="text-success font-weight-bold">
+                                <i class="fas fa-check-circle mr-1"></i> Okundu: @Model.ReadDateFormatted
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="text-warning font-weight-bold">
+                                <i class="fas fa-clock mr-1"></i> Henüz Okunmadı
+                            </span>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-2">
+                <div class="col-md-12">
+                    <span class="meta-label">Alıcı:</span>
+                    <span class="meta-value font-weight-bold ml-1">@Model.RecipientName</span>
+                    @if (!string.IsNullOrWhiteSpace(Model.RecipientRole))
+                    {
+                        <span class="badge badge-light border ml-1">@Model.RecipientRole</span>
+                    }
+                </div>
+            </div>
+
+            <h4 class="message-subject-title">
+                <i class="fas fa-heading text-muted mr-1"></i> @Model.Subject
+            </h4>
+        </div>
+
+        <div class="message-body-card">
+            @Html.Raw(System.Web.HttpUtility.HtmlEncode(Model.Message ?? "").Replace("\r\n", "\n").Replace("\n", "<br />"))
+        </div>
+
+        @if (Model.Replies != null && Model.Replies.Any())
+        {
+            <div class="reply-section">
+                <h5 class="font-weight-bold mb-3">
+                    <i class="fas fa-comments text-primary mr-1"></i> Yanıtlar ve Görüşme Geçmişi (@Model.Replies.Count)
+                </h5>
+
+                @foreach (var reply in Model.Replies)
+                {
+                    <div class="reply-item">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong class="text-primary"><i class="fas fa-user mr-1"></i>@reply.SenderName</strong>
+                                <span class="badge badge-light border ml-1">@(string.IsNullOrWhiteSpace(reply.SenderRole) ? "Kullanıcı" : reply.SenderRole)</span>
+                            </div>
+                            <div class="col-md-6 text-md-right">
+                                <small class="text-muted"><i class="far fa-clock mr-1"></i>@reply.SentDateFormatted</small>
+                            </div>
+                        </div>
+                        <div class="mt-2 text-dark" style="line-height: 1.6;">
+                            @Html.Raw(System.Web.HttpUtility.HtmlEncode(reply.MessagePreview ?? "").Replace("\r\n", "\n").Replace("\n", "<br />"))
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+
+        @if (Model.CanReply)
+        {
+            <div class="reply-form">
+                <h5 class="font-weight-bold mb-3">
+                    <i class="fas fa-reply text-success mr-1"></i> Yanıt Ver
+                </h5>
+
+                @using (Html.BeginForm("Reply", "Mesaj", FormMethod.Post))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.Hidden("messageId", Model.MessageId)
+
+                    <div class="form-group">
+                        <label class="font-weight-bold">Yanıt Metniniz</label>
+                        <textarea name="replyContent" class="form-control" rows="5"
+                                  placeholder="Yanıtınızı buraya yazınız..."
+                                  required maxlength="4000"></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane mr-1"></i> Yanıtı Gönder
+                    </button>
+                }
+            </div>
+        }
+    </div>
+</section>
+
+@section Scripts {
+    <div id="mesaj-details-config"
+         data-url-delete="@Url.Action("Delete", "Mesaj")"
+         data-url-inbox="@Url.Action("Inbox", "Mesaj")"
+         style="display:none;"></div>
+    <script src="@Url.Content("~/js/mesaj-details.js")?v=1.2"></script>
+}

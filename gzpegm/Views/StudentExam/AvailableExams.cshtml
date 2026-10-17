@@ -1,0 +1,604 @@
+@model List<gzpegm.Models.ViewModels.ExamViewModel>
+@using System
+
+@{
+    ViewBag.Title = "Mevcut Sınavlar";
+    Layout = "~/Views/Shared/_Master.cshtml";
+
+    int totalExams = Model != null ? Model.Count : 0;
+    int completedCount = Model != null ? Model.Count(x => x.ExamResultId.HasValue) : 0;
+    int readyCount = Model != null ? Model.Count(x => x.CanTakeExam) : 0;
+    int needEnrollCount = Model != null ? Model.Count(x => !x.IsStudentEnrolled) : 0;
+}
+
+<div class="page-wrapper">
+    <!-- EGM Hero Başlık -->
+    <div class="exam-hero mb-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h1 class="hero-title">
+                    <i class="fas fa-clipboard-list mr-2"></i>Mevcut Sınavlar & Değerlendirme Modülleri
+                </h1>
+                <p class="hero-subtitle">
+                    Kayıtlı olduğunuz eğitimlerin sınavlarına katılarak bilginizi test edin ve sertifika kriterlerini tamamlayın.
+                </p>
+            </div>
+            <div class="d-flex align-items-center flex-wrap gap-2">
+                <a href="@Url.Action("MyExamResults", "StudentExam")" class="btn btn-hero-action">
+                    <i class="fas fa-history mr-1"></i> Sınav Geçmişim
+                </a>
+                <a href="@Url.Action("StudentIndex", "Course")" class="btn btn-hero-action">
+                    <i class="fas fa-graduation-cap mr-1"></i> Kurs Kataloğu
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4 İstatistik Kartı -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="exam-stat-card">
+                <div class="exam-stat-info">
+                    <div class="exam-stat-label">Toplam Sınav</div>
+                    <div class="exam-stat-value">@totalExams</div>
+                    <small class="text-muted font-weight-bold">Aktif Değerlendirme</small>
+                </div>
+                <div class="exam-stat-icon icon-navy">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="exam-stat-card">
+                <div class="exam-stat-info">
+                    <div class="exam-stat-label">Girmeye Hazır</div>
+                    <div class="exam-stat-value text-success">@readyCount</div>
+                    <small class="text-success font-weight-bold">Katılabilirsiniz</small>
+                </div>
+                <div class="exam-stat-icon icon-emerald">
+                    <i class="fas fa-play"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="exam-stat-card">
+                <div class="exam-stat-info">
+                    <div class="exam-stat-label">Tamamlanan</div>
+                    <div class="exam-stat-value text-primary">@completedCount</div>
+                    <small class="text-primary font-weight-bold">Sonuçlandırıldı</small>
+                </div>
+                <div class="exam-stat-icon icon-blue">
+                    <i class="fas fa-check-double"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="exam-stat-card">
+                <div class="exam-stat-info">
+                    <div class="exam-stat-label">Kayıt Gereken</div>
+                    <div class="exam-stat-value text-warning">@needEnrollCount</div>
+                    <small class="text-warning font-weight-bold">Kursa Katılın</small>
+                </div>
+                <div class="exam-stat-icon icon-amber">
+                    <i class="fas fa-user-plus"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Arama ve Araç Çubuğu -->
+    <div class="exam-toolbar-card mb-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div class="input-group" style="max-width: 420px;">
+                <div class="input-group-prepend">
+                    <span class="input-group-text bg-light border-right-0"><i class="fas fa-search text-muted"></i></span>
+                </div>
+                <input type="text" id="examSearch" class="form-control border-left-0" placeholder="Sınav veya kurs adına göre ara..." autocomplete="off" />
+            </div>
+            <div class="text-muted small">
+                Toplam <strong>@totalExams</strong> sınav listeleniyor &bull; Sayfa başı 6 sınav
+            </div>
+        </div>
+    </div>
+
+    @if (Model != null && Model.Count > 0)
+    {
+        <div id="examCardGrid" class="exam-card-grid">
+            @foreach (var exam in Model)
+            {
+                var coverImage = string.IsNullOrWhiteSpace(exam.CourseCoverImage)
+                    ? Url.Content("~/files/Egitim/91a7dd7d-56dc-41d3-a9bf-296a421966e2_155.jpg")
+                    : (exam.CourseCoverImage.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+                        ? exam.CourseCoverImage
+                        : Url.Content("~/files/Egitim/" + exam.CourseCoverImage));
+
+                var searchText = ((exam.ExamTitle ?? "") + " " + (exam.ExamDescription ?? "") + " " + (exam.CourseTitle ?? "")).ToLowerInvariant();
+
+                string statusText;
+                string statusClass;
+
+                if (!exam.IsActive)
+                {
+                    statusText = "Pasif";
+                    statusClass = "status-passive";
+                }
+                else if (exam.ExamResultId.HasValue)
+                {
+                    statusText = "Tamamlandı";
+                    statusClass = "status-done";
+                }
+                else if (!exam.IsStudentEnrolled)
+                {
+                    statusText = "Kayıt Gerekli";
+                    statusClass = "status-wait";
+                }
+                else if (exam.CanTakeExam)
+                {
+                    statusText = "Girmeye Hazır";
+                    statusClass = "status-ready";
+                }
+                else
+                {
+                    statusText = "Kapalı";
+                    statusClass = "status-wait";
+                }
+
+                <div class="exam-card-item" data-search="@searchText">
+                    <article class="exam-card">
+                        <div class="exam-cover">
+                            <img src="@coverImage" alt="@exam.CourseTitle" loading="lazy" />
+                            <span class="exam-status @statusClass">@statusText</span>
+                        </div>
+                        <div class="exam-panel">
+                            <div class="exam-card-head">
+                                <div>
+                                    <span class="exam-course" title="@exam.CourseTitle">
+                                        <i class="fas fa-book-open mr-1"></i>@exam.CourseTitle
+                                    </span>
+                                    <h5 title="@exam.ExamTitle">@exam.ExamTitle</h5>
+                                </div>
+                                <span class="exam-arrow">&rarr;</span>
+                            </div>
+
+                            <p class="exam-desc">
+                                @(string.IsNullOrEmpty(exam.ExamDescription) ? "Bu sınav için ek açıklama bulunmuyor." : exam.ExamDescription)
+                            </p>
+
+                            <div class="exam-meta-grid">
+                                <div>
+                                    <span>Süre</span>
+                                    <strong>@exam.Duration dk</strong>
+                                </div>
+                                <div>
+                                    <span>Soru</span>
+                                    <strong>@exam.QuestionCount</strong>
+                                </div>
+                                <div>
+                                    <span>Baraj Notu</span>
+                                    <strong>@exam.PassingScore Puan</strong>
+                                </div>
+                                <div>
+                                    <span>Durum</span>
+                                    <strong class="@(exam.CanTakeExam ? "text-success" : "")">@statusText</strong>
+                                </div>
+                            </div>
+
+                            <div class="exam-actions">
+                                @if (!exam.IsActive)
+                                {
+                                    <button class="btn btn-secondary btn-block disabled" disabled>
+                                        <i class="fas fa-times-circle mr-1"></i> Sınav Aktif Değil
+                                    </button>
+                                }
+                                else if (exam.ExamResultId.HasValue)
+                                {
+                                    <a href="@Url.Action("ExamResult", "StudentExam", new { id = exam.ExamResultId.Value })"
+                                       class="btn btn-info btn-block font-weight-bold">
+                                        <i class="fas fa-chart-pie mr-1"></i> Sonucu & Karneni Gör
+                                    </a>
+                                }
+                                else if (!exam.IsStudentEnrolled)
+                                {
+                                    <a href="@Url.Action("Details", "Course", new { id = exam.CourseId })"
+                                       class="btn btn-warning btn-block font-weight-bold text-dark">
+                                        <i class="fas fa-user-plus mr-1"></i> Kursa Kayıt Ol
+                                    </a>
+                                }
+                                else if (exam.CanTakeExam)
+                                {
+                                    <a href="@Url.Action("StartExam", "StudentExam", new { id = exam.ExamId })"
+                                       class="btn btn-success btn-block font-weight-bold shadow-sm">
+                                        <i class="fas fa-play mr-1"></i> Sınava Başla
+                                    </a>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-secondary btn-block disabled" disabled>
+                                        <i class="fas fa-clock mr-1"></i> Sınava Giremezsiniz
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            }
+        </div>
+
+        <div id="examEmptyState" class="text-center py-5" style="display:none;">
+            <i class="fas fa-search fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted font-weight-bold">Aramanıza uygun sınav bulunamadı</h5>
+            <p class="text-muted small">Lütfen arama teriminizi kontrol ediniz.</p>
+        </div>
+
+        <div id="examPagination" class="exam-pagination"></div>
+    }
+    else
+    {
+        <div class="text-center py-5 bg-white rounded-lg border shadow-sm">
+            <i class="fas fa-clipboard-check fa-4x text-muted mb-3" style="color: #cbd5e1 !important;"></i>
+            <h4 class="text-secondary font-weight-bold">Aktif Sınav Bulunmuyor</h4>
+            <p class="text-muted mb-3">Kayıtlı olduğunuz kurslarda şu anda aktif bir değerlendirme sınavı yer almamaktadır.</p>
+            <a href="@Url.Action("StudentIndex", "Course")" class="btn btn-primary px-4 font-weight-bold">
+                <i class="fas fa-graduation-cap mr-1"></i> Kurslarıma Git
+            </a>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        $(function () {
+            var pageSize = 6;
+            var currentPage = 1;
+
+            function getFilteredExams() {
+                var text = ($('#examSearch').val() || '').toLocaleLowerCase('tr-TR').trim();
+                return $('.exam-card-item').filter(function () {
+                    var searchText = ($(this).data('search') || '').toString().toLocaleLowerCase('tr-TR');
+                    return !text || searchText.indexOf(text) !== -1;
+                });
+            }
+
+            function renderExams() {
+                var $items = $('.exam-card-item');
+                var $filtered = getFilteredExams();
+                var totalPages = Math.max(1, Math.ceil($filtered.length / pageSize));
+
+                if (currentPage > totalPages) {
+                    currentPage = totalPages;
+                }
+
+                $items.hide();
+                $('#examEmptyState').toggle($filtered.length === 0);
+
+                if ($filtered.length > 0) {
+                    var start = (currentPage - 1) * pageSize;
+                    $filtered.slice(start, start + pageSize).show();
+                }
+
+                renderPagination(totalPages, $filtered.length);
+            }
+
+            function renderPagination(totalPages, totalCount) {
+                var $pagination = $('#examPagination').empty();
+                if (totalPages <= 1) return;
+
+                $('<button type="button" class="page-btn">&lsaquo;</button>')
+                    .prop('disabled', currentPage === 1)
+                    .on('click', function () {
+                        if (currentPage > 1) {
+                            currentPage--;
+                            renderExams();
+                        }
+                    })
+                    .appendTo($pagination);
+
+                for (var i = 1; i <= totalPages; i++) {
+                    $('<button type="button" class="page-btn ' + (i === currentPage ? 'active' : '') + '">' + i + '</button>')
+                        .on('click', (function (page) {
+                            return function () {
+                                currentPage = page;
+                                renderExams();
+                            };
+                        })(i))
+                        .appendTo($pagination);
+                }
+
+                $('<button type="button" class="page-btn">&rsaquo;</button>')
+                    .prop('disabled', currentPage === totalPages)
+                    .on('click', function () {
+                        if (currentPage < totalPages) {
+                            currentPage++;
+                            renderExams();
+                        }
+                    })
+                    .appendTo($pagination);
+            }
+
+            function resetAndRender() {
+                currentPage = 1;
+                renderExams();
+            }
+
+            $('#examSearch').on('input', resetAndRender);
+            renderExams();
+        });
+    </script>
+}
+
+@section Styles {
+    <style>
+        .page-wrapper {
+            padding: 10px 0;
+        }
+
+        /* HERO BANNER */
+        .exam-hero {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #ffffff;
+            border-radius: 12px;
+            padding: 24px 28px;
+            box-shadow: 0 4px 16px rgba(30, 60, 114, 0.12);
+        }
+        .hero-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #ffffff;
+            margin: 0 0 6px 0;
+            display: flex;
+            align-items: center;
+        }
+        .hero-subtitle {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.85);
+            margin: 0;
+            max-width: 700px;
+        }
+        .btn-hero-action {
+            background: rgba(255, 255, 255, 0.15);
+            color: #ffffff !important;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            font-size: 13px;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            text-decoration: none !important;
+        }
+        .btn-hero-action:hover {
+            background: #ffffff;
+            color: #1e3c72 !important;
+            transform: translateY(-1px);
+        }
+
+        /* METRIC CARDS */
+        .exam-stat-card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 18px 20px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: transform 0.2s ease;
+            height: 100%;
+        }
+        .exam-stat-card:hover {
+            transform: translateY(-2px);
+        }
+        .exam-stat-info .exam-stat-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #64748b;
+            margin-bottom: 2px;
+        }
+        .exam-stat-info .exam-stat-value {
+            font-size: 24px;
+            font-weight: 800;
+            color: #0f172a;
+            line-height: 1.1;
+        }
+        .exam-stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        .icon-navy { background: #e0e7ff; color: #3730a3; }
+        .icon-emerald { background: #d1fae5; color: #065f46; }
+        .icon-blue { background: #dbeafe; color: #1d4ed8; }
+        .icon-amber { background: #fef3c7; color: #b45309; }
+
+        /* TOOLBAR */
+        .exam-toolbar-card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 14px 20px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+        }
+
+        /* EXAM CARDS GRID */
+        .exam-card-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 22px;
+        }
+        .exam-card-item {
+            min-width: 0;
+        }
+        .exam-card {
+            background: #ffffff;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            transition: all 0.2s ease;
+        }
+        .exam-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(30, 60, 114, 0.12);
+            border-color: #93c5fd;
+        }
+        .exam-cover {
+            height: 160px;
+            position: relative;
+            background: #0f172a;
+        }
+        .exam-cover img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .exam-cover::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.1) 0%, rgba(15, 23, 42, 0.6) 100%);
+        }
+        .exam-status {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 2;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+        .status-ready { background: #059669; color: #ffffff; }
+        .status-done { background: #2563eb; color: #ffffff; }
+        .status-wait { background: #d97706; color: #ffffff; }
+        .status-passive { background: #64748b; color: #ffffff; }
+
+        .exam-panel {
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            justify-content: space-between;
+        }
+        .exam-card-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        .exam-course {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #0284c7;
+            display: block;
+            margin-bottom: 2px;
+        }
+        .exam-card-head h5 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0;
+            line-height: 1.35;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .exam-arrow {
+            color: #1e3c72;
+            font-size: 18px;
+            line-height: 1;
+            font-weight: bold;
+        }
+        .exam-desc {
+            font-size: 12px;
+            color: #64748b;
+            line-height: 1.5;
+            margin-bottom: 14px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .exam-meta-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 10px 12px;
+            margin-bottom: 16px;
+            border: 1px solid #f1f5f9;
+        }
+        .exam-meta-grid div span {
+            display: block;
+            font-size: 10px;
+            text-transform: uppercase;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+        .exam-meta-grid div strong {
+            font-size: 12px;
+            color: #1e293b;
+        }
+        .exam-actions .btn {
+            border-radius: 8px;
+            font-size: 13px;
+            padding: 9px 12px;
+        }
+
+        /* PAGINATION */
+        .exam-pagination {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            margin: 28px 0;
+            flex-wrap: wrap;
+        }
+        .exam-pagination .page-btn {
+            min-width: 36px;
+            height: 36px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            background: #ffffff;
+            color: #334155;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            transition: 0.15s;
+        }
+        .exam-pagination .page-btn:hover,
+        .exam-pagination .page-btn.active {
+            background: #1e3c72;
+            border-color: #1e3c72;
+            color: #ffffff;
+        }
+        .exam-pagination .page-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        @@media (max-width: 992px) {
+            .exam-card-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+        @@media (max-width: 576px) {
+            .exam-card-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+}

@@ -1,0 +1,34 @@
+@{
+    Layout = "~/Views/Shared/_Master.cshtml";
+    ViewBag.Title = "Sayfa Bulunamadı";
+}
+
+<section class="card">
+    <header class="card-header">
+        <h2 class="card-title"><i class="fas fa-search"></i> 404 - Sayfa Bulunamadı</h2>
+    </header>
+    <div class="card-body">
+        <div class="alert alert-warning">
+            <strong>Oops!</strong> Aradığınız sayfa bulunamadı.
+        </div>
+        <p class="lead">
+            Sayfanın adresi değişmiş olabilir veya kaldırılmış olabilir.
+        </p>
+        @if (Request.Url != null)
+        {
+            <p>
+                <small class="text-muted">
+                    <strong>İstenen URL:</strong> @Request.Url.PathAndQuery
+                </small>
+            </p>
+        }
+        <p>
+            <a href="@Url.Action("Index", "Home")" class="btn btn-primary">
+                <i class="fas fa-home"></i> Ana Sayfaya Dön
+            </a>
+            <a href="@Url.Action("Index", "Landing")" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Giriş Sayfasına Dön
+            </a>
+        </p>
+    </div>
+</section>

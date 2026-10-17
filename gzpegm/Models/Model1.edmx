@@ -1,0 +1,2688 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+  <!-- EF Runtime content -->
+  <edmx:Runtime>
+    <!-- SSDL content -->
+    <edmx:StorageModels>
+    <Schema Namespace="CEZAModel.Store" Provider="System.Data.SqlClient" ProviderManifestToken="2012" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
+        <EntityType Name="__MigrationHistory">
+          <Key>
+            <PropertyRef Name="MigrationId" />
+          </Key>
+          <Property Name="MigrationId" Type="nvarchar" MaxLength="255" Nullable="false" />
+          <Property Name="Model" Type="varbinary(max)" Nullable="false" />
+          <Property Name="ProductVersion" Type="nvarchar" MaxLength="32" Nullable="false" />
+        </EntityType>
+        <EntityType Name="Airline">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="IATACode" Type="nvarchar" MaxLength="7" Nullable="false" />
+          <Property Name="Name" Type="nvarchar" MaxLength="150" Nullable="false" />
+          <Property Name="Country" Type="nvarchar" MaxLength="100" />
+          <Property Name="IsActive" Type="bit" Nullable="false" />
+          <Property Name="IsUserDefined" Type="bit" />
+          <Property Name="CreatedDate" Type="datetime" />
+        </EntityType>
+        <EntityType Name="Answer">
+          <Key>
+            <PropertyRef Name="AnswerId" />
+          </Key>
+          <Property Name="AnswerId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="ExamResultId" Type="int" Nullable="false" />
+          <Property Name="QuestionId" Type="int" Nullable="false" />
+          <Property Name="OptionId" Type="int" />
+          <Property Name="TextAnswer" Type="nvarchar(max)" />
+        </EntityType>
+        <EntityType Name="Categories">
+          <Key>
+            <PropertyRef Name="CategoryId" />
+          </Key>
+          <Property Name="CategoryId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="CategoryName" Type="nvarchar" MaxLength="200" Nullable="false" />
+          <Property Name="Description" Type="nvarchar(max)" />
+          <Property Name="IsActive" Type="bit" Nullable="false" />
+        </EntityType>
+        <EntityType Name="Certificate">
+          <Key>
+            <PropertyRef Name="CertificateId" />
+          </Key>
+          <Property Name="CertificateId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="UserId" Type="int" Nullable="false" />
+          <Property Name="CourseId" Type="int" Nullable="false" />
+          <Property Name="ExamResultId" Type="int" />
+          <Property Name="CertificateNumber" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="FilePath" Type="nvarchar" MaxLength="500" />
+          <Property Name="IssuedDate" Type="datetime" Nullable="false" />
+          <Property Name="Score" Type="int" Nullable="false" />
+          <Property Name="IsActive" Type="bit" Nullable="false" />
+          <Property Name="CreatedAt" Type="datetime" Nullable="false" />
+        </EntityType>
+        <EntityType Name="CertificateRequest">
+          <Key>
+            <PropertyRef Name="RequestId" />
+          </Key>
+          <Property Name="RequestId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="UserId" Type="int" Nullable="false" />
+          <Property Name="CourseId" Type="int" Nullable="false" />
+          <Property Name="RequestDate" Type="datetime" Nullable="false" />
+          <Property Name="Status" Type="tinyint" Nullable="false" />
+          <Property Name="AdminNote" Type="nvarchar" MaxLength="500" />
+          <Property Name="ProcessedDate" Type="datetime" />
+          <Property Name="ProcessedBy" Type="int" />
+        </EntityType>
+        <EntityType Name="ChatMessages">
+          <Key>
+            <PropertyRef Name="ChatMessageId" />
+          </Key>
+          <Property Name="ChatMessageId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="SenderId" Type="int" Nullable="false" />
+          <Property Name="RecipientId" Type="int" Nullable="false" />
+          <Property Name="MessageText" Type="nvarchar" MaxLength="2000" />
+          <Property Name="ImagePath" Type="nvarchar" MaxLength="500" />
+          <Property Name="CreatedAt" Type="datetime" Nullable="false" />
+          <Property Name="ReadAt" Type="datetime" />
+          <Property Name="IsDeleted" Type="bit" Nullable="false" />
+        </EntityType>
+        <EntityType Name="ChatOnlineUsers">
+          <Key>
+            <PropertyRef Name="UserId" />
+          </Key>
+          <Property Name="UserId" Type="int" Nullable="false" />
+          <Property Name="LastSeen" Type="datetime" Nullable="false" />
+          <Property Name="LastPage" Type="nvarchar" MaxLength="500" />
+        </EntityType>
+        <EntityType Name="CourseContents">
+          <Key>
+            <PropertyRef Name="ContentId" />
+          </Key>
+          <Property Name="ContentId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="CourseId" Type="int" Nullable="false" />
+          <Property Name="ContentType" Type="nvarchar" MaxLength="20" Nullable="false" />
+          <Property Name="ContentTitle" Type="nvarchar" MaxLength="200" />
+          <Property Name="FilePath" Type="nvarchar" MaxLength="500" Nullable="false" />
+          <Property Name="CreatedDate" Type="datetime" />
+          <Property Name="ContentDescription" Type="nvarchar(max)" />
+        </EntityType>
+        <EntityType Name="CourseEnrollments">
+          <Key>
+            <PropertyRef Name="EnrollmentId" />
+          </Key>
+          <Property Name="EnrollmentId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="CourseId" Type="int" Nullable="false" />
+          <Property Name="UserId" Type="int" Nullable="false" />
+          <Property Name="EnrollmentDate" Type="datetime" />
+          <Property Name="IsDrawEntry" Type="bit" Nullable="false" />
+          <Property Name="DrawEntryDate" Type="datetime" />
+        </EntityType>
+        <EntityType Name="CourseReviews">
+          <Key>
+            <PropertyRef Name="ReviewId" />
+          </Key>
+          <Property Name="ReviewId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="CourseId" Type="int" Nullable="false" />
+          <Property Name="UserId" Type="int" Nullable="false" />
+          <Property Name="Rating" Type="tinyint" Nullable="false" />
+          <Property Name="Comment" Type="nvarchar(max)" />
+          <Property Name="CreatedDate" Type="datetime" Nullable="false" />
+          <Property Name="IsApproved" Type="bit" Nullable="false" />
+          <Property Name="ApprovedBy" Type="int" />
+          <Property Name="ApprovedDate" Type="datetime" />
+        </EntityType>
+        <EntityType Name="Courses">
+          <Key>
+            <PropertyRef Name="CourseId" />
+          </Key>
+          <Property Name="CourseId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="CourseTitle" Type="nvarchar" MaxLength="200" Nullable="false" />
+          <Property Name="CourseDescription" Type="nvarchar(max)" />
+          <Property Name="CoverImage" Type="nvarchar(max)" />
+          <Property Name="CreatedBy" Type="int" Nullable="false" />
+          <Property Name="CreatedDate" Type="datetime" />
+          <Property Name="CategoryId" Type="int" Nullable="false" />
+          <Property Name="ResourceFile" Type="nvarchar(max)" />
+          <Property Name="IsActive" Type="bit" Nullable="false" />
+          <Property Name="IsDeleted" Type="bit" />
+        </EntityType>
+        <EntityType Name="DocumentTerms">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="Term" Type="nvarchar" MaxLength="200" Nullable="false" />
+          <Property Name="Slug" Type="nvarchar" MaxLength="250" Nullable="false" />
+          <Property Name="Category" Type="nvarchar" MaxLength="100" Nullable="false" />
+          <Property Name="Definition" Type="nvarchar(max)" Nullable="false" />
+          <Property Name="DetailedDescription" Type="nvarchar(max)" />
+          <Property Name="ImageUrl" Type="nvarchar" MaxLength="500" />
+          <Property Name="RelatedTerms" Type="nvarchar" MaxLength="500" />
+          <Property Name="IsActive" Type="bit" Nullable="false" />
+          <Property Name="CreatedAt" Type="datetime" />
+          <Property Name="UpdatedAt" Type="datetime" />
+          <Property Name="Sicil" Type="nvarchar" MaxLength="50" />
+          <Property Name="AdSoyad" Type="nvarchar" MaxLength="200" />
+        </EntityType>
+        <EntityType Name="E_AUH">
+          <Key>
+            <PropertyRef Name="fldId" />
+          </Key>
+          <Property Name="fldId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="fldCountry" Type="nvarchar(max)" />
+          <Property Name="fldFirstMounth" Type="nvarchar(max)" />
+          <Property Name="fldKat" Type="nvarchar(max)" />
+          <Property Name="fldDayStart" Type="nvarchar(max)" />
+          <Property Name="fldDayKat" Type="nvarchar(max)" />
+          <Property Name="fldToM" Type="nvarchar(max)" />
+        </EntityType>
+        <EntityType Name="E_Border">
+          <Key>
+            <PropertyRef Name="fldId" />
+          </Key>
+          <Property Name="fldId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="fldName" Type="nvarchar(max)" />
+        </EntityType>
+        <EntityType Name="E_Defter">
+          <Key>
+            <PropertyRef Name="fldId" />
+          </Key>
+          <Property Name="fldId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="fldPrice" Type="nvarchar" MaxLength="25" />
+          <Property Name="fldTypeofMoney" Type="nvarchar" MaxLength="50" />
+        </EntityType>
+        <EntityType Name="E_Dilekce">
+          <Key>
+            <PropertyRef Name="DilekceId" />
+          </Key>
+          <Property Name="DilekceId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="AdSoyad" Type="nvarchar" MaxLength="100" />
+          <Property Name="DogumTarih" Type="date" />
+          <Property Name="DogumYeri" Type="nvarchar" MaxLength="250" />
+          <Property Name="PasaportNo" Type="nvarchar" MaxLength="250" />
+          <Property Name="KimlikNo" Type="nvarchar" MaxLength="250" />
+          <Property Name="Adres" Type="nvarchar" MaxLength="250" />
+          <Property Name="Telefon" Type="nchar" MaxLength="20" />
+          <Property Name="Uyruk" Type="nvarchar" MaxLength="500" />
+          <Property Name="DilekceTarih" Type="date" />
+          <Property Name="Tarih1" Type="date" />
+          <Property Name="Tarih2" Type="date" />
+          <Property Name="DilekceSebep" Type="nvarchar(max)" />
+          <Property Name="Valilik" Type="nvarchar" MaxLength="500" />
+          <Property Name="DosyaNo" Type="nchar" MaxLength="50" />
+          <Property Name="Unvan" Type="nvarchar" MaxLength="500" />
+          <Property Name="Aciklama" Type="nvarchar(max)" />
+          <Property Name="Sicil" Type="nvarchar(max)" />
+        </EntityType>
+        <EntityType Name="E_Exchange">
+          <Key>
+            <PropertyRef Name="fldId" />
+          </Key>
+          <Property Name="fldId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="fldEuro" Type="nvarchar" MaxLength="50" />
+          <Property Name="fldDollar" Type="nvarchar" MaxLength="50" />
+          <Property Name="fldPaund" Type="nvarchar" MaxLength="50" />
+        </EntityType>
+        <EntityType Name="E_Forms">
+          <Key>
+            <PropertyRef Name="fldId" />
+          </Key>
+          <Property Name="fldId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="fldGB" Type="nvarchar(max)" />
+          <Property Name="fldDE" Type="nvarchar(max)" />
+          <Property Name="fldRU" Type="nvarchar(max)" />
+          <Property Name="fldIR" Type="nvarchar(max)" />
+          <Property Name="fldGBC" Type="nvarchar(max)" />
+          <Property Name="fldDEC" Type="nvarchar(max)" />
+          <Property Name="fldRUC" Type="nvarchar(max)" />
+          <Property Name="fldIRC" Type="nvarchar(max)" />
+          <Property Name="fldIRKC" Type="nvarchar(max)" />
+          <Property Name="fldIRK" Type="nvarchar(max)" />
+          <Property Name="fldFransizca" Type="nvarchar(max)" />
+          <Property Name="fldFransizcaC" Type="nvarchar(max)" />
+        </EntityType>
+        <EntityType Name="E_History">
+          <Key>
+            <PropertyRef Name="fldId" />
+          </Key>
+          <Property Name="fldId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="fldStart" Type="datetime" />
+          <Property Name="fldShouldExit" Type="datetime" />
+          <Property Name="fldBirthDate" Type="datetime" />
+          <Property Name="fldCountry" Type="nvarchar(max)" />
+          <Property Name="fldPenalty" Type="nvarchar(max)" />
+          <Property Name="fldPMoney" Type="nvarchar(max)" />
+          <Property Name="fldUser" Type="nvarchar(max)" />
+          <Property Name="fldBorder" Type="nvarchar(max)" />
+          <Property Name="fldDatetime" Type="datetime" />
+        </EntityType>
+        <EntityType Name="E_Inad">
+          <Key>
+            <PropertyRef Name="InadId" />
+          </Key>
+          <Property Name="InadId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="TarihSaat" Type="datetime" />
+          <Property Name="AdSoyad" Type="nchar" MaxLength="50" />
+          <Property Name="DogumT" Type="date" />
+          <Property Name="DogumY" Type="nvarchar" MaxLength="50" />
+          <Property Name="Cinsiyet" Type="nvarchar" MaxLength="10" />
+          <Property Name="Uyruk" Type="nchar" MaxLength="250" />
+          <Property Name="PasaportNo" Type="nchar" MaxLength="20" />
+          <Property Name="BelgeNo" Type="nvarchar" MaxLength="20" />
+          <Property Name="PasaportTuru" Type="nchar" MaxLength="50" />
+          <Property Name="Beyan" Type="nvarchar" MaxLength="100" />
+          <Property Name="GelenUcusNo" Type="nvarchar" MaxLength="10" />
+          <Property Name="GelenHavayolu" Type="nvarchar" MaxLength="150" />
+          <Property Name="GeldigiYer" Type="nchar" MaxLength="250" />
+          <Property Name="GeldigiTarihSaat" Type="datetime" />
+          <Property Name="InadSebepAciklama" Type="nvarchar(max)" />
+          <Property Name="InadSebep" Type="nvarchar(max)" />
+          <Property Name="GidenHavayolu" Type="nvarchar" MaxLength="150" />
+          <Property Name="GidisUcusNo" Type="nvarchar" MaxLength="10" />
+          <Property Name="GidisYer" Type="nchar" MaxLength="250" />
+          <Property Name="GidisTarihSaat" Type="datetime" />
+          <Property Name="Personel" Type="nvarchar(max)" />
+          <Property Name="UstAramaEsya" Type="nvarchar(max)" />
+          <Property Name="UcagaNakil" Type="nvarchar(max)" />
+          <Property Name="OzelGuvenlik" Type="nvarchar" MaxLength="50" />
+          <Property Name="YerHizmetleriPersonel" Type="nvarchar" MaxLength="50" />
+          <Property Name="YerHizmetleri" Type="nchar" MaxLength="250" />
+          <Property Name="Refakat" Type="nvarchar" MaxLength="250" />
+          <Property Name="Kapi" Type="nvarchar(max)" />
+          <Property Name="Valilik" Type="nvarchar(max)" />
+          <Property Name="Durum" Type="nvarchar(max)" />
+          <Property Name="Sicil" Type="nvarchar(max)" />
+          <Property Name="KimlikNo" Type="nvarchar" MaxLength="50" />
+        </EntityType>
+        <EntityType Name="E_IsK">
+          <Key>
+            <PropertyRef Name="fldId" />
+          </Key>
+          <Property Name="fldId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="fldDatetime" Type="datetime" />
+          <Property Name="fldName" Type="nvarchar(max)" />
+          <Property Name="fldPassport" Type="nvarchar(max)" />
+          <Property Name="fldIdn" Type="nvarchar(max)" />
+          <Property Name="fldOrgin" Type="nvarchar(max)" />
+          <Property Name="fldBirthdate" Type="date" />
+          <Property Name="fldForm" Type="nvarchar(max)" />
+          <Property Name="fldPassControl" Type="nvarchar(max)" />
+          <Property Name="fldApproval" Type="nvarchar(max)" />
+          <Property Name="fldBorder" Type="nvarchar(max)" />
+          <Property Name="fldVisa" Type="nvarchar(max)" />
+          <Property Name="fldPMoney" Type="nvarchar(max)" />
+          <Property Name="fldPicture" Type="nvarchar(max)" />
+        </EntityType>
+        <EntityType Name="E_Messages">
+          <Key>
+            <PropertyRef Name="fldId" />
+          </Key>
+          <Property Name="fldId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="fldSendByName" Type="nvarchar(max)" />
+          <Property Name="fldSendBySicil" Type="nvarchar(max)" />
+          <Property Name="fldSendByPhone" Type="nvarchar(max)" />
+          <Property Name="fldSendByMail" Type="nvarchar(max)" />
+          <Property Name="fldDateTime" Type="datetime" />
+          <Property Name="fldMessage" Type="nvarchar(max)" />
+          <Property Name="fldSenderId" Type="int" />
+          <Property Name="fldSenderRole" Type="nvarchar" MaxLength="20" />
+          <Property Name="fldRecipientId" Type="int" />
+          <Property Name="fldRecipientRole" Type="nvarchar" MaxLength="20" />
+          <Property Name="fldSubject" Type="nvarchar" MaxLength="200" />
+          <Property Name="fldIsRead" Type="bit" Nullable="false" />
+          <Property Name="fldReadDateTime" Type="datetime" />
+          <Property Name="fldIsDeletedBySender" Type="bit" Nullable="false" />
+          <Property Name="fldIsDeletedByRecipient" Type="bit" Nullable="false" />
+          <Property Name="fldParentMessageId" Type="int" />
+          <Property Name="fldIsReply" Type="bit" Nullable="false" />
+          <Property Name="fldIsApproved" Type="bit" Nullable="false" />
+          <Property Name="fldApprovedBy" Type="int" />
+          <Property Name="fldApprovedDateTime" Type="datetime" />
+        </EntityType>
+        <EntityType Name="E_Sartli">
+          <Key>
+            <PropertyRef Name="fldId" />
+          </Key>
+          <Property Name="fldId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="fldBy" Type="varchar" MaxLength="150" />
+          <Property Name="fldOrgin" Type="nvarchar" MaxLength="50" />
+          <Property Name="fldBdate" Type="date" />
+          <Property Name="fldDate" Type="datetime" />
+          <Property Name="fldName" Type="nvarchar" MaxLength="250" />
+          <Property Name="fldBorder" Type="nvarchar" MaxLength="500" />
+        </EntityType>
+        <EntityType Name="E_TGVH">
+          <Key>
+            <PropertyRef Name="fldId" />
+          </Key>
+          <Property Name="fldId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="fldPrice" Type="nvarchar" MaxLength="25" />
+          <Property Name="fldTypeofMoney" Type="nvarchar" MaxLength="25" />
+          <Property Name="fldYear" Type="nvarchar" MaxLength="25" />
+        </EntityType>
+        <EntityType Name="E_TKOD">
+          <Key>
+            <PropertyRef Name="fldId" />
+          </Key>
+          <Property Name="fldId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="fldCode" Type="nvarchar" MaxLength="50" />
+          <Property Name="fldPTime" Type="nvarchar" MaxLength="50" />
+          <Property Name="fldStart" Type="int" />
+          <Property Name="fldFinish" Type="int" />
+          <Property Name="fldIdariCode" Type="nvarchar" MaxLength="50" />
+          <Property Name="fldPaid" Type="tinyint" />
+        </EntityType>
+        <EntityType Name="E_Token">
+          <Key>
+            <PropertyRef Name="fldId" />
+          </Key>
+          <Property Name="fldId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="fldUserId" Type="int" />
+          <Property Name="fldToken" Type="nvarchar(max)" />
+          <Property Name="fldDateTime" Type="datetime" />
+          <Property Name="fldIp" Type="nvarchar" MaxLength="50" />
+        </EntityType>
+        <EntityType Name="E_User">
+          <Key>
+            <PropertyRef Name="fldId" />
+          </Key>
+          <Property Name="fldId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="fldSicil" Type="nvarchar(max)" />
+          <Property Name="fldName" Type="nvarchar(max)" />
+          <Property Name="fldLastName" Type="nvarchar(max)" />
+          <Property Name="fldPhone" Type="nvarchar(max)" />
+          <Property Name="fldEmail" Type="nvarchar(max)" />
+          <Property Name="fldTitle" Type="nvarchar(max)" />
+          <Property Name="fldDeputy" Type="nvarchar(max)" />
+          <Property Name="fldPicture" Type="nvarchar(max)" />
+          <Property Name="fldAuth" Type="nvarchar(max)" />
+          <Property Name="fldSubAuth" Type="nvarchar(max)" />
+          <Property Name="fldPassword" Type="nvarchar(max)" />
+          <Property Name="fldDateTime" Type="datetime" />
+          <Property Name="fldBorder" Type="nvarchar(max)" />
+          <Property Name="fldActive" Type="nchar" MaxLength="1" />
+          <Property Name="Role" Type="nvarchar" MaxLength="20" Nullable="false" />
+          <Property Name="LastLogin" Type="datetime" />
+          <Property Name="XP" Type="int" Nullable="false" />
+          <Property Name="Level" Type="int" Nullable="false" />
+          <Property Name="IsActive" Type="bit" />
+          <Property Name="TeacherRequestStatus" Type="tinyint" />
+          <Property Name="TeacherRequestDate" Type="datetime" />
+        </EntityType>
+        <EntityType Name="E_UVR">
+          <Key>
+            <PropertyRef Name="fldId" />
+          </Key>
+          <Property Name="fldId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="fldCountry" Type="nvarchar(max)" />
+          <Property Name="fldCalculateType" Type="int" />
+          <Property Name="fldPassportType" Type="int" />
+          <Property Name="fldVisaStatus" Type="int" />
+          <Property Name="fldDay" Type="int" />
+          <Property Name="fldLong" Type="int" />
+          <Property Name="fldOneTime" Type="int" />
+          <Property Name="fldHB" Type="tinyint" />
+        </EntityType>
+        <!--Errors Found During Generation:
+warning 6002: The table/view 'CEZA.dbo.E_UVR_Backup_Before_WorkPermit' does not have a primary key defined. The key has been inferred and the definition was created as a read-only table/view.-->
+        <EntityType Name="E_UVR_Backup_Before_WorkPermit">
+          <Key>
+            <PropertyRef Name="fldId" />
+          </Key>
+          <Property Name="fldId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="fldCountry" Type="nvarchar(max)" />
+          <Property Name="fldCalculateType" Type="int" />
+          <Property Name="fldPassportType" Type="int" />
+          <Property Name="fldVisaStatus" Type="int" />
+          <Property Name="fldDay" Type="int" />
+          <Property Name="fldLong" Type="int" />
+          <Property Name="fldOneTime" Type="int" />
+          <Property Name="fldHB" Type="tinyint" />
+        </EntityType>
+        <EntityType Name="EducationPackageImportLog">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="PackageCode" Type="nvarchar" MaxLength="100" />
+          <Property Name="PackageTitle" Type="nvarchar" MaxLength="300" />
+          <Property Name="PackageVersion" Type="nvarchar" MaxLength="30" />
+          <Property Name="SourceDocumentCode" Type="nvarchar" MaxLength="100" />
+          <Property Name="ImportedCourseId" Type="int" />
+          <Property Name="ImportedExamId" Type="int" />
+          <Property Name="ImportedByUserId" Type="int" Nullable="false" />
+          <Property Name="ImportedDate" Type="datetime" Nullable="false" />
+          <Property Name="FileName" Type="nvarchar" MaxLength="260" />
+          <Property Name="Status" Type="nvarchar" MaxLength="30" Nullable="false" />
+          <Property Name="Message" Type="nvarchar" MaxLength="2000" />
+        </EntityType>
+        <EntityType Name="Exam">
+          <Key>
+            <PropertyRef Name="ExamId" />
+          </Key>
+          <Property Name="ExamId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="CourseId" Type="int" Nullable="false" />
+          <Property Name="Title" Type="nvarchar" MaxLength="200" Nullable="false" />
+          <Property Name="Description" Type="nvarchar(max)" />
+          <Property Name="DurationMinutes" Type="int" />
+          <Property Name="PassingScore" Type="int" />
+          <Property Name="IsActive" Type="bit" Nullable="false" />
+          <Property Name="CreatedAt" Type="datetime" Nullable="false" />
+          <Property Name="IsArchived" Type="bit" />
+        </EntityType>
+        <EntityType Name="ExamResult">
+          <Key>
+            <PropertyRef Name="ExamResultId" />
+          </Key>
+          <Property Name="ExamResultId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="ExamId" Type="int" Nullable="false" />
+          <Property Name="UserId" Type="int" />
+          <Property Name="Score" Type="decimal" Precision="5" Scale="2" />
+          <Property Name="StartedAt" Type="datetime" />
+          <Property Name="FinishedAt" Type="datetime" />
+          <Property Name="Status" Type="tinyint" Nullable="false" />
+        </EntityType>
+        <EntityType Name="Question">
+          <Key>
+            <PropertyRef Name="QuestionId" />
+          </Key>
+          <Property Name="QuestionId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="ExamId" Type="int" Nullable="false" />
+          <Property Name="Text" Type="nvarchar(max)" Nullable="false" />
+          <Property Name="QuestionType" Type="tinyint" Nullable="false" />
+          <Property Name="Points" Type="int" Nullable="false" />
+          <Property Name="SortOrder" Type="int" Nullable="false" />
+          <Property Name="IsActive" Type="bit" />
+        </EntityType>
+        <EntityType Name="QuestionMedia">
+          <Key>
+            <PropertyRef Name="MediaId" />
+          </Key>
+          <Property Name="MediaId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="QuestionId" Type="int" Nullable="false" />
+          <Property Name="MediaType" Type="tinyint" Nullable="false" />
+          <Property Name="MediaPath" Type="nvarchar(max)" Nullable="false" />
+          <Property Name="SortOrder" Type="int" Nullable="false" />
+          <Property Name="CreatedAt" Type="datetime" Nullable="false" />
+        </EntityType>
+        <EntityType Name="QuestionOption">
+          <Key>
+            <PropertyRef Name="OptionId" />
+          </Key>
+          <Property Name="OptionId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="QuestionId" Type="int" Nullable="false" />
+          <Property Name="Text" Type="nvarchar(max)" Nullable="false" />
+          <Property Name="IsCorrect" Type="bit" Nullable="false" />
+          <Property Name="SortOrder" Type="int" Nullable="false" />
+        </EntityType>
+        <EntityType Name="SorguCevaplari">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="AnahtarKelimeler" Type="nvarchar" MaxLength="200" Nullable="false" />
+          <Property Name="Cevap" Type="nvarchar(max)" Nullable="false" />
+          <Property Name="Kategori" Type="nvarchar" MaxLength="100" />
+          <Property Name="Aktif" Type="bit" />
+          <Property Name="OlusturmaTarihi" Type="datetime" />
+          <Property Name="ResimUrl" Type="nvarchar(max)" />
+        </EntityType>
+        <EntityType Name="SorguLoglari">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="Soru" Type="nvarchar" MaxLength="500" Nullable="false" />
+          <Property Name="Cevap" Type="nvarchar" MaxLength="1000" />
+          <Property Name="KullaniciAdi" Type="nvarchar" MaxLength="100" />
+          <Property Name="IpAdresi" Type="nvarchar" MaxLength="50" />
+          <Property Name="Tarih" Type="datetime" />
+          <Property Name="BasariDurumu" Type="bit" />
+        </EntityType>
+        <EntityType Name="TahditFormLog">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="CreatedAt" Type="datetime" Nullable="false" />
+          <Property Name="TahditCode" Type="nvarchar" MaxLength="50" />
+          <Property Name="IdariTahditCode" Type="nvarchar" MaxLength="50" />
+          <Property Name="PenaltyDay" Type="int" Nullable="false" />
+          <Property Name="PenaltyMonth" Type="int" Nullable="false" />
+          <Property Name="PenaltyTotalDay" Type="int" Nullable="false" />
+          <Property Name="PaymentType" Type="nvarchar" MaxLength="20" />
+          <Property Name="VisaType" Type="int" Nullable="false" />
+          <Property Name="Country" Type="nvarchar" MaxLength="150" />
+          <Property Name="Border" Type="nvarchar" MaxLength="150" />
+          <Property Name="UserId" Type="int" />
+          <Property Name="UserSicil" Type="nvarchar" MaxLength="50" />
+          <Property Name="UserDisplayName" Type="nvarchar" MaxLength="200" />
+          <Property Name="PassengerName" Type="nvarchar" MaxLength="200" />
+          <Property Name="PassportNo" Type="nvarchar" MaxLength="80" />
+          <Property Name="FormMoney" Type="nvarchar" MaxLength="80" />
+        </EntityType>
+        <EntityType Name="TahditKod">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="Kod" Type="nvarchar(max)" Nullable="false" />
+          <Property Name="Aciklama" Type="nvarchar(max)" Nullable="false" />
+          <Property Name="SureAy" Type="int" />
+          <Property Name="Aktif" Type="bit" Nullable="false" />
+          <Property Name="GirisGelirse" Type="nvarchar(max)" />
+          <Property Name="CikisGelirse" Type="nvarchar(max)" />
+          <Property Name="TahditMedia" Type="nvarchar(max)" />
+          <Property Name="CreatedAt" Type="datetime" />
+          <Property Name="CreatedByUserId" Type="int" />
+          <Property Name="CreatedBySicil" Type="nvarchar" MaxLength="50" />
+          <Property Name="CreatedByName" Type="nvarchar" MaxLength="200" />
+        </EntityType>
+        <EntityType Name="tbl_TempUser">
+          <Key>
+            <PropertyRef Name="fldId" />
+          </Key>
+          <Property Name="fldId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="fldSicil" Type="nvarchar(max)" />
+          <Property Name="fldName" Type="nvarchar(max)" />
+          <Property Name="fldLastName" Type="nvarchar(max)" />
+          <Property Name="fldPhone" Type="nvarchar(max)" />
+          <Property Name="fldEmail" Type="nvarchar(max)" />
+          <Property Name="fldTitle" Type="nvarchar(max)" />
+          <Property Name="fldDeputy" Type="nvarchar(max)" />
+        </EntityType>
+        <Association Name="FK_Answer_ExamResult">
+          <End Role="ExamResult" Type="Self.ExamResult" Multiplicity="1" />
+          <End Role="Answer" Type="Self.Answer" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="ExamResult">
+              <PropertyRef Name="ExamResultId" />
+            </Principal>
+            <Dependent Role="Answer">
+              <PropertyRef Name="ExamResultId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Answer_Option">
+          <End Role="QuestionOption" Type="Self.QuestionOption" Multiplicity="0..1" />
+          <End Role="Answer" Type="Self.Answer" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="QuestionOption">
+              <PropertyRef Name="OptionId" />
+            </Principal>
+            <Dependent Role="Answer">
+              <PropertyRef Name="OptionId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Answer_Question">
+          <End Role="Question" Type="Self.Question" Multiplicity="1" />
+          <End Role="Answer" Type="Self.Answer" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Question">
+              <PropertyRef Name="QuestionId" />
+            </Principal>
+            <Dependent Role="Answer">
+              <PropertyRef Name="QuestionId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Certificate_Course">
+          <End Role="Courses" Type="Self.Courses" Multiplicity="1" />
+          <End Role="Certificate" Type="Self.Certificate" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Courses">
+              <PropertyRef Name="CourseId" />
+            </Principal>
+            <Dependent Role="Certificate">
+              <PropertyRef Name="CourseId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Certificate_ExamResult">
+          <End Role="ExamResult" Type="Self.ExamResult" Multiplicity="0..1" />
+          <End Role="Certificate" Type="Self.Certificate" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="ExamResult">
+              <PropertyRef Name="ExamResultId" />
+            </Principal>
+            <Dependent Role="Certificate">
+              <PropertyRef Name="ExamResultId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Certificate_User">
+          <End Role="E_User" Type="Self.E_User" Multiplicity="1" />
+          <End Role="Certificate" Type="Self.Certificate" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="E_User">
+              <PropertyRef Name="fldId" />
+            </Principal>
+            <Dependent Role="Certificate">
+              <PropertyRef Name="UserId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_CourseContents_Course">
+          <End Role="Courses" Type="Self.Courses" Multiplicity="1" />
+          <End Role="CourseContents" Type="Self.CourseContents" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Courses">
+              <PropertyRef Name="CourseId" />
+            </Principal>
+            <Dependent Role="CourseContents">
+              <PropertyRef Name="CourseId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_CourseEnrollments_Course">
+          <End Role="Courses" Type="Self.Courses" Multiplicity="1" />
+          <End Role="CourseEnrollments" Type="Self.CourseEnrollments" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Courses">
+              <PropertyRef Name="CourseId" />
+            </Principal>
+            <Dependent Role="CourseEnrollments">
+              <PropertyRef Name="CourseId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_CourseEnrollments_User">
+          <End Role="E_User" Type="Self.E_User" Multiplicity="1">
+            <OnDelete Action="Cascade" />
+          </End>
+          <End Role="CourseEnrollments" Type="Self.CourseEnrollments" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="E_User">
+              <PropertyRef Name="fldId" />
+            </Principal>
+            <Dependent Role="CourseEnrollments">
+              <PropertyRef Name="UserId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_CourseReviews_ApprovedBy">
+          <End Role="E_User" Type="Self.E_User" Multiplicity="0..1" />
+          <End Role="CourseReviews" Type="Self.CourseReviews" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="E_User">
+              <PropertyRef Name="fldId" />
+            </Principal>
+            <Dependent Role="CourseReviews">
+              <PropertyRef Name="ApprovedBy" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_CourseReviews_Course">
+          <End Role="Courses" Type="Self.Courses" Multiplicity="1" />
+          <End Role="CourseReviews" Type="Self.CourseReviews" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Courses">
+              <PropertyRef Name="CourseId" />
+            </Principal>
+            <Dependent Role="CourseReviews">
+              <PropertyRef Name="CourseId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_CourseReviews_User">
+          <End Role="E_User" Type="Self.E_User" Multiplicity="1" />
+          <End Role="CourseReviews" Type="Self.CourseReviews" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="E_User">
+              <PropertyRef Name="fldId" />
+            </Principal>
+            <Dependent Role="CourseReviews">
+              <PropertyRef Name="UserId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Courses_Category">
+          <End Role="Categories" Type="Self.Categories" Multiplicity="1" />
+          <End Role="Courses" Type="Self.Courses" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Categories">
+              <PropertyRef Name="CategoryId" />
+            </Principal>
+            <Dependent Role="Courses">
+              <PropertyRef Name="CategoryId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Courses_CreatedBy">
+          <End Role="E_User" Type="Self.E_User" Multiplicity="1" />
+          <End Role="Courses" Type="Self.Courses" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="E_User">
+              <PropertyRef Name="fldId" />
+            </Principal>
+            <Dependent Role="Courses">
+              <PropertyRef Name="CreatedBy" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_E_Messages_ApprovedBy">
+          <End Role="E_User" Type="Self.E_User" Multiplicity="0..1" />
+          <End Role="E_Messages" Type="Self.E_Messages" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="E_User">
+              <PropertyRef Name="fldId" />
+            </Principal>
+            <Dependent Role="E_Messages">
+              <PropertyRef Name="fldApprovedBy" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_E_Messages_Parent">
+          <End Role="E_Messages" Type="Self.E_Messages" Multiplicity="0..1" />
+          <End Role="E_Messages1" Type="Self.E_Messages" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="E_Messages">
+              <PropertyRef Name="fldId" />
+            </Principal>
+            <Dependent Role="E_Messages1">
+              <PropertyRef Name="fldParentMessageId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_E_Messages_Recipient">
+          <End Role="E_User" Type="Self.E_User" Multiplicity="0..1" />
+          <End Role="E_Messages" Type="Self.E_Messages" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="E_User">
+              <PropertyRef Name="fldId" />
+            </Principal>
+            <Dependent Role="E_Messages">
+              <PropertyRef Name="fldRecipientId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_E_Messages_Sender">
+          <End Role="E_User" Type="Self.E_User" Multiplicity="0..1" />
+          <End Role="E_Messages" Type="Self.E_Messages" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="E_User">
+              <PropertyRef Name="fldId" />
+            </Principal>
+            <Dependent Role="E_Messages">
+              <PropertyRef Name="fldSenderId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_ExamResult_Exam">
+          <End Role="Exam" Type="Self.Exam" Multiplicity="1" />
+          <End Role="ExamResult" Type="Self.ExamResult" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Exam">
+              <PropertyRef Name="ExamId" />
+            </Principal>
+            <Dependent Role="ExamResult">
+              <PropertyRef Name="ExamId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Question_Exam">
+          <End Role="Exam" Type="Self.Exam" Multiplicity="1" />
+          <End Role="Question" Type="Self.Question" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Exam">
+              <PropertyRef Name="ExamId" />
+            </Principal>
+            <Dependent Role="Question">
+              <PropertyRef Name="ExamId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_QuestionMedia_Question">
+          <End Role="Question" Type="Self.Question" Multiplicity="1">
+            <OnDelete Action="Cascade" />
+          </End>
+          <End Role="QuestionMedia" Type="Self.QuestionMedia" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Question">
+              <PropertyRef Name="QuestionId" />
+            </Principal>
+            <Dependent Role="QuestionMedia">
+              <PropertyRef Name="QuestionId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_QuestionOption_Question">
+          <End Role="Question" Type="Self.Question" Multiplicity="1" />
+          <End Role="QuestionOption" Type="Self.QuestionOption" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Question">
+              <PropertyRef Name="QuestionId" />
+            </Principal>
+            <Dependent Role="QuestionOption">
+              <PropertyRef Name="QuestionId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <EntityContainer Name="CEZAModelStoreContainer">
+          <EntitySet Name="__MigrationHistory" EntityType="Self.__MigrationHistory" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="Airline" EntityType="Self.Airline" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="Answer" EntityType="Self.Answer" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="Categories" EntityType="Self.Categories" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="Certificate" EntityType="Self.Certificate" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="CertificateRequest" EntityType="Self.CertificateRequest" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="ChatMessages" EntityType="Self.ChatMessages" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="ChatOnlineUsers" EntityType="Self.ChatOnlineUsers" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="CourseContents" EntityType="Self.CourseContents" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="CourseEnrollments" EntityType="Self.CourseEnrollments" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="CourseReviews" EntityType="Self.CourseReviews" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="Courses" EntityType="Self.Courses" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="DocumentTerms" EntityType="Self.DocumentTerms" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="E_AUH" EntityType="Self.E_AUH" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="E_Border" EntityType="Self.E_Border" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="E_Defter" EntityType="Self.E_Defter" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="E_Dilekce" EntityType="Self.E_Dilekce" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="E_Exchange" EntityType="Self.E_Exchange" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="E_Forms" EntityType="Self.E_Forms" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="E_History" EntityType="Self.E_History" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="E_Inad" EntityType="Self.E_Inad" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="E_IsK" EntityType="Self.E_IsK" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="E_Messages" EntityType="Self.E_Messages" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="E_Sartli" EntityType="Self.E_Sartli" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="E_TGVH" EntityType="Self.E_TGVH" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="E_TKOD" EntityType="Self.E_TKOD" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="E_Token" EntityType="Self.E_Token" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="E_User" EntityType="Self.E_User" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="E_UVR" EntityType="Self.E_UVR" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="EducationPackageImportLog" EntityType="Self.EducationPackageImportLog" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="Exam" EntityType="Self.Exam" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="ExamResult" EntityType="Self.ExamResult" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="Question" EntityType="Self.Question" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="QuestionMedia" EntityType="Self.QuestionMedia" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="QuestionOption" EntityType="Self.QuestionOption" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="SorguCevaplari" EntityType="Self.SorguCevaplari" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="SorguLoglari" EntityType="Self.SorguLoglari" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="TahditFormLog" EntityType="Self.TahditFormLog" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="TahditKod" EntityType="Self.TahditKod" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="tbl_TempUser" EntityType="Self.tbl_TempUser" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="E_UVR_Backup_Before_WorkPermit" EntityType="Self.E_UVR_Backup_Before_WorkPermit" store:Type="Tables" store:Schema="dbo">
+            <DefiningQuery>SELECT 
+    [E_UVR_Backup_Before_WorkPermit].[fldId] AS [fldId], 
+    [E_UVR_Backup_Before_WorkPermit].[fldCountry] AS [fldCountry], 
+    [E_UVR_Backup_Before_WorkPermit].[fldCalculateType] AS [fldCalculateType], 
+    [E_UVR_Backup_Before_WorkPermit].[fldPassportType] AS [fldPassportType], 
+    [E_UVR_Backup_Before_WorkPermit].[fldVisaStatus] AS [fldVisaStatus], 
+    [E_UVR_Backup_Before_WorkPermit].[fldDay] AS [fldDay], 
+    [E_UVR_Backup_Before_WorkPermit].[fldLong] AS [fldLong], 
+    [E_UVR_Backup_Before_WorkPermit].[fldOneTime] AS [fldOneTime], 
+    [E_UVR_Backup_Before_WorkPermit].[fldHB] AS [fldHB]
+    FROM [dbo].[E_UVR_Backup_Before_WorkPermit] AS [E_UVR_Backup_Before_WorkPermit]</DefiningQuery>
+          </EntitySet>
+          <AssociationSet Name="FK_Answer_ExamResult" Association="Self.FK_Answer_ExamResult">
+            <End Role="ExamResult" EntitySet="ExamResult" />
+            <End Role="Answer" EntitySet="Answer" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Answer_Option" Association="Self.FK_Answer_Option">
+            <End Role="QuestionOption" EntitySet="QuestionOption" />
+            <End Role="Answer" EntitySet="Answer" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Answer_Question" Association="Self.FK_Answer_Question">
+            <End Role="Question" EntitySet="Question" />
+            <End Role="Answer" EntitySet="Answer" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Certificate_Course" Association="Self.FK_Certificate_Course">
+            <End Role="Courses" EntitySet="Courses" />
+            <End Role="Certificate" EntitySet="Certificate" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Certificate_ExamResult" Association="Self.FK_Certificate_ExamResult">
+            <End Role="ExamResult" EntitySet="ExamResult" />
+            <End Role="Certificate" EntitySet="Certificate" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Certificate_User" Association="Self.FK_Certificate_User">
+            <End Role="E_User" EntitySet="E_User" />
+            <End Role="Certificate" EntitySet="Certificate" />
+          </AssociationSet>
+          <AssociationSet Name="FK_CourseContents_Course" Association="Self.FK_CourseContents_Course">
+            <End Role="Courses" EntitySet="Courses" />
+            <End Role="CourseContents" EntitySet="CourseContents" />
+          </AssociationSet>
+          <AssociationSet Name="FK_CourseEnrollments_Course" Association="Self.FK_CourseEnrollments_Course">
+            <End Role="Courses" EntitySet="Courses" />
+            <End Role="CourseEnrollments" EntitySet="CourseEnrollments" />
+          </AssociationSet>
+          <AssociationSet Name="FK_CourseEnrollments_User" Association="Self.FK_CourseEnrollments_User">
+            <End Role="E_User" EntitySet="E_User" />
+            <End Role="CourseEnrollments" EntitySet="CourseEnrollments" />
+          </AssociationSet>
+          <AssociationSet Name="FK_CourseReviews_ApprovedBy" Association="Self.FK_CourseReviews_ApprovedBy">
+            <End Role="E_User" EntitySet="E_User" />
+            <End Role="CourseReviews" EntitySet="CourseReviews" />
+          </AssociationSet>
+          <AssociationSet Name="FK_CourseReviews_Course" Association="Self.FK_CourseReviews_Course">
+            <End Role="Courses" EntitySet="Courses" />
+            <End Role="CourseReviews" EntitySet="CourseReviews" />
+          </AssociationSet>
+          <AssociationSet Name="FK_CourseReviews_User" Association="Self.FK_CourseReviews_User">
+            <End Role="E_User" EntitySet="E_User" />
+            <End Role="CourseReviews" EntitySet="CourseReviews" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Courses_Category" Association="Self.FK_Courses_Category">
+            <End Role="Categories" EntitySet="Categories" />
+            <End Role="Courses" EntitySet="Courses" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Courses_CreatedBy" Association="Self.FK_Courses_CreatedBy">
+            <End Role="E_User" EntitySet="E_User" />
+            <End Role="Courses" EntitySet="Courses" />
+          </AssociationSet>
+          <AssociationSet Name="FK_E_Messages_ApprovedBy" Association="Self.FK_E_Messages_ApprovedBy">
+            <End Role="E_User" EntitySet="E_User" />
+            <End Role="E_Messages" EntitySet="E_Messages" />
+          </AssociationSet>
+          <AssociationSet Name="FK_E_Messages_Parent" Association="Self.FK_E_Messages_Parent">
+            <End Role="E_Messages" EntitySet="E_Messages" />
+            <End Role="E_Messages1" EntitySet="E_Messages" />
+          </AssociationSet>
+          <AssociationSet Name="FK_E_Messages_Recipient" Association="Self.FK_E_Messages_Recipient">
+            <End Role="E_User" EntitySet="E_User" />
+            <End Role="E_Messages" EntitySet="E_Messages" />
+          </AssociationSet>
+          <AssociationSet Name="FK_E_Messages_Sender" Association="Self.FK_E_Messages_Sender">
+            <End Role="E_User" EntitySet="E_User" />
+            <End Role="E_Messages" EntitySet="E_Messages" />
+          </AssociationSet>
+          <AssociationSet Name="FK_ExamResult_Exam" Association="Self.FK_ExamResult_Exam">
+            <End Role="Exam" EntitySet="Exam" />
+            <End Role="ExamResult" EntitySet="ExamResult" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Question_Exam" Association="Self.FK_Question_Exam">
+            <End Role="Exam" EntitySet="Exam" />
+            <End Role="Question" EntitySet="Question" />
+          </AssociationSet>
+          <AssociationSet Name="FK_QuestionMedia_Question" Association="Self.FK_QuestionMedia_Question">
+            <End Role="Question" EntitySet="Question" />
+            <End Role="QuestionMedia" EntitySet="QuestionMedia" />
+          </AssociationSet>
+          <AssociationSet Name="FK_QuestionOption_Question" Association="Self.FK_QuestionOption_Question">
+            <End Role="Question" EntitySet="Question" />
+            <End Role="QuestionOption" EntitySet="QuestionOption" />
+          </AssociationSet>
+        </EntityContainer>
+      </Schema></edmx:StorageModels>
+    <!-- CSDL content -->
+    <edmx:ConceptualModels>
+      <Schema Namespace="CEZAModel" Alias="Self" annotation:UseStrongSpatialTypes="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm">
+        <EntityContainer Name="GZPEGM1" annotation:LazyLoadingEnabled="true">
+          <EntitySet Name="C__MigrationHistory" EntityType="CEZAModel.C__MigrationHistory" />
+          <EntitySet Name="Airline" EntityType="CEZAModel.Airline" />
+          <EntitySet Name="Answer" EntityType="CEZAModel.Answer" />
+          <EntitySet Name="Categories" EntityType="CEZAModel.Categories" />
+          <EntitySet Name="Certificate" EntityType="CEZAModel.Certificate" />
+          <EntitySet Name="CertificateRequest" EntityType="CEZAModel.CertificateRequest" />
+          <EntitySet Name="CourseContents" EntityType="CEZAModel.CourseContents" />
+          <EntitySet Name="CourseEnrollments" EntityType="CEZAModel.CourseEnrollments" />
+          <EntitySet Name="CourseReviews" EntityType="CEZAModel.CourseReviews" />
+          <EntitySet Name="Courses" EntityType="CEZAModel.Courses" />
+          <EntitySet Name="DocumentTerms" EntityType="CEZAModel.DocumentTerms" />
+          <EntitySet Name="E_AUH" EntityType="CEZAModel.E_AUH" />
+          <EntitySet Name="E_Border" EntityType="CEZAModel.E_Border" />
+          <EntitySet Name="E_Defter" EntityType="CEZAModel.E_Defter" />
+          <EntitySet Name="E_Exchange" EntityType="CEZAModel.E_Exchange" />
+          <EntitySet Name="E_Forms" EntityType="CEZAModel.E_Forms" />
+          <EntitySet Name="E_History" EntityType="CEZAModel.E_History" />
+          <EntitySet Name="E_Inad" EntityType="CEZAModel.E_Inad" />
+          <EntitySet Name="E_IsK" EntityType="CEZAModel.E_IsK" />
+          <EntitySet Name="E_Messages" EntityType="CEZAModel.E_Messages" />
+          <EntitySet Name="E_Sartli" EntityType="CEZAModel.E_Sartli" />
+          <EntitySet Name="E_TGVH" EntityType="CEZAModel.E_TGVH" />
+          <EntitySet Name="E_TKOD" EntityType="CEZAModel.E_TKOD" />
+          <EntitySet Name="E_Token" EntityType="CEZAModel.E_Token" />
+          <EntitySet Name="E_User" EntityType="CEZAModel.E_User" />
+          <EntitySet Name="E_UVR" EntityType="CEZAModel.E_UVR" />
+          <EntitySet Name="Exam" EntityType="CEZAModel.Exam" />
+          <EntitySet Name="ExamResult" EntityType="CEZAModel.ExamResult" />
+          <EntitySet Name="Question" EntityType="CEZAModel.Question" />
+          <EntitySet Name="QuestionMedia" EntityType="CEZAModel.QuestionMedia" />
+          <EntitySet Name="QuestionOption" EntityType="CEZAModel.QuestionOption" />
+          <EntitySet Name="tbl_TempUser" EntityType="CEZAModel.tbl_TempUser" />
+          <AssociationSet Name="FK_Answer_ExamResult" Association="CEZAModel.FK_Answer_ExamResult">
+            <End Role="ExamResult" EntitySet="ExamResult" />
+            <End Role="Answer" EntitySet="Answer" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Answer_Option" Association="CEZAModel.FK_Answer_Option">
+            <End Role="QuestionOption" EntitySet="QuestionOption" />
+            <End Role="Answer" EntitySet="Answer" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Answer_Question" Association="CEZAModel.FK_Answer_Question">
+            <End Role="Question" EntitySet="Question" />
+            <End Role="Answer" EntitySet="Answer" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Courses_Category" Association="CEZAModel.FK_Courses_Category">
+            <End Role="Categories" EntitySet="Categories" />
+            <End Role="Courses" EntitySet="Courses" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Certificate_Course" Association="CEZAModel.FK_Certificate_Course">
+            <End Role="Courses" EntitySet="Courses" />
+            <End Role="Certificate" EntitySet="Certificate" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Certificate_ExamResult" Association="CEZAModel.FK_Certificate_ExamResult">
+            <End Role="ExamResult" EntitySet="ExamResult" />
+            <End Role="Certificate" EntitySet="Certificate" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Certificate_User" Association="CEZAModel.FK_Certificate_User">
+            <End Role="E_User" EntitySet="E_User" />
+            <End Role="Certificate" EntitySet="Certificate" />
+          </AssociationSet>
+          <AssociationSet Name="FK_CourseContents_Course" Association="CEZAModel.FK_CourseContents_Course">
+            <End Role="Courses" EntitySet="Courses" />
+            <End Role="CourseContents" EntitySet="CourseContents" />
+          </AssociationSet>
+          <AssociationSet Name="FK_CourseEnrollments_Course" Association="CEZAModel.FK_CourseEnrollments_Course">
+            <End Role="Courses" EntitySet="Courses" />
+            <End Role="CourseEnrollments" EntitySet="CourseEnrollments" />
+          </AssociationSet>
+          <AssociationSet Name="FK_CourseEnrollments_User" Association="CEZAModel.FK_CourseEnrollments_User">
+            <End Role="E_User" EntitySet="E_User" />
+            <End Role="CourseEnrollments" EntitySet="CourseEnrollments" />
+          </AssociationSet>
+          <AssociationSet Name="FK_CourseReviews_ApprovedBy" Association="CEZAModel.FK_CourseReviews_ApprovedBy">
+            <End Role="E_User" EntitySet="E_User" />
+            <End Role="CourseReviews" EntitySet="CourseReviews" />
+          </AssociationSet>
+          <AssociationSet Name="FK_CourseReviews_Course" Association="CEZAModel.FK_CourseReviews_Course">
+            <End Role="Courses" EntitySet="Courses" />
+            <End Role="CourseReviews" EntitySet="CourseReviews" />
+          </AssociationSet>
+          <AssociationSet Name="FK_CourseReviews_User" Association="CEZAModel.FK_CourseReviews_User">
+            <End Role="E_User" EntitySet="E_User" />
+            <End Role="CourseReviews" EntitySet="CourseReviews" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Courses_CreatedBy" Association="CEZAModel.FK_Courses_CreatedBy">
+            <End Role="E_User" EntitySet="E_User" />
+            <End Role="Courses" EntitySet="Courses" />
+          </AssociationSet>
+          <AssociationSet Name="FK_E_Messages_Parent" Association="CEZAModel.FK_E_Messages_Parent">
+            <End Role="E_Messages" EntitySet="E_Messages" />
+            <End Role="E_Messages1" EntitySet="E_Messages" />
+          </AssociationSet>
+          <AssociationSet Name="FK_E_Messages_Recipient" Association="CEZAModel.FK_E_Messages_Recipient">
+            <End Role="E_User" EntitySet="E_User" />
+            <End Role="E_Messages" EntitySet="E_Messages" />
+          </AssociationSet>
+          <AssociationSet Name="FK_E_Messages_Sender" Association="CEZAModel.FK_E_Messages_Sender">
+            <End Role="E_User" EntitySet="E_User" />
+            <End Role="E_Messages" EntitySet="E_Messages" />
+          </AssociationSet>
+          <AssociationSet Name="FK_ExamResult_Exam" Association="CEZAModel.FK_ExamResult_Exam">
+            <End Role="Exam" EntitySet="Exam" />
+            <End Role="ExamResult" EntitySet="ExamResult" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Question_Exam" Association="CEZAModel.FK_Question_Exam">
+            <End Role="Exam" EntitySet="Exam" />
+            <End Role="Question" EntitySet="Question" />
+          </AssociationSet>
+          <AssociationSet Name="FK_QuestionMedia_Question" Association="CEZAModel.FK_QuestionMedia_Question">
+            <End Role="Question" EntitySet="Question" />
+            <End Role="QuestionMedia" EntitySet="QuestionMedia" />
+          </AssociationSet>
+          <AssociationSet Name="FK_QuestionOption_Question" Association="CEZAModel.FK_QuestionOption_Question">
+            <End Role="Question" EntitySet="Question" />
+            <End Role="QuestionOption" EntitySet="QuestionOption" />
+          </AssociationSet>
+          <EntitySet Name="E_Dilekce" EntityType="CEZAModel.E_Dilekce" />
+          <EntitySet Name="TahditKod" EntityType="CEZAModel.TahditKod" />
+          <AssociationSet Name="FK_E_Messages_ApprovedBy" Association="CEZAModel.FK_E_Messages_ApprovedBy">
+            <End Role="E_User" EntitySet="E_User" />
+            <End Role="E_Messages" EntitySet="E_Messages" />
+          </AssociationSet>
+          <EntitySet Name="EducationPackageImportLog" EntityType="CEZAModel.EducationPackageImportLog" />
+          <EntitySet Name="TahditFormLog" EntityType="CEZAModel.TahditFormLog" />
+          <EntitySet Name="ChatMessages" EntityType="CEZAModel.ChatMessages" />
+          <EntitySet Name="ChatOnlineUsers" EntityType="CEZAModel.ChatOnlineUsers" />
+          <EntitySet Name="SorguCevaplari" EntityType="CEZAModel.SorguCevaplari" />
+          <EntitySet Name="SorguLoglari" EntityType="CEZAModel.SorguLoglari" />
+          <EntitySet Name="E_UVR_Backup_Before_WorkPermit" EntityType="CEZAModel.E_UVR_Backup_Before_WorkPermit" />
+        </EntityContainer>
+        <EntityType Name="C__MigrationHistory">
+          <Key>
+            <PropertyRef Name="MigrationId" />
+          </Key>
+          <Property Name="MigrationId" Type="String" Nullable="false" MaxLength="255" FixedLength="false" Unicode="true" />
+          <Property Name="Model" Type="Binary" Nullable="false" MaxLength="Max" FixedLength="false" />
+          <Property Name="ProductVersion" Type="String" Nullable="false" MaxLength="32" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="Airline">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="IATACode" Type="String" Nullable="false" MaxLength="7" FixedLength="false" Unicode="true" />
+          <Property Name="Name" Type="String" Nullable="false" MaxLength="150" FixedLength="false" Unicode="true" />
+          <Property Name="Country" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="IsActive" Type="Boolean" Nullable="false" />
+          <Property Name="IsUserDefined" Type="Boolean" />
+          <Property Name="CreatedDate" Type="DateTime" Precision="3" />
+        </EntityType>
+        <EntityType Name="Answer">
+          <Key>
+            <PropertyRef Name="AnswerId" />
+          </Key>
+          <Property Name="AnswerId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="ExamResultId" Type="Int32" Nullable="false" />
+          <Property Name="QuestionId" Type="Int32" Nullable="false" />
+          <Property Name="OptionId" Type="Int32" />
+          <Property Name="TextAnswer" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <NavigationProperty Name="ExamResult" Relationship="CEZAModel.FK_Answer_ExamResult" FromRole="Answer" ToRole="ExamResult" />
+          <NavigationProperty Name="QuestionOption" Relationship="CEZAModel.FK_Answer_Option" FromRole="Answer" ToRole="QuestionOption" />
+          <NavigationProperty Name="Question" Relationship="CEZAModel.FK_Answer_Question" FromRole="Answer" ToRole="Question" />
+        </EntityType>
+        <EntityType Name="Categories">
+          <Key>
+            <PropertyRef Name="CategoryId" />
+          </Key>
+          <Property Name="CategoryId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="CategoryName" Type="String" Nullable="false" MaxLength="200" FixedLength="false" Unicode="true" />
+          <Property Name="Description" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="IsActive" Type="Boolean" Nullable="false" />
+          <NavigationProperty Name="Courses" Relationship="CEZAModel.FK_Courses_Category" FromRole="Categories" ToRole="Courses" />
+        </EntityType>
+        <EntityType Name="Certificate">
+          <Key>
+            <PropertyRef Name="CertificateId" />
+          </Key>
+          <Property Name="CertificateId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="UserId" Type="Int32" Nullable="false" />
+          <Property Name="CourseId" Type="Int32" Nullable="false" />
+          <Property Name="ExamResultId" Type="Int32" />
+          <Property Name="CertificateNumber" Type="String" Nullable="false" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="FilePath" Type="String" MaxLength="500" FixedLength="false" Unicode="true" />
+          <Property Name="IssuedDate" Type="DateTime" Nullable="false" Precision="3" />
+          <Property Name="Score" Type="Int32" Nullable="false" />
+          <Property Name="IsActive" Type="Boolean" Nullable="false" />
+          <Property Name="CreatedAt" Type="DateTime" Nullable="false" Precision="3" />
+          <NavigationProperty Name="Courses" Relationship="CEZAModel.FK_Certificate_Course" FromRole="Certificate" ToRole="Courses" />
+          <NavigationProperty Name="ExamResult" Relationship="CEZAModel.FK_Certificate_ExamResult" FromRole="Certificate" ToRole="ExamResult" />
+          <NavigationProperty Name="E_User" Relationship="CEZAModel.FK_Certificate_User" FromRole="Certificate" ToRole="E_User" />
+        </EntityType>
+        <EntityType Name="CertificateRequest">
+          <Key>
+            <PropertyRef Name="RequestId" />
+          </Key>
+          <Property Name="RequestId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="UserId" Type="Int32" Nullable="false" />
+          <Property Name="CourseId" Type="Int32" Nullable="false" />
+          <Property Name="RequestDate" Type="DateTime" Nullable="false" Precision="3" />
+          <Property Name="Status" Type="Byte" Nullable="false" />
+          <Property Name="AdminNote" Type="String" MaxLength="500" FixedLength="false" Unicode="true" />
+          <Property Name="ProcessedDate" Type="DateTime" Precision="3" />
+          <Property Name="ProcessedBy" Type="Int32" />
+        </EntityType>
+        <EntityType Name="CourseContents">
+          <Key>
+            <PropertyRef Name="ContentId" />
+          </Key>
+          <Property Name="ContentId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="CourseId" Type="Int32" Nullable="false" />
+          <Property Name="ContentType" Type="String" Nullable="false" MaxLength="20" FixedLength="false" Unicode="true" />
+          <Property Name="ContentTitle" Type="String" MaxLength="200" FixedLength="false" Unicode="true" />
+          <Property Name="FilePath" Type="String" Nullable="false" MaxLength="500" FixedLength="false" Unicode="true" />
+          <Property Name="CreatedDate" Type="DateTime" Precision="3" />
+          <Property Name="ContentDescription" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <NavigationProperty Name="Courses" Relationship="CEZAModel.FK_CourseContents_Course" FromRole="CourseContents" ToRole="Courses" />
+        </EntityType>
+        <EntityType Name="CourseEnrollments">
+          <Key>
+            <PropertyRef Name="EnrollmentId" />
+          </Key>
+          <Property Name="EnrollmentId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="CourseId" Type="Int32" Nullable="false" />
+          <Property Name="UserId" Type="Int32" Nullable="false" />
+          <Property Name="EnrollmentDate" Type="DateTime" Precision="3" />
+          <Property Name="IsDrawEntry" Type="Boolean" Nullable="false" />
+          <Property Name="DrawEntryDate" Type="DateTime" Precision="3" />
+          <NavigationProperty Name="Courses" Relationship="CEZAModel.FK_CourseEnrollments_Course" FromRole="CourseEnrollments" ToRole="Courses" />
+          <NavigationProperty Name="E_User" Relationship="CEZAModel.FK_CourseEnrollments_User" FromRole="CourseEnrollments" ToRole="E_User" />
+        </EntityType>
+        <EntityType Name="CourseReviews">
+          <Key>
+            <PropertyRef Name="ReviewId" />
+          </Key>
+          <Property Name="ReviewId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="CourseId" Type="Int32" Nullable="false" />
+          <Property Name="UserId" Type="Int32" Nullable="false" />
+          <Property Name="Rating" Type="Byte" Nullable="false" />
+          <Property Name="Comment" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="CreatedDate" Type="DateTime" Nullable="false" Precision="3" />
+          <Property Name="IsApproved" Type="Boolean" Nullable="false" />
+          <Property Name="ApprovedBy" Type="Int32" />
+          <Property Name="ApprovedDate" Type="DateTime" Precision="3" />
+          <NavigationProperty Name="E_User" Relationship="CEZAModel.FK_CourseReviews_ApprovedBy" FromRole="CourseReviews" ToRole="E_User" />
+          <NavigationProperty Name="Courses" Relationship="CEZAModel.FK_CourseReviews_Course" FromRole="CourseReviews" ToRole="Courses" />
+          <NavigationProperty Name="E_User1" Relationship="CEZAModel.FK_CourseReviews_User" FromRole="CourseReviews" ToRole="E_User" />
+        </EntityType>
+        <EntityType Name="Courses">
+          <Key>
+            <PropertyRef Name="CourseId" />
+          </Key>
+          <Property Name="CourseId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="CourseTitle" Type="String" Nullable="false" MaxLength="200" FixedLength="false" Unicode="true" />
+          <Property Name="CourseDescription" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="CoverImage" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="CreatedBy" Type="Int32" Nullable="false" />
+          <Property Name="CreatedDate" Type="DateTime" Precision="3" />
+          <Property Name="CategoryId" Type="Int32" Nullable="false" />
+          <Property Name="ResourceFile" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="IsActive" Type="Boolean" Nullable="false" />
+          <Property Name="IsDeleted" Type="Boolean" />
+          <NavigationProperty Name="Categories" Relationship="CEZAModel.FK_Courses_Category" FromRole="Courses" ToRole="Categories" />
+          <NavigationProperty Name="Certificate" Relationship="CEZAModel.FK_Certificate_Course" FromRole="Courses" ToRole="Certificate" />
+          <NavigationProperty Name="CourseContents" Relationship="CEZAModel.FK_CourseContents_Course" FromRole="Courses" ToRole="CourseContents" />
+          <NavigationProperty Name="CourseEnrollments" Relationship="CEZAModel.FK_CourseEnrollments_Course" FromRole="Courses" ToRole="CourseEnrollments" />
+          <NavigationProperty Name="CourseReviews" Relationship="CEZAModel.FK_CourseReviews_Course" FromRole="Courses" ToRole="CourseReviews" />
+          <NavigationProperty Name="E_User" Relationship="CEZAModel.FK_Courses_CreatedBy" FromRole="Courses" ToRole="E_User" />
+        </EntityType>
+        <EntityType Name="DocumentTerms">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Term" Type="String" Nullable="false" MaxLength="200" FixedLength="false" Unicode="true" />
+          <Property Name="Slug" Type="String" Nullable="false" MaxLength="250" FixedLength="false" Unicode="true" />
+          <Property Name="Category" Type="String" Nullable="false" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="Definition" Type="String" Nullable="false" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="DetailedDescription" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="ImageUrl" Type="String" MaxLength="500" FixedLength="false" Unicode="true" />
+          <Property Name="RelatedTerms" Type="String" MaxLength="500" FixedLength="false" Unicode="true" />
+          <Property Name="IsActive" Type="Boolean" Nullable="false" />
+          <Property Name="CreatedAt" Type="DateTime" Precision="3" />
+          <Property Name="UpdatedAt" Type="DateTime" Precision="3" />
+          <Property Name="Sicil" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="AdSoyad" Type="String" MaxLength="200" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="E_AUH">
+          <Key>
+            <PropertyRef Name="fldId" />
+          </Key>
+          <Property Name="fldId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="fldCountry" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldFirstMounth" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldKat" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldDayStart" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldDayKat" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldToM" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="E_Border">
+          <Key>
+            <PropertyRef Name="fldId" />
+          </Key>
+          <Property Name="fldId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="fldName" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="E_Defter">
+          <Key>
+            <PropertyRef Name="fldId" />
+          </Key>
+          <Property Name="fldId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="fldPrice" Type="String" MaxLength="25" FixedLength="false" Unicode="true" />
+          <Property Name="fldTypeofMoney" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="E_Exchange">
+          <Key>
+            <PropertyRef Name="fldId" />
+          </Key>
+          <Property Name="fldId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="fldEuro" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="fldDollar" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="fldPaund" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="E_Forms">
+          <Key>
+            <PropertyRef Name="fldId" />
+          </Key>
+          <Property Name="fldId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="fldGB" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldDE" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldRU" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldIR" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldGBC" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldDEC" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldRUC" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldIRC" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldIRKC" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldIRK" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldFransizca" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldFransizcaC" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="E_History">
+          <Key>
+            <PropertyRef Name="fldId" />
+          </Key>
+          <Property Name="fldId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="fldStart" Type="DateTime" Precision="3" />
+          <Property Name="fldShouldExit" Type="DateTime" Precision="3" />
+          <Property Name="fldBirthDate" Type="DateTime" Precision="3" />
+          <Property Name="fldCountry" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldPenalty" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldPMoney" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldUser" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldBorder" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldDatetime" Type="DateTime" Precision="3" />
+        </EntityType>
+        <EntityType Name="E_Inad">
+          <Key>
+            <PropertyRef Name="InadId" />
+          </Key>
+          <Property Name="InadId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="TarihSaat" Type="DateTime" Precision="3" />
+          <Property Name="AdSoyad" Type="String" MaxLength="50" FixedLength="true" Unicode="true" />
+          <Property Name="DogumT" Type="DateTime" Precision="0" />
+          <Property Name="DogumY" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Cinsiyet" Type="String" MaxLength="10" FixedLength="false" Unicode="true" />
+          <Property Name="Uyruk" Type="String" MaxLength="250" FixedLength="true" Unicode="true" />
+          <Property Name="PasaportNo" Type="String" MaxLength="20" FixedLength="true" Unicode="true" />
+          <Property Name="BelgeNo" Type="String" MaxLength="20" FixedLength="false" Unicode="true" />
+          <Property Name="PasaportTuru" Type="String" MaxLength="50" FixedLength="true" Unicode="true" />
+          <Property Name="Beyan" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="GelenUcusNo" Type="String" MaxLength="10" FixedLength="false" Unicode="true" />
+          <Property Name="GelenHavayolu" Type="String" MaxLength="150" FixedLength="false" Unicode="true" />
+          <Property Name="GeldigiYer" Type="String" MaxLength="250" FixedLength="true" Unicode="true" />
+          <Property Name="GeldigiTarihSaat" Type="DateTime" Precision="3" />
+          <Property Name="InadSebepAciklama" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="InadSebep" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="GidenHavayolu" Type="String" MaxLength="150" FixedLength="false" Unicode="true" />
+          <Property Name="GidisUcusNo" Type="String" MaxLength="10" FixedLength="false" Unicode="true" />
+          <Property Name="GidisYer" Type="String" MaxLength="250" FixedLength="true" Unicode="true" />
+          <Property Name="GidisTarihSaat" Type="DateTime" Precision="3" />
+          <Property Name="Personel" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="UstAramaEsya" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="UcagaNakil" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="OzelGuvenlik" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="YerHizmetleriPersonel" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="YerHizmetleri" Type="String" MaxLength="250" FixedLength="true" Unicode="true" />
+          <Property Name="Refakat" Type="String" MaxLength="250" FixedLength="false" Unicode="true" />
+          <Property Name="Kapi" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Valilik" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Durum" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Sicil" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="KimlikNo" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="E_IsK">
+          <Key>
+            <PropertyRef Name="fldId" />
+          </Key>
+          <Property Name="fldId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="fldDatetime" Type="DateTime" Precision="3" />
+          <Property Name="fldName" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldPassport" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldIdn" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldOrgin" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldBirthdate" Type="DateTime" Precision="0" />
+          <Property Name="fldForm" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldPassControl" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldApproval" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldBorder" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldVisa" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldPMoney" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldPicture" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="E_Messages">
+          <Key>
+            <PropertyRef Name="fldId" />
+          </Key>
+          <Property Name="fldId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="fldSendByName" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldSendBySicil" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldSendByPhone" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldSendByMail" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldDateTime" Type="DateTime" Precision="3" />
+          <Property Name="fldMessage" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldSenderId" Type="Int32" />
+          <Property Name="fldSenderRole" Type="String" MaxLength="20" FixedLength="false" Unicode="true" />
+          <Property Name="fldRecipientId" Type="Int32" />
+          <Property Name="fldRecipientRole" Type="String" MaxLength="20" FixedLength="false" Unicode="true" />
+          <Property Name="fldSubject" Type="String" MaxLength="200" FixedLength="false" Unicode="true" />
+          <Property Name="fldIsRead" Type="Boolean" Nullable="false" />
+          <Property Name="fldReadDateTime" Type="DateTime" Precision="3" />
+          <Property Name="fldIsDeletedBySender" Type="Boolean" Nullable="false" />
+          <Property Name="fldIsDeletedByRecipient" Type="Boolean" Nullable="false" />
+          <Property Name="fldParentMessageId" Type="Int32" />
+          <Property Name="fldIsReply" Type="Boolean" Nullable="false" />
+          <Property Name="fldIsApproved" Type="Boolean" Nullable="false" />
+          <Property Name="fldApprovedBy" Type="Int32" />
+          <Property Name="fldApprovedDateTime" Type="DateTime" Precision="3" />
+          <NavigationProperty Name="E_Messages1" Relationship="CEZAModel.FK_E_Messages_Parent" FromRole="E_Messages" ToRole="E_Messages1" />
+          <NavigationProperty Name="E_Messages2" Relationship="CEZAModel.FK_E_Messages_Parent" FromRole="E_Messages1" ToRole="E_Messages" />
+          <NavigationProperty Name="E_User" Relationship="CEZAModel.FK_E_Messages_Recipient" FromRole="E_Messages" ToRole="E_User" />
+          <NavigationProperty Name="E_User1" Relationship="CEZAModel.FK_E_Messages_Sender" FromRole="E_Messages" ToRole="E_User" />
+          <NavigationProperty Name="E_User2" Relationship="CEZAModel.FK_E_Messages_ApprovedBy" FromRole="E_Messages" ToRole="E_User" />
+        </EntityType>
+        <EntityType Name="E_Sartli">
+          <Key>
+            <PropertyRef Name="fldId" />
+          </Key>
+          <Property Name="fldId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="fldBy" Type="String" MaxLength="150" FixedLength="false" Unicode="false" />
+          <Property Name="fldOrgin" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="fldBdate" Type="DateTime" Precision="0" />
+          <Property Name="fldDate" Type="DateTime" Precision="3" />
+          <Property Name="fldName" Type="String" MaxLength="250" FixedLength="false" Unicode="true" />
+          <Property Name="fldBorder" Type="String" MaxLength="500" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="E_TGVH">
+          <Key>
+            <PropertyRef Name="fldId" />
+          </Key>
+          <Property Name="fldId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="fldPrice" Type="String" MaxLength="25" FixedLength="false" Unicode="true" />
+          <Property Name="fldTypeofMoney" Type="String" MaxLength="25" FixedLength="false" Unicode="true" />
+          <Property Name="fldYear" Type="String" MaxLength="25" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="E_TKOD">
+          <Key>
+            <PropertyRef Name="fldId" />
+          </Key>
+          <Property Name="fldId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="fldCode" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="fldPTime" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="fldStart" Type="Int32" />
+          <Property Name="fldFinish" Type="Int32" />
+          <Property Name="fldIdariCode" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="fldPaid" Type="Byte" />
+        </EntityType>
+        <EntityType Name="E_Token">
+          <Key>
+            <PropertyRef Name="fldId" />
+          </Key>
+          <Property Name="fldId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="fldUserId" Type="Int32" />
+          <Property Name="fldToken" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldDateTime" Type="DateTime" Precision="3" />
+          <Property Name="fldIp" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="E_User">
+          <Key>
+            <PropertyRef Name="fldId" />
+          </Key>
+          <Property Name="fldId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="fldSicil" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldName" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldLastName" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldPhone" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldEmail" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldTitle" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldDeputy" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldPicture" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldAuth" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldSubAuth" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldPassword" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldDateTime" Type="DateTime" Precision="3" />
+          <Property Name="fldBorder" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldActive" Type="String" MaxLength="1" FixedLength="true" Unicode="true" />
+          <Property Name="Role" Type="String" Nullable="false" MaxLength="20" FixedLength="false" Unicode="true" />
+          <Property Name="LastLogin" Type="DateTime" Precision="3" />
+          <Property Name="XP" Type="Int32" Nullable="false" />
+          <Property Name="Level" Type="Int32" Nullable="false" />
+          <Property Name="IsActive" Type="Boolean" />
+          <Property Name="TeacherRequestStatus" Type="Byte" />
+          <Property Name="TeacherRequestDate" Type="DateTime" Precision="3" />
+          <NavigationProperty Name="Certificate" Relationship="CEZAModel.FK_Certificate_User" FromRole="E_User" ToRole="Certificate" />
+          <NavigationProperty Name="CourseEnrollments" Relationship="CEZAModel.FK_CourseEnrollments_User" FromRole="E_User" ToRole="CourseEnrollments" />
+          <NavigationProperty Name="CourseReviews" Relationship="CEZAModel.FK_CourseReviews_ApprovedBy" FromRole="E_User" ToRole="CourseReviews" />
+          <NavigationProperty Name="CourseReviews1" Relationship="CEZAModel.FK_CourseReviews_User" FromRole="E_User" ToRole="CourseReviews" />
+          <NavigationProperty Name="Courses" Relationship="CEZAModel.FK_Courses_CreatedBy" FromRole="E_User" ToRole="Courses" />
+          <NavigationProperty Name="E_Messages" Relationship="CEZAModel.FK_E_Messages_Recipient" FromRole="E_User" ToRole="E_Messages" />
+          <NavigationProperty Name="E_Messages1" Relationship="CEZAModel.FK_E_Messages_Sender" FromRole="E_User" ToRole="E_Messages" />
+          <NavigationProperty Name="E_Messages2" Relationship="CEZAModel.FK_E_Messages_ApprovedBy" FromRole="E_User" ToRole="E_Messages" />
+          </EntityType>
+        <EntityType Name="E_UVR">
+          <Key>
+            <PropertyRef Name="fldId" />
+          </Key>
+          <Property Name="fldId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="fldCountry" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldCalculateType" Type="Int32" />
+          <Property Name="fldPassportType" Type="Int32" />
+          <Property Name="fldVisaStatus" Type="Int32" />
+          <Property Name="fldDay" Type="Int32" />
+          <Property Name="fldLong" Type="Int32" />
+          <Property Name="fldOneTime" Type="Int32" />
+          <Property Name="fldHB" Type="Byte" />
+        </EntityType>
+        <EntityType Name="Exam">
+          <Key>
+            <PropertyRef Name="ExamId" />
+          </Key>
+          <Property Name="ExamId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="CourseId" Type="Int32" Nullable="false" />
+          <Property Name="Title" Type="String" Nullable="false" MaxLength="200" FixedLength="false" Unicode="true" />
+          <Property Name="Description" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="DurationMinutes" Type="Int32" />
+          <Property Name="PassingScore" Type="Int32" />
+          <Property Name="IsActive" Type="Boolean" Nullable="false" />
+          <Property Name="CreatedAt" Type="DateTime" Nullable="false" Precision="3" />
+          <Property Name="IsArchived" Type="Boolean" />
+          <NavigationProperty Name="ExamResult" Relationship="CEZAModel.FK_ExamResult_Exam" FromRole="Exam" ToRole="ExamResult" />
+          <NavigationProperty Name="Question" Relationship="CEZAModel.FK_Question_Exam" FromRole="Exam" ToRole="Question" />
+        </EntityType>
+        <EntityType Name="ExamResult">
+          <Key>
+            <PropertyRef Name="ExamResultId" />
+          </Key>
+          <Property Name="ExamResultId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="ExamId" Type="Int32" Nullable="false" />
+          <Property Name="UserId" Type="Int32" />
+          <Property Name="Score" Type="Decimal" Precision="5" Scale="2" />
+          <Property Name="StartedAt" Type="DateTime" Precision="3" />
+          <Property Name="FinishedAt" Type="DateTime" Precision="3" />
+          <Property Name="Status" Type="Byte" Nullable="false" />
+          <NavigationProperty Name="Answer" Relationship="CEZAModel.FK_Answer_ExamResult" FromRole="ExamResult" ToRole="Answer" />
+          <NavigationProperty Name="Certificate" Relationship="CEZAModel.FK_Certificate_ExamResult" FromRole="ExamResult" ToRole="Certificate" />
+          <NavigationProperty Name="Exam" Relationship="CEZAModel.FK_ExamResult_Exam" FromRole="ExamResult" ToRole="Exam" />
+        </EntityType>
+        <EntityType Name="Question">
+          <Key>
+            <PropertyRef Name="QuestionId" />
+          </Key>
+          <Property Name="QuestionId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="ExamId" Type="Int32" Nullable="false" />
+          <Property Name="Text" Type="String" Nullable="false" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="QuestionType" Type="Byte" Nullable="false" />
+          <Property Name="Points" Type="Int32" Nullable="false" />
+          <Property Name="SortOrder" Type="Int32" Nullable="false" />
+          <Property Name="IsActive" Type="Boolean" />
+          <NavigationProperty Name="Answer" Relationship="CEZAModel.FK_Answer_Question" FromRole="Question" ToRole="Answer" />
+          <NavigationProperty Name="Exam" Relationship="CEZAModel.FK_Question_Exam" FromRole="Question" ToRole="Exam" />
+          <NavigationProperty Name="QuestionMedia" Relationship="CEZAModel.FK_QuestionMedia_Question" FromRole="Question" ToRole="QuestionMedia" />
+          <NavigationProperty Name="QuestionOption" Relationship="CEZAModel.FK_QuestionOption_Question" FromRole="Question" ToRole="QuestionOption" />
+        </EntityType>
+        <EntityType Name="QuestionMedia">
+          <Key>
+            <PropertyRef Name="MediaId" />
+          </Key>
+          <Property Name="MediaId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="QuestionId" Type="Int32" Nullable="false" />
+          <Property Name="MediaType" Type="Byte" Nullable="false" />
+          <Property Name="MediaPath" Type="String" Nullable="false" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="SortOrder" Type="Int32" Nullable="false" />
+          <Property Name="CreatedAt" Type="DateTime" Nullable="false" Precision="3" />
+          <NavigationProperty Name="Question" Relationship="CEZAModel.FK_QuestionMedia_Question" FromRole="QuestionMedia" ToRole="Question" />
+        </EntityType>
+        <EntityType Name="QuestionOption">
+          <Key>
+            <PropertyRef Name="OptionId" />
+          </Key>
+          <Property Name="OptionId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="QuestionId" Type="Int32" Nullable="false" />
+          <Property Name="Text" Type="String" Nullable="false" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="IsCorrect" Type="Boolean" Nullable="false" />
+          <Property Name="SortOrder" Type="Int32" Nullable="false" />
+          <NavigationProperty Name="Answer" Relationship="CEZAModel.FK_Answer_Option" FromRole="QuestionOption" ToRole="Answer" />
+          <NavigationProperty Name="Question" Relationship="CEZAModel.FK_QuestionOption_Question" FromRole="QuestionOption" ToRole="Question" />
+        </EntityType>
+        <EntityType Name="tbl_TempUser">
+          <Key>
+            <PropertyRef Name="fldId" />
+          </Key>
+          <Property Name="fldId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="fldSicil" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldName" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldLastName" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldPhone" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldEmail" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldTitle" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldDeputy" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <Association Name="FK_Answer_ExamResult">
+          <End Type="CEZAModel.ExamResult" Role="ExamResult" Multiplicity="1" />
+          <End Type="CEZAModel.Answer" Role="Answer" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="ExamResult">
+              <PropertyRef Name="ExamResultId" />
+            </Principal>
+            <Dependent Role="Answer">
+              <PropertyRef Name="ExamResultId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Answer_Option">
+          <End Type="CEZAModel.QuestionOption" Role="QuestionOption" Multiplicity="0..1" />
+          <End Type="CEZAModel.Answer" Role="Answer" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="QuestionOption">
+              <PropertyRef Name="OptionId" />
+            </Principal>
+            <Dependent Role="Answer">
+              <PropertyRef Name="OptionId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Answer_Question">
+          <End Type="CEZAModel.Question" Role="Question" Multiplicity="1" />
+          <End Type="CEZAModel.Answer" Role="Answer" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Question">
+              <PropertyRef Name="QuestionId" />
+            </Principal>
+            <Dependent Role="Answer">
+              <PropertyRef Name="QuestionId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Courses_Category">
+          <End Type="CEZAModel.Categories" Role="Categories" Multiplicity="1" />
+          <End Type="CEZAModel.Courses" Role="Courses" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Categories">
+              <PropertyRef Name="CategoryId" />
+            </Principal>
+            <Dependent Role="Courses">
+              <PropertyRef Name="CategoryId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Certificate_Course">
+          <End Type="CEZAModel.Courses" Role="Courses" Multiplicity="1" />
+          <End Type="CEZAModel.Certificate" Role="Certificate" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Courses">
+              <PropertyRef Name="CourseId" />
+            </Principal>
+            <Dependent Role="Certificate">
+              <PropertyRef Name="CourseId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Certificate_ExamResult">
+          <End Type="CEZAModel.ExamResult" Role="ExamResult" Multiplicity="0..1" />
+          <End Type="CEZAModel.Certificate" Role="Certificate" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="ExamResult">
+              <PropertyRef Name="ExamResultId" />
+            </Principal>
+            <Dependent Role="Certificate">
+              <PropertyRef Name="ExamResultId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Certificate_User">
+          <End Type="CEZAModel.E_User" Role="E_User" Multiplicity="1" />
+          <End Type="CEZAModel.Certificate" Role="Certificate" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="E_User">
+              <PropertyRef Name="fldId" />
+            </Principal>
+            <Dependent Role="Certificate">
+              <PropertyRef Name="UserId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_CourseContents_Course">
+          <End Type="CEZAModel.Courses" Role="Courses" Multiplicity="1" />
+          <End Type="CEZAModel.CourseContents" Role="CourseContents" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Courses">
+              <PropertyRef Name="CourseId" />
+            </Principal>
+            <Dependent Role="CourseContents">
+              <PropertyRef Name="CourseId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_CourseEnrollments_Course">
+          <End Type="CEZAModel.Courses" Role="Courses" Multiplicity="1" />
+          <End Type="CEZAModel.CourseEnrollments" Role="CourseEnrollments" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Courses">
+              <PropertyRef Name="CourseId" />
+            </Principal>
+            <Dependent Role="CourseEnrollments">
+              <PropertyRef Name="CourseId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_CourseEnrollments_User">
+          <End Type="CEZAModel.E_User" Role="E_User" Multiplicity="1">
+            <OnDelete Action="Cascade" />
+          </End>
+          <End Type="CEZAModel.CourseEnrollments" Role="CourseEnrollments" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="E_User">
+              <PropertyRef Name="fldId" />
+            </Principal>
+            <Dependent Role="CourseEnrollments">
+              <PropertyRef Name="UserId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_CourseReviews_ApprovedBy">
+          <End Type="CEZAModel.E_User" Role="E_User" Multiplicity="0..1" />
+          <End Type="CEZAModel.CourseReviews" Role="CourseReviews" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="E_User">
+              <PropertyRef Name="fldId" />
+            </Principal>
+            <Dependent Role="CourseReviews">
+              <PropertyRef Name="ApprovedBy" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_CourseReviews_Course">
+          <End Type="CEZAModel.Courses" Role="Courses" Multiplicity="1" />
+          <End Type="CEZAModel.CourseReviews" Role="CourseReviews" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Courses">
+              <PropertyRef Name="CourseId" />
+            </Principal>
+            <Dependent Role="CourseReviews">
+              <PropertyRef Name="CourseId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_CourseReviews_User">
+          <End Type="CEZAModel.E_User" Role="E_User" Multiplicity="1" />
+          <End Type="CEZAModel.CourseReviews" Role="CourseReviews" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="E_User">
+              <PropertyRef Name="fldId" />
+            </Principal>
+            <Dependent Role="CourseReviews">
+              <PropertyRef Name="UserId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Courses_CreatedBy">
+          <End Type="CEZAModel.E_User" Role="E_User" Multiplicity="1" />
+          <End Type="CEZAModel.Courses" Role="Courses" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="E_User">
+              <PropertyRef Name="fldId" />
+            </Principal>
+            <Dependent Role="Courses">
+              <PropertyRef Name="CreatedBy" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_E_Messages_Parent">
+          <End Type="CEZAModel.E_Messages" Role="E_Messages" Multiplicity="0..1" />
+          <End Type="CEZAModel.E_Messages" Role="E_Messages1" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="E_Messages">
+              <PropertyRef Name="fldId" />
+            </Principal>
+            <Dependent Role="E_Messages1">
+              <PropertyRef Name="fldParentMessageId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_E_Messages_Recipient">
+          <End Type="CEZAModel.E_User" Role="E_User" Multiplicity="0..1" />
+          <End Type="CEZAModel.E_Messages" Role="E_Messages" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="E_User">
+              <PropertyRef Name="fldId" />
+            </Principal>
+            <Dependent Role="E_Messages">
+              <PropertyRef Name="fldRecipientId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_E_Messages_Sender">
+          <End Type="CEZAModel.E_User" Role="E_User" Multiplicity="0..1" />
+          <End Type="CEZAModel.E_Messages" Role="E_Messages" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="E_User">
+              <PropertyRef Name="fldId" />
+            </Principal>
+            <Dependent Role="E_Messages">
+              <PropertyRef Name="fldSenderId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_ExamResult_Exam">
+          <End Type="CEZAModel.Exam" Role="Exam" Multiplicity="1" />
+          <End Type="CEZAModel.ExamResult" Role="ExamResult" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Exam">
+              <PropertyRef Name="ExamId" />
+            </Principal>
+            <Dependent Role="ExamResult">
+              <PropertyRef Name="ExamId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Question_Exam">
+          <End Type="CEZAModel.Exam" Role="Exam" Multiplicity="1" />
+          <End Type="CEZAModel.Question" Role="Question" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Exam">
+              <PropertyRef Name="ExamId" />
+            </Principal>
+            <Dependent Role="Question">
+              <PropertyRef Name="ExamId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_QuestionMedia_Question">
+          <End Type="CEZAModel.Question" Role="Question" Multiplicity="1">
+            <OnDelete Action="Cascade" />
+          </End>
+          <End Type="CEZAModel.QuestionMedia" Role="QuestionMedia" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Question">
+              <PropertyRef Name="QuestionId" />
+            </Principal>
+            <Dependent Role="QuestionMedia">
+              <PropertyRef Name="QuestionId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_QuestionOption_Question">
+          <End Type="CEZAModel.Question" Role="Question" Multiplicity="1" />
+          <End Type="CEZAModel.QuestionOption" Role="QuestionOption" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Question">
+              <PropertyRef Name="QuestionId" />
+            </Principal>
+            <Dependent Role="QuestionOption">
+              <PropertyRef Name="QuestionId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <EntityType Name="E_Dilekce">
+          <Key>
+            <PropertyRef Name="DilekceId" />
+          </Key>
+          <Property Name="DilekceId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="AdSoyad" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="DogumTarih" Type="DateTime" Precision="0" />
+          <Property Name="DogumYeri" Type="String" MaxLength="250" FixedLength="false" Unicode="true" />
+          <Property Name="PasaportNo" Type="String" MaxLength="250" FixedLength="false" Unicode="true" />
+          <Property Name="KimlikNo" Type="String" MaxLength="250" FixedLength="false" Unicode="true" />
+          <Property Name="Adres" Type="String" MaxLength="250" FixedLength="false" Unicode="true" />
+          <Property Name="Telefon" Type="String" MaxLength="20" FixedLength="true" Unicode="true" />
+          <Property Name="Uyruk" Type="String" MaxLength="500" FixedLength="false" Unicode="true" />
+          <Property Name="DilekceTarih" Type="DateTime" Precision="0" />
+          <Property Name="Tarih1" Type="DateTime" Precision="0" />
+          <Property Name="Tarih2" Type="DateTime" Precision="0" />
+          <Property Name="DilekceSebep" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Valilik" Type="String" MaxLength="500" FixedLength="false" Unicode="true" />
+          <Property Name="DosyaNo" Type="String" MaxLength="50" FixedLength="true" Unicode="true" />
+          <Property Name="Unvan" Type="String" MaxLength="500" FixedLength="false" Unicode="true" />
+          <Property Name="Aciklama" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Sicil" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="TahditKod">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Kod" Type="String" Nullable="false" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Aciklama" Type="String" Nullable="false" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="SureAy" Type="Int32" />
+          <Property Name="Aktif" Type="Boolean" Nullable="false" />
+          <Property Name="GirisGelirse" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="CikisGelirse" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="TahditMedia" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="CreatedAt" Type="DateTime" Precision="3" />
+          <Property Name="CreatedByUserId" Type="Int32" />
+          <Property Name="CreatedBySicil" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="CreatedByName" Type="String" MaxLength="200" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <Association Name="FK_E_Messages_ApprovedBy">
+          <End Type="CEZAModel.E_User" Role="E_User" Multiplicity="0..1" />
+          <End Type="CEZAModel.E_Messages" Role="E_Messages" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="E_User">
+              <PropertyRef Name="fldId" />
+            </Principal>
+            <Dependent Role="E_Messages">
+              <PropertyRef Name="fldApprovedBy" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <EntityType Name="EducationPackageImportLog">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="PackageCode" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="PackageTitle" Type="String" MaxLength="300" FixedLength="false" Unicode="true" />
+          <Property Name="PackageVersion" Type="String" MaxLength="30" FixedLength="false" Unicode="true" />
+          <Property Name="SourceDocumentCode" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="ImportedCourseId" Type="Int32" />
+          <Property Name="ImportedExamId" Type="Int32" />
+          <Property Name="ImportedByUserId" Type="Int32" Nullable="false" />
+          <Property Name="ImportedDate" Type="DateTime" Nullable="false" Precision="3" />
+          <Property Name="FileName" Type="String" MaxLength="260" FixedLength="false" Unicode="true" />
+          <Property Name="Status" Type="String" Nullable="false" MaxLength="30" FixedLength="false" Unicode="true" />
+          <Property Name="Message" Type="String" MaxLength="2000" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="TahditFormLog">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="CreatedAt" Type="DateTime" Nullable="false" Precision="3" />
+          <Property Name="TahditCode" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="IdariTahditCode" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="PenaltyDay" Type="Int32" Nullable="false" />
+          <Property Name="PenaltyMonth" Type="Int32" Nullable="false" />
+          <Property Name="PenaltyTotalDay" Type="Int32" Nullable="false" />
+          <Property Name="PaymentType" Type="String" MaxLength="20" FixedLength="false" Unicode="true" />
+          <Property Name="VisaType" Type="Int32" Nullable="false" />
+          <Property Name="Country" Type="String" MaxLength="150" FixedLength="false" Unicode="true" />
+          <Property Name="Border" Type="String" MaxLength="150" FixedLength="false" Unicode="true" />
+          <Property Name="UserId" Type="Int32" />
+          <Property Name="UserSicil" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="UserDisplayName" Type="String" MaxLength="200" FixedLength="false" Unicode="true" />
+          <Property Name="PassengerName" Type="String" MaxLength="200" FixedLength="false" Unicode="true" />
+          <Property Name="PassportNo" Type="String" MaxLength="80" FixedLength="false" Unicode="true" />
+          <Property Name="FormMoney" Type="String" MaxLength="80" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="ChatMessages">
+          <Key>
+            <PropertyRef Name="ChatMessageId" />
+          </Key>
+          <Property Name="ChatMessageId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="SenderId" Type="Int32" Nullable="false" />
+          <Property Name="RecipientId" Type="Int32" Nullable="false" />
+          <Property Name="MessageText" Type="String" MaxLength="2000" FixedLength="false" Unicode="true" />
+          <Property Name="ImagePath" Type="String" MaxLength="500" FixedLength="false" Unicode="true" />
+          <Property Name="CreatedAt" Type="DateTime" Nullable="false" Precision="3" />
+          <Property Name="ReadAt" Type="DateTime" Precision="3" />
+          <Property Name="IsDeleted" Type="Boolean" Nullable="false" />
+        </EntityType>
+        <EntityType Name="ChatOnlineUsers">
+          <Key>
+            <PropertyRef Name="UserId" />
+          </Key>
+          <Property Name="UserId" Type="Int32" Nullable="false" />
+          <Property Name="LastSeen" Type="DateTime" Nullable="false" Precision="3" />
+          <Property Name="LastPage" Type="String" MaxLength="500" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="SorguCevaplari">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="AnahtarKelimeler" Type="String" Nullable="false" MaxLength="200" FixedLength="false" Unicode="true" />
+          <Property Name="Cevap" Type="String" Nullable="false" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Kategori" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="Aktif" Type="Boolean" />
+          <Property Name="OlusturmaTarihi" Type="DateTime" Precision="3" />
+          <Property Name="ResimUrl" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="SorguLoglari">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Soru" Type="String" Nullable="false" MaxLength="500" FixedLength="false" Unicode="true" />
+          <Property Name="Cevap" Type="String" MaxLength="1000" FixedLength="false" Unicode="true" />
+          <Property Name="KullaniciAdi" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="IpAdresi" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Tarih" Type="DateTime" Precision="3" />
+          <Property Name="BasariDurumu" Type="Boolean" />
+        </EntityType>
+        <EntityType Name="E_UVR_Backup_Before_WorkPermit">
+          <Key>
+            <PropertyRef Name="fldId" />
+          </Key>
+          <Property Name="fldId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="fldCountry" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldCalculateType" Type="Int32" />
+          <Property Name="fldPassportType" Type="Int32" />
+          <Property Name="fldVisaStatus" Type="Int32" />
+          <Property Name="fldDay" Type="Int32" />
+          <Property Name="fldLong" Type="Int32" />
+          <Property Name="fldOneTime" Type="Int32" />
+          <Property Name="fldHB" Type="Byte" />
+        </EntityType>
+        </Schema>
+    </edmx:ConceptualModels>
+    <!-- C-S mapping content -->
+    <edmx:Mappings>
+      <Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2009/11/mapping/cs">
+        <EntityContainerMapping StorageEntityContainer="CEZAModelStoreContainer" CdmEntityContainer="GZPEGM1">
+          <EntitySetMapping Name="C__MigrationHistory">
+            <EntityTypeMapping TypeName="CEZAModel.C__MigrationHistory">
+              <MappingFragment StoreEntitySet="__MigrationHistory">
+                <ScalarProperty Name="ProductVersion" ColumnName="ProductVersion" />
+                <ScalarProperty Name="Model" ColumnName="Model" />
+                <ScalarProperty Name="MigrationId" ColumnName="MigrationId" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Airline">
+            <EntityTypeMapping TypeName="CEZAModel.Airline">
+              <MappingFragment StoreEntitySet="Airline">
+                <ScalarProperty Name="CreatedDate" ColumnName="CreatedDate" />
+                <ScalarProperty Name="IsUserDefined" ColumnName="IsUserDefined" />
+                <ScalarProperty Name="IsActive" ColumnName="IsActive" />
+                <ScalarProperty Name="Country" ColumnName="Country" />
+                <ScalarProperty Name="Name" ColumnName="Name" />
+                <ScalarProperty Name="IATACode" ColumnName="IATACode" />
+                <ScalarProperty Name="Id" ColumnName="Id" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Answer">
+            <EntityTypeMapping TypeName="CEZAModel.Answer">
+              <MappingFragment StoreEntitySet="Answer">
+                <ScalarProperty Name="TextAnswer" ColumnName="TextAnswer" />
+                <ScalarProperty Name="OptionId" ColumnName="OptionId" />
+                <ScalarProperty Name="QuestionId" ColumnName="QuestionId" />
+                <ScalarProperty Name="ExamResultId" ColumnName="ExamResultId" />
+                <ScalarProperty Name="AnswerId" ColumnName="AnswerId" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Categories">
+            <EntityTypeMapping TypeName="CEZAModel.Categories">
+              <MappingFragment StoreEntitySet="Categories">
+                <ScalarProperty Name="IsActive" ColumnName="IsActive" />
+                <ScalarProperty Name="Description" ColumnName="Description" />
+                <ScalarProperty Name="CategoryName" ColumnName="CategoryName" />
+                <ScalarProperty Name="CategoryId" ColumnName="CategoryId" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Certificate">
+            <EntityTypeMapping TypeName="CEZAModel.Certificate">
+              <MappingFragment StoreEntitySet="Certificate">
+                <ScalarProperty Name="CreatedAt" ColumnName="CreatedAt" />
+                <ScalarProperty Name="IsActive" ColumnName="IsActive" />
+                <ScalarProperty Name="Score" ColumnName="Score" />
+                <ScalarProperty Name="IssuedDate" ColumnName="IssuedDate" />
+                <ScalarProperty Name="FilePath" ColumnName="FilePath" />
+                <ScalarProperty Name="CertificateNumber" ColumnName="CertificateNumber" />
+                <ScalarProperty Name="ExamResultId" ColumnName="ExamResultId" />
+                <ScalarProperty Name="CourseId" ColumnName="CourseId" />
+                <ScalarProperty Name="UserId" ColumnName="UserId" />
+                <ScalarProperty Name="CertificateId" ColumnName="CertificateId" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="CertificateRequest">
+            <EntityTypeMapping TypeName="CEZAModel.CertificateRequest">
+              <MappingFragment StoreEntitySet="CertificateRequest">
+                <ScalarProperty Name="ProcessedBy" ColumnName="ProcessedBy" />
+                <ScalarProperty Name="ProcessedDate" ColumnName="ProcessedDate" />
+                <ScalarProperty Name="AdminNote" ColumnName="AdminNote" />
+                <ScalarProperty Name="Status" ColumnName="Status" />
+                <ScalarProperty Name="RequestDate" ColumnName="RequestDate" />
+                <ScalarProperty Name="CourseId" ColumnName="CourseId" />
+                <ScalarProperty Name="UserId" ColumnName="UserId" />
+                <ScalarProperty Name="RequestId" ColumnName="RequestId" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="CourseContents">
+            <EntityTypeMapping TypeName="CEZAModel.CourseContents">
+              <MappingFragment StoreEntitySet="CourseContents">
+                <ScalarProperty Name="ContentDescription" ColumnName="ContentDescription" />
+                <ScalarProperty Name="CreatedDate" ColumnName="CreatedDate" />
+                <ScalarProperty Name="FilePath" ColumnName="FilePath" />
+                <ScalarProperty Name="ContentTitle" ColumnName="ContentTitle" />
+                <ScalarProperty Name="ContentType" ColumnName="ContentType" />
+                <ScalarProperty Name="CourseId" ColumnName="CourseId" />
+                <ScalarProperty Name="ContentId" ColumnName="ContentId" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="CourseEnrollments">
+            <EntityTypeMapping TypeName="CEZAModel.CourseEnrollments">
+              <MappingFragment StoreEntitySet="CourseEnrollments">
+                <ScalarProperty Name="DrawEntryDate" ColumnName="DrawEntryDate" />
+                <ScalarProperty Name="IsDrawEntry" ColumnName="IsDrawEntry" />
+                <ScalarProperty Name="EnrollmentDate" ColumnName="EnrollmentDate" />
+                <ScalarProperty Name="UserId" ColumnName="UserId" />
+                <ScalarProperty Name="CourseId" ColumnName="CourseId" />
+                <ScalarProperty Name="EnrollmentId" ColumnName="EnrollmentId" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="CourseReviews">
+            <EntityTypeMapping TypeName="CEZAModel.CourseReviews">
+              <MappingFragment StoreEntitySet="CourseReviews">
+                <ScalarProperty Name="ApprovedDate" ColumnName="ApprovedDate" />
+                <ScalarProperty Name="ApprovedBy" ColumnName="ApprovedBy" />
+                <ScalarProperty Name="IsApproved" ColumnName="IsApproved" />
+                <ScalarProperty Name="CreatedDate" ColumnName="CreatedDate" />
+                <ScalarProperty Name="Comment" ColumnName="Comment" />
+                <ScalarProperty Name="Rating" ColumnName="Rating" />
+                <ScalarProperty Name="UserId" ColumnName="UserId" />
+                <ScalarProperty Name="CourseId" ColumnName="CourseId" />
+                <ScalarProperty Name="ReviewId" ColumnName="ReviewId" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Courses">
+            <EntityTypeMapping TypeName="CEZAModel.Courses">
+              <MappingFragment StoreEntitySet="Courses">
+                <ScalarProperty Name="IsDeleted" ColumnName="IsDeleted" />
+                <ScalarProperty Name="IsActive" ColumnName="IsActive" />
+                <ScalarProperty Name="ResourceFile" ColumnName="ResourceFile" />
+                <ScalarProperty Name="CategoryId" ColumnName="CategoryId" />
+                <ScalarProperty Name="CreatedDate" ColumnName="CreatedDate" />
+                <ScalarProperty Name="CreatedBy" ColumnName="CreatedBy" />
+                <ScalarProperty Name="CoverImage" ColumnName="CoverImage" />
+                <ScalarProperty Name="CourseDescription" ColumnName="CourseDescription" />
+                <ScalarProperty Name="CourseTitle" ColumnName="CourseTitle" />
+                <ScalarProperty Name="CourseId" ColumnName="CourseId" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="DocumentTerms">
+            <EntityTypeMapping TypeName="CEZAModel.DocumentTerms">
+              <MappingFragment StoreEntitySet="DocumentTerms">
+                <ScalarProperty Name="AdSoyad" ColumnName="AdSoyad" />
+                <ScalarProperty Name="Sicil" ColumnName="Sicil" />
+                <ScalarProperty Name="UpdatedAt" ColumnName="UpdatedAt" />
+                <ScalarProperty Name="CreatedAt" ColumnName="CreatedAt" />
+                <ScalarProperty Name="IsActive" ColumnName="IsActive" />
+                <ScalarProperty Name="RelatedTerms" ColumnName="RelatedTerms" />
+                <ScalarProperty Name="ImageUrl" ColumnName="ImageUrl" />
+                <ScalarProperty Name="DetailedDescription" ColumnName="DetailedDescription" />
+                <ScalarProperty Name="Definition" ColumnName="Definition" />
+                <ScalarProperty Name="Category" ColumnName="Category" />
+                <ScalarProperty Name="Slug" ColumnName="Slug" />
+                <ScalarProperty Name="Term" ColumnName="Term" />
+                <ScalarProperty Name="Id" ColumnName="Id" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="E_AUH">
+            <EntityTypeMapping TypeName="CEZAModel.E_AUH">
+              <MappingFragment StoreEntitySet="E_AUH">
+                <ScalarProperty Name="fldToM" ColumnName="fldToM" />
+                <ScalarProperty Name="fldDayKat" ColumnName="fldDayKat" />
+                <ScalarProperty Name="fldDayStart" ColumnName="fldDayStart" />
+                <ScalarProperty Name="fldKat" ColumnName="fldKat" />
+                <ScalarProperty Name="fldFirstMounth" ColumnName="fldFirstMounth" />
+                <ScalarProperty Name="fldCountry" ColumnName="fldCountry" />
+                <ScalarProperty Name="fldId" ColumnName="fldId" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="E_Border">
+            <EntityTypeMapping TypeName="CEZAModel.E_Border">
+              <MappingFragment StoreEntitySet="E_Border">
+                <ScalarProperty Name="fldName" ColumnName="fldName" />
+                <ScalarProperty Name="fldId" ColumnName="fldId" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="E_Defter">
+            <EntityTypeMapping TypeName="CEZAModel.E_Defter">
+              <MappingFragment StoreEntitySet="E_Defter">
+                <ScalarProperty Name="fldTypeofMoney" ColumnName="fldTypeofMoney" />
+                <ScalarProperty Name="fldPrice" ColumnName="fldPrice" />
+                <ScalarProperty Name="fldId" ColumnName="fldId" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="E_Exchange">
+            <EntityTypeMapping TypeName="CEZAModel.E_Exchange">
+              <MappingFragment StoreEntitySet="E_Exchange">
+                <ScalarProperty Name="fldPaund" ColumnName="fldPaund" />
+                <ScalarProperty Name="fldDollar" ColumnName="fldDollar" />
+                <ScalarProperty Name="fldEuro" ColumnName="fldEuro" />
+                <ScalarProperty Name="fldId" ColumnName="fldId" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="E_Forms">
+            <EntityTypeMapping TypeName="CEZAModel.E_Forms">
+              <MappingFragment StoreEntitySet="E_Forms">
+                <ScalarProperty Name="fldFransizcaC" ColumnName="fldFransizcaC" />
+                <ScalarProperty Name="fldFransizca" ColumnName="fldFransizca" />
+                <ScalarProperty Name="fldIRK" ColumnName="fldIRK" />
+                <ScalarProperty Name="fldIRKC" ColumnName="fldIRKC" />
+                <ScalarProperty Name="fldIRC" ColumnName="fldIRC" />
+                <ScalarProperty Name="fldRUC" ColumnName="fldRUC" />
+                <ScalarProperty Name="fldDEC" ColumnName="fldDEC" />
+                <ScalarProperty Name="fldGBC" ColumnName="fldGBC" />
+                <ScalarProperty Name="fldIR" ColumnName="fldIR" />
+                <ScalarProperty Name="fldRU" ColumnName="fldRU" />
+                <ScalarProperty Name="fldDE" ColumnName="fldDE" />
+                <ScalarProperty Name="fldGB" ColumnName="fldGB" />
+                <ScalarProperty Name="fldId" ColumnName="fldId" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="E_History">
+            <EntityTypeMapping TypeName="CEZAModel.E_History">
+              <MappingFragment StoreEntitySet="E_History">
+                <ScalarProperty Name="fldDatetime" ColumnName="fldDatetime" />
+                <ScalarProperty Name="fldBorder" ColumnName="fldBorder" />
+                <ScalarProperty Name="fldUser" ColumnName="fldUser" />
+                <ScalarProperty Name="fldPMoney" ColumnName="fldPMoney" />
+                <ScalarProperty Name="fldPenalty" ColumnName="fldPenalty" />
+                <ScalarProperty Name="fldCountry" ColumnName="fldCountry" />
+                <ScalarProperty Name="fldBirthDate" ColumnName="fldBirthDate" />
+                <ScalarProperty Name="fldShouldExit" ColumnName="fldShouldExit" />
+                <ScalarProperty Name="fldStart" ColumnName="fldStart" />
+                <ScalarProperty Name="fldId" ColumnName="fldId" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="E_Inad">
+            <EntityTypeMapping TypeName="CEZAModel.E_Inad">
+              <MappingFragment StoreEntitySet="E_Inad">
+                <ScalarProperty Name="KimlikNo" ColumnName="KimlikNo" />
+                <ScalarProperty Name="Sicil" ColumnName="Sicil" />
+                <ScalarProperty Name="Durum" ColumnName="Durum" />
+                <ScalarProperty Name="Valilik" ColumnName="Valilik" />
+                <ScalarProperty Name="Kapi" ColumnName="Kapi" />
+                <ScalarProperty Name="Refakat" ColumnName="Refakat" />
+                <ScalarProperty Name="YerHizmetleri" ColumnName="YerHizmetleri" />
+                <ScalarProperty Name="YerHizmetleriPersonel" ColumnName="YerHizmetleriPersonel" />
+                <ScalarProperty Name="OzelGuvenlik" ColumnName="OzelGuvenlik" />
+                <ScalarProperty Name="UcagaNakil" ColumnName="UcagaNakil" />
+                <ScalarProperty Name="UstAramaEsya" ColumnName="UstAramaEsya" />
+                <ScalarProperty Name="Personel" ColumnName="Personel" />
+                <ScalarProperty Name="GidisTarihSaat" ColumnName="GidisTarihSaat" />
+                <ScalarProperty Name="GidisYer" ColumnName="GidisYer" />
+                <ScalarProperty Name="GidisUcusNo" ColumnName="GidisUcusNo" />
+                <ScalarProperty Name="GidenHavayolu" ColumnName="GidenHavayolu" />
+                <ScalarProperty Name="InadSebep" ColumnName="InadSebep" />
+                <ScalarProperty Name="InadSebepAciklama" ColumnName="InadSebepAciklama" />
+                <ScalarProperty Name="GeldigiTarihSaat" ColumnName="GeldigiTarihSaat" />
+                <ScalarProperty Name="GeldigiYer" ColumnName="GeldigiYer" />
+                <ScalarProperty Name="GelenHavayolu" ColumnName="GelenHavayolu" />
+                <ScalarProperty Name="GelenUcusNo" ColumnName="GelenUcusNo" />
+                <ScalarProperty Name="Beyan" ColumnName="Beyan" />
+                <ScalarProperty Name="PasaportTuru" ColumnName="PasaportTuru" />
+                <ScalarProperty Name="BelgeNo" ColumnName="BelgeNo" />
+                <ScalarProperty Name="PasaportNo" ColumnName="PasaportNo" />
+                <ScalarProperty Name="Uyruk" ColumnName="Uyruk" />
+                <ScalarProperty Name="Cinsiyet" ColumnName="Cinsiyet" />
+                <ScalarProperty Name="DogumY" ColumnName="DogumY" />
+                <ScalarProperty Name="DogumT" ColumnName="DogumT" />
+                <ScalarProperty Name="AdSoyad" ColumnName="AdSoyad" />
+                <ScalarProperty Name="TarihSaat" ColumnName="TarihSaat" />
+                <ScalarProperty Name="InadId" ColumnName="InadId" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="E_IsK">
+            <EntityTypeMapping TypeName="CEZAModel.E_IsK">
+              <MappingFragment StoreEntitySet="E_IsK">
+                <ScalarProperty Name="fldPicture" ColumnName="fldPicture" />
+                <ScalarProperty Name="fldPMoney" ColumnName="fldPMoney" />
+                <ScalarProperty Name="fldVisa" ColumnName="fldVisa" />
+                <ScalarProperty Name="fldBorder" ColumnName="fldBorder" />
+                <ScalarProperty Name="fldApproval" ColumnName="fldApproval" />
+                <ScalarProperty Name="fldPassControl" ColumnName="fldPassControl" />
+                <ScalarProperty Name="fldForm" ColumnName="fldForm" />
+                <ScalarProperty Name="fldBirthdate" ColumnName="fldBirthdate" />
+                <ScalarProperty Name="fldOrgin" ColumnName="fldOrgin" />
+                <ScalarProperty Name="fldIdn" ColumnName="fldIdn" />
+                <ScalarProperty Name="fldPassport" ColumnName="fldPassport" />
+                <ScalarProperty Name="fldName" ColumnName="fldName" />
+                <ScalarProperty Name="fldDatetime" ColumnName="fldDatetime" />
+                <ScalarProperty Name="fldId" ColumnName="fldId" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="E_Messages">
+            <EntityTypeMapping TypeName="CEZAModel.E_Messages">
+              <MappingFragment StoreEntitySet="E_Messages">
+                <ScalarProperty Name="fldApprovedDateTime" ColumnName="fldApprovedDateTime" />
+                <ScalarProperty Name="fldApprovedBy" ColumnName="fldApprovedBy" />
+                <ScalarProperty Name="fldIsApproved" ColumnName="fldIsApproved" />
+                <ScalarProperty Name="fldIsReply" ColumnName="fldIsReply" />
+                <ScalarProperty Name="fldParentMessageId" ColumnName="fldParentMessageId" />
+                <ScalarProperty Name="fldIsDeletedByRecipient" ColumnName="fldIsDeletedByRecipient" />
+                <ScalarProperty Name="fldIsDeletedBySender" ColumnName="fldIsDeletedBySender" />
+                <ScalarProperty Name="fldReadDateTime" ColumnName="fldReadDateTime" />
+                <ScalarProperty Name="fldIsRead" ColumnName="fldIsRead" />
+                <ScalarProperty Name="fldSubject" ColumnName="fldSubject" />
+                <ScalarProperty Name="fldRecipientRole" ColumnName="fldRecipientRole" />
+                <ScalarProperty Name="fldRecipientId" ColumnName="fldRecipientId" />
+                <ScalarProperty Name="fldSenderRole" ColumnName="fldSenderRole" />
+                <ScalarProperty Name="fldSenderId" ColumnName="fldSenderId" />
+                <ScalarProperty Name="fldMessage" ColumnName="fldMessage" />
+                <ScalarProperty Name="fldDateTime" ColumnName="fldDateTime" />
+                <ScalarProperty Name="fldSendByMail" ColumnName="fldSendByMail" />
+                <ScalarProperty Name="fldSendByPhone" ColumnName="fldSendByPhone" />
+                <ScalarProperty Name="fldSendBySicil" ColumnName="fldSendBySicil" />
+                <ScalarProperty Name="fldSendByName" ColumnName="fldSendByName" />
+                <ScalarProperty Name="fldId" ColumnName="fldId" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="E_Sartli">
+            <EntityTypeMapping TypeName="CEZAModel.E_Sartli">
+              <MappingFragment StoreEntitySet="E_Sartli">
+                <ScalarProperty Name="fldBorder" ColumnName="fldBorder" />
+                <ScalarProperty Name="fldName" ColumnName="fldName" />
+                <ScalarProperty Name="fldDate" ColumnName="fldDate" />
+                <ScalarProperty Name="fldBdate" ColumnName="fldBdate" />
+                <ScalarProperty Name="fldOrgin" ColumnName="fldOrgin" />
+                <ScalarProperty Name="fldBy" ColumnName="fldBy" />
+                <ScalarProperty Name="fldId" ColumnName="fldId" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="E_TGVH">
+            <EntityTypeMapping TypeName="CEZAModel.E_TGVH">
+              <MappingFragment StoreEntitySet="E_TGVH">
+                <ScalarProperty Name="fldYear" ColumnName="fldYear" />
+                <ScalarProperty Name="fldTypeofMoney" ColumnName="fldTypeofMoney" />
+                <ScalarProperty Name="fldPrice" ColumnName="fldPrice" />
+                <ScalarProperty Name="fldId" ColumnName="fldId" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="E_TKOD">
+            <EntityTypeMapping TypeName="CEZAModel.E_TKOD">
+              <MappingFragment StoreEntitySet="E_TKOD">
+                <ScalarProperty Name="fldPaid" ColumnName="fldPaid" />
+                <ScalarProperty Name="fldIdariCode" ColumnName="fldIdariCode" />
+                <ScalarProperty Name="fldFinish" ColumnName="fldFinish" />
+                <ScalarProperty Name="fldStart" ColumnName="fldStart" />
+                <ScalarProperty Name="fldPTime" ColumnName="fldPTime" />
+                <ScalarProperty Name="fldCode" ColumnName="fldCode" />
+                <ScalarProperty Name="fldId" ColumnName="fldId" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="E_Token">
+            <EntityTypeMapping TypeName="CEZAModel.E_Token">
+              <MappingFragment StoreEntitySet="E_Token">
+                <ScalarProperty Name="fldIp" ColumnName="fldIp" />
+                <ScalarProperty Name="fldDateTime" ColumnName="fldDateTime" />
+                <ScalarProperty Name="fldToken" ColumnName="fldToken" />
+                <ScalarProperty Name="fldUserId" ColumnName="fldUserId" />
+                <ScalarProperty Name="fldId" ColumnName="fldId" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="E_User">
+            <EntityTypeMapping TypeName="CEZAModel.E_User">
+              <MappingFragment StoreEntitySet="E_User">
+                <ScalarProperty Name="TeacherRequestDate" ColumnName="TeacherRequestDate" />
+                <ScalarProperty Name="TeacherRequestStatus" ColumnName="TeacherRequestStatus" />
+                <ScalarProperty Name="IsActive" ColumnName="IsActive" />
+                <ScalarProperty Name="Level" ColumnName="Level" />
+                <ScalarProperty Name="XP" ColumnName="XP" />
+                <ScalarProperty Name="LastLogin" ColumnName="LastLogin" />
+                <ScalarProperty Name="Role" ColumnName="Role" />
+                <ScalarProperty Name="fldActive" ColumnName="fldActive" />
+                <ScalarProperty Name="fldBorder" ColumnName="fldBorder" />
+                <ScalarProperty Name="fldDateTime" ColumnName="fldDateTime" />
+                <ScalarProperty Name="fldPassword" ColumnName="fldPassword" />
+                <ScalarProperty Name="fldSubAuth" ColumnName="fldSubAuth" />
+                <ScalarProperty Name="fldAuth" ColumnName="fldAuth" />
+                <ScalarProperty Name="fldPicture" ColumnName="fldPicture" />
+                <ScalarProperty Name="fldDeputy" ColumnName="fldDeputy" />
+                <ScalarProperty Name="fldTitle" ColumnName="fldTitle" />
+                <ScalarProperty Name="fldEmail" ColumnName="fldEmail" />
+                <ScalarProperty Name="fldPhone" ColumnName="fldPhone" />
+                <ScalarProperty Name="fldLastName" ColumnName="fldLastName" />
+                <ScalarProperty Name="fldName" ColumnName="fldName" />
+                <ScalarProperty Name="fldSicil" ColumnName="fldSicil" />
+                <ScalarProperty Name="fldId" ColumnName="fldId" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="E_UVR">
+            <EntityTypeMapping TypeName="CEZAModel.E_UVR">
+              <MappingFragment StoreEntitySet="E_UVR">
+                <ScalarProperty Name="fldHB" ColumnName="fldHB" />
+                <ScalarProperty Name="fldOneTime" ColumnName="fldOneTime" />
+                <ScalarProperty Name="fldLong" ColumnName="fldLong" />
+                <ScalarProperty Name="fldDay" ColumnName="fldDay" />
+                <ScalarProperty Name="fldVisaStatus" ColumnName="fldVisaStatus" />
+                <ScalarProperty Name="fldPassportType" ColumnName="fldPassportType" />
+                <ScalarProperty Name="fldCalculateType" ColumnName="fldCalculateType" />
+                <ScalarProperty Name="fldCountry" ColumnName="fldCountry" />
+                <ScalarProperty Name="fldId" ColumnName="fldId" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Exam">
+            <EntityTypeMapping TypeName="CEZAModel.Exam">
+              <MappingFragment StoreEntitySet="Exam">
+                <ScalarProperty Name="IsArchived" ColumnName="IsArchived" />
+                <ScalarProperty Name="CreatedAt" ColumnName="CreatedAt" />
+                <ScalarProperty Name="IsActive" ColumnName="IsActive" />
+                <ScalarProperty Name="PassingScore" ColumnName="PassingScore" />
+                <ScalarProperty Name="DurationMinutes" ColumnName="DurationMinutes" />
+                <ScalarProperty Name="Description" ColumnName="Description" />
+                <ScalarProperty Name="Title" ColumnName="Title" />
+                <ScalarProperty Name="CourseId" ColumnName="CourseId" />
+                <ScalarProperty Name="ExamId" ColumnName="ExamId" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="ExamResult">
+            <EntityTypeMapping TypeName="CEZAModel.ExamResult">
+              <MappingFragment StoreEntitySet="ExamResult">
+                <ScalarProperty Name="Status" ColumnName="Status" />
+                <ScalarProperty Name="FinishedAt" ColumnName="FinishedAt" />
+                <ScalarProperty Name="StartedAt" ColumnName="StartedAt" />
+                <ScalarProperty Name="Score" ColumnName="Score" />
+                <ScalarProperty Name="UserId" ColumnName="UserId" />
+                <ScalarProperty Name="ExamId" ColumnName="ExamId" />
+                <ScalarProperty Name="ExamResultId" ColumnName="ExamResultId" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Question">
+            <EntityTypeMapping TypeName="CEZAModel.Question">
+              <MappingFragment StoreEntitySet="Question">
+                <ScalarProperty Name="IsActive" ColumnName="IsActive" />
+                <ScalarProperty Name="SortOrder" ColumnName="SortOrder" />
+                <ScalarProperty Name="Points" ColumnName="Points" />
+                <ScalarProperty Name="QuestionType" ColumnName="QuestionType" />
+                <ScalarProperty Name="Text" ColumnName="Text" />
+                <ScalarProperty Name="ExamId" ColumnName="ExamId" />
+                <ScalarProperty Name="QuestionId" ColumnName="QuestionId" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="QuestionMedia">
+            <EntityTypeMapping TypeName="CEZAModel.QuestionMedia">
+              <MappingFragment StoreEntitySet="QuestionMedia">
+                <ScalarProperty Name="CreatedAt" ColumnName="CreatedAt" />
+                <ScalarProperty Name="SortOrder" ColumnName="SortOrder" />
+                <ScalarProperty Name="MediaPath" ColumnName="MediaPath" />
+                <ScalarProperty Name="MediaType" ColumnName="MediaType" />
+                <ScalarProperty Name="QuestionId" ColumnName="QuestionId" />
+                <ScalarProperty Name="MediaId" ColumnName="MediaId" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="QuestionOption">
+            <EntityTypeMapping TypeName="CEZAModel.QuestionOption">
+              <MappingFragment StoreEntitySet="QuestionOption">
+                <ScalarProperty Name="SortOrder" ColumnName="SortOrder" />
+                <ScalarProperty Name="IsCorrect" ColumnName="IsCorrect" />
+                <ScalarProperty Name="Text" ColumnName="Text" />
+                <ScalarProperty Name="QuestionId" ColumnName="QuestionId" />
+                <ScalarProperty Name="OptionId" ColumnName="OptionId" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="tbl_TempUser">
+            <EntityTypeMapping TypeName="CEZAModel.tbl_TempUser">
+              <MappingFragment StoreEntitySet="tbl_TempUser">
+                <ScalarProperty Name="fldDeputy" ColumnName="fldDeputy" />
+                <ScalarProperty Name="fldTitle" ColumnName="fldTitle" />
+                <ScalarProperty Name="fldEmail" ColumnName="fldEmail" />
+                <ScalarProperty Name="fldPhone" ColumnName="fldPhone" />
+                <ScalarProperty Name="fldLastName" ColumnName="fldLastName" />
+                <ScalarProperty Name="fldName" ColumnName="fldName" />
+                <ScalarProperty Name="fldSicil" ColumnName="fldSicil" />
+                <ScalarProperty Name="fldId" ColumnName="fldId" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="E_Dilekce">
+            <EntityTypeMapping TypeName="CEZAModel.E_Dilekce">
+              <MappingFragment StoreEntitySet="E_Dilekce">
+                <ScalarProperty Name="Sicil" ColumnName="Sicil" />
+                <ScalarProperty Name="Aciklama" ColumnName="Aciklama" />
+                <ScalarProperty Name="Unvan" ColumnName="Unvan" />
+                <ScalarProperty Name="DosyaNo" ColumnName="DosyaNo" />
+                <ScalarProperty Name="Valilik" ColumnName="Valilik" />
+                <ScalarProperty Name="DilekceSebep" ColumnName="DilekceSebep" />
+                <ScalarProperty Name="Tarih2" ColumnName="Tarih2" />
+                <ScalarProperty Name="Tarih1" ColumnName="Tarih1" />
+                <ScalarProperty Name="DilekceTarih" ColumnName="DilekceTarih" />
+                <ScalarProperty Name="Uyruk" ColumnName="Uyruk" />
+                <ScalarProperty Name="Telefon" ColumnName="Telefon" />
+                <ScalarProperty Name="Adres" ColumnName="Adres" />
+                <ScalarProperty Name="KimlikNo" ColumnName="KimlikNo" />
+                <ScalarProperty Name="PasaportNo" ColumnName="PasaportNo" />
+                <ScalarProperty Name="DogumYeri" ColumnName="DogumYeri" />
+                <ScalarProperty Name="DogumTarih" ColumnName="DogumTarih" />
+                <ScalarProperty Name="AdSoyad" ColumnName="AdSoyad" />
+                <ScalarProperty Name="DilekceId" ColumnName="DilekceId" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="TahditKod">
+            <EntityTypeMapping TypeName="CEZAModel.TahditKod">
+              <MappingFragment StoreEntitySet="TahditKod">
+                <ScalarProperty Name="CreatedByName" ColumnName="CreatedByName" />
+                <ScalarProperty Name="CreatedBySicil" ColumnName="CreatedBySicil" />
+                <ScalarProperty Name="CreatedByUserId" ColumnName="CreatedByUserId" />
+                <ScalarProperty Name="CreatedAt" ColumnName="CreatedAt" />
+                <ScalarProperty Name="TahditMedia" ColumnName="TahditMedia" />
+                <ScalarProperty Name="CikisGelirse" ColumnName="CikisGelirse" />
+                <ScalarProperty Name="GirisGelirse" ColumnName="GirisGelirse" />
+                <ScalarProperty Name="Aktif" ColumnName="Aktif" />
+                <ScalarProperty Name="SureAy" ColumnName="SureAy" />
+                <ScalarProperty Name="Aciklama" ColumnName="Aciklama" />
+                <ScalarProperty Name="Kod" ColumnName="Kod" />
+                <ScalarProperty Name="Id" ColumnName="Id" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="EducationPackageImportLog">
+            <EntityTypeMapping TypeName="CEZAModel.EducationPackageImportLog">
+              <MappingFragment StoreEntitySet="EducationPackageImportLog">
+                <ScalarProperty Name="Message" ColumnName="Message" />
+                <ScalarProperty Name="Status" ColumnName="Status" />
+                <ScalarProperty Name="FileName" ColumnName="FileName" />
+                <ScalarProperty Name="ImportedDate" ColumnName="ImportedDate" />
+                <ScalarProperty Name="ImportedByUserId" ColumnName="ImportedByUserId" />
+                <ScalarProperty Name="ImportedExamId" ColumnName="ImportedExamId" />
+                <ScalarProperty Name="ImportedCourseId" ColumnName="ImportedCourseId" />
+                <ScalarProperty Name="SourceDocumentCode" ColumnName="SourceDocumentCode" />
+                <ScalarProperty Name="PackageVersion" ColumnName="PackageVersion" />
+                <ScalarProperty Name="PackageTitle" ColumnName="PackageTitle" />
+                <ScalarProperty Name="PackageCode" ColumnName="PackageCode" />
+                <ScalarProperty Name="Id" ColumnName="Id" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="TahditFormLog">
+            <EntityTypeMapping TypeName="CEZAModel.TahditFormLog">
+              <MappingFragment StoreEntitySet="TahditFormLog">
+                <ScalarProperty Name="FormMoney" ColumnName="FormMoney" />
+                <ScalarProperty Name="PassportNo" ColumnName="PassportNo" />
+                <ScalarProperty Name="PassengerName" ColumnName="PassengerName" />
+                <ScalarProperty Name="UserDisplayName" ColumnName="UserDisplayName" />
+                <ScalarProperty Name="UserSicil" ColumnName="UserSicil" />
+                <ScalarProperty Name="UserId" ColumnName="UserId" />
+                <ScalarProperty Name="Border" ColumnName="Border" />
+                <ScalarProperty Name="Country" ColumnName="Country" />
+                <ScalarProperty Name="VisaType" ColumnName="VisaType" />
+                <ScalarProperty Name="PaymentType" ColumnName="PaymentType" />
+                <ScalarProperty Name="PenaltyTotalDay" ColumnName="PenaltyTotalDay" />
+                <ScalarProperty Name="PenaltyMonth" ColumnName="PenaltyMonth" />
+                <ScalarProperty Name="PenaltyDay" ColumnName="PenaltyDay" />
+                <ScalarProperty Name="IdariTahditCode" ColumnName="IdariTahditCode" />
+                <ScalarProperty Name="TahditCode" ColumnName="TahditCode" />
+                <ScalarProperty Name="CreatedAt" ColumnName="CreatedAt" />
+                <ScalarProperty Name="Id" ColumnName="Id" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="ChatMessages">
+            <EntityTypeMapping TypeName="CEZAModel.ChatMessages">
+              <MappingFragment StoreEntitySet="ChatMessages">
+                <ScalarProperty Name="IsDeleted" ColumnName="IsDeleted" />
+                <ScalarProperty Name="ReadAt" ColumnName="ReadAt" />
+                <ScalarProperty Name="CreatedAt" ColumnName="CreatedAt" />
+                <ScalarProperty Name="ImagePath" ColumnName="ImagePath" />
+                <ScalarProperty Name="MessageText" ColumnName="MessageText" />
+                <ScalarProperty Name="RecipientId" ColumnName="RecipientId" />
+                <ScalarProperty Name="SenderId" ColumnName="SenderId" />
+                <ScalarProperty Name="ChatMessageId" ColumnName="ChatMessageId" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="ChatOnlineUsers">
+            <EntityTypeMapping TypeName="CEZAModel.ChatOnlineUsers">
+              <MappingFragment StoreEntitySet="ChatOnlineUsers">
+                <ScalarProperty Name="LastPage" ColumnName="LastPage" />
+                <ScalarProperty Name="LastSeen" ColumnName="LastSeen" />
+                <ScalarProperty Name="UserId" ColumnName="UserId" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="SorguCevaplari">
+            <EntityTypeMapping TypeName="CEZAModel.SorguCevaplari">
+              <MappingFragment StoreEntitySet="SorguCevaplari">
+                <ScalarProperty Name="ResimUrl" ColumnName="ResimUrl" />
+                <ScalarProperty Name="OlusturmaTarihi" ColumnName="OlusturmaTarihi" />
+                <ScalarProperty Name="Aktif" ColumnName="Aktif" />
+                <ScalarProperty Name="Kategori" ColumnName="Kategori" />
+                <ScalarProperty Name="Cevap" ColumnName="Cevap" />
+                <ScalarProperty Name="AnahtarKelimeler" ColumnName="AnahtarKelimeler" />
+                <ScalarProperty Name="Id" ColumnName="Id" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="SorguLoglari">
+            <EntityTypeMapping TypeName="CEZAModel.SorguLoglari">
+              <MappingFragment StoreEntitySet="SorguLoglari">
+                <ScalarProperty Name="BasariDurumu" ColumnName="BasariDurumu" />
+                <ScalarProperty Name="Tarih" ColumnName="Tarih" />
+                <ScalarProperty Name="IpAdresi" ColumnName="IpAdresi" />
+                <ScalarProperty Name="KullaniciAdi" ColumnName="KullaniciAdi" />
+                <ScalarProperty Name="Cevap" ColumnName="Cevap" />
+                <ScalarProperty Name="Soru" ColumnName="Soru" />
+                <ScalarProperty Name="Id" ColumnName="Id" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="E_UVR_Backup_Before_WorkPermit">
+            <EntityTypeMapping TypeName="CEZAModel.E_UVR_Backup_Before_WorkPermit">
+              <MappingFragment StoreEntitySet="E_UVR_Backup_Before_WorkPermit">
+                <ScalarProperty Name="fldHB" ColumnName="fldHB" />
+                <ScalarProperty Name="fldOneTime" ColumnName="fldOneTime" />
+                <ScalarProperty Name="fldLong" ColumnName="fldLong" />
+                <ScalarProperty Name="fldDay" ColumnName="fldDay" />
+                <ScalarProperty Name="fldVisaStatus" ColumnName="fldVisaStatus" />
+                <ScalarProperty Name="fldPassportType" ColumnName="fldPassportType" />
+                <ScalarProperty Name="fldCalculateType" ColumnName="fldCalculateType" />
+                <ScalarProperty Name="fldCountry" ColumnName="fldCountry" />
+                <ScalarProperty Name="fldId" ColumnName="fldId" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+        </EntityContainerMapping>
+      </Mapping>
+    </edmx:Mappings>
+  </edmx:Runtime>
+  <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <Connection>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="MetadataArtifactProcessing" Value="EmbedInOutputAssembly" />
+      </DesignerInfoPropertySet>
+    </Connection>
+    <Options>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="ValidateOnBuild" Value="true" />
+        <DesignerProperty Name="EnablePluralization" Value="false" />
+        <DesignerProperty Name="IncludeForeignKeysInModel" Value="true" />
+        <DesignerProperty Name="UseLegacyProvider" Value="false" />
+        <DesignerProperty Name="CodeGenerationStrategy" Value="None" />
+      </DesignerInfoPropertySet>
+    </Options>
+    <!-- Diagram content (shape and connector positions) -->
+    <Diagrams></Diagrams>
+  </Designer>
+</edmx:Edmx>
+

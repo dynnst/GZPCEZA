@@ -1,0 +1,481 @@
+@{
+    Layout = "~/Views/Shared/_Master.cshtml";
+}
+
+@using System.Globalization
+@using System.Collections.Generic
+@using gzpegm.Cont
+@using gzpegm.Models
+@{
+    // Harç (gün başı) değeri veritabanından çekilecek (E_TGVH.fldPrice)
+    // Kullanmak için yeni GetCurrentPrice helper'ı kullanıyoruz (decimal parsing ile güvenli).
+    string harcPerGunValue = "10";
+    try
+    {
+        var _tgvh = new gzpegm.Cont.tgvh();
+        var price = _tgvh.GetCurrentPrice(10m);
+        harcPerGunValue = price.ToString("0.##", CultureInfo.InvariantCulture);
+    }
+    catch { /* ignore DB errors, use default */ }
+
+    // Ülke listesi controller tarafında cache'lenerek hazırlanır.
+    var uvrCountries = ViewBag.UvrCountries as IEnumerable<string> ?? new List<string>();
+
+    var currentUser = ViewBag.User as gzpegm.Models.E_User;
+    var currentUserName = currentUser == null
+        ? "Kullanıcı"
+        : ((currentUser.fldName ?? "") + " " + (currentUser.fldLastName ?? "")).Trim();
+    var currentUserPicture = currentUser == null || string.IsNullOrWhiteSpace(currentUser.fldPicture)
+        ? Url.Content("/AdminTemplate/img/a4.jpg")
+        : Url.Content("~/files/User/" + currentUser.fldPicture);
+    Func<string, string> profileValue = value => string.IsNullOrWhiteSpace(value) ? "Belirtilmemiş" : value;
+    var profileTitle = currentUser == null ? null : currentUser.fldTitle;
+    var profileRole = currentUser == null ? null : currentUser.Role;
+    var profileStatus = currentUser != null && currentUser.fldActive == "0" ? "Pasif" : "Aktif";
+    var profileSicil = currentUser == null ? null : currentUser.fldSicil;
+    var profilePhone = currentUser == null ? null : currentUser.fldPhone;
+    var profileEmail = currentUser == null ? null : currentUser.fldEmail;
+    var profileDeputy = currentUser == null ? null : currentUser.fldDeputy;
+    var profileBorder = currentUser == null ? null : currentUser.fldBorder;
+    var profileAuth = currentUser == null ? null : currentUser.fldAuth;
+
+    Func<string, string> getAuthDescription = code =>
+    {
+        switch ((code ?? "").Trim())
+        {
+            case "1": return "Kullanıcı İşlemleri";
+            case "2": return "Admin / Sistem Tanımları";
+            case "3": return "Ceza, Tahdit ve Şartlı Vize";
+            case "4": return "Eski İşlemler / Raporlar";
+            case "5": return "Duyuru ve Mesajlar";
+            case "6": return "Eğitim Yönetimi";
+            case "0": return "Temel Erişim";
+            default: return string.IsNullOrWhiteSpace(code) ? "" : "Yetki " + code;
+        }
+    };
+
+    var authCodesList = (profileAuth ?? "")
+        .Split(new[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries)
+        .Select(x => x.Trim())
+        .Where(x => !string.IsNullOrEmpty(x))
+        .Distinct()
+        .ToList();
+
+    var authDescriptionList = authCodesList
+        .Select(c => getAuthDescription(c))
+        .Where(d => !string.IsNullOrWhiteSpace(d))
+        .ToList();
+}
+
+@section Styles {
+    <link href="@Url.Content("~/css/home-index.css")?v=1.0" rel="stylesheet" />
+}
+
+
+<div class="home-workspace">
+    <section class="home-hero" aria-labelledby="homeTitle">
+        <div>
+            <div class="home-eyebrow"><i class="fas fa-shield-alt"></i>İŞLEM EKRANLARI</div>
+            <h1 id="homeTitle" class="home-title">Ceza, vize ve tahdit işlemleri için hızlı çalışma alanı</h1>
+            <p class="home-summary">Sık kullanılan hesaplama, belge, sözlük ve kontrol ekranları tek yerde toplandı. Tüm bağlantılar yerel proje dosyaları ve mevcut modüller üzerinden çalışır.</p>
+            <div class="home-primary-actions">
+                <a href="@Url.Action("Index", "Calculate")" class="home-primary-btn">
+                    <i class="fas fa-calculator"></i> Hesaplama
+                </a>
+                <button id="openKaseVizeModal" type="button" class="home-secondary-btn" data-toggle="modal" data-target="#kaseVizeModal">
+                    <i class="fas fa-passport"></i> Kaşe Vize Kontrolü
+                </button>
+            </div>
+        </div>
+        <aside class="home-profile-card" aria-label="Profil tanıtımı">
+            <div class="home-profile-head">
+                <img class="home-profile-avatar" src="@currentUserPicture" alt="@currentUserName" />
+                <div>
+                    <h2 class="home-profile-name">@profileValue(currentUserName)</h2>
+                    <div class="home-profile-title">@profileValue(profileTitle)</div>
+                    <div class="home-profile-badges">
+                        <span class="home-profile-badge">@profileValue(profileRole)</span>
+                        <span class="home-profile-badge">@profileStatus</span>
+                    </div>
+                </div>
+            </div>
+            <div class="home-profile-grid">
+                <div class="home-profile-field"><span>Sicil</span><strong>@profileValue(profileSicil)</strong></div>
+                <div class="home-profile-field"><span>Telefon</span><strong>@profileValue(profilePhone)</strong></div>
+                <div class="home-profile-field"><span>E-Posta</span><strong>@profileValue(profileEmail)</strong></div>
+                <div class="home-profile-field"><span>Görev Yeri</span><strong>@profileValue(profileDeputy)</strong></div>
+                <div class="home-profile-field"><span>Hudut Kapısı</span><strong>@profileValue(profileBorder)</strong></div>
+                <div class="home-profile-field">
+                    <span>Yetkiler</span>
+                    @if (authDescriptionList.Any())
+                    {
+                        <div style="display:flex; flex-wrap:wrap; gap:4px; margin-top:4px;">
+                            @foreach (var authText in authDescriptionList)
+                            {
+                                <span class="badge" style="background:#eaf2f9; color:#1e425e; font-size:0.72rem; font-weight:600; padding:3px 6px; border:1px solid #c8dff1; border-radius:4px; text-transform:none; display:inline-flex; align-items:center; line-height:1.2;">
+                                    <i class="fas fa-shield-alt text-primary me-1" style="margin-right:3px; font-size:0.65rem;"></i>@authText
+                                </span>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <strong>Belirtilmemiş</strong>
+                    }
+                </div>
+            </div>
+            <div class="home-profile-note">
+                <i class="fas fa-id-card"></i>
+                <span>Bu alan profil bilgilerini sadece tanıtım amaçlı gösterir; resim, şifre veya bilgi değiştirme işlemi içermez.</span>
+            </div>
+        </aside>
+    </section>
+
+
+    <section class="home-section" aria-labelledby="quickActionsTitle">
+        <div class="home-section-title">
+            <h3 id="quickActionsTitle">Hızlı İşlemler</h3>
+            <span>Yerel modüller ve dosyalar</span>
+        </div>
+        <div class="quick-action-grid">
+            <a href="@Url.Action("Index", "Calculate")" class="quick-action is-primary">
+                <span class="quick-action-icon"><i class="fas fa-calculator"></i></span>
+                <span class="quick-action-text"><strong>Ceza Hesaplama</strong><span>Hesaplama ekranı</span></span>
+            </a>
+            <a href="/VIZEV" target="_blank" rel="noopener noreferrer" class="quick-action is-check">
+                <span class="quick-action-icon"><i class="fas fa-stamp"></i></span>
+                <span class="quick-action-text"><strong>V-84 İşlemler</strong><span>Şartlı vize ekranı</span></span>
+            </a>
+            <a href="@Url.Action("Index", "Tahdit")" target="_blank" rel="noopener noreferrer" class="quick-action is-warning">
+                <span class="quick-action-icon"><i class="fas fa-ban"></i></span>
+                <span class="quick-action-text"><strong>Tahditler</strong><span>Tahdit kayıtları</span></span>
+            </a>
+            <a href="@Url.Action("Index", "EInad")" target="_blank" rel="noopener noreferrer" class="quick-action">
+                <span class="quick-action-icon"><i class="fas fa-clipboard-check"></i></span>
+                <span class="quick-action-text"><strong>İnad İşlemleri</strong><span>İnad kayıtları</span></span>
+            </a>
+            <a href="@Url.Action("Index", "PublicGlossary")" target="_blank" rel="noopener noreferrer" class="quick-action">
+                <span class="quick-action-icon"><i class="fas fa-book"></i></span>
+                <span class="quick-action-text"><strong>Terimler</strong><span>Sözlük ekranı</span></span>
+            </a>
+            <a href="@Url.Content("~/files/Genelge/TahditGenelgeler/Giris_Yasaklari.pdf")" target="_blank" rel="noopener noreferrer" class="quick-action is-reference">
+                <span class="quick-action-icon"><i class="fas fa-file-pdf"></i></span>
+                <span class="quick-action-text"><strong>Ç Kodlu Genelge</strong><span>Yerel PDF</span></span>
+            </a>
+            <a href="@Url.Content("~/files/Genelge/TahditGenelgeler/Idari_Kodlar.pdf")" target="_blank" rel="noopener noreferrer" class="quick-action is-reference">
+                <span class="quick-action-icon"><i class="fas fa-file-alt"></i></span>
+                <span class="quick-action-text"><strong>V Kodlu Genelge</strong><span>Yerel PDF</span></span>
+            </a>
+            <button type="button" class="quick-action is-check" data-toggle="modal" data-target="#kaseVizeModal">
+                <span class="quick-action-icon"><i class="fas fa-passport"></i></span>
+                <span class="quick-action-text"><strong>Kaşe Vize Kontrolü</strong><span>Pasaport süresi</span></span>
+            </button>
+        </div>
+    </section>
+
+    <section class="home-section" aria-label="Operasyon özeti">
+        <div class="home-info-grid">
+            <div class="home-info-item">
+                <i class="fas fa-lock"></i>
+                <div><strong>Kapalı ağ</strong><span>Yerel modüller, yerel dosyalar ve mevcut yetki yapısı.</span></div>
+            </div>
+            <div class="home-info-item">
+                <i class="fas fa-link"></i>
+                <div><strong>Genelge dosyaları</strong><span>Ç ve V kodlu PDF belgelerine hızlı erişim.</span></div>
+            </div>
+            <div class="home-info-item">
+                <i class="fas fa-layer-group"></i>
+                <div><strong>İşlem modülleri</strong><span>Hesaplama, vize, tahdit, inad ve terim ekranları.</span></div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<!-- Kaşe Vize Kontrol Modal -->
+<div class="modal fade" id="kaseVizeModal" tabindex="-1" role="dialog" aria-labelledby="kaseVizeModalLabel" aria-hidden="true" style="z-index: 1060;">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document" style="max-width:760px;">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-light">
+                <div>
+                    <h5 class="modal-title font-weight-bold text-dark mb-0" id="kaseVizeModalLabel">
+                        <i class="fas fa-passport text-primary me-2"></i>Kaşe Vize Değerlendirmesi (Hudut Kapısı İşlemleri)
+                    </h5>
+                    <small class="text-muted">6458 m.7/1-b Süre Kısaltması & Biten Pasaporttaki Konsolosluk Vizesi Kolaylığı</small>
+                </div>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Kapat">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body p-4">
+
+                <!-- Mevzuat Ayrım Bilgi Kutusu -->
+                <div class="alert alert-info py-2 px-3 mb-3 small">
+                    <div class="font-weight-bold mb-1">
+                        <i class="fas fa-balance-scale me-1"></i> Mevzuat Ayrımı ve Hukuki Dayanak:
+                    </div>
+                    <ul class="mb-0 ps-3">
+                        <li><strong>Sınır Kapısında Verilen Vize (Yön. m.15):</strong> Mücbir sebep, sağlık, ticari etkinlik vb. istisnai hallerde en fazla <strong>15 güne kadar</strong> verilen vizedir.</li>
+                        <li><strong>Pasaport Süresi Yetersizliği Kaşe Vizesi (GİGM 2014 & 6458 m.7/1-b):</strong> Pasaport süresi <em>(Vize + 60 gün)</em> kuralını karşılamayan yolculara, pasaportun bitimine 60 gün kalana kadar <strong>(P - 60)</strong> süreyi kısaltarak <strong>aynı pasaporta 1 defaya mahsus TEK GİRİŞ</strong> olarak verilir.</li>
+                        <li><strong>Biten Pasaporttaki Vize Uygulaması:</strong> Süresi biten eski pasaportundaki geçerli müteaddit vize ve yeni pasaportla gelenlere <strong>harçsız</strong>, 1 defaya mahsus tek girişli kaşe vize tatbik edilir.</li>
+                    </ul>
+                </div>
+
+                <!-- İşlem Türü Seçimi -->
+                <div class="form-group mb-3">
+                    <label class="font-weight-bold text-dark mb-2">Değerlendirilecek İşlem Türü:</label>
+                    <div class="d-flex flex-wrap" style="gap: 10px;">
+                        <div class="custom-control custom-radio flex-fill p-2 border rounded bg-white">
+                            <input type="radio" id="islemSureYetersiz" name="kaseIslemTipi" class="custom-control-input" value="sureYetersiz" checked />
+                            <label class="custom-control-label font-weight-bold" for="islemSureYetersiz">
+                                1. Pasaport Süresi Yetersizliği <span class="badge badge-primary ms-1">P - 60 Kısaltması</span>
+                                <small class="d-block text-muted font-weight-normal mt-1">Normal vize/muafiyet süresini karşılamayan pasaportlar için süre kısaltması.</small>
+                            </label>
+                        </div>
+                        <div class="custom-control custom-radio flex-fill p-2 border rounded bg-white">
+                            <input type="radio" id="islemEskiPasaport" name="kaseIslemTipi" class="custom-control-input" value="eskiPasaport" />
+                            <label class="custom-control-label font-weight-bold" for="islemEskiPasaport">
+                                2. Biten Pasaporttaki Vize + Yeni Pasaport <span class="badge badge-success ms-1">Harçsız Tek Giriş</span>
+                                <small class="d-block text-muted font-weight-normal mt-1">Eski pasaportta geçerli konsolosluk vizesi + geçerli yeni pasaport ile gelenler.</small>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <form id="kaseVizeForm">
+                    <!-- ============================================== -->
+                    <!-- BÖLÜM 1: PASAPORT SÜRESİ YETERSİZLİĞİ ALANLARI -->
+                    <!-- ============================================== -->
+                    <div id="sectionSureYetersiz">
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="girisTarihi" class="font-weight-semibold">Giriş Tarihi (Bugün varsayılan)</label>
+                                <input type="date" id="girisTarihi" name="girisTarihi" class="form-control" />
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="pasaportBitis" class="font-weight-semibold">Pasaport Bitiş Tarihi <span class="text-danger">*</span></label>
+                                <input type="date" id="pasaportBitis" name="pasaportBitis" class="form-control" required />
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="kaseCountry" class="font-weight-semibold">Yabancının Uyruğu / Ülke</label>
+                            <div class="input-group">
+                                <select id="kaseCountry" name="kaseCountry" class="form-control">
+                                    <option value="">Lütfen ülke seçiniz (İsteğe bağlı)</option>
+                                    @foreach (var c in uvrCountries)
+                                    {
+                                        <option value="@c">@c</option>
+                                    }
+                                </select>
+                                <div class="input-group-append">
+                                    <button type="button" id="kaseFetchCountry" class="btn btn-outline-secondary">Ülke Bilgilerini Getir</button>
+                                </div>
+                            </div>
+                            <small class="form-text text-muted">Ülke seçildiğinde sistemde tanımlı vize/muafiyet süresi ve harç bilgisi otomatik doldurulur.</small>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="kaseVizeHakki" class="font-weight-semibold">Normal Vize / Muafiyet Süresi (Gün)</label>
+                                <input type="number" id="kaseVizeHakki" name="kaseVizeHakki" class="form-control" value="90" min="1" max="90" />
+                                <small class="form-text text-muted">Yabancının vizesine veya muafiyetine göre (Örn: 30, 60 veya 90 gün).</small>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="harcDurum" class="font-weight-semibold">Harç Durumu</label>
+                                <select id="harcDurum" name="harcDurum" class="form-control">
+                                    <option value="var">Harca Tabi (Ülkeye göre tahsil edilir)</option>
+                                    <option value="muaf">Harçtan Muaf</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="harcPerGun" class="font-weight-semibold">Tahmini Harç Bedeli (TRY)</label>
+                            <input type="number" id="harcPerGun" name="harcPerGun" class="form-control" value="@harcPerGunValue" min="0" step="0.01" disabled />
+                            <small class="form-text text-muted">Sistemde kayıtlı tarife baz alınır; muafiyet durumunda tahsilat yapılmaz.</small>
+                        </div>
+                    </div>
+
+                    <!-- ============================================== -->
+                    <!-- BÖLÜM 2: BİTEN PASAPORTTAKİ VİZE ALANLARI       -->
+                    <!-- ============================================== -->
+                    <div id="sectionEskiPasaport" style="display:none;">
+                        <div class="alert alert-warning py-2 px-3 mb-3 small">
+                            <i class="fas fa-info-circle me-1"></i>
+                            <strong>Uygulama Kuralı:</strong> Eski pasaporttaki geçerli müteaddit vizeyi yeni pasaporta taşımak amacıyla yapılan bu işlem <strong>HARÇSIZDIR</strong> ve <strong>1 defaya mahsus TEK GİRİŞ</strong> hakkı verir. Yolcunun bir sonraki seyahatinde yeni pasaportuna vize alması zorunludur.
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="eskiVizeGirisTarihi" class="font-weight-semibold">Giriş Tarihi (Bugün varsayılan)</label>
+                                <input type="date" id="eskiVizeGirisTarihi" class="form-control" />
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="yeniPasaportBitis" class="font-weight-semibold">YENİ Pasaport Bitiş Tarihi <span class="text-danger">*</span></label>
+                                <input type="date" id="yeniPasaportBitis" class="form-control" />
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="eskiVizeBitis" class="font-weight-semibold">Eski Pasaporttaki Vizenin Bitiş Tarihi <span class="text-danger">*</span></label>
+                                <input type="date" id="eskiVizeBitis" class="form-control" />
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="eskiVizeTekGirisHakki" class="font-weight-semibold">Vizenin Tek Girişte İzin Verdiği Süre (Gün)</label>
+                                <input type="number" id="eskiVizeTekGirisHakki" class="form-control" value="90" min="1" max="90" />
+                                <small class="form-text text-muted">Vize etiketindeki tek girişte kalış süresi (Örn: 30, 60 veya 90 gün).</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="kaseVizeFeedback" class="mt-3"></div>
+                </form>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" id="kaseVizeKontrolBtn" class="btn btn-primary font-weight-semibold px-4">
+                    <i class="fas fa-check-circle me-1"></i> Değerlendir
+                </button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Kapat</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<br />
+<br />
+
+@{
+    int unreadCount = 0;
+
+    if (ViewBag.UnreadMessageCount != null)
+    {
+        int.TryParse(ViewBag.UnreadMessageCount.ToString(), out unreadCount);
+    }
+
+    var newCourseBriefs = ViewBag.NewCourseTitles as List<CourseBrief> ?? new List<CourseBrief>();
+    var newCourseModalKey = string.Join("-", newCourseBriefs.Select(x => x.CourseId));
+}
+
+@if (newCourseBriefs.Any())
+{
+    var firstCourse = newCourseBriefs.First();
+    Func<CourseBrief, string> courseCover = c => string.IsNullOrWhiteSpace(c.CoverImage)
+        ? Url.Content("/AdminTemplate/img/landing/default-course.jpg")
+        : (c.CoverImage.StartsWith("http", StringComparison.OrdinalIgnoreCase) ? c.CoverImage : Url.Content("~/files/Egitim/" + c.CoverImage));
+
+    <div class="modal fade new-course-modal" id="newCourseModal" tabindex="-1" role="dialog" aria-labelledby="newCourseModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+            <div class="modal-content">
+                <div class="new-course-hero">
+                    <div class="new-course-kicker"><i class="fas fa-bell"></i> Yeni Eğitim Duyurusu</div>
+                    <h2 class="new-course-title" id="newCourseModalLabel">Yeni kurs yayında</h2>
+                    <p class="new-course-subtitle">
+                        Son girişinizden sonra sisteme eklenen eğitimleri kaçırmayın. Uygun olduğunuzda eğitime başlayabilir veya tüm kursları inceleyebilirsiniz.
+                    </p>
+                </div>
+
+                <div class="new-course-body">
+                    <div class="new-course-feature">
+                        <img class="new-course-cover" src="@courseCover(firstCourse)" alt="@firstCourse.CourseTitle" onerror="this.src='/AdminTemplate/img/landing/default-course.jpg'" />
+                        <div>
+                            <h3 class="new-course-name">@firstCourse.CourseTitle</h3>
+                            <span class="new-course-date">
+                                <i class="fas fa-calendar-alt"></i>
+                                @(firstCourse.CreatedDate.HasValue ? firstCourse.CreatedDate.Value.ToString("dd.MM.yyyy") : "Yeni eklendi")
+                            </span>
+                        </div>
+                    </div>
+
+                    @if (newCourseBriefs.Count > 1)
+                    {
+                        <div class="new-course-list" aria-label="Diğer yeni kurslar">
+                            @foreach (var course in newCourseBriefs.Skip(1))
+                            {
+                                <a class="new-course-list-item" href="@Url.Action("EnrollAndGo", "Course", new { id = course.CourseId })">
+                                    <img src="@courseCover(course)" alt="@course.CourseTitle" onerror="this.src='/AdminTemplate/img/landing/default-course.jpg'" />
+                                    <div>
+                                        <div class="new-course-list-title">@course.CourseTitle</div>
+                                        <div class="new-course-list-date">@(course.CreatedDate.HasValue ? course.CreatedDate.Value.ToString("dd.MM.yyyy") : "Yeni eklendi")</div>
+                                    </div>
+                                    <i class="fas fa-chevron-right text-muted"></i>
+                                </a>
+                            }
+                        </div>
+                    }
+                </div>
+
+                <div class="new-course-actions">
+                    <button type="button" class="btn btn-light new-course-secondary" data-dismiss="modal">
+                        <i class="fas fa-clock"></i> Daha Sonra
+                    </button>
+                    <div>
+                        <a href="@Url.Action("StudentIndex", "Course")" class="btn btn-outline-primary new-course-secondary mr-2">
+                            Tüm Kurslar
+                        </a>
+                        <a href="@Url.Action("EnrollAndGo", "Course", new { id = firstCourse.CourseId })" class="btn new-course-primary">
+                            Kursa Git <i class="fas fa-arrow-right ml-1"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+
+@if (unreadCount > 0)
+{
+    <div class="modal fade" id="unreadMessageModal" tabindex="-1"
+         role="dialog"
+         aria-labelledby="unreadMessageModalLabel"
+         aria-hidden="true"
+         data-backdrop="static"
+         data-keyboard="false">
+
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+
+                <div class="modal-header bg-warning text-white">
+                    <h5 class="modal-title" id="unreadMessageModalLabel">
+                        <i class="fas fa-envelope"></i> Yeni Mesajınız Var!
+                    </h5>
+                </div>
+
+                <div class="modal-body text-center">
+                    <i class="fas fa-envelope fa-4x text-warning mb-3"></i>
+                    <h4>@unreadCount adet okunmamış mesajınız bulunmaktadır.</h4>
+                    <p class="text-muted">Mesajlarınızı kontrol etmek ister misiniz?</p>
+                </div>
+
+                <div class="modal-footer justify-content-center">
+                    <a href="@Url.Action("Inbox", "Mesaj")"
+                       class="btn btn-primary btn-lg">
+                        <i class="fas fa-inbox"></i> Mesajlara Git
+                    </a>
+
+                    <button type="button"
+                            class="btn btn-secondary btn-lg"
+                            data-dismiss="modal"
+                            onclick="sessionStorage.setItem('unreadModalClosed','1')">
+                        <i class="fas fa-times"></i> Kapat
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+}
+@section Scripts {
+    <div id="home-config"
+         data-chart-url="@Url.Action("ChartData", "Grafik")"
+         data-harc-per-gun="@harcPerGunValue"
+         data-history-labels='@Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.HistoryChartLabels ?? new List<string>()))'
+         data-history-data='@Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.HistoryChart ?? new List<int>()))'
+         data-force-unread-modal="@((ViewBag.ForceUnreadModal != null && (bool)ViewBag.ForceUnreadModal == true).ToString().ToLowerInvariant())"
+         data-has-new-courses="@(newCourseBriefs.Any().ToString().ToLowerInvariant())"
+         data-new-course-key="@newCourseModalKey"
+         style="display:none;"></div>
+    <script src="@Url.Content("~/AdminTemplate/js/plugins/chartJs/Chart.min.js")"></script>
+    <script src="@Url.Content("~/js/home-index.js")?v=@DateTime.Now.Ticks"></script>
+}

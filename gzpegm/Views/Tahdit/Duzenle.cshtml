@@ -1,0 +1,72 @@
+@model gzpegm.Models.TahditKod
+@{
+    ViewBag.Title = "Tahdit Kodu Düzenle";
+    Layout = "~/Views/Shared/_Master.cshtml";
+    ViewBag.UseSummernote = true;
+}
+
+<div class="page-wrapper">
+    <div class="container-fluid p-0">
+        <div class="page-heading mb-4">
+            <h2 class="page-title"><i class="fas fa-edit me-2"></i>Tahdit Kodu Düzenle</h2>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                @using (Html.BeginForm("Duzenle", "Tahdit", FormMethod.Post, new { enctype = "multipart/form-data" }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.HiddenFor(m => m.Id)
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Kod <span class="text-danger">*</span></label>
+                            <input name="Kod" id="Edit_Kod" class="form-control" value="@((Model != null) ? Model.Kod : "")" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Açıklama</label>
+                            <textarea name="Aciklama" id="Edit_Aciklama" class="form-control" rows="3">@((Model != null) ? Model.Aciklama : "")</textarea>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Durum</label>
+                            <div class="form-check form-switch" style="margin-top: 10px;">
+                                <input type="hidden" name="Aktif" id="Edit_Aktif_Hidden" value="@((Model != null && Model.Aktif) ? "true" : "false")" />
+                                <input type="checkbox" class="form-check-input" id="Edit_Aktif" style="width:50px;height:25px;cursor:pointer;" @(Model != null && Model.Aktif ? "checked" : "") />
+                                <label class="form-check-label" for="Edit_Aktif">
+                                    <span id="Edit_AktifText">@(Model != null && Model.Aktif ? "Aktif" : "Pasif")</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Ceza Süre (Ay)</label>
+                            <input name="SureAy" id="Edit_SureAy" type="number" class="form-control" value="@((Model != null && Model.SureAy.HasValue) ? Model.SureAy.ToString() : "")" />
+                        </div>
+                        <div class="col-md-9">
+                            <label class="form-label">Girişe Gelirse</label>
+                            <textarea name="GirisGelirse" id="Edit_GirisGelirse" class="form-control" rows="3">@((Model != null) ? Model.GirisGelirse : "")</textarea>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Çıkışa Gelirse</label>
+                            <textarea name="CikisGelirse" id="Edit_CikisGelirse" class="form-control" rows="3">@((Model != null) ? Model.CikisGelirse : "")</textarea>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Tahdit İçeriği (Resim, Video, Metin)</label>
+                            <textarea name="TahditMedia" id="Edit_TahditMedia" class="form-control summernote" rows="8">@Html.Raw((Model != null) ? Model.TahditMedia : "")</textarea>
+                            <small class="text-muted">Resim eklemek için resim butonuna tıklayın, video için embed kodu kullanabilirsiniz.</small>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <a href="@Url.Action("Index","Tahdit")" class="btn btn-secondary"><i class="fas fa-times me-1"></i>İptal</a>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Kaydet</button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <div id="tahdit-editor-config" data-upload-url="@Url.Action("SummernoteUpload", "Tahdit")" style="display:none;"></div>
+    <script src="@Url.Content("~/css/Summernote/summernote-bs4.js")"></script>
+    <script src="@Url.Content("~/css/Summernote/lang/summernote-tr-TR.js")"></script>
+    <script src="@Url.Content("~/js/tahdit-editor.js")?v=1.0"></script>
+}

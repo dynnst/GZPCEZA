@@ -1,0 +1,47 @@
+@model gzpegm.Helpers.ErrorLogEntry
+
+@{
+    Layout = "~/Views/Shared/_Master.cshtml";
+    ViewBag.Title = "Hata Detayı";
+}
+
+<section class="card">
+    <header class="card-header d-flex align-items-center justify-content-between flex-wrap">
+        <div>
+            <h2 class="card-title mb-0"><i class="fas fa-bug"></i> Hata Detayı</h2>
+            <p class="card-subtitle">@Model.FileName:@Model.LineNumber</p>
+        </div>
+        <a class="btn btn-outline-secondary mt-2 mt-sm-0" href="@Url.Action("Index")">
+            <i class="fas fa-arrow-left"></i> Listeye Dön
+        </a>
+    </header>
+    <div class="card-body">
+        <div class="alert alert-danger">
+            <strong>@Model.ExceptionType</strong><br />
+            @Model.Message
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <table class="table table-sm">
+                    <tr><th>Tarih</th><td>@Model.LoggedAt.ToString("dd.MM.yyyy HH:mm:ss")</td></tr>
+                    <tr><th>Makine</th><td>@Model.MachineName</td></tr>
+                    <tr><th>Kullanıcı</th><td>@(string.IsNullOrWhiteSpace(Model.UserName) ? "-" : Model.UserName)</td></tr>
+                    <tr><th>IP</th><td>@Model.IpAddress</td></tr>
+                    <tr><th>Metot</th><td>@Model.HttpMethod</td></tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <table class="table table-sm">
+                    <tr><th>Path</th><td>@Model.Path</td></tr>
+                    <tr><th>URL</th><td style="word-break:break-all;">@Model.Url</td></tr>
+                    <tr><th>Referrer</th><td style="word-break:break-all;">@Model.Referrer</td></tr>
+                    <tr><th>User Agent</th><td style="word-break:break-all;">@Model.UserAgent</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <h4 class="mt-4">Stack Trace</h4>
+        <pre class="p-3 bg-light border" style="white-space:pre-wrap; max-height:650px; overflow:auto;">@Model.Detail</pre>
+    </div>
+</section>

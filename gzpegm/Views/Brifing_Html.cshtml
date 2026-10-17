@@ -1,0 +1,609 @@
+@{
+    ViewBag.UseSummernote = true;
+}
+<!doctype html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <title>Ceza Projesi – Eğitim ve Tanıtım Brifingi</title>
+    <style>
+        body {
+            font-family: Calibri, Arial, sans-serif;
+            line-height: 1.5;
+            color: #222;
+            margin: 24px;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 12px;
+        }
+
+        h2 {
+            font-size: 20px;
+            margin-top: 22px;
+            margin-bottom: 8px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 4px;
+        }
+
+        h3 {
+            font-size: 16px;
+            margin-top: 16px;
+            margin-bottom: 6px;
+        }
+
+        p, li {
+            font-size: 13pt;
+            color: #111;
+        }
+
+        .muted {
+            color: #555;
+        }
+
+        .section {
+            margin-bottom: 18px;
+        }
+
+        ul, ol {
+            margin-top: 4px;
+            margin-bottom: 8px;
+        }
+
+            ul ul, ol ul {
+                margin-top: 0;
+                margin-bottom: 0;
+            }
+
+        code {
+            font-family: Consolas, monospace;
+            font-size: 11pt;
+            background: #f5f5f5;
+            padding: 1px 3px;
+            border-radius: 3px;
+        }
+
+        .tag {
+            display: inline-block;
+            background: #eef3ff;
+            border: 1px solid #ccd7ff;
+            border-radius: 10px;
+            padding: 2px 8px;
+            margin-right: 4px;
+            margin-bottom: 4px;
+            font-size: 11pt;
+        }
+
+        hr {
+            margin: 22px 0;
+            border: 0;
+            border-top: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Ceza Projesi – Eğitim ve Tanıtım Brifingi</h1>
+    <p class="muted">
+        Bu brifing dokümanı, Ceza Projesi kapsamındaki modülleri (Ceza Hesaplama, Kurs/Eğitim Platformu,
+        İNAD Projesi ve Terimler Sözlüğü) eğitim amaçlı olarak tanıtmak için hazırlanmıştır.
+        Her bölüm, hem iş tarafını (kullanım senaryoları) hem de teknik yapıyı özetler.
+    </p>
+
+    <hr />
+
+    <!-- 1. CEZA HESAPLAMA MODÜLÜ -->
+
+    <h2>1. Ceza Hesaplama Modülü (gzpegm)</h2>
+
+    <div class="section">
+        <h3>1.1. Amaç ve Kapsam</h3>
+        <ul>
+            <li>
+                Yabancıların ülkeye giriş–çıkış tarihleri, ülke, pasaport ve vize bilgilerinden hareketle
+                <strong>cezalı kalış süresini</strong> (gün/ay) doğru ve tutarlı biçimde hesaplamak.
+            </li>
+            <li>
+                Bu süreye bağlı olarak:
+                <ul>
+                    <li><strong>Cezalı ikamet harcı</strong></li>
+                    <li><strong>Vize harcı</strong></li>
+                    <li><strong>Defter harcı</strong></li>
+                    <li><strong>İdari para cezası</strong></li>
+                </ul>
+                gibi kalemleri otomatik bulmak.
+            </li>
+            <li>Uygun <strong>tahdit kodlarını</strong> üretmek ve resmi çıktı (form/PDF) oluşturarak işlemi belgelemek.</li>
+            <li>Sınır kapısı / yabancılar biriminde görevli personelin işini hızlandırmak, hataları minimize etmek.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h3>1.2. Mimari ve Bileşenler</h3>
+        <p><strong>Teknoloji Yığını:</strong> ASP.NET MVC (C#), Razor cshtml, jQuery/JavaScript, Entity Framework.</p>
+        <ul>
+            <li>
+                <strong>Controller katmanı</strong>
+                <ul>
+                    <li>
+                        <code>AjaxController</code>:
+                        <ul>
+                            <li><code>/Calculate1</code> – Cezalı gün/ay hesaplama</li>
+                            <li><code>/Calculate2</code> – Para cezası ve harç hesapları</li>
+                            <li><code>/Kodgetir</code> – Tahdit kodu bulma</li>
+                            <li><code>/addhistory</code> – Hesaplama geçmişi kaydı</li>
+                            <li><code>/getanons</code> – Duyuru/anons çekme</li>
+                        </ul>
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <strong>View (UI) katmanı</strong>
+                <ul>
+                    <li>
+                        <code>Views/Calculate/Index.cshtml</code> – Ceza Hesaplama ekranı:
+                        çoklu giriş–çıkış, pasaport/ülke/vize seçimi, cezalı süre ve para cezası
+                        görünümü, tahdit seçimi, form oluşturma.
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <strong>İstemci (JavaScript) katmanı</strong>
+                <ul>
+                    <li>
+                        <code>js/custom.js</code>:
+                        tarih farkları, çoklu satır yönetimi, form doğrulama, AJAX çağrıları
+                        (<code>hesapla1</code>, <code>hesapla2</code>, <code>tahdit1</code>, <code>hesapla3</code>), özel ülke/vize mantıkları.
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <strong>Veritabanı</strong>
+                <ul>
+                    <li>
+                        <code>Model1.edmx</code> ve ilgili tablolarda:
+                        <ul>
+                            <li>Ülke–vize rejimleri (UVR)</li>
+                            <li>Ülke grupları ve ceza parametreleri (AUH vb.)</li>
+                            <li>Döviz kurları</li>
+                            <li>Tahdit kodları</li>
+                            <li>Hesaplama geçmişleri</li>
+                        </ul>
+                    </li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h3>1.3. Kullanıcı Akışı (Özet)</h3>
+        <ol>
+            <li>Görevli, son giriş–çıkış tarihlerini ve gerekiyorsa önceki giriş–çıkış satırlarını girer.</li>
+            <li>
+                Pasaport türü, ülke ve vize tipini seçer. Vize tipine göre gerekirse ek tarih (<code>testarihi</code>) veya
+                vize süresi (<code>Visaday</code>) istenir.
+            </li>
+            <li>
+                <strong>İlk aşama:</strong> <code>hesapla1</code> ile
+                <ul>
+                    <li>Kanuni kalış süresi</li>
+                    <li>Tek sefer ve toplam limitler</li>
+                    <li>Cezalı süre (ay/gün)</li>
+                    <li>Çıkması gereken tarih</li>
+                </ul>
+                hesaplanır.
+            </li>
+            <li>
+                <strong>İkinci aşama:</strong> Doğum tarihine göre kişi tipinin (çocuk / yetişkin) otomatik belirlenmesi,
+                ardından <code>hesapla2</code> ile:
+                <ul>
+                    <li>Cezalı ikamet harcı</li>
+                    <li>Vize harcı</li>
+                    <li>Defter harcı</li>
+                    <li>İdari para cezası</li>
+                    <li>Toplam TL tutarı</li>
+                </ul>
+                hesaplanır ve gösterilir.
+            </li>
+            <li>
+                <strong>Üçüncü aşama:</strong> Ödeme/Tahdit tipi seçilir (<code>tahdit1</code>), uygun tahdit kodu ve
+                idari tahdit kodu üretilir.
+            </li>
+            <li>
+                <strong>Dördüncü aşama:</strong> Kişisel bilgiler tamamlanarak <code>Form Oluştur</code> ile resmi form/PDF
+                üretilir.
+            </li>
+        </ol>
+    </div>
+
+    <div class="section">
+        <h3>1.4. Özel Kurallar Örneği: Beyaz Rusya ve Vize Tipleri</h3>
+        <ul>
+            <li>
+                <strong>Beyaz Rusya kuralı:</strong>
+                <ul>
+                    <li>Bir seferde en fazla 30 gün.</li>
+                    <li>365 günde toplam 90 gün.</li>
+                    <li>Cezalı gün = sefer bazlı aşım ile yıllık toplam aşımın büyük olanı.</li>
+                </ul>
+            </li>
+            <li>
+                <strong>Vize tiplerine göre davranış:</strong>
+                <ul>
+                    <li>V=3: Vize süresi (<code>Visaday</code>) kullanıcıdan istenir.</li>
+                    <li>V=4, 10, 12, 13, 14, 15: <code>testarihi</code> zorunlu; hesaplama bu tarihe göre yapılır.</li>
+                    <li>Günübirlik (Ctype=4): Her sefer otomatik 1 gün kabul edilir.</li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h3>1.5. Güvenlik ve Kayıt</h3>
+        <ul>
+            <li>
+                Kullanıcı, <code>Token</code> çerezi üzerinden tespit edilir, token içindeki <code>fldUserId</code>
+                değeriyle kullanıcı veritabanından çekilir.
+            </li>
+            <li>Her hesaplama, kullanıcı adı–soyadı, sınır kapısı ve ülke bilgileri ile geçmiş tablosuna işlenir.</li>
+            <li>
+                Önerilen ek önlemler:
+                <ul>
+                    <li>Tüm POST isteklerinde Anti-Forgery Token kullanımı.</li>
+                    <li>Sadece HTTPS erişimi, HSTS, uygun CORS.</li>
+                    <li>Merkezi loglama ve hata yakalama mekanizmaları.</li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+
+    <hr />
+
+    <!-- 2. KURS / EĞİTİM PLATFORMU -->
+
+    <h2>2. Kurs / Eğitim Platformu (Course Modülü)</h2>
+
+    <div class="section">
+        <h3>2.1. Amaç ve Hedefler</h3>
+        <ul>
+            <li>Kurumsal personelin çevrim içi kurslar üzerinden <strong>sistemli eğitim almasını</strong> sağlamak.</li>
+            <li>Eğitmenlere ders ve içerik oluşturabilecekleri bir <strong>eğitim alanı</strong> sunmak.</li>
+            <li>Yöneticilere kurs kayıtları, ilerleme ve sınav sonuçları hakkında <strong>görülebilirlik</strong> sağlamak.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h3>2.2. Mimari ve Rollere Göre Eğitim Alanları</h3>
+        <ul>
+            <li>
+                <strong>Controller:</strong> <code>CourseController</code>
+                <ul>
+                    <li><code>Index</code> – Admin/Teacher için kurs yönetim ekranı.</li>
+                    <li><code>StudentIndex</code> – Öğrenci paneli: tüm kurslar + kayıtlı kurslar.</li>
+                    <li><code>InstructorCourses</code> – Belirli eğitmenin kurslarını gösterir.</li>
+                    <li><code>Details</code> – Kurs detayları, içerikler, sınavlar.</li>
+                    <li><code>Enroll</code>, <code>Enrollments</code> – Kayıt ve kayıt listeleri.</li>
+                    <li>
+                        İçerik yönetimi: <code>CreateContent</code>, <code>EditContent</code>, <code>DeleteContent</code>,
+                        <code>ContentDetail</code>.
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <strong>View’ler:</strong>
+                <ul>
+                    <li><code>Course/Index</code> – Yönetim (Admin/Teacher) kurs listesi ve modalları.</li>
+                    <li><code>Course/StudentIndex</code> – Öğrenci kurs vitrini ve kayıtlı kurslar alanı.</li>
+                    <li><code>Course/InstructorCourses</code> – Eğitmenin herkese açık kurs listesi.</li>
+                    <li><code>Course/ContentDetail</code> – Tekil içerik sayfası, ilişkili sınavlar.</li>
+                </ul>
+            </li>
+            <li>
+                <strong>Rollere göre eğitim alanları:</strong>
+                <ul>
+                    <li><strong>Öğrenci:</strong> Kurs bulma, kayıt olma, içerik ve sınavlara erişim.</li>
+                    <li><strong>Eğitmen:</strong> Kurs oluşturma, içerik ekleme, öğrencileri ve sınavları yönetme.</li>
+                    <li><strong>Yönetici:</strong> Tüm kursları, kayıtları, yorumları ve sınavları yönetme.</li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h3>2.3. Öğrenci Eğitim Alanı (StudentIndex)</h3>
+        <ul>
+            <li>
+                <strong>Kurs listesi:</strong>
+                <ul>
+                    <li>Kapak görseli, başlık, kategori, kısa açıklama.</li>
+                    <li>Arama kutusu (kurs adına göre), kategori filtresi.</li>
+                </ul>
+            </li>
+            <li>
+                <strong>Eylemler:</strong>
+                <ul>
+                    <li>Kursa kayıt olmamışsa: <strong>Kayıt Ol</strong>.</li>
+                    <li>Kayıtlıysa: <strong>Derse Git</strong> ve kayıtlı kurslar alanında listelenir.</li>
+                </ul>
+            </li>
+            <li><strong>Pekiştirme:</strong> Öğrenci, kayıtlı olduğu kurslar alanından kaldığı yerden devam edebilir.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h3>2.4. Eğitmen Eğitim Alanı (Kurs Yönetimi)</h3>
+        <ul>
+            <li>
+                <strong>Kurs listesi (Index):</strong>
+                <ul>
+                    <li>Ders adı, kategori, oluşturan, tarih, durum (aktif/pasif).</li>
+                    <li>Kurs içerikleri butonu, düzenleme, silme ve kayıtlı öğrenciler butonları.</li>
+                </ul>
+            </li>
+            <li>
+                <strong>Yeni kurs oluşturma modali:</strong>
+                <ul>
+                    <li>Ders başlığı, açıklaması, kategori seçimi.</li>
+                    <li>Kapak görseli yükleme.</li>
+                    <li>Summernote ile zengin içerik alanı (<code>ResourceHtml</code>) – eğitim metni, görseller.</li>
+                </ul>
+            </li>
+            <li><strong>Kurs durumu:</strong> <code>ToggleStatus</code> ile kursu aktif/pasif yapma.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h3>2.5. Kurs İçerikleri ve Sınav Alanı</h3>
+        <ul>
+            <li>
+                <strong>İçerik yönetimi:</strong>
+                <ul>
+                    <li><code>CourseContents</code> tablosu: her kurs için çoklu içerik.</li>
+                    <li>İçerik türleri: VIDEO, IMAGE, DOCUMENT, PDF.</li>
+                    <li>Başlık, açıklama, dosya yolu, oluşturma tarihi.</li>
+                </ul>
+            </li>
+            <li>
+                <strong>Kursun sınav alanı:</strong>
+                <ul>
+                    <li>Kursa bağlı aktif sınavlar (süre, geçme notu, soru sayısı).</li>
+                    <li>Öğrencinin sınav sonuçları (varsa) gösterilir.</li>
+                </ul>
+            </li>
+            <li>
+                <strong>Geri bildirim ve değerlendirme:</strong>
+                <ul>
+                    <li>Öğrenciler kursa yorum ve puan verebilir.</li>
+                    <li>Admin, <code>PendingReviews</code> ekranında yorumları onaylar veya reddeder.</li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h3>2.6. Katılım ve Çekiliş Alanı</h3>
+        <ul>
+            <li>
+                Kursa kayıtlı öğrenciler, <code>ToggleDrawEntry</code> ile kursa özel <strong>çekilişe katılım</strong> talebi
+                oluşturabilir.
+            </li>
+            <li><code>IsDrawEntry</code> ve <code>DrawEntryDate</code> alanları, çekiliş sürecini yönetmek için kullanılır.</li>
+        </ul>
+    </div>
+
+    <hr />
+
+    <!-- 3. İNAD PROJESİ -->
+
+    <h2>3. İNAD Projesi (EInad Modülü)</h2>
+
+    <div class="section">
+        <h3>3.1. Amaç ve Kapsam</h3>
+        <ul>
+            <li>
+                Havalimanlarında <strong>kabul edilemeyen yolcu (INAD)</strong> işlemlerini standart ve eksiksiz şekilde
+                kayıt altına almak.
+            </li>
+            <li>
+                İNAD sürecinin tamamını dijitalleştirmek:
+                <ul>
+                    <li>Tespit ve kimlik tespiti</li>
+                    <li>Belge ve uçuş bilgileri</li>
+                    <li>İNAD sebepleri</li>
+                    <li>İdari bilgiler</li>
+                    <li>Çok dilli resmi formlar (Form-1, Form-2, Takip, Tutanak, Teslim Tesellüm)</li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h3>3.2. Mimari ve Güvenlik</h3>
+        <ul>
+            <li>
+                <strong>Controller:</strong> <code>EInadController</code>
+                <ul>
+                    <li><code>Index</code> – İNAD kayıt listesi.</li>
+                    <li><code>GetInad</code> – JSON ile tek kayıt getir.</li>
+                    <li><code>AddInad</code>, <code>EditInad</code>, <code>DeleteInad</code> – CRUD işlemleri.</li>
+                    <li><code>PrintForm1–5</code> – Çok dilli form yazdırma.</li>
+                    <li>
+                        Havayolu yardım fonksiyonları: <code>GetEuropeanAirlines</code>, <code>GetByIataCode</code>,
+                        <code>AddUserDefinedAirline</code>.
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <strong>View:</strong> <code>Views/EInad/Index.cshtml</code>
+                <ul>
+                    <li>DataTable ile liste ve yazdırma/düzenleme/silme butonları.</li>
+                    <li>Geniş modalli, çok sekmeli (accordion) kayıt formu.</li>
+                </ul>
+            </li>
+            <li><strong>Model:</strong> <code>E_Inad</code> + <code>E_Inad.Partial</code></li>
+            <li>
+                <strong>Yetki mantığı:</strong>
+                <ul>
+                    <li>Admin → tüm kayıtları görür ve değiştirebilir.</li>
+                    <li>
+                        Diğer personel → yalnızca kendi <strong>siciline</strong> ait kayıtları görebilir/düzenleyebilir
+                        (<code>HasAccessToRecord</code>).
+                    </li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h3>3.3. Kayıt Formunun Bölümleri</h3>
+        <ol>
+            <li>
+                <strong>Kimlik Bilgileri</strong>
+                <ul>
+                    <li>Tarih/Saat, Ad Soyad, Doğum Tarihi, Doğum Yeri, Cinsiyet, Uyruk.</li>
+                </ul>
+            </li>
+            <li>
+                <strong>Belge Bilgileri</strong>
+                <ul>
+                    <li>Pasaport No (zorunlu), Kimlik No, Pasaport Türü (pasaport türleri listesi), Beyan türü.</li>
+                </ul>
+            </li>
+            <li>
+                <strong>İNAD Bilgileri</strong>
+                <ul>
+                    <li>Çoklu seçilebilir İNAD sebepleri (geçerli seyahat belgesi yok, giriş yasağı, sahte pasaport, 180/90 ihlali vb.).</li>
+                </ul>
+            </li>
+            <li>
+                <strong>Uçuş &amp; İşlem Bilgileri</strong>
+                <ul>
+                    <li>Gelen/giden uçuş numarası, havayolu adı (datalist + otomatik IATA çözümü), geldiği/gittiği yer ve tarih/saat.</li>
+                    <li>Üst arama ve eşya bilgileri, ilgili personel bilgisi.</li>
+                    <li>Uçağa nakil seçenekleri (eşyaların teslimi, refakat gerekliliği).</li>
+                </ul>
+            </li>
+            <li>
+                <strong>İdari Bilgiler</strong>
+                <ul>
+                    <li>Kapı (hudut kapısı), tespit eden personel sicili, hudut kapısının bulunduğu il.</li>
+                    <li>Yolcunun durumu (inad odasına alındı, inad edildi), özel güvenlik, yer hizmetleri, refakat.</li>
+                </ul>
+            </li>
+        </ol>
+    </div>
+
+    <div class="section">
+        <h3>3.4. Uçuş ve Havayolu Yardımcıları</h3>
+        <ul>
+            <li>Avrupa merkezli havayolları listesi <code>GetEuropeanAirlines</code> ile datalist’e yüklenir.</li>
+            <li>
+                Uçuş numarasının ilk 2 karakteri üzerinden IATA kodu otomatik ayrıştırılır, havayolu adı bulunmaya çalışılır
+                (<code>GetByIataCode</code>).
+            </li>
+            <li>
+                Sistemde bulunmayan havayolları, kullanıcı girişiyle <strong>Airline</strong> tablosuna eklenebilir
+                (<code>AddUserDefinedAirline</code> ve <code>EnsureAirlineExists</code>).
+            </li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h3>3.5. Çok Dilli Form Üretimi</h3>
+        <ul>
+            <li>
+                <strong>Form-1 (Bilgi Formu):</strong>
+                <ul>
+                    <li>
+                        Uyruk bilgisine göre form dili otomatik belirlenir
+                        (<code>InadHelpers.GetFormLanguageByCountry</code>).
+                    </li>
+                    <li>
+                        View yolu: <code>PrintTemplates/Form1_{DilKodu}</code> (ör. <code>Form1_Ingilizce</code>,
+                        <code>Form1_Almanca</code> vb.).
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <strong>Form-2 (Kabul Edilemez Yolcu Formu):</strong> İngilizce form
+                (<code>PrintTemplates/Form2_Ingilizce</code>).
+            </li>
+            <li><strong>Form-3, 4, 5:</strong> Takip Formu, Tutanak, Teslim Tesellüm – sabit şablonlar.</li>
+            <li>
+                <strong>Eğitim notu:</strong> Kullanıcı sadece form alanlarını doğru doldurur; dil ve şablon seçimi sistem
+                tarafından otomatik yapılır.
+            </li>
+        </ul>
+    </div>
+
+    <hr />
+
+    <!-- 4. TERİMLER SÖZLÜĞÜ -->
+
+    <h2>4. Terimler Sözlüğü</h2>
+
+    <div class="section">
+        <h3>4.1. Terimler Sözlüğü (DocumentTerms) – Amaç ve Yapı</h3>
+        <ul>
+            <li>
+                Kurumsal belgelerde ve uygulamalarda geçen tüm kavram, kısaltma ve terimleri
+                <strong>standart tanımlarla</strong> toplamak.
+            </li>
+            <li>
+                <strong>Controller:</strong> <code>DocumentTermsController</code>
+                <ul>
+                    <li><code>Index</code> – Yönetim listesi ve arama.</li>
+                    <li><code>Create</code>, <code>Edit</code>, <code>Delete</code> – Terim yönetimi.</li>
+                    <li><code>AddCategory</code>, <code>GetCategories</code> – Kategori yönetimi.</li>
+                    <li><code>UploadImage</code> – Sözlük terimlerine görsel yükleme.</li>
+                </ul>
+            </li>
+            <li>
+                <strong>Model:</strong> <code>DocumentTerms</code>
+                <ul>
+                    <li>Term (terim), Slug, Category.</li>
+                    <li>Definition (kısa tanım), DetailedDescription (detaylı açıklama).</li>
+                    <li>RelatedTerms, ImageUrl, IsActive, CreatedAt/UpdatedAt.</li>
+                    <li>AdSoyad, Sicil – terimi ekleyen kişi bilgisi.</li>
+                </ul>
+            </li>
+            <li>
+                <strong>Kullanıcı yetkisi:</strong>
+                <ul>
+                    <li>Admin → tüm terimleri görür.</li>
+                    <li>Diğer kullanıcılar → sadece kendi siciline ait terimleri görür.</li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h3>4.2. Terimler Sözlüğü Kullanımı ve Entegrasyon</h3>
+        <ul>
+            <li>
+                Yönetim tarafında:
+                <ul>
+                    <li>Yeni terim eklenirken kategori seçilir veya yeni kategori oluşturulur.</li>
+                    <li>Gerekirse eğitim amaçlı resimler (şema, ekran görüntüsü) yüklenir.</li>
+                </ul>
+            </li>
+            <li>
+                Kullanıcı/yayın tarafında:
+                <ul>
+                    <li>Terimler liste halinde veya kategori/slug üzerinden sunulur.</li>
+                    <li>Her terim detay sayfasında tanım, açıklama, ilgili terimler ve görsel gösterilir.</li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+
+    <hr />
+
+    <p class="muted">
+        Not: Bu HTML dokümanı, Word veya benzeri bir editöre yapıştırılarak kurum içi eğitim
+        brifingi olarak düzenlenebilir ve PDF’e dönüştürülebilir.
+    </p>
+
+</body>
+</html>

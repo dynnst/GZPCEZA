@@ -1,0 +1,383 @@
+@model gzpegm.Controllers.EducationQualityReportViewModel
+
+@{
+    Layout = "~/Views/Shared/_Master.cshtml";
+    ViewBag.Title = "Eğitim Paketi Kalite Kontrol Raporu";
+    ViewBag.UseDataTables = true;
+}
+
+<style>
+    .eq-hero {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: #ffffff;
+        border-radius: 12px;
+        padding: 24px 28px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 16px rgba(30, 60, 114, 0.12);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+    .eq-hero h1 {
+        font-size: 20px;
+        font-weight: 700;
+        margin: 0;
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .eq-stat-card {
+        background: #ffffff;
+        border-radius: 12px;
+        padding: 20px 22px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        height: 100%;
+    }
+    .eq-stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 18px rgba(30, 60, 114, 0.1);
+    }
+    .eq-stat-info .eq-stat-label {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #64748b;
+        margin-bottom: 4px;
+    }
+    .eq-stat-info .eq-stat-value {
+        font-size: 26px;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1.1;
+    }
+    .eq-stat-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+    }
+    .icon-navy { background: #e0e7ff; color: #3730a3; }
+    .icon-emerald { background: #d1fae5; color: #065f46; }
+    .icon-blue { background: #dbeafe; color: #1d4ed8; }
+    .icon-rose { background: #ffe4e6; color: #be123c; }
+
+    .eq-table-card {
+        background: #ffffff;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+        overflow: hidden;
+    }
+    .eq-table th {
+        background: #f8fafc;
+        color: #475569;
+        font-weight: 700;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-top: none !important;
+        padding: 12px 14px;
+    }
+    .eq-table td {
+        padding: 12px 14px;
+        vertical-align: middle !important;
+        font-size: 13px;
+    }
+    .issue-pill {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        margin-right: 4px;
+        margin-bottom: 4px;
+    }
+    .issue-pill-error {
+        background: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+    }
+    .issue-pill-warning {
+        background: #fef3c7;
+        color: #92400e;
+        border: 1px solid #fde68a;
+    }
+    .filter-btn-group .btn {
+        font-size: 13px;
+        font-weight: 600;
+        padding: 6px 14px;
+        border-radius: 6px;
+    }
+</style>
+
+<!-- Hero Başlık -->
+<div class="eq-hero">
+    <div>
+        <h1><i class="fas fa-clipboard-check"></i> Eğitim Paketi Kalite Kontrol Raporu</h1>
+        <small style="color: rgba(255,255,255,0.85); font-size: 13px;">
+            Kurs, içerik modülleri, sınavlar, sorular, şıklar, medya ve Türkçe karakter bütünlüğü otomatik denetim sonuçları.
+        </small>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <a href="@Url.Action("Index", "EducationPackage")" class="btn btn-outline-light btn-sm mr-1">
+            <i class="fas fa-boxes mr-1"></i> Paket Merkezi
+        </a>
+        <a href="@Url.Action("Index")" class="btn btn-light btn-sm font-weight-bold" style="color: #1e3c72;">
+            <i class="fas fa-sync-alt mr-1"></i> Raporu Yenile
+        </a>
+    </div>
+</div>
+
+<!-- 4 Metrik Kartı -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="eq-stat-card">
+            <div class="eq-stat-info">
+                <div class="eq-stat-label">Toplam Eğitim</div>
+                <div class="eq-stat-value">@Model.TotalCourses</div>
+                <small class="text-success font-weight-bold"><i class="fas fa-check-circle mr-1"></i>@Model.PublishedCourses Yayında</small>
+            </div>
+            <div class="eq-stat-icon icon-navy">
+                <i class="fas fa-graduation-cap"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="eq-stat-card">
+            <div class="eq-stat-info">
+                <div class="eq-stat-label">İçerik & Sınav</div>
+                <div class="eq-stat-value">@Model.TotalContents</div>
+                <small class="text-muted font-weight-bold">@Model.TotalExams Bağlı Sınav</small>
+            </div>
+            <div class="eq-stat-icon icon-emerald">
+                <i class="fas fa-folder-open"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="eq-stat-card">
+            <div class="eq-stat-info">
+                <div class="eq-stat-label">Toplam Soru</div>
+                <div class="eq-stat-value">@Model.TotalQuestions</div>
+                <small class="text-muted font-weight-bold">Tüm sınavlarda</small>
+            </div>
+            <div class="eq-stat-icon icon-blue">
+                <i class="fas fa-question-circle"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="eq-stat-card">
+            <div class="eq-stat-info">
+                <div class="eq-stat-label">Hata & Uyarı Durumu</div>
+                <div class="eq-stat-value">
+                    <span class="text-danger">@Model.TotalErrors</span> <small class="text-muted">/</small> <span class="text-warning">@Model.TotalWarnings</span>
+                </div>
+                <small class="text-muted">Rapor: @Model.GeneratedAt.ToString("dd.MM.yyyy HH:mm")</small>
+            </div>
+            <div class="eq-stat-icon icon-rose">
+                <i class="fas fa-shield-alt"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bilgi ve Hızlı Filtre Barı -->
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div class="alert alert-info py-2 px-3 mb-0 small border-0 shadow-sm rounded-lg d-flex align-items-center">
+        <i class="fas fa-info-circle mr-2 fa-lg text-info"></i>
+        <span><strong>Kural:</strong> Kırmızı <strong>Hata</strong> içeren kurslar yayın öncesi mutlaka düzeltilmelidir. Sarı <strong>Uyarılar</strong> yayını engellemez.</span>
+    </div>
+    <div class="btn-group filter-btn-group shadow-sm" role="group">
+        <button type="button" class="btn btn-outline-primary active" id="btnFilterAll">Tümü (@Model.TotalCourses)</button>
+        <button type="button" class="btn btn-outline-danger" id="btnFilterErrors">Hatalı Olanlar (@Model.Courses.Count(x => x.ErrorCount > 0))</button>
+        <button type="button" class="btn btn-outline-success" id="btnFilterActive">Yayında (@Model.PublishedCourses)</button>
+        <button type="button" class="btn btn-outline-warning" id="btnFilterDrafts">Taslak (@Model.Courses.Count(x => !x.IsActive))</button>
+    </div>
+</div>
+
+<!-- Kurs Bazlı Kontrol Tablosu -->
+<div class="eq-table-card mb-4">
+    <div class="table-responsive">
+        <table id="educationQualityTable" class="table table-hover eq-table mb-0">
+            <thead>
+                <tr>
+                    <th style="width: 240px;">Kurs Adı</th>
+                    <th style="width: 90px;" class="text-center">Durum</th>
+                    <th style="width: 65px;" class="text-center">İçerik</th>
+                    <th style="width: 65px;" class="text-center">Sınav</th>
+                    <th style="width: 65px;" class="text-center">Soru</th>
+                    <th style="width: 65px;" class="text-center">Medya</th>
+                    <th style="width: 70px;" class="text-center">Hata</th>
+                    <th style="width: 70px;" class="text-center">Uyarı</th>
+                    <th>Tespit Edilen Sorunlar & Düzeltme</th>
+                    <th style="width: 110px;" class="text-center">İncele</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var course in Model.Courses)
+                {
+                    <tr data-has-errors="@(course.ErrorCount > 0 ? "true" : "false")"
+                        data-is-active="@(course.IsActive ? "true" : "false")">
+                        <td>
+                            <strong class="text-dark">@course.CourseTitle</strong>
+                            <div class="small text-muted">
+                                Kurs #@course.CourseId &bull; @(course.CreatedDate.HasValue ? course.CreatedDate.Value.ToString("dd.MM.yyyy") : "-")
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge @(course.IsActive ? "badge-success" : "badge-warning") px-2 py-1">
+                                @(course.IsActive ? "Yayında" : "Taslak")
+                            </span>
+                        </td>
+                        <td class="text-center font-weight-bold">@course.ContentCount</td>
+                        <td class="text-center font-weight-bold">@course.ExamCount</td>
+                        <td class="text-center font-weight-bold">@course.QuestionCount</td>
+                        <td class="text-center font-weight-bold">@course.MediaCount</td>
+                        <td class="text-center">
+                            @if (course.ErrorCount > 0)
+                            {
+                                <span class="badge badge-danger px-2 py-1 font-weight-bold">@course.ErrorCount</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-light border text-muted">0</span>
+                            }
+                        </td>
+                        <td class="text-center">
+                            @if (course.WarningCount > 0)
+                            {
+                                <span class="badge badge-warning text-dark px-2 py-1 font-weight-bold">@course.WarningCount</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-light border text-muted">0</span>
+                            }
+                        </td>
+                        <td style="min-width: 320px;">
+                            @if (!course.Issues.Any())
+                            {
+                                <span class="text-success font-weight-bold small">
+                                    <i class="fas fa-check-circle mr-1"></i> Sorun bulunmadı (Kusursuz)
+                                </span>
+                            }
+                            else
+                            {
+                                foreach (var issue in course.Issues.Take(8))
+                                {
+                                    <div class="mb-1 d-flex align-items-center flex-wrap">
+                                        <span class="issue-pill @(issue.Severity == "Error" ? "issue-pill-error" : "issue-pill-warning")">
+                                            @(issue.Severity == "Error" ? "HATA" : "UYARI") &bull; @issue.Area
+                                        </span>
+                                        <span class="small text-dark mr-1">@issue.Message</span>
+                                        @if (!string.IsNullOrWhiteSpace(issue.EditUrl))
+                                        {
+                                            <a href="@issue.EditUrl" class="badge badge-light border text-primary small" target="_blank">
+                                                <i class="fas fa-wrench mr-1"></i>Düzelt
+                                            </a>
+                                        }
+                                    </div>
+                                }
+                                if (course.Issues.Count > 8)
+                                {
+                                    <div class="small text-muted font-weight-bold mt-1">
+                                        + @(course.Issues.Count - 8) ek tespit daha...
+                                    </div>
+                                }
+                            }
+                        </td>
+                        <td class="text-center">
+                            <a href="@Url.Action("Review", "EducationPackage", new { id = course.CourseId })"
+                               class="btn btn-sm btn-outline-primary font-weight-bold" title="Detaylı Denetim & Yayın Paneli">
+                                <i class="fas fa-search mr-1"></i>İncele
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(function () {
+            var table = null;
+            if ($.fn.DataTable) {
+                table = $('#educationQualityTable').DataTable({
+                    pageLength: 25,
+                    order: [[6, 'desc'], [7, 'desc']], // En çok hata ve uyarı olan kurslar en üstte
+                    language: {
+                        search: 'Kurs veya sorun ara:',
+                        lengthMenu: 'Sayfada _MENU_ kayıt',
+                        info: '_TOTAL_ kayıttan _START_ - _END_ arası',
+                        infoEmpty: 'Kayıt bulunamadı',
+                        zeroRecords: 'Aramanıza uygun eğitim bulunamadı',
+                        paginate: { next: 'Sonraki', previous: 'Önceki' }
+                    }
+                });
+            }
+
+            // Hızlı filtre butonları
+            $('#btnFilterAll').on('click', function () {
+                $('.filter-btn-group .btn').removeClass('active');
+                $(this).addClass('active');
+                if (table) {
+                    $.fn.dataTable.ext.search.pop();
+                    table.draw();
+                }
+            });
+
+            $('#btnFilterErrors').on('click', function () {
+                $('.filter-btn-group .btn').removeClass('active');
+                $(this).addClass('active');
+                if (table) {
+                    $.fn.dataTable.ext.search.pop();
+                    $.fn.dataTable.ext.search.push(function (settings, data, dataIndex, rowData, counter) {
+                        var hasErrors = $(table.row(dataIndex).node()).data('has-errors');
+                        return hasErrors === true || hasErrors === 'true';
+                    });
+                    table.draw();
+                }
+            });
+
+            $('#btnFilterActive').on('click', function () {
+                $('.filter-btn-group .btn').removeClass('active');
+                $(this).addClass('active');
+                if (table) {
+                    $.fn.dataTable.ext.search.pop();
+                    $.fn.dataTable.ext.search.push(function (settings, data, dataIndex, rowData, counter) {
+                        var isActive = $(table.row(dataIndex).node()).data('is-active');
+                        return isActive === true || isActive === 'true';
+                    });
+                    table.draw();
+                }
+            });
+
+            $('#btnFilterDrafts').on('click', function () {
+                $('.filter-btn-group .btn').removeClass('active');
+                $(this).addClass('active');
+                if (table) {
+                    $.fn.dataTable.ext.search.pop();
+                    $.fn.dataTable.ext.search.push(function (settings, data, dataIndex, rowData, counter) {
+                        var isActive = $(table.row(dataIndex).node()).data('is-active');
+                        return isActive === false || isActive === 'false';
+                    });
+                    table.draw();
+                }
+            });
+        });
+    </script>
+}

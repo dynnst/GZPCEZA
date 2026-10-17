@@ -1,0 +1,64 @@
+@model DocumentGlossary.ViewModels.DocumentTermVM
+
+@{
+    ViewBag.Title = "Yeni Terim Ekle";
+}
+
+<h2>Yeni Terim Ekle</h2>
+
+@using (Html.BeginForm("Create", "Terms", FormMethod.Post))
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true)
+
+    <div>
+        @Html.LabelFor(m => m.Term)
+        @Html.TextBoxFor(m => m.Term)
+        @Html.ValidationMessageFor(m => m.Term)
+    </div>
+
+    <div>
+        @Html.LabelFor(m => m.Category)
+        @Html.TextBoxFor(m => m.Category)
+        @Html.ValidationMessageFor(m => m.Category)
+    </div>
+
+    <div>
+        @Html.LabelFor(m => m.Definition)
+        @Html.TextAreaFor(m => m.Definition, 5, 80, null)
+        @Html.ValidationMessageFor(m => m.Definition)
+    </div>
+
+    <div>
+        @Html.LabelFor(m => m.DetailedDescription)
+        @Html.TextAreaFor(m => m.DetailedDescription, 8, 80, null)
+        @Html.ValidationMessageFor(m => m.DetailedDescription)
+    </div>
+
+    <div>
+        @Html.LabelFor(m => m.ImageUrl)
+        @Html.TextBoxFor(m => m.ImageUrl)
+        @Html.ValidationMessageFor(m => m.ImageUrl)
+    </div>
+
+    <div>
+        @Html.LabelFor(m => m.RelatedTermIdsInput)
+        @Html.TextBoxFor(m => m.RelatedTermIdsInput)
+        <small>Örnek: 1,2,5</small>
+    </div>
+
+    <div>
+        @Html.LabelFor(m => m.VerificationTips)
+        @Html.TextAreaFor(m => m.VerificationTips, 4, 80, null)
+    </div>
+
+    <div>
+        <button type="submit">Kaydet</button>
+        @Html.ActionLink("Ýptal", "Index")
+    </div>
+}
+
+@section Scripts {
+    @* jQuery validation bundle (projede varsa) *@
+    @Scripts.Render("~/bundles/jqueryval")
+}

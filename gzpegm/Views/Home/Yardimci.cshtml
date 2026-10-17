@@ -1,0 +1,1956 @@
+@{
+    ViewBag.Title = "Kullanıcı Rehberi ve İşlem Kılavuzu";
+    Layout = "~/Views/Shared/_Master.cshtml";
+}
+
+@section Styles {
+<style>
+    /* ==========================================================================
+       CEZAM Kapsamlı Kullanıcı ve İşlem Rehberi Stilleri
+       ========================================================================== */
+    .guide-wrapper {
+        padding: 10px 0 35px 0;
+        color: #243342;
+    }
+
+    /* Hero Banner */
+    .guide-hero {
+        background: linear-gradient(135deg, #0e273c 0%, #173b57 60%, #1f4e72 100%);
+        border-radius: 12px;
+        padding: 35px 30px;
+        color: #fff;
+        margin-bottom: 25px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(14, 39, 60, 0.25);
+    }
+    .guide-hero::after {
+        content: "";
+        position: absolute;
+        right: -60px;
+        bottom: -60px;
+        width: 260px;
+        height: 260px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+        pointer-events: none;
+    }
+    .guide-hero h1 {
+        font-size: 2.1rem;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    .guide-hero .hero-badge {
+        font-size: 0.78rem;
+        background: rgba(255, 193, 7, 0.22);
+        color: #ffc107;
+        border: 1px solid rgba(255, 193, 7, 0.45);
+        padding: 4px 12px;
+        border-radius: 30px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .guide-hero p {
+        font-size: 1.05rem;
+        color: #c5d7e6;
+        max-width: 850px;
+        line-height: 1.6;
+        margin-bottom: 20px;
+    }
+
+    /* Arama Barı */
+    .guide-search-box {
+        position: relative;
+        max-width: 650px;
+    }
+    .guide-search-box input {
+        width: 100%;
+        height: 50px;
+        padding: 10px 20px 10px 48px;
+        border-radius: 30px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        background: rgba(255, 255, 255, 0.95);
+        color: #1a2c3e;
+        font-size: 1rem;
+        font-weight: 600;
+        transition: all 0.25s ease;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    }
+    .guide-search-box input:focus {
+        background: #fff;
+        border-color: #38a169;
+        outline: none;
+        box-shadow: 0 6px 20px rgba(56, 161, 105, 0.25);
+    }
+    .guide-search-box i {
+        position: absolute;
+        left: 18px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #718096;
+        font-size: 1.15rem;
+    }
+
+    /* Hızlı Filtre Butonları */
+    .quick-filter-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 18px;
+    }
+    .pill-btn {
+        background: rgba(255, 255, 255, 0.12);
+        color: #e2e8f0;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 20px;
+        padding: 5px 14px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .pill-btn:hover, .pill-btn.active {
+        background: #2b6cb0;
+        color: #fff;
+        border-color: #4299e1;
+        transform: translateY(-1px);
+    }
+
+    /* Ana Layout: Sol Tab Menü + Sağ İçerik */
+    .guide-layout {
+        display: grid;
+        grid-template-columns: 280px minmax(0, 1fr);
+        gap: 24px;
+        align-items: flex-start;
+    }
+
+    /* Sol Menü */
+    .guide-nav {
+        background: #fff;
+        border-radius: 12px;
+        padding: 16px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.03);
+        position: sticky;
+        top: 20px;
+    }
+    .guide-nav-title {
+        font-size: 0.78rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: #718096;
+        margin-bottom: 12px;
+        padding-left: 8px;
+    }
+    .guide-menu {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    .guide-menu li {
+        margin-bottom: 5px;
+    }
+    .guide-menu a {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 14px;
+        border-radius: 8px;
+        color: #334e68;
+        font-size: 0.92rem;
+        font-weight: 700;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        border-left: 3px solid transparent;
+    }
+    .guide-menu a i {
+        font-size: 1.1rem;
+        width: 22px;
+        text-align: center;
+        color: #627d98;
+        transition: color 0.2s;
+    }
+    .guide-menu a:hover {
+        background: #f0f4f8;
+        color: #102a43;
+        transform: translateX(2px);
+    }
+    .guide-menu a.active {
+        background: #ebf8ff;
+        color: #2b6cb0;
+        border-left-color: #3182ce;
+    }
+    .guide-menu a.active i {
+        color: #3182ce;
+    }
+
+    /* Sağ İçerik Kartları */
+    .guide-card {
+        background: #fff;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        padding: 26px 28px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.03);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .guide-card:hover {
+        box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+    }
+    .guide-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-bottom: 16px;
+        margin-bottom: 18px;
+        border-bottom: 2px solid #edf2f7;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    .guide-card-title {
+        font-size: 1.35rem;
+        font-weight: 800;
+        color: #1a365d;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0;
+    }
+    .guide-card-title i {
+        color: #3182ce;
+        background: #ebf8ff;
+        padding: 8px;
+        border-radius: 8px;
+        font-size: 1.2rem;
+    }
+    .guide-badge-role {
+        background: #edf2f7;
+        color: #4a5568;
+        border: 1px solid #cbd5e0;
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 20px;
+    }
+
+    /* Adım Adım İşlem Akışı (Timeline / Stepper) */
+    .steps-container {
+        position: relative;
+        padding-left: 36px;
+        margin: 20px 0;
+    }
+    .steps-container::before {
+        content: "";
+        position: absolute;
+        left: 14px;
+        top: 8px;
+        bottom: 8px;
+        width: 2px;
+        background: #cbd5e0;
+    }
+    .step-item {
+        position: relative;
+        margin-bottom: 20px;
+    }
+    .step-item:last-child {
+        margin-bottom: 0;
+    }
+    .step-number {
+        position: absolute;
+        left: -36px;
+        top: 0;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: #3182ce;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 0.85rem;
+        box-shadow: 0 0 0 4px #fff, 0 2px 6px rgba(49, 130, 206, 0.4);
+    }
+    .step-content {
+        background: #f7fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 14px 18px;
+    }
+    .step-title {
+        font-size: 0.98rem;
+        font-weight: 800;
+        color: #2d3748;
+        margin-bottom: 4px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .step-desc {
+        font-size: 0.88rem;
+        color: #4a5568;
+        line-height: 1.5;
+        margin: 0;
+    }
+
+    /* Canlı Senaryo & Püf Noktası Kutusu */
+    .scenario-box {
+        background: linear-gradient(135deg, #f0fff4 0%, #e6fffa 100%);
+        border: 1px solid #b2f5ea;
+        border-left: 5px solid #38a169;
+        border-radius: 8px;
+        padding: 16px 20px;
+        margin: 18px 0;
+    }
+    .scenario-box-title {
+        font-weight: 800;
+        font-size: 0.95rem;
+        color: #22543d;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 6px;
+    }
+
+    /* Dikkat / Uyarı Kutusu */
+    .warning-box {
+        background: linear-gradient(135deg, #fffaf0 0%, #feebc8 100%);
+        border: 1px solid #fbd38d;
+        border-left: 5px solid #dd6b20;
+        border-radius: 8px;
+        padding: 16px 20px;
+        margin: 18px 0;
+    }
+    .warning-box-title {
+        font-weight: 800;
+        font-size: 0.95rem;
+        color: #7b341e;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 6px;
+    }
+
+    /* İnteraktif Simülatör Kartı */
+    .simulator-card {
+        background: #1a202c;
+        border-radius: 10px;
+        padding: 20px;
+        color: #e2e8f0;
+        margin: 18px 0;
+        box-shadow: inset 0 2px 6px rgba(0,0,0,0.4);
+    }
+    .simulator-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #2d3748;
+        padding-bottom: 10px;
+        margin-bottom: 14px;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #a0aec0;
+    }
+    .sim-tag {
+        background: #319795;
+        color: #fff;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 0.72rem;
+        font-weight: 700;
+    }
+
+    /* Canlı Animasyonlu Nabız Efekti */
+    @@keyframes pulseGlow {
+        0% { box-shadow: 0 0 0 0 rgba(49, 130, 206, 0.5); }
+        70% { box-shadow: 0 0 0 10px rgba(49, 130, 206, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(49, 130, 206, 0); }
+    }
+    .pulse-glow {
+        animation: pulseGlow 2s infinite;
+    }
+
+    /* Buton Linki */
+    .btn-guide-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: #3182ce;
+        color: #fff !important;
+        font-weight: 700;
+        font-size: 0.88rem;
+        padding: 8px 18px;
+        border-radius: 6px;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+    .btn-guide-action:hover {
+        background: #2b6cb0;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(49, 130, 206, 0.3);
+    }
+
+    /* SSS Akordeon */
+    .faq-item {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        overflow: hidden;
+        background: #fff;
+    }
+    .faq-question {
+        padding: 14px 18px;
+        font-weight: 700;
+        color: #2d3748;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #f7fafc;
+        transition: background 0.2s;
+    }
+    .faq-question:hover {
+        background: #edf2f7;
+    }
+    .faq-answer {
+        padding: 16px 18px;
+        font-size: 0.9rem;
+        color: #4a5568;
+        line-height: 1.55;
+        border-top: 1px solid #e2e8f0;
+        display: none;
+    }
+    .faq-item.open .faq-answer {
+        display: block;
+    }
+    .faq-item.open .faq-icon {
+        transform: rotate(180deg);
+    }
+    .faq-icon {
+        transition: transform 0.2s;
+    }
+
+    @@media (max-width: 991px) {
+        .guide-layout {
+            grid-template-columns: 1fr;
+        }
+        .guide-nav {
+            position: static;
+            margin-bottom: 20px;
+        }
+    }
+
+    /* ==========================================================================
+       Ceza Hesaplama Ön Planda - Amiral Gemisi & Simülatör Stilleri
+       ========================================================================== */
+    .flagship-ceza-card {
+        border: 2px solid #3182ce !important;
+        box-shadow: 0 12px 36px rgba(49, 130, 206, 0.18) !important;
+        position: relative;
+        overflow: hidden;
+        background: #ffffff;
+    }
+    .flagship-ceza-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 5px;
+        background: linear-gradient(90deg, #3182ce, #00d2ff, #f6ad55, #38a169, #3182ce);
+        background-size: 300% 100%;
+        animation: gradientFlow 4s linear infinite;
+        z-index: 2;
+    }
+    @@keyframes gradientFlow {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    .flagship-nav-item {
+        background: #ebf8ff !important;
+        color: #2b6cb0 !important;
+        border-left: 3px solid #3182ce !important;
+        font-weight: 800 !important;
+    }
+    .ceza-flagship-badge {
+        background: linear-gradient(135deg, #1a365d, #2b6cb0);
+        color: #ffd700;
+        border: 1px solid rgba(255, 215, 0, 0.45);
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        box-shadow: 0 0 12px rgba(255, 215, 0, 0.25);
+        animation: badgePulse 2.5s infinite;
+    }
+    @@keyframes badgePulse {
+        0%, 100% { transform: scale(1); box-shadow: 0 0 8px rgba(255, 215, 0, 0.2); }
+        50% { transform: scale(1.03); box-shadow: 0 0 16px rgba(255, 215, 0, 0.4); }
+    }
+
+    /* İnteraktif Simülatör (Dark Sci-Fi Cyber Paneli) */
+    .ceza-simulator-wrap {
+        background: radial-gradient(circle at top left, #162436 0%, #0c1521 100%);
+        border: 1px solid #2b4566;
+        border-radius: 12px;
+        padding: 22px;
+        color: #e2e8f0;
+        margin: 22px 0;
+        box-shadow: 0 10px 28px rgba(0,0,0,0.35);
+        position: relative;
+    }
+    .ceza-sim-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #23374e;
+        padding-bottom: 12px;
+        margin-bottom: 18px;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    .ceza-sim-title {
+        font-size: 1.05rem;
+        font-weight: 800;
+        color: #38bdf8;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0;
+    }
+    .sim-ctrl-label {
+        font-size: 0.76rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        color: #93c5fd;
+        margin-bottom: 5px;
+        display: block;
+    }
+    .sim-input-dark {
+        background: #111e2e;
+        border: 1px solid #2b4566;
+        color: #fff;
+        border-radius: 6px;
+        padding: 8px 12px;
+        width: 100%;
+        font-size: 0.88rem;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+    .sim-input-dark:focus {
+        outline: none;
+        border-color: #38bdf8;
+        box-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+        background: #16253a;
+    }
+    .sim-presets-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 6px;
+    }
+    .sim-preset-btn {
+        background: rgba(255, 255, 255, 0.07);
+        color: #cbd5e1;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 14px;
+        padding: 3px 10px;
+        font-size: 0.73rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.18s;
+    }
+    .sim-preset-btn:hover, .sim-preset-btn.active {
+        background: #2563eb;
+        color: #fff;
+        border-color: #60a5fa;
+        transform: translateY(-1px);
+    }
+    .sim-toggle-pill {
+        display: flex;
+        background: #0f172a;
+        border: 1px solid #334155;
+        border-radius: 8px;
+        padding: 3px;
+        gap: 4px;
+    }
+    .sim-toggle-opt {
+        flex: 1;
+        text-align: center;
+        padding: 7px 10px;
+        border-radius: 6px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+        color: #94a3b8;
+    }
+    .sim-toggle-opt.active-paid {
+        background: #059669;
+        color: #fff;
+        box-shadow: 0 0 10px rgba(5, 150, 105, 0.5);
+    }
+    .sim-toggle-opt.active-unpaid {
+        background: #dc2626;
+        color: #fff;
+        box-shadow: 0 0 10px rgba(220, 38, 38, 0.5);
+    }
+    .btn-sim-run {
+        background: linear-gradient(135deg, #2563eb 0%, #0284c7 50%, #0d9488 100%);
+        color: #fff;
+        border: none;
+        font-weight: 800;
+        font-size: 0.95rem;
+        padding: 12px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        width: 100%;
+        transition: all 0.25s;
+        box-shadow: 0 4px 16px rgba(37, 99, 235, 0.4);
+        margin-top: 14px;
+    }
+    .btn-sim-run:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 24px rgba(2, 132, 199, 0.6);
+    }
+
+    /* Animasyonlu Pipeline Stepper */
+    .sim-pipeline {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        margin: 18px 0;
+    }
+    .pipe-step {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid #22374e;
+        border-radius: 8px;
+        padding: 10px 8px;
+        text-align: center;
+        transition: all 0.3s;
+        position: relative;
+    }
+    .pipe-step.pipe-active {
+        background: rgba(56, 189, 248, 0.15);
+        border-color: #38bdf8;
+        box-shadow: 0 0 14px rgba(56, 189, 248, 0.4);
+        transform: scale(1.02);
+    }
+    .pipe-num {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: #1e293b;
+        color: #94a3b8;
+        font-weight: 800;
+        font-size: 0.75rem;
+        margin: 0 auto 5px auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s;
+    }
+    .pipe-step.pipe-active .pipe-num {
+        background: #38bdf8;
+        color: #0c1521;
+        box-shadow: 0 0 8px #38bdf8;
+    }
+    .pipe-title {
+        font-size: 0.74rem;
+        font-weight: 700;
+        color: #e2e8f0;
+        line-height: 1.3;
+    }
+
+    /* Canlı Sonuç Kutuları */
+    .sim-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        gap: 10px;
+        margin: 14px 0;
+    }
+    .sim-stat-card {
+        background: #0f172a;
+        border: 1px solid #1e293b;
+        border-radius: 8px;
+        padding: 10px;
+        text-align: center;
+        transition: all 0.3s;
+    }
+    .sim-stat-card.stat-primary {
+        border-color: #38bdf8;
+        background: rgba(56, 189, 248, 0.08);
+    }
+    .sim-stat-card.stat-gold {
+        border-color: #f59e0b;
+        background: rgba(245, 158, 11, 0.12);
+    }
+    .sim-stat-title {
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #94a3b8;
+        margin-bottom: 4px;
+    }
+    .sim-stat-number {
+        font-size: 1.15rem;
+        font-weight: 800;
+        color: #fff;
+        font-family: 'Courier New', monospace;
+    }
+
+    /* Tahdit ve Karar Sonuç Alanı */
+    .sim-decision-result {
+        border-radius: 8px;
+        padding: 14px 18px;
+        margin-top: 14px;
+        display: none;
+        animation: fadeInBox 0.4s ease;
+    }
+    @@keyframes fadeInBox {
+        from { opacity: 0; transform: translateY(6px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .sim-res-paid {
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(6, 95, 70, 0.3));
+        border: 1px solid #10b981;
+        color: #ecfdf5;
+        box-shadow: 0 0 18px rgba(16, 185, 129, 0.2);
+    }
+    .sim-res-unpaid {
+        background: linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(153, 27, 27, 0.3));
+        border: 1px solid #ef4444;
+        color: #fef2f2;
+        box-shadow: 0 0 18px rgba(239, 68, 68, 0.3);
+        animation: sirenPulse 1.4s infinite alternate;
+    }
+    @@keyframes sirenPulse {
+        0% { box-shadow: 0 0 10px rgba(239, 68, 68, 0.3); }
+        100% { box-shadow: 0 0 25px rgba(239, 68, 68, 0.65); }
+    }
+
+    /* İnteraktif Senaryo Sekmeleri */
+    .scenario-tabs-nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        border-bottom: 2px solid #e2e8f0;
+        padding-bottom: 8px;
+        margin: 16px 0;
+    }
+    .scenario-tab-btn {
+        background: #edf2f7;
+        color: #4a5568;
+        border: 1px solid #cbd5e0;
+        border-radius: 6px;
+        padding: 6px 14px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .scenario-tab-btn:hover, .scenario-tab-btn.active {
+        background: #2b6cb0;
+        color: #fff;
+        border-color: #2b6cb0;
+    }
+    .scenario-tab-pane {
+        display: none;
+        animation: fadeInBox 0.3s ease;
+    }
+    .scenario-tab-pane.active {
+        display: block;
+    }
+
+    @@media (max-width: 768px) {
+        .sim-pipeline {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+</style>
+}
+
+<div class="guide-wrapper">
+    <!-- HERO BÖLÜMÜ -->
+    <div class="guide-hero">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+            <h1>
+                <i class="fas fa-book-reader text-warning"></i> CEZAM İşlem Rehberi & Operasyon Kılavuzu
+            </h1>
+            <span class="hero-badge"><i class="fas fa-shield-alt me-1"></i> Hudut Kapıları Bilgi Sistemi</span>
+        </div>
+        <p>
+            Bu kılavuz; hudut kapılarında görevli personelin ceza hesaplama, kaşe vize değerlendirmesi, V-84 şartlı giriş, tahdit ve INAD işlemlerini 
+            <strong>6458 sayılı Kanun</strong> ve <strong>EGM/Göç İdaresi Genelgeleri</strong> doğrultusunda eksiksiz, hızlı ve hatasız yürütmesi için hazırlanmıştır.
+        </p>
+
+        <!-- Arama Kutusu -->
+        <div class="guide-search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="guideSearchInput" placeholder="Nasıl yapılır? (Örn: Kaşe vize, V-84, Ceza hesabı, INAD, Tahdit kodları...)" />
+        </div>
+
+        <!-- Hızlı Filtre Hapları -->
+        <div class="quick-filter-pills">
+            <span class="pill-btn active" data-target="all"><i class="fas fa-layer-group"></i> Tüm Konular</span>
+            <span class="pill-btn active" data-target="section-ceza" style="background:#2b6cb0; border-color:#63b3ed; color:#fff; box-shadow:0 0 10px rgba(99,179,237,0.5);"><i class="fas fa-bolt text-warning"></i> ⚡ Ceza Hesaplama (Öncelikli)</span>
+            <span class="pill-btn" data-target="section-kasevize"><i class="fas fa-passport"></i> Kaşe Vize (P-60)</span>
+            <span class="pill-btn" data-target="section-v84"><i class="fas fa-stamp"></i> V-84 Şartlı Giriş</span>
+            <span class="pill-btn" data-target="section-tahdit"><i class="fas fa-ban"></i> Tahdit & Ç Kodları</span>
+            <span class="pill-btn" data-target="section-inad"><i class="fas fa-user-times"></i> INAD Prosedürü</span>
+            <span class="pill-btn" data-target="section-egitim"><i class="fas fa-graduation-cap"></i> Eğitim Portalı</span>
+            <span class="pill-btn" data-target="section-admin"><i class="fas fa-user-cog"></i> Yetki & Bakım</span>
+        </div>
+    </div>
+
+    <!-- ANA İÇERİK LAYOUT -->
+    <div class="guide-layout">
+        <!-- SOL NAVİGASYON -->
+        <aside class="guide-nav">
+            <div class="guide-nav-title"><i class="fas fa-compass me-1"></i> İşlem Başlıkları</div>
+            <ul class="guide-menu">
+                <li>
+                    <a href="#section-ceza" class="active flagship-nav-item">
+                        <i class="fas fa-calculator text-primary"></i>
+                        <span class="d-flex align-items-center justify-content-between w-100">
+                            <span>1. Ceza Hesaplama</span>
+                            <span class="badge badge-warning pulse-glow ms-1" style="font-size:0.65rem; background:#f6ad55; color:#742a2a; border-radius:10px; padding:2px 7px; font-weight:800;">ÖNCELİKLİ</span>
+                        </span>
+                    </a>
+                </li>
+                <li><a href="#section-kasevize"><i class="fas fa-passport text-success"></i> 2. Kaşe Vize Değerlendirmesi</a></li>
+                <li><a href="#section-v84"><i class="fas fa-stamp text-warning"></i> 3. V-84 Şartlı Giriş</a></li>
+                <li><a href="#section-tahdit"><i class="fas fa-ban text-danger"></i> 4. Tahditler & Giriş Yasakları</a></li>
+                <li><a href="#section-inad"><i class="fas fa-user-times text-dark"></i> 5. INAD (Kabul Edilemez Yolcu)</a></li>
+                <li><a href="#section-terimler"><i class="fas fa-book text-info"></i> 6. Terimler Sözlüğü</a></li>
+                <li><a href="#section-raporlar"><i class="fas fa-chart-bar text-secondary"></i> 7. Raporlar & İstatistikler</a></li>
+                <li><a href="#section-egitim"><i class="fas fa-graduation-cap text-primary"></i> 8. Eğitim & Sınav Portalı</a></li>
+                <li><a href="#section-admin"><i class="fas fa-user-shield text-danger"></i> 9. Yetkiler & Bakım İşlemleri</a></li>
+                <li><a href="#section-faq"><i class="fas fa-question-circle text-warning"></i> 10. Sıkça Sorulan Sorular</a></li>
+            </ul>
+        </aside>
+
+        <!-- SAĞ İÇERİK BÖLÜMÜ -->
+        <main class="guide-main-content">
+
+            <!-- 1. CEZA HESAPLAMA (ÖN PLANDA & AMİRAL GEMİSİ) -->
+            <section id="section-ceza" class="guide-card flagship-ceza-card searchable-section">
+                <div class="guide-card-header">
+                    <div>
+                        <h2 class="guide-card-title text-primary">
+                            <i class="fas fa-calculator text-primary"></i> 1. Ceza Hesaplama & İkamet İhlali Değerlendirmesi
+                        </h2>
+                        <div class="d-flex align-items-center gap-2 flex-wrap mt-2">
+                            <span class="ceza-flagship-badge"><i class="fas fa-crown text-warning"></i> SİSTEMİN KALBİ & BİRİNCİL OPERASYON MODÜLÜ</span>
+                            <span class="guide-badge-role">6458 SK. md.102 / 492 SK. V Sayılı Tarife</span>
+                        </div>
+                    </div>
+                    <a href="@Url.Action("Index", "Calculate")" class="btn-guide-action pulse-glow" target="_blank">
+                        <i class="fas fa-bolt"></i> Ceza Hesaplama Ekranını Aç
+                    </a>
+                </div>
+
+                <p class="lead" style="font-size:1.02rem; color:#2c3e50; line-height:1.6;">
+                    <strong>CEZAM Ceza Hesaplama Motoru</strong>; Türkiye'de vize muafiyeti süresini, konsolosluk vizesini veya ikamet/çalışma iznini aşarak 
+                    ülkede yasal hakkı olmaksızın kalan yabancıların hudut kapılarından çıkış (veya giriş) anındaki 
+                    <strong>idari para cezası, ikamet harcı, vize harcı, defter bedeli ve yurda giriş yasağı tahdit kodlarını</strong> 
+                    saniyeler içinde ve sıfır hata ile belirleyen en kritik operasyon modülümüzdür.
+                </p>
+
+                <!-- 4 AŞAMALI İŞLEM AKIŞI (TIMELINE PIPELINE) -->
+                <div class="steps-container">
+                    <!-- ADIM 1 -->
+                    <div class="step-item">
+                        <div class="step-number" style="background:#2b6cb0;">1</div>
+                        <div class="step-content">
+                            <div class="step-title"><i class="fas fa-calendar-alt text-primary"></i> 1. Aşama: Sefer & Giriş-Çıkış Tespiti (/Calculate1)</div>
+                            <p class="step-desc">
+                                Pasaport kontrol görevlisi, yabancının <strong>Son Giriş Tarihi</strong> ve <strong>Son Çıkış Tarihi</strong>ni girer. 
+                                Sistem arka planda ülkenin tabi olduğu vize rejimini ve sefer tipini analiz eder:
+                            </p>
+                            <ul class="small mb-2 mt-2 ps-3 text-secondary">
+                                <li><strong>Normal Hesaplama (CType=1):</strong> Giriş ve çıkış tarihi arasındaki gün farkından yasal kalış hakkı düşülerek ihlal süresi bulunur.</li>
+                                <li><strong>180 Günde 90 Gün Kuralı (CType=2):</strong> Yolcunun son 180 gün içindeki tüm Türkiye kalışları <code>Giriş-Çıkış Ekle (gcadd)</code> butonu ile toplanır; 90 günü aşan kısımlar ihlal kabul edilir.</li>
+                                <li><strong>Tır Şoförleri (CType=3):</strong> Uluslararası nakliyat yapan şoförler için tek girişte en fazla 30 günlük yasal hak uygulanır.</li>
+                                <li><strong>Beyaz Rusya (CType=5):</strong> Tek girişte max 30 gün, 365 gün içinde max 90 gün kuralı uygulanır. İhlal = $\max(\text{Giriş Başı Aşım}, \text{Yıllık Aşım})$.</li>
+                                <li><strong>Günübirlik Seferler:</strong> Her giriş-çıkış 1 tam gün olarak sayılır.</li>
+                            </ul>
+                            <div class="p-2 bg-light rounded small border">
+                                <i class="fas fa-arrow-right text-primary me-1"></i> <strong>Sistem Çıktısı:</strong> Kanuni Kalış Süresi, Çıkış Yapması Gereken Tarih, İhlal Ayı, İhlal Günü, Toplam Gün ve 180/90 Tekrar Giriş Uygunluk Durumu.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ADIM 2 -->
+                    <div class="step-item">
+                        <div class="step-number" style="background:#2563eb;">2</div>
+                        <div class="step-content">
+                            <div class="step-title"><i class="fas fa-coins text-warning"></i> 2. Aşama: Yaş, TCMB Kuru & 5 Kalemli Maliye Cetveli (/Calculate2)</div>
+                            <p class="step-desc">
+                                İhlal süresi belirlendikten sonra yabancının doğum tarihi girilir. Sistem <strong>Yetişkin</strong> ve <strong>Çocuk (18 yaş altı)</strong> ayrımını otomatik yapar. 
+                                Ardından TCMB'nin anlık döviz kuru çekilerek 5 kalem üzerinden kesin tahakkuk cetveli oluşturulur:
+                            </p>
+                            <div class="table-responsive mt-2 mb-2">
+                                <table class="table table-sm table-bordered bg-white small mb-0">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>Harç / Ceza Kalemi</th>
+                                            <th>Yasal Dayanağı</th>
+                                            <th>Hesaplama Formülü</th>
+                                            <th>Uygulama Notu</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="font-weight-bold text-primary">1. Cezalı İkamet Harcı (TL)</td>
+                                            <td>492 SK. md.85 & YUKK m.102</td>
+                                            <td><code>1. Ay Tabanı + (Kalan Aylar × Aylık Harç)</code></td>
+                                            <td>Ülke grubuna göre döviz kuru (USD/EUR) ile TL'ye çevrilir.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="font-weight-bold text-info">2. Tek Giriş Vize Harcı (TL)</td>
+                                            <td>492 SK. (1) Sayılı Tarife</td>
+                                            <td><code>Sabit Tarife × (1 Kat veya 2 Kat)</code></td>
+                                            <td>Vize muafiyeti aşıldığında karşılıklılık ilkesine göre tahsil edilir.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="font-weight-bold text-success">3. Defter Bedeli (TL)</td>
+                                            <td>210 SK. Değerli Kağıtlar</td>
+                                            <td><code>Hazine Bakanlığı Sabit Kart Bedeli</code></td>
+                                            <td>Her yıl başında güncellenen ikamet izni belge bedelidir.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="font-weight-bold text-danger">4. İdari Para Cezası (TL)</td>
+                                            <td>6458 SK. md.102/1</td>
+                                            <td><code>VUK Yeniden Değerleme Oranı</code></td>
+                                            <td>Yasal sürede çıkmayan yabancıya kesilen idari yaptırımdır.</td>
+                                        </tr>
+                                        <tr class="table-warning font-weight-bold">
+                                            <td>5. GENEL TOPLAM TUTAR</td>
+                                            <td>Tahsilat Makbuzu</td>
+                                            <td colspan="2"><code>Tüm Kalemlerin Toplamı = Vezneye Ödenecek Nihai Tutar</code></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ADIM 3 -->
+                    <div class="step-item">
+                        <div class="step-number" style="background:#059669;">3</div>
+                        <div class="step-content">
+                            <div class="step-title"><i class="fas fa-shield-alt text-success"></i> 3. Aşama: Ödeme Durumu & Tahdit Kodu Eşleşmesi (/Kodgetir)</div>
+                            <p class="step-desc">
+                                Memur, yabancının cezasını ödeyip ödemeyeceğine göre sistemden <strong>"Ödeyen"</strong> veya <strong>"Ödemeyen"</strong> seçimini yapar:
+                            </p>
+                            <div class="row">
+                                <div class="col-md-6 mb-2 mb-md-0">
+                                    <div class="p-2 border rounded" style="background:#f0fff4; border-color:#9ae6b4 !important;">
+                                        <div class="font-weight-bold text-success"><i class="fas fa-check-circle me-1"></i> CEZAYI ÖDEYEN YABANCI:</div>
+                                        <div class="small text-muted mt-1">
+                                            • İhlal süresine bağlı olarak şahsa çıkış anında <strong>yurda giriş yasağı konmaz</strong>.<br />
+                                            • 10 gün içinde ikamet başvurusunda bulunacağını taahhüt ederek <strong>V-84 Şartlı Giriş</strong> kolaylığıyla hemen geri dönebilir.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="p-2 border rounded" style="background:#fff5f5; border-color:#feb2b2 !important;">
+                                        <div class="font-weight-bold text-danger"><i class="fas fa-times-circle me-1"></i> CEZAYI ÖDEMEYEN YABANCI:</div>
+                                        <div class="small text-muted mt-1">
+                                            • POLNET sistemine derhal <strong>Ç-114</strong> (veya Ç-113) tahdit kodu işlenir.<br />
+                                            • İhlal süresiyle orantılı olarak <strong>3 aydan 5 yıla kadar YURDA GİRİŞ YASAĞI</strong> tesis edilir ve ceza ödenmeden gelemez.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ADIM 4 -->
+                    <div class="step-item">
+                        <div class="step-number" style="background:#d97706;">4</div>
+                        <div class="step-content">
+                            <div class="step-title"><i class="fas fa-file-invoice-dollar text-primary"></i> 4. Aşama: Resmi Tebligat Bordrosu & Çıkış Formu (/Formolustur)</div>
+                            <p class="step-desc">
+                                <code>Form Oluştur</code> butonuna basıldığında açılan alana yolcunun <em>Adı Soyadı, Anne-Baba Adı, Pasaport No ve Kimlik No</em> bilgileri yazılır. 
+                                Sistem iki nüsha resmi tebligat ve tahsilat bordrosu basar: Bir nüsha yabancıya verilir, ikinci nüsha imzalatılarak hudut arşive kaldırılır.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ================================================================= -->
+                <!-- CANLI İNTERAKTİF CEZA HESAPLAMA SİMÜLATÖRÜ (CYBER PANEL) -->
+                <!-- ================================================================= -->
+                <div class="ceza-simulator-wrap">
+                    <div class="ceza-sim-header">
+                        <h4 class="ceza-sim-title">
+                            <i class="fas fa-microchip"></i> Canlı İnteraktif Ceza ve Tahdit Simülatörü
+                        </h4>
+                        <span class="sim-tag" style="background:#0284c7;"><i class="fas fa-bolt me-1"></i> Gerçek Zamanlı Motor</span>
+                    </div>
+
+                    <div class="row g-3">
+                        <!-- Ülke Seçimi -->
+                        <div class="col-md-3">
+                            <label class="sim-ctrl-label"><i class="fas fa-globe me-1"></i> 1. Yabancının Uyruğu</label>
+                            <select id="simCountry" class="sim-input-dark">
+                                <option value="Rusya" data-currency="USD" data-month="25" data-visa="3560" data-defter="565" data-base="1100">Rusya Federasyonu (USD)</option>
+                                <option value="Almanya" data-currency="EUR" data-month="30" data-visa="3560" data-defter="565" data-base="1400">Almanya (EUR - Muafiyet 90g)</option>
+                                <option value="Irak" data-currency="USD" data-month="25" data-visa="0" data-defter="565" data-base="950">Irak (USD - İkamet/Vize)</option>
+                                <option value="Azerbaycan" data-currency="USD" data-month="20" data-visa="3560" data-defter="565" data-base="850">Azerbaycan (USD - Muafiyet 90g)</option>
+                                <option value="Gürcistan" data-currency="USD" data-month="20" data-visa="3560" data-defter="565" data-base="850">Gürcistan (USD - Kimlikle Giriş)</option>
+                                <option value="İngiltere" data-currency="GBP" data-month="35" data-visa="3560" data-defter="565" data-base="1600">Birleşik Krallık (GBP)</option>
+                                <option value="Turkmenistan" data-currency="USD" data-month="25" data-visa="3560" data-defter="565" data-base="1000">Türkmenistan (USD - Vizeli)</option>
+                            </select>
+                        </div>
+
+                        <!-- Vize Türü -->
+                        <div class="col-md-3">
+                            <label class="sim-ctrl-label"><i class="fas fa-id-card me-1"></i> 2. Kalış / Vize Rejimi</label>
+                            <select id="simVisaType" class="sim-input-dark">
+                                <option value="muafiyet">Vizesiz Muafiyet Aşımı</option>
+                                <option value="ikamet">İkamet Tezkeresi Bitişi</option>
+                                <option value="calisma">Çalışma İzni Bitişi</option>
+                                <option value="v137_sureli">V-137 Terke Davet (Süre İçi)</option>
+                                <option value="v137_gecmis">V-137 Terke Davet (Süre Geçmiş)</option>
+                            </select>
+                        </div>
+
+                        <!-- İhlal Süresi Presetleri -->
+                        <div class="col-md-3">
+                            <label class="sim-ctrl-label"><i class="fas fa-clock me-1"></i> 3. İhlal Edilen Süre</label>
+                            <input type="number" id="simDaysInput" class="sim-input-dark" value="45" min="1" max="1825" placeholder="Gün sayısı girin" />
+                            <div class="sim-presets-row">
+                                <span class="sim-preset-btn" data-days="15">15 Gün</span>
+                                <span class="sim-preset-btn active" data-days="45">45 Gün (1.5 Ay)</span>
+                                <span class="sim-preset-btn" data-days="105">3.5 Ay</span>
+                                <span class="sim-preset-btn" data-days="240">8 Ay</span>
+                                <span class="sim-preset-btn" data-days="540">1.5 Yıl</span>
+                            </div>
+                        </div>
+
+                        <!-- Ödeme ve Yaş -->
+                        <div class="col-md-3">
+                            <label class="sim-ctrl-label"><i class="fas fa-wallet me-1"></i> 4. Çıkışta Cezayı Ödeyecek mi?</label>
+                            <div class="sim-toggle-pill">
+                                <div id="simTogglePaid" class="sim-toggle-opt active-paid"><i class="fas fa-check"></i> Ödeyecek</div>
+                                <div id="simToggleUnpaid" class="sim-toggle-opt"><i class="fas fa-times"></i> Ödemeyecek</div>
+                            </div>
+                            <div class="mt-2">
+                                <label class="sim-ctrl-label mb-1"><i class="fas fa-user me-1"></i> Yaş Durumu</label>
+                                <select id="simAgeGroup" class="sim-input-dark">
+                                    <option value="adult">Yetişkin (18+ Yaş)</option>
+                                    <option value="child">Çocuk (18 Yaş Altı - İndirimli)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ÇALIŞTIR BUTONU -->
+                    <button type="button" id="btnRunSim" class="btn-sim-run">
+                        <i class="fas fa-play-circle fa-lg"></i> CANLI HESAPLAMAYI VE ANİMASYONLU SÜRECİ ÇALIŞTIR
+                    </button>
+
+                    <!-- ANİMASYONLU PIPELINE GÖSTERGESİ -->
+                    <div class="sim-pipeline">
+                        <div id="pipe1" class="pipe-step">
+                            <div class="pipe-num">1</div>
+                            <div class="pipe-title">Tarih & Sefer Analizi</div>
+                        </div>
+                        <div id="pipe2" class="pipe-step">
+                            <div class="pipe-num">2</div>
+                            <div class="pipe-title">TCMB Kur & Harç Cetveli</div>
+                        </div>
+                        <div id="pipe3" class="pipe-step">
+                            <div class="pipe-num">3</div>
+                            <div class="pipe-title">Tahdit & Ç Kodu Kararı</div>
+                        </div>
+                        <div id="pipe4" class="pipe-step">
+                            <div class="pipe-num">4</div>
+                            <div class="pipe-title">Resmi Tebligat Çıktısı</div>
+                        </div>
+                    </div>
+
+                    <!-- ANİMASYONLU SAYAÇ VE RAKAMLAR -->
+                    <div class="sim-stats-grid">
+                        <div class="sim-stat-card">
+                            <div class="sim-stat-title">İhlal Edilen Süre</div>
+                            <div id="statViolationTime" class="sim-stat-number text-info">1 Ay 15 Gün</div>
+                        </div>
+                        <div class="sim-stat-card">
+                            <div class="sim-stat-title">Cezalı İkamet Harcı</div>
+                            <div id="statIkametHarc" class="sim-stat-number text-white">0 TL</div>
+                        </div>
+                        <div class="sim-stat-card">
+                            <div class="sim-stat-title">Tek Giriş Vize Harcı</div>
+                            <div id="statVizeHarc" class="sim-stat-number text-white">0 TL</div>
+                        </div>
+                        <div class="sim-stat-card">
+                            <div class="sim-stat-title">Defter Bedeli</div>
+                            <div id="statDefterHarc" class="sim-stat-number text-white">0 TL</div>
+                        </div>
+                        <div class="sim-stat-card">
+                            <div class="sim-stat-title">İdari Para Cezası</div>
+                            <div id="statIdariCeza" class="sim-stat-number text-white">0 TL</div>
+                        </div>
+                        <div class="sim-stat-card stat-gold">
+                            <div class="sim-stat-title" style="color:#fbd38d;">TOPLAM ÖDENECEK</div>
+                            <div id="statTotal" class="sim-stat-number text-warning font-weight-bold" style="font-size:1.35rem;">0 TL</div>
+                        </div>
+                    </div>
+
+                    <!-- ANİMASYONLU TAHDİT VE KARAR KUTUSU -->
+                    <div id="simDecisionBox" class="sim-decision-result">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <i id="decisionIcon" class="fas fa-check-circle fa-2x"></i>
+                            <h5 id="decisionTitle" class="mb-0 font-weight-bold"></h5>
+                        </div>
+                        <div id="decisionBody" class="small" style="line-height:1.55;"></div>
+                    </div>
+                </div>
+
+                <!-- GİRİŞ YASAKLARI KARŞILAŞTIRMALI MATRİSİ -->
+                <div class="mt-4 mb-4">
+                    <h5 class="font-weight-bold text-dark mb-3">
+                        <i class="fas fa-balance-scale text-primary me-2"></i> İhlal Süresine Göre Giriş Yasağı Karşılaştırma Matrisi (GİGM & EGM Genelgesi)
+                    </h5>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped table-hover small">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>İkamet / Vize İhlal Süresi</th>
+                                    <th style="background:#065f46; color:#fff;"><i class="fas fa-check-circle me-1"></i> CEZAYI ÖDEYENİN DURUMU</th>
+                                    <th style="background:#991b1b; color:#fff;"><i class="fas fa-ban me-1"></i> CEZAYI ÖDEMEYENİN GİRİŞ YASAĞI (Ç-114)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="font-weight-bold">0 Gün – 3 Ay Arası İhlal</td>
+                                    <td class="text-success font-weight-bold"><i class="fas fa-shield-alt text-success me-1"></i> Giriş Yasağı YOK (V-84 Şartıyla Hemen Dönebilir)</td>
+                                    <td class="text-danger font-weight-bold"><i class="fas fa-times-circle text-danger me-1"></i> 3 AY YURDA GİRİŞ YASAĞI (Ç-114)</td>
+                                </tr>
+                                <tr>
+                                    <td class="font-weight-bold">3 Ay – 6 Ay Arası İhlal</td>
+                                    <td class="text-success font-weight-bold"><i class="fas fa-shield-alt text-success me-1"></i> Giriş Yasağı YOK (V-84 Şartıyla Hemen Dönebilir)</td>
+                                    <td class="text-danger font-weight-bold"><i class="fas fa-times-circle text-danger me-1"></i> 6 AY YURDA GİRİŞ YASAĞI (Ç-114)</td>
+                                </tr>
+                                <tr>
+                                    <td class="font-weight-bold">6 Ay – 1 Yıl Arası İhlal</td>
+                                    <td class="text-success font-weight-bold"><i class="fas fa-shield-alt text-success me-1"></i> Giriş Yasağı YOK (V-84 Şartıyla Hemen Dönebilir)</td>
+                                    <td class="text-danger font-weight-bold"><i class="fas fa-times-circle text-danger me-1"></i> 1 YIL YURDA GİRİŞ YASAĞI (Ç-114)</td>
+                                </tr>
+                                <tr>
+                                    <td class="font-weight-bold">1 Yıl – 2 Yıl Arası İhlal</td>
+                                    <td class="text-success font-weight-bold"><i class="fas fa-shield-alt text-success me-1"></i> Giriş Yasağı YOK (V-84 Şartıyla Hemen Dönebilir)</td>
+                                    <td class="text-danger font-weight-bold"><i class="fas fa-times-circle text-danger me-1"></i> 2 YIL YURDA GİRİŞ YASAĞI (Ç-114)</td>
+                                </tr>
+                                <tr>
+                                    <td class="font-weight-bold">2 Yıl – 5 Yıl Arası İhlal</td>
+                                    <td class="text-success font-weight-bold"><i class="fas fa-shield-alt text-success me-1"></i> Giriş Yasağı YOK (V-84 Şartıyla Hemen Dönebilir)</td>
+                                    <td class="text-danger font-weight-bold"><i class="fas fa-times-circle text-danger me-1"></i> 2 YIL YURDA GİRİŞ YASAĞI (Ç-114)</td>
+                                </tr>
+                                <tr>
+                                    <td class="font-weight-bold">5 Yıldan Fazla İhlal</td>
+                                    <td class="text-success font-weight-bold"><i class="fas fa-shield-alt text-success me-1"></i> Giriş Yasağı YOK (V-84 Şartıyla Hemen Dönebilir)</td>
+                                    <td class="text-danger font-weight-bold"><i class="fas fa-times-circle text-danger me-1"></i> 5 YIL YURDA GİRİŞ YASAĞI (Ç-114)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- GERÇEK SAHA VAKALARI (SEKMELİ İNTERAKTİF ÇÖZÜMLER) -->
+                <div class="mt-4">
+                    <h5 class="font-weight-bold text-dark mb-2">
+                        <i class="fas fa-user-check text-primary me-2"></i> Hudut Kapısında Gerçek Saha Vakaları ve Çözüm Adımları
+                    </h5>
+                    <div class="scenario-tabs-nav">
+                        <button type="button" class="scenario-tab-btn active" data-tab="tab-case-1">Vaka 1: Rus Turist (45 Gün Aşım)</button>
+                        <button type="button" class="scenario-tab-btn" data-tab="tab-case-2">Vaka 2: Irak Vatandaşı (İkamet Bitişi 4 Ay)</button>
+                        <button type="button" class="scenario-tab-btn" data-tab="tab-case-3">Vaka 3: V-137 Terke Davetli Yabancı</button>
+                        <button type="button" class="scenario-tab-btn" data-tab="tab-case-4">Vaka 4: Beyaz Rusya (30/90 Kuralı)</button>
+                    </div>
+
+                    <!-- TAB 1 -->
+                    <div id="tab-case-1" class="scenario-tab-pane active">
+                        <div class="scenario-box">
+                            <div class="scenario-box-title"><i class="fas fa-passport text-primary"></i> Vaka 1: Rusya Vatandaşı 45 Günlük Vize Muafiyeti Aşımı</div>
+                            <p class="small mb-1">
+                                <strong>Olay:</strong> Rusya vatandaşı Türkiye'de tek girişte 60 gün kalma hakkına sahipken 105 gün kalmıştır. İhlal süresi: 45 gün (1 ay 15 gün).
+                            </p>
+                            <p class="small mb-1">
+                                <strong>Hesaplama:</strong> 1. Ay taban harcı (25 USD) + 2. Ay harcı (5 USD) + Tek giriş vize harcı + Defter bedeli + İdari Para Cezası = TCMB kuru ile tahakkuk eder.
+                            </p>
+                            <p class="small mb-0 text-success font-weight-bold">
+                                <strong>Operasyonel Karar:</strong> Cezayı öderse hakkında Ç kodu girilmez; isterse 10 gün içinde ikamet başvurusunda bulunma şartıyla V-84 taahhüdüyle hemen dönebilir. Ödemezse Ç-114 / 3 ay giriş yasağı konur.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- TAB 2 -->
+                    <div id="tab-case-2" class="scenario-tab-pane">
+                        <div class="scenario-box">
+                            <div class="scenario-box-title"><i class="fas fa-address-card text-primary"></i> Vaka 2: İkamet Tezkeresi Biten Irak Vatandaşı (4 Ay İhlal)</div>
+                            <p class="small mb-1">
+                                <strong>Olay:</strong> Kısa dönem ikamet izni 15.01.2024'te bitmiş, çıkış 15.05.2024 tarihinde yapılmaktadır. İkamet bitiş tarihi <code>testarihi</code> alanına girilir. İhlal 4 tam aydır.
+                            </p>
+                            <p class="small mb-1">
+                                <strong>Hesaplama:</strong> Şahsın daha önce ikameti olduğu için <u>Tek Giriş Vize Harcı alınmaz</u>. 4 aylık cezalı ikamet harcı + Defter bedeli + 6458 SK. m.102 İdari Para Cezası tahsil edilir.
+                            </p>
+                            <p class="small mb-0 text-primary font-weight-bold">
+                                <strong>Operasyonel Karar:</strong> Cezayı kapıda öderse yurda giriş yasağı konmaz. Ödemeden çıkarsa Ç-114 ve 6 ay yurda giriş yasağı tesis edilir.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- TAB 3 -->
+                    <div id="tab-case-3" class="scenario-tab-pane">
+                        <div class="scenario-box">
+                            <div class="scenario-box-title"><i class="fas fa-exclamation-circle text-warning"></i> Vaka 3: V-137 Terke Davet Süresi İçinde Çıkan Yabancı</div>
+                            <p class="small mb-1">
+                                <strong>Olay:</strong> İl Göç İdaresi tarafından kendisine "Türkiye'yi Terke Davet" (V-137) tebliği yapılmış ve 15 günlük yasal süre tanınmıştır.
+                            </p>
+                            <p class="small mb-1">
+                                <strong>Hesaplama:</strong> Süresi içinde (15 gün dolmadan) sınır kapısına geldiği için <code>V137ExpiredCalculate = Hayır</code> seçilir. Katlamalı ceza uygulanmaz.
+                            </p>
+                            <p class="small mb-0 text-success font-weight-bold">
+                                <strong>Operasyonel Karar:</strong> Süresinde çıktığı için ağır giriş yasağı konmaz; çıkış işlemi tamamlanır ve sistemde V-137 süresinde çıkış olarak arşivlenir.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- TAB 4 -->
+                    <div id="tab-case-4" class="scenario-tab-pane">
+                        <div class="scenario-box">
+                            <div class="scenario-box-title"><i class="fas fa-calculator text-info"></i> Vaka 4: Beyaz Rusya (Belarus) Özel 30/90 Kuralı</div>
+                            <p class="small mb-1">
+                                <strong>Olay:</strong> Belarus vatandaşları tek seferde en fazla 30 gün kalabilir ve 365 gün içinde toplam kalışları 90 günü geçemez.
+                            </p>
+                            <p class="small mb-1">
+                                <strong>Hesaplama:</strong> CType=5 seçildiğinde sunucu hem tek sefer aşımını hem de yıllık kümülatif aşımı ayrı ayrı hesaplar ve <u>hangisi büyükse</u> o süreyi ceza gününe esas alır.
+                            </p>
+                            <p class="small mb-0 text-dark font-weight-bold">
+                                <strong>Operasyonel Karar:</strong> Memurun günleri elle saymasına gerek yoktur; sistem iki kuralı kıyaslayarak en doğru ihlal gününü ekrana yansıtır.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KRİTİK SAHA İPUÇLARI -->
+                <div class="warning-box">
+                    <div class="warning-box-title"><i class="fas fa-lightbulb text-warning"></i> Ceza Hesaplamada Görevli Personel İçin Hayati İpuçları:</div>
+                    <ul class="mb-0 small ps-3">
+                        <li><strong>İkamet Bitiminde 10 Günlük Yasal Pay:</strong> İkamet tezkeresi biten yabancı, bitiş tarihinden sonraki ilk 10 gün içinde Türkiye'den çıkış yaparsa veya randevu almışsa bu süre cezasız/yasal tolerans kabul edilir; 10. günden sonra kaçak başlar.</li>
+                        <li><strong>18 Yaş Altı Çocuklar:</strong> Reşit olmayan çocukların cezaları velisiyle birlikte işlem görür. Çocuklar için bazı harç kalemlerinde indirim uygulanır ancak çıkış formu mutlaka doldurulmalıdır.</li>
+                        <li><strong>Ödeme Makbuzu ve Sanal POS:</strong> Kapıdaki Maliye veznesinden veya sanal POS'tan tahsil edilen makbuz numarası sisteme işlenmeden yabancının pasaportuna çıkış damgası basılmamalıdır.</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- 2. KAŞE VİZE DEĞERLENDİRMESİ -->
+            <section id="section-kasevize" class="guide-card searchable-section">
+                <div class="guide-card-header">
+                    <h2 class="guide-card-title">
+                        <i class="fas fa-passport"></i> 2. Kaşe Vize (Pasaport Süresi Kısaltması) Değerlendirmesi
+                    </h2>
+                    <span class="guide-badge-role">GİGM 2014 & 2018 Genelgesi</span>
+                </div>
+                <p>
+                    6458 sayılı YUKK md. 7/1-b uyarınca; Türkiye'ye giriş yapacak yabancıların pasaport geçerlilik süresi <strong>talep edilen vize/muafiyet süresinden en az 60 gün daha uzun</strong> olmalıdır.
+                </p>
+
+                <div class="simulator-card">
+                    <div class="simulator-header">
+                        <span><i class="fas fa-code-branch me-1"></i> İki Temel Saha Senaryosu</span>
+                        <span class="sim-tag">Hudut Kapısı Standardı</span>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <h5 class="text-warning font-weight-bold mb-2">1. Pasaport Süresi Yetersizliği (P - 60 Formülü)</h5>
+                            <p class="small text-light mb-1">• Yabancının vize veya muafiyeti vardır ancak pasaport süresi yetersizdir (60 ila 150 gün arası).</p>
+                            <p class="small text-light mb-1">• <strong>Formül:</strong> <code>Verilecek Kaşe Vize = Kalan Pasaport Günü - 60</code></p>
+                            <p class="small text-info mb-0"><strong>Örnek:</strong> 60 gün muafiyeti olan Rusya vatandaşı 100 günlük pasaportla gelirse: 100 - 60 = <strong>40 gün</strong> kaşe vize verilir.</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="text-success font-weight-bold mb-2">2. Biten Pasaporttaki Vize + Yeni Pasaport</h5>
+                            <p class="small text-light mb-1">• Eski pasaportunda geçerli konsolosluk vizesi + yeni geçerli pasaportla gelen yabancıdır.</p>
+                            <p class="small text-light mb-1">• <strong>Harç:</strong> <u>ALINMAZ (Harçtan Muaftır)</u>.</p>
+                            <p class="small text-light mb-0">• <strong>Giriş Hakkı:</strong> 1 defaya mahsus <strong>TEK GİRİŞ</strong> verilir. Sonraki seyahatinde yeni vize alması zorunludur.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="warning-box">
+                    <div class="warning-box-title"><i class="fas fa-exclamation-triangle text-danger"></i> Kritik Hudut Kuralları:</div>
+                    <ul class="mb-0 small ps-3">
+                        <li><strong>Kalan Pasaport Süresi 60 Gün veya Altında ise:</strong> ❌ <strong>Kesinlikle giriş verilemez / INAD uygulanır.</strong> 60 günden az pasaporta kaşe vize verilemez!</li>
+                        <li><strong>Aynı Pasaporta 1 Defa:</strong> Pasaport süresi kısaltmasıyla verilen kaşe vize, aynı pasaporta <u>yalnızca bir defaya mahsus</u> verilebilir.</li>
+                        <li><strong>Tek Giriş Sınırı:</strong> Verilen tüm kaşe vizeler tek giriş olarak sisteme kaydedilir.</li>
+                        <li><strong>15 Günlük Sınır Vizesi ile Karıştırmayın:</strong> Yönetmelik md. 15'teki vize vizesiz gelenlere acil/mücbir sebeple verilen 15 günlük vizedir; kaşe vize ise pasaport kısaltmasıdır.</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- 3. V-84 ŞARTLI GİRİŞ İŞLEMLERİ -->
+            <section id="section-v84" class="guide-card searchable-section">
+                <div class="guide-card-header">
+                    <h2 class="guide-card-title">
+                        <i class="fas fa-stamp"></i> 3. V-84 Şartlı Giriş İşlemleri
+                    </h2>
+                    <a href="/VIZEV" class="btn-guide-action" target="_blank">
+                        <i class="fas fa-external-link-alt"></i> V-84 Modülüne Git
+                    </a>
+                </div>
+                <p>
+                    Daha önce vize/ikamet ihlali yapıp çıkışta para cezasını ödeyen ve hakkında süreli giriş yasağı bulunmayan yabancıların, 
+                    <strong>10 gün içerisinde İl Göç İdaresine başvurarak ikamet izni alacaklarını taahhüt etmeleri şartıyla</strong> ülkeye girişlerine izin verilmesi işlemidir.
+                </p>
+
+                <div class="steps-container">
+                    <div class="step-item">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <div class="step-title"><i class="fas fa-search text-warning"></i> Tahdit ve Ceza Kontrolü</div>
+                            <p class="step-desc">Yabancının önceki ihlal cezasını ödeyip ödemediği ve sistemde aktif bir giriş yasağı (Ç kodu) olup olmadığı tahdit sorgulamasıyla kontrol edilir.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <div class="step-title"><i class="fas fa-file-signature text-warning"></i> Taahhütname Düzenlenmesi</div>
+                            <p class="step-desc">Yolcuya "10 gün içinde İl Göç İdaresi Müdürlüğüne ikamet izni başvurusunda bulunacağına" dair yasal tebligat ve taahhütname imzalatılır.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <div class="step-title"><i class="fas fa-passport text-warning"></i> V-84 Kaşesi ve Sistem Kaydı</div>
+                            <p class="step-desc">Pasaporta V-84 kaşesi basılır, sisteme V-84 tahditi işlenir. 10 günlük yasal süre giriş gününü takip eden günden itibaren başlar.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="scenario-box">
+                    <div class="scenario-box-title"><i class="fas fa-child text-success"></i> 10 Yaşından Küçük Çocuklar Kuralı</div>
+                    <p class="mb-0 small">
+                        10 yaşını doldurmamış çocuklara ceza tahakkuk ettirilemez ve giriş yasağı uygulanamaz. Çocuk anne/babasına bağlı olarak giriş yapar; 
+                        çocuk adına ayrıca şartlı ceza takibi yapılmaz.
+                    </p>
+                </div>
+            </section>
+
+            <!-- 4. TAHDİT KODLARI VE GİRİŞ YASAKLARI -->
+            <section id="section-tahdit" class="guide-card searchable-section">
+                <div class="guide-card-header">
+                    <h2 class="guide-card-title">
+                        <i class="fas fa-ban"></i> 4. Tahdit Kodları ve Giriş Yasakları (Ç ve V Kodları)
+                    </h2>
+                    <a href="@Url.Action("Index", "Tahdit")" class="btn-guide-action" target="_blank">
+                        <i class="fas fa-external-link-alt"></i> Tahdit Ekranı
+                    </a>
+                </div>
+                <p>
+                    Hudut kapılarında pasaport kontrolü sırasında sistemde çıkan tahdit kodlarının anlamları, süreleri ve yolcuya uygulanacak muameleler bu modülden incelenir.
+                </p>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm small mb-2">
+                        <thead class="bg-light font-weight-bold">
+                            <tr>
+                                <th style="width: 100px;">Tahdit Kodu</th>
+                                <th>Anlamı / Kapsamı</th>
+                                <th>Yasak Süresi</th>
+                                <th>Giriş Durumu</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="badge badge-danger">Ç-101</span></td>
+                                <td>Vize/ikamet ihlali (3 aya kadar ihlal edip ceza ödemeden çıkanlar)</td>
+                                <td>3 Ay</td>
+                                <td>Giriş Verilmez (Süre bitene kadar)</td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge badge-danger">Ç-102</span></td>
+                                <td>Vize/ikamet ihlali (3 ay - 6 ay arası ihlal edip ceza ödemeden çıkanlar)</td>
+                                <td>6 Ay</td>
+                                <td>Giriş Verilmez</td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge badge-danger">Ç-103</span></td>
+                                <td>Vize/ikamet ihlali (6 ay - 1 yıl arası ihlal edip ceza ödemeden çıkanlar)</td>
+                                <td>1 Yıl</td>
+                                <td>Giriş Verilmez</td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge badge-danger">Ç-104</span></td>
+                                <td>Vize/ikamet ihlali (1 yıl - 2 yıl arası ihlal edip ceza ödemeden çıkanlar)</td>
+                                <td>2 Yıl</td>
+                                <td>Giriş Verilmez</td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge badge-danger">Ç-105</span></td>
+                                <td>Vize/ikamet ihlali (2 yıldan fazla ihlal edip ceza ödemeden çıkanlar)</td>
+                                <td>5 Yıl</td>
+                                <td>Giriş Verilmez</td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge badge-warning text-dark">V-84</span></td>
+                                <td>10 gün içinde ikamet izni alma taahhüdüyle şartlı giriş</td>
+                                <td>10 Gün</td>
+                                <td>Şartlı Giriş İzni Verilir</td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge badge-dark">Ç-114</span></td>
+                                <td>Hakkında adli işlem yapılan veya ceza ödemeyen yabancılar</td>
+                                <td>1 - 2 Yıl</td>
+                                <td>Bakanlık / Mahkeme İzni Aranır</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="d-flex gap-2 flex-wrap mt-2">
+                    <a href="@Url.Content("~/files/Genelge/TahditGenelgeler/Giris_Yasaklari.pdf")" target="_blank" class="btn btn-sm btn-outline-danger">
+                        <i class="fas fa-file-pdf me-1"></i> Ç Kodlu Giriş Yasakları Genelgesi (PDF)
+                    </a>
+                    <a href="@Url.Content("~/files/Genelge/TahditGenelgeler/Idari_Kodlar.pdf")" target="_blank" class="btn btn-sm btn-outline-info">
+                        <i class="fas fa-file-pdf me-1"></i> V Kodlu İdari Kararlar Genelgesi (PDF)
+                    </a>
+                </div>
+            </section>
+
+            <!-- 5. INAD (KABUL EDİLEMEZ YOLCU) PROSEDÜRÜ -->
+            <section id="section-inad" class="guide-card searchable-section">
+                <div class="guide-card-header">
+                    <h2 class="guide-card-title">
+                        <i class="fas fa-user-times"></i> 5. INAD (Kabul Edilemez Yolcu) Prosedürü
+                    </h2>
+                    <a href="@Url.Action("Index", "EInad")" class="btn-guide-action" target="_blank">
+                        <i class="fas fa-external-link-alt"></i> INAD Ekranı
+                    </a>
+                </div>
+                <p>
+                    Pasaportu geçersiz olan, vizesi bulunmayan, giriş yasağı (tahditi) olan, pasaport süresi 60 günden az olan veya kamu düzeni açısından 
+                    ülkeye girişi sakıncalı görülen yabancılar hakkında uygulanan kabul edilmeme (inadmissible passenger) sürecidir.
+                </p>
+
+                <div class="steps-container">
+                    <div class="step-item">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <div class="step-title"><i class="fas fa-shield-alt text-danger"></i> Giriş Reddi Kararının Belirlenmesi</div>
+                            <p class="step-desc">6458 sayılı Kanun m. 7, 9 veya 15 kapsamındaki ret gerekçesi tespit edilir (Örn: Sahte pasaport, süresi bitmiş vize, Ç-kodu yasağı vb.).</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <div class="step-title"><i class="fas fa-file-contract text-danger"></i> INAD Tebligat Formu Düzenleme</div>
+                            <p class="step-desc">Sistem üzerinden "Türkiye'ye Girişine İzin Verilmeyen Yolcuya İlişkin Tebliğ-Tebellüğ Belgesi" yabancının anlayacağı dilde hazırlanıp imzalatılır.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <div class="step-title"><i class="fas fa-plane-departure text-danger"></i> Taşıyıcıya (Havayoluna) Teslim ve Geri Gönderme</div>
+                            <p class="step-desc">Yolcu, geldiği taşıyıcı şirkete (havayolu/gemi) tebliğ formuyla teslim edilir. Taşıyıcı, masrafları üstlenerek yabancıyı geldiği ülkeye geri taşımakla yükümlüdür.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 6. TERİMLER SÖZLÜĞÜ -->
+            <section id="section-terimler" class="guide-card searchable-section">
+                <div class="guide-card-header">
+                    <h2 class="guide-card-title">
+                        <i class="fas fa-book"></i> 6. Terimler ve Mevzuat Sözlüğü
+                    </h2>
+                    <a href="@Url.Action("Index", "PublicGlossary")" class="btn-guide-action" target="_blank">
+                        <i class="fas fa-external-link-alt"></i> Terimler Sözlüğü
+                    </a>
+                </div>
+                <p>
+                    Hudut kontrollerinde karşılaşılan diplomatik, konsolosluk, vize rejimi ve uluslararası göç hukuku kavramlarına hızlı erişim sağlayan kütüphanedir.
+                </p>
+                <div class="row small">
+                    <div class="col-md-4 mb-2">
+                        <div class="border rounded p-2 bg-light">
+                            <strong>Müteaddit Vize:</strong> Çok girişli, geçerlilik süresi içinde birden fazla giriş-çıkışa imkan tanıyan vize türü.
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <div class="border rounded p-2 bg-light">
+                            <strong>INAD Yolcu:</strong> Ülkeye giriş şartlarını taşımadığı için hudut kapısından geri çevrilen kişi.
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <div class="border rounded p-2 bg-light">
+                            <strong>UVR Tablosu:</strong> Ülkelerin vize rejimlerini ve günlük/aylık harç tarifelerini barındıran veri cetveli.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 7. RAPORLAR VE İSTATİSTİKLER -->
+            <section id="section-raporlar" class="guide-card searchable-section">
+                <div class="guide-card-header">
+                    <h2 class="guide-card-title">
+                        <i class="fas fa-chart-bar"></i> 7. Eski İşlemler ve Raporlama
+                    </h2>
+                    <a href="@Url.Action("Index", "EskiIslemler")" class="btn-guide-action" target="_blank">
+                        <i class="fas fa-external-link-alt"></i> Eski İşlemler
+                    </a>
+                </div>
+                <p>
+                    Kapınızda veya ülke genelinde yapılmış tüm ceza, vize ve muafiyet işlemlerini filtreleyebilir; Excel/PDF formatında dışa aktarabilirsiniz.
+                </p>
+                <ul class="small ps-3 mb-0">
+                    <li>Tarih aralığı, pasaport numarası, yabancı uyruğu ve işlem yapan personel siciline göre filtreleme.</li>
+                    <li>Tahsil edilen harç tutarlarının günlük/aylık kasa icmali.</li>
+                    <li>Hudut kapısı bazlı yoğunluk ve en çok ihlal yapan ülke grafik analizleri.</li>
+                </ul>
+            </section>
+
+            <!-- 8. EĞİTİM PORTALI -->
+            <section id="section-egitim" class="guide-card searchable-section">
+                <div class="guide-card-header">
+                    <h2 class="guide-card-title">
+                        <i class="fas fa-graduation-cap"></i> 8. Eğitim & Sınav Portalı
+                    </h2>
+                    <a href="@Url.Action("Index", "Edu")" class="btn-guide-action" target="_blank">
+                        <i class="fas fa-external-link-alt"></i> Eğitim Portalına Git
+                    </a>
+                </div>
+                <p>
+                    Hudut kapısı personelinin mevzuat bilgilerini taze tutmak, sahte belge/pasaport inceleme yetkinliklerini artırmak amacıyla hazırlanan interaktif eğitim sistemidir.
+                </p>
+                <div class="steps-container">
+                    <div class="step-item">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <div class="step-title">Dersleri İnceleyin</div>
+                            <p class="step-desc">Mevzuat videoları, slaytlar ve örnek olay çalışmalarını tamamlayın.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <div class="step-title">Sınavlara Katılın</div>
+                            <p class="step-desc">Kurs sonundaki çoktan seçmeli değerlendirme testlerine katılın.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <div class="step-title">Sertifika Kazanın</div>
+                            <p class="step-desc">Başarı barajını aşarak dijital eğitim sertifikanızı profilinize ekleyin.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 9. YETKİLER VE BAKIM İŞLEMLERİ (ADMIN) -->
+            <section id="section-admin" class="guide-card searchable-section">
+                <div class="guide-card-header">
+                    <h2 class="guide-card-title">
+                        <i class="fas fa-user-shield"></i> 9. Yetkiler ve Bakım İşlemleri (Yöneticiler İçin)
+                    </h2>
+                    <span class="guide-badge-role">Admin Yetkisi (Kod: 2)</span>
+                </div>
+                <p>
+                    Sistem yöneticileri (Adminler) için kullanıcı hesap yönetimi, yetki matrisi ve veritabanı sağlık kontrolleri araçları:
+                </p>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm small mb-2">
+                        <thead class="bg-light font-weight-bold">
+                            <tr>
+                                <th>Yetki Kodu</th>
+                                <th>Yetki Adı</th>
+                                <th>Kapsadığı İşlem Alanları</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><strong>1</strong></td><td>Kullanıcı İşlemleri</td><td>Personel ekleme, düzenleme, şifre sıfırlama, kapı ataması.</td></tr>
+                            <tr><td><strong>2</strong></td><td>Admin / Sistem Tanımları</td><td>Harç tarifeleri, ülke tanımları, bakım işlemleri ve rol yetkilendirmesi.</td></tr>
+                            <tr><td><strong>3</strong></td><td>Ceza, Tahdit ve Vize</td><td>Ceza hesaplama, kaşe vize, V-84 taahhüdü ve tahdit sorgulama.</td></tr>
+                            <tr><td><strong>4</strong></td><td>Eski İşlemler / Raporlar</td><td>Geçmiş sorgular, kasa dökümleri ve Excel/PDF ihracı.</td></tr>
+                            <tr><td><strong>5</strong></td><td>Duyuru ve Mesajlar</td><td>Personele sistem içi duyuru ve bildirim gönderme.</td></tr>
+                            <tr><td><strong>6</strong></td><td>Eğitim Yönetimi</td><td>Kurs açma, sınav hazırlama, soru ekleme ve eğitmen yetkisi.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="scenario-box">
+                    <div class="scenario-box-title"><i class="fas fa-tools text-success"></i> Sistem Bakım İşlemleri (/AllUsers):</div>
+                    <ul class="mb-0 small ps-3">
+                        <li><strong>Tüm Pasifleri Aktifleştir:</strong> Tayin/görev değişimi sonrası kapalı hesapları tek tıkla oturuma açar.</li>
+                        <li><strong>3 Ay ve Üzeri İnaktifleri Pasife Al:</strong> Güvenlik gereği 90 gün oturum açmamış hesapları dondurur.</li>
+                        <li><strong>Yetim Kullanıcıları Temizle:</strong> Silinmiş kapıya/yetkiye bağlı kalmış geçersiz hesap artıklarını temizler.</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- 10. SIKÇA SORULAN SORULAR -->
+            <section id="section-faq" class="guide-card searchable-section">
+                <div class="guide-card-header">
+                    <h2 class="guide-card-title">
+                        <i class="fas fa-question-circle"></i> 10. Sıkça Sorulan Sorular (SSS)
+                    </h2>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>Kaşe vize ile sınır kapısında verilen 15 günlük vize aynı mıdır?</span>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <strong>Hayır, tamamen farklıdır.</strong> 
+                        Sınırda verilen vize (YUKK Yön. m.15) vizesiz gelen yabancılara acil ve mücbir durumlarda en fazla 15 güne kadar verilen vizedir. 
+                        Kaşe vize ise pasaport geçerlilik süresi <em>(Vize + 60 gün)</em> şartını karşılamayan yabancılara pasaport bitimine 60 gün kalana kadar 
+                        verilen süre kısaltması kolaylığıdır.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>Pasaportunda 50 gün kalan yabancıya kaşe vize verilebilir mi?</span>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <strong>Kesinlikle verilemez.</strong> 
+                        6458 sayılı Kanun md. 7/1-b gereği Türkiye'ye giriş yapacak her yabancının pasaportunda en az 60 gün geçerlilik süresi bulunmak zorundadır. 
+                        60 gün veya daha az süresi olan yabancı hakkında INAD (Giriş Reddi) işlemi tesis edilerek geri gönderilir.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>Eski pasaportunda geçerli çok girişli vizesi olan biri yeni pasaportla geldiğinde harç alınır mı?</span>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <strong>Harç alınmaz.</strong> 
+                        Konsolosluk vizesi harcı daha önce ödendiği için hudut kapısında mükerrer harç tahsil edilmez. Yabancıya kolaylık amacıyla 
+                        1 defaya mahsus TEK GİRİŞLİ kaşe vize tatbik edilir ve sonraki seyahati için yeni vize alması tebliğ edilir.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>V-84 şartlı vizesi alan yabancı 10 gün içinde başvurmazsa ne olur?</span>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </div>
+                    <div class="faq-answer">
+                        10 gün içerisinde İl Göç İdaresine ikamet izni başvurusu yapmayan yabancı kaçak durumuna düşer (vize ihlali başlar) 
+                        ve bir sonraki çıkışında hakkında para cezasıyla birlikte süreli giriş yasağı kararı alınır.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>Almanya ve bazı AB ülkeleri pasaportlarının süresi bitmiş olsa da kabul edilir mi?</span>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <strong>Evet.</strong> İkili anlaşmalar uyarınca; Almanya vatandaşlarının son 1 yıl içinde; Belçika, Fransa, İspanya, İsviçre, 
+                        Lüksemburg ve Portekiz vatandaşlarının son 5 yıl içinde süresi bitmiş pasaport veya kimlik kartları geçerli kabul edilmektedir.
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Canlı Arama Filtresi
+        var searchInput = document.getElementById('guideSearchInput');
+        var sections = document.querySelectorAll('.searchable-section');
+        var menuLinks = document.querySelectorAll('.guide-menu a');
+        var pillBtns = document.querySelectorAll('.pill-btn');
+
+        if (searchInput) {
+            searchInput.addEventListener('input', function () {
+                var query = this.value.toLowerCase().trim();
+                sections.forEach(function (sec) {
+                    var text = sec.innerText.toLowerCase();
+                    if (!query || text.indexOf(query) !== -1) {
+                        sec.style.display = 'block';
+                    } else {
+                        sec.style.display = 'none';
+                    }
+                });
+            });
+        }
+
+        // Hap Filtreleri
+        pillBtns.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                pillBtns.forEach(function (b) { b.classList.remove('active'); });
+                this.classList.add('active');
+                var target = this.getAttribute('data-target');
+
+                if (target === 'all') {
+                    sections.forEach(function (sec) { sec.style.display = 'block'; });
+                } else {
+                    sections.forEach(function (sec) {
+                        if (sec.id === target) {
+                            sec.style.display = 'block';
+                            sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        } else {
+                            sec.style.display = 'none';
+                        }
+                    });
+                }
+            });
+        });
+
+        // Sol Menü Tıklamaları ve Aktiflik
+        menuLinks.forEach(function (link) {
+            link.addEventListener('click', function (e) {
+                menuLinks.forEach(function (l) { l.classList.remove('active'); });
+                this.classList.add('active');
+
+                var href = this.getAttribute('href');
+                if (href && href.startsWith('#')) {
+                    var sec = document.querySelector(href);
+                    if (sec) {
+                        sec.style.display = 'block';
+                    }
+                }
+            });
+        });
+
+        // SSS Akordeon Tıklaması
+        var faqItems = document.querySelectorAll('.faq-item');
+        faqItems.forEach(function (item) {
+            var q = item.querySelector('.faq-question');
+            if (q) {
+                q.addEventListener('click', function () {
+                    item.classList.toggle('open');
+                });
+            }
+        });
+
+        // =====================================================================
+        // CEZA HESAPLAMA SİMÜLATÖRÜ VE ANİMASYON MOTORU
+        // =====================================================================
+        var isPaidSelected = true;
+
+        // Ödeme Seçimi Toggle
+        var btnTogglePaid = document.getElementById('simTogglePaid');
+        var btnToggleUnpaid = document.getElementById('simToggleUnpaid');
+
+        if (btnTogglePaid && btnToggleUnpaid) {
+            btnTogglePaid.addEventListener('click', function () {
+                isPaidSelected = true;
+                btnTogglePaid.classList.add('active-paid');
+                btnToggleUnpaid.classList.remove('active-unpaid');
+            });
+            btnToggleUnpaid.addEventListener('click', function () {
+                isPaidSelected = false;
+                btnToggleUnpaid.classList.add('active-unpaid');
+                btnTogglePaid.classList.remove('active-paid');
+            });
+        }
+
+        // Hızlı Gün Preset Butonları
+        var presetBtns = document.querySelectorAll('.sim-preset-btn');
+        var daysInput = document.getElementById('simDaysInput');
+        presetBtns.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                presetBtns.forEach(function (b) { b.classList.remove('active'); });
+                this.classList.add('active');
+                if (daysInput) {
+                    daysInput.value = this.getAttribute('data-days');
+                }
+            });
+        });
+
+        // Sayı Saydırma Animasyonu (CountUp)
+        function animateCounter(elementId, targetValue, duration) {
+            var el = document.getElementById(elementId);
+            if (!el) return;
+            var start = 0;
+            var startTime = null;
+
+            function step(timestamp) {
+                if (!startTime) startTime = timestamp;
+                var progress = Math.min((timestamp - startTime) / duration, 1);
+                var current = Math.floor(progress * targetValue);
+                el.innerText = current.toLocaleString('tr-TR') + ' TL';
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                } else {
+                    el.innerText = targetValue.toLocaleString('tr-TR') + ' TL';
+                }
+            }
+            window.requestAnimationFrame(step);
+        }
+
+        // Simülasyon Çalıştır Butonu
+        var btnRunSim = document.getElementById('btnRunSim');
+        if (btnRunSim) {
+            btnRunSim.addEventListener('click', function () {
+                var countrySelect = document.getElementById('simCountry');
+                var visaSelect = document.getElementById('simVisaType');
+                var ageSelect = document.getElementById('simAgeGroup');
+                var days = parseInt(daysInput ? daysInput.value : 45) || 45;
+
+                var selectedCountryOpt = countrySelect.options[countrySelect.selectedIndex];
+                var currency = selectedCountryOpt.getAttribute('data-currency') || 'USD';
+                var monthFee = parseFloat(selectedCountryOpt.getAttribute('data-month')) || 25;
+                var visaFee = parseFloat(selectedCountryOpt.getAttribute('data-visa')) || 3560;
+                var defterFee = parseFloat(selectedCountryOpt.getAttribute('data-defter')) || 565;
+                var baseFee = parseFloat(selectedCountryOpt.getAttribute('data-base')) || 1000;
+
+                var isChild = (ageSelect && ageSelect.value === 'child');
+                var visaType = visaSelect ? visaSelect.value : 'muafiyet';
+
+                // İhlal Süresini Ay ve Gün Olarak Hesapla
+                var months = Math.floor(days / 30);
+                var remainingDays = days % 30;
+                if (remainingDays > 0) months += 1;
+
+                var violationText = '';
+                if (Math.floor(days / 30) > 0) {
+                    violationText += Math.floor(days / 30) + ' Ay ';
+                }
+                if (days % 30 > 0) {
+                    violationText += (days % 30) + ' Gün';
+                }
+                if (!violationText) violationText = days + ' Gün';
+                violationText += ' (' + days + ' Gün Toplam)';
+
+                var statViolationTime = document.getElementById('statViolationTime');
+                if (statViolationTime) statViolationTime.innerText = violationText;
+
+                // Harç Hesaplama Mantığı (Yaklaşık TCMB Kurları)
+                var fxRate = (currency === 'EUR') ? 37.0 : ((currency === 'GBP') ? 44.0 : 34.0);
+                var calculatedIkamet = Math.round((baseFee + ((months - 1) * monthFee * fxRate)));
+                if (calculatedIkamet < baseFee) calculatedIkamet = baseFee;
+
+                var calculatedVisa = (visaType === 'ikamet' || visaType === 'calisma') ? 0 : visaFee;
+                var calculatedDefter = defterFee;
+                var calculatedIdari = Math.round(1500 + (months * 450));
+
+                if (isChild) {
+                    calculatedIkamet = Math.round(calculatedIkamet * 0.5);
+                    calculatedIdari = Math.round(calculatedIdari * 0.5);
+                }
+
+                var grandTotal = calculatedIkamet + calculatedVisa + calculatedDefter + calculatedIdari;
+
+                // Animasyonlu Pipeline Tetikleme (1 -> 2 -> 3 -> 4)
+                var pipe1 = document.getElementById('pipe1');
+                var pipe2 = document.getElementById('pipe2');
+                var pipe3 = document.getElementById('pipe3');
+                var pipe4 = document.getElementById('pipe4');
+
+                [pipe1, pipe2, pipe3, pipe4].forEach(function(p) { if(p) p.classList.remove('pipe-active'); });
+
+                if (pipe1) pipe1.classList.add('pipe-active');
+
+                setTimeout(function () {
+                    if (pipe2) pipe2.classList.add('pipe-active');
+                    // Sayaç Animasyonlarını Başlat
+                    animateCounter('statIkametHarc', calculatedIkamet, 600);
+                    animateCounter('statVizeHarc', calculatedVisa, 600);
+                    animateCounter('statDefterHarc', calculatedDefter, 600);
+                    animateCounter('statIdariCeza', calculatedIdari, 600);
+                    animateCounter('statTotal', grandTotal, 750);
+                }, 250);
+
+                setTimeout(function () {
+                    if (pipe3) pipe3.classList.add('pipe-active');
+                    if (pipe4) pipe4.classList.add('pipe-active');
+
+                    // Tahdit ve Karar Kutusunu Göster
+                    var decisionBox = document.getElementById('simDecisionBox');
+                    var decisionIcon = document.getElementById('decisionIcon');
+                    var decisionTitle = document.getElementById('decisionTitle');
+                    var decisionBody = document.getElementById('decisionBody');
+
+                    if (!decisionBox) return;
+                    decisionBox.style.display = 'block';
+
+                    if (isPaidSelected) {
+                        decisionBox.className = 'sim-decision-result sim-res-paid';
+                        if (decisionIcon) decisionIcon.className = 'fas fa-check-circle fa-2x text-success';
+                        if (decisionTitle) decisionTitle.innerText = '✅ ÇIKIŞ ONAYLANDI: GİRİŞ YASAĞI UYGULANMAZ!';
+                        if (decisionBody) {
+                            decisionBody.innerHTML = '<strong>Yolcu cezasını (' + grandTotal.toLocaleString('tr-TR') + ' TL) vezneye eksiksiz ödemiştir.</strong><br />' +
+                                '• 6458 sayılı Kanun gereğince hakkında <strong>Ç-114 tahditi tesis EDİLMEZ</strong>.<br />' +
+                                '• Yolcu isterse 10 gün içinde ikamet başvurusunda bulunacağını taahhüt ederek <strong>V-84 Şartlı Giriş</strong> hakkıyla derhal Türkiye\'ye geri gelebilir.<br />' +
+                                '• Pasaporta harç tahsil damgası vurulur, 2 nüsha tahsilat ve tebligat bordrosu basılır.';
+                        }
+                    } else {
+                        decisionBox.className = 'sim-decision-result sim-res-unpaid';
+                        if (decisionIcon) decisionIcon.className = 'fas fa-ban fa-2x text-danger';
+
+                        var banPeriod = '3 AY';
+                        if (days > 1825) banPeriod = '5 YIL';
+                        else if (days > 730) banPeriod = '2 YIL';
+                        else if (days > 365) banPeriod = '1 YIL';
+                        else if (days > 180) banPeriod = '1 YIL';
+                        else if (days > 90) banPeriod = '6 AY';
+                        else banPeriod = '3 AY';
+
+                        if (decisionTitle) decisionTitle.innerText = '⛔ Ç-114 TAHDİT KODU İŞLENDİ: ' + banPeriod + ' YURDA GİRİŞ YASAĞI!';
+                        if (decisionBody) {
+                            decisionBody.innerHTML = '<strong>Yolcu cezasını (' + grandTotal.toLocaleString('tr-TR') + ' TL) ödemeden çıkış yapmaktadır.</strong><br />' +
+                                '• POLNET sistemine derhal <strong>Ç-114 (Vize/İkamet İhlali Nedeniyle Giriş Yasağı)</strong> kodu girilir.<br />' +
+                                '• İhlal edilen ' + days + ' güne istinaden <strong>' + banPeriod + ' boyunca Türkiye\'ye Girişi YASAKLANMIŞTIR</strong>.<br />' +
+                                '• Yabancı, yasak süresi bitse dahi ödenmemiş olan ' + grandTotal.toLocaleString('tr-TR') + ' TL cezasını Maliye\'ye ödemeden ülkeye kesinlikle alınamaz.';
+                        }
+                    }
+
+                    decisionBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 600);
+            });
+        }
+
+        // İnteraktif Senaryo Sekmeleri (Case Tabs)
+        var scenarioTabs = document.querySelectorAll('.scenario-tab-btn');
+        scenarioTabs.forEach(function (tabBtn) {
+            tabBtn.addEventListener('click', function () {
+                scenarioTabs.forEach(function (t) { t.classList.remove('active'); });
+                this.classList.add('active');
+
+                var targetTabId = this.getAttribute('data-tab');
+                document.querySelectorAll('.scenario-tab-pane').forEach(function (pane) {
+                    pane.classList.remove('active');
+                });
+                var targetPane = document.getElementById(targetTabId);
+                if (targetPane) targetPane.classList.add('active');
+            });
+        });
+    });
+</script>
+}

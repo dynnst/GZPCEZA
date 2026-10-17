@@ -1,0 +1,290 @@
+@model IEnumerable<gzpegm.Models.ISKmodel>
+@{
+    Layout = "~/Views/Shared/_Master.cshtml";
+    ViewBag.UseDataTables = true;
+    ViewBag.UseDataTablesExport = true;
+    ViewBag.Title = "Ceza Kesilen Yolcular";
+    var tahditStats = ViewBag.TahditStats as gzpegm.Models.ViewModels.TahditStatisticsViewModel ?? new gzpegm.Models.ViewModels.TahditStatisticsViewModel();
+}
+
+@section Styles {
+    <link href="@Url.Content("~/css/isk-index.css")?v=1.0" rel="stylesheet" />
+}
+
+<div id="isk-config" data-delete-url="@Url.Action("DeleteIsk", "Isk")" style="display:none;"></div>
+
+<div class="wrapper wrapper-content animated fadeInRight">
+    <div class="row">
+        <div class="col-lg-12">
+            <!-- İSTATİSTİK KARTI -->
+            <div class="ibox">
+                <div class="ibox-title">
+                    <h5>📊 Genel İstatistikler</h5>
+                </div>
+                <div class="ibox-content">
+                    <div class="row text-center stats-row g-0">
+                        <div class="col-md-3">
+                            <div class="stat-circle">@(ViewBag.KesilenToplamCeza ?? 0)</div>
+                            <div class="text-muted small">Toplam İşlem</div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-circle text-danger">
+                                ₺ @{
+                                    try
+                                    {
+                                        var toplam = ViewBag.toplam;
+                                        if (toplam != null && toplam.ToString() != "")
+                                        {
+                                            decimal deger = Convert.ToDecimal(toplam);
+                                            @deger.ToString("N0")
+}
+                                        else
+                                        {
+                                            @:0
+                                        }
+                                    }
+                                    catch
+                                    {
+                                        @:0
+                                    }
+                                }
+                            </div>
+                            <div class="text-muted small">Toplam Ceza (TL)</div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-circle">@(ViewBag.EnCokIslemYapanPersonel ?? "-")</div>
+                            <div class="text-muted small">En Aktif Personel</div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-circle text-danger">
+                                ₺ @{
+                                    try
+                                    {
+                                        var enFazla = ViewBag.EnFazlaCezaMiktari;
+                                        if (enFazla != null && enFazla.ToString() != "")
+                                        {
+                                            decimal deger = Convert.ToDecimal(enFazla);
+                                            @deger.ToString("N0")
+}
+                                        else
+                                        {
+                                            @:0
+                                        }
+                                    }
+                                    catch
+                                    {
+                                        @:0
+                                    }
+                                }
+                            </div>
+                            <div class="text-muted small">En Yüksek Ceza</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ibox">
+                <div class="ibox-title">
+                    <h5><i class="fas fa-ban mr-2"></i>Tahdit Form İstatistikleri</h5>
+                </div>
+                <div class="ibox-content">
+                    <div class="tahdit-summary-grid">
+                        <div class="tahdit-total-card">
+                            <span>Seçili Aralık Tahdit Formu</span>
+                            <strong>@tahditStats.AllTotal</strong>
+                            <small>filtreye göre toplam</small>
+                        </div>
+                        <div class="tahdit-table-wrap">
+                            <table class="table table-sm mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Tahdit</th>
+                                        <th>İdari</th>
+                                        <th class="text-right">Adet</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (tahditStats.AllByCode != null && tahditStats.AllByCode.Any())
+                                    {
+                                        foreach (var item in tahditStats.AllByCode)
+                                        {
+                                            <tr>
+                                                <td>@item.TahditCode</td>
+                                                <td>@item.IdariTahditCode</td>
+                                                <td class="text-right">@item.Count</td>
+                                            </tr>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <tr><td colspan="3" class="text-center text-muted">Seçili aralıkta tahdit formu yok.</td></tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TABLO KARTI -->
+            <div class="ibox">
+                <div class="ibox-title d-flex justify-content-between align-items-center flex-wrap">
+                    <h5>📋 Ceza Kesilen Yolcular</h5>
+                    <div>
+                        @{
+                            int? selectedHours = ViewBag.SelectedHours as int?;
+                            var selectedYear = ViewBag.SelectedYear != null ? Convert.ToInt32(ViewBag.SelectedYear) : DateTime.Now.Year;
+                            var fromVal = ViewBag.From != null ? ((DateTime)ViewBag.From).ToString("yyyy-MM-dd") : "";
+                            var toVal = ViewBag.To != null ? ((DateTime)ViewBag.To).ToString("yyyy-MM-dd") : "";
+                            var searchText = ViewBag.SearchText as string ?? "";
+                            var baseUrl = Url.Action("Export", "Isk");
+                            var currentParams = "?year=" + selectedYear;
+                            if (selectedHours.HasValue) { currentParams += "&hours=" + selectedHours.Value;
+}
+                            if (!string.IsNullOrEmpty(fromVal)) { currentParams += "&from=" + fromVal; }
+                            if (!string.IsNullOrEmpty(toVal)) { currentParams += "&to=" + toVal; }
+                            if (!string.IsNullOrEmpty(searchText)) { currentParams += "&q=" + HttpUtility.UrlEncode(searchText); }
+                            if (!string.IsNullOrEmpty(ViewBag.SelectedBorder as string)) { currentParams += "&border=" + HttpUtility.UrlEncode(ViewBag.SelectedBorder as string); }
+                            if (!string.IsNullOrEmpty(ViewBag.SelectedUser as string)) { currentParams += "&user=" + HttpUtility.UrlEncode(ViewBag.SelectedUser as string); }
+
+                            var exportPdfUrl = baseUrl + currentParams + "&export=pdf";
+                            var exportXlsUrl = baseUrl + currentParams + "&export=excel";
+                        }
+
+                        <form method="get" action="@Url.Action("Index","Isk")" class="form-inline d-inline-block mr-2">
+                            <select name="year" class="form-control mr-1">
+                                <option value="0" @(selectedYear == 0 ? "selected" : "")>Tüm Yıllar</option>
+                                @for (int y = DateTime.Now.Year; y >= 2020; y--)
+                                {
+                                    <option value="@y" @(selectedYear == y ? "selected" : "")>@y</option>
+                                }
+                            </select>
+                            <select name="hours" class="form-control mr-1">
+                                <option value="" @(!selectedHours.HasValue ? "selected" : "")>Yıl Seçimine Göre</option>
+                                <option value="24" @(selectedHours == 24 ? "selected" : "")>Son 24 Saat</option>
+                                <option value="168" @(selectedHours == 168 ? "selected" : "")>Son 7 Gün</option>
+                                <option value="720" @(selectedHours == 720 ? "selected" : "")>Son 30 Gün</option>
+                                <option value="8760" @(selectedHours == 8760 ? "selected" : "")>Son 1 Yıl</option>
+                            </select>
+
+                            <select name="border" class="form-control mr-1 populate" data-plugin-selectTwo data-width="220px">
+                                <option value="">Tüm Kapılar</option>
+                                @foreach (var item in (ViewBag.BorderList as List<string> ?? new List<string>()))
+                                {
+                                    <option value="@item" @(ViewBag.SelectedBorder == item ? "selected" : "")>@item</option>
+                                }
+                            </select>
+
+                            <select name="user" class="form-control mr-1 populate" data-plugin-selectTwo data-width="220px">
+                                <option value="">Tüm Kullanıcılar</option>
+                                @foreach (var item in (ViewBag.UserList as List<string> ?? new List<string>()))
+                                {
+                                    <option value="@item" @(ViewBag.SelectedUser == item ? "selected" : "")>@item</option>
+                                }
+                            </select>
+                            <input type="date" name="from" value="@fromVal" class="form-control mr-1" />
+                            <input type="date" name="to" value="@toVal" class="form-control mr-1" />
+                            <input type="hidden" name="q" value="@searchText" />
+
+                            <button type="submit" class="btn btn-sm btn-primary">Filtrele</button>
+                        </form>
+
+                        <a href="@exportPdfUrl" class="btn btn-sm btn-outline-secondary mr-1">📄 PDF</a>
+                        <a href="@exportXlsUrl" class="btn btn-sm btn-outline-secondary">📥 Excel</a>
+                    </div>
+                </div>
+                <div class="ibox-content">
+                    @if (!string.IsNullOrEmpty(ViewBag.LoadError as string))
+                    {
+                        <div class="alert alert-danger">@ViewBag.LoadError</div>
+                    }
+
+                    <form method="get" action="@Url.Action("Index", "Isk")" class="search-wrapper d-flex flex-wrap align-items-center" style="gap: 8px;">
+                        <input type="hidden" name="year" value="@selectedYear" />
+                        @if (selectedHours.HasValue)
+                        {
+                            <input type="hidden" name="hours" value="@selectedHours.Value" />
+                        }
+                        <input type="hidden" name="from" value="@fromVal" />
+                        <input type="hidden" name="to" value="@toVal" />
+                        <input type="hidden" name="border" value="@ViewBag.SelectedBorder" />
+                        <input type="hidden" name="user" value="@ViewBag.SelectedUser" />
+                        <input type="text" name="q" id="tableSearch" value="@ViewBag.SearchText" placeholder="Ad Soyad ile ara...">
+                        <button type="submit" class="btn btn-primary">Ara</button>
+                        @if (!string.IsNullOrEmpty(ViewBag.SearchText as string))
+                        {
+                            <a href="@Url.Action("Index", "Isk", new { year = selectedYear, hours = selectedHours, from = fromVal, to = toVal, border = ViewBag.SelectedBorder, user = ViewBag.SelectedUser })" class="btn btn-outline-secondary">Aramayı Temizle</a>
+                        }
+                    </form>
+
+                    <div class="text-muted small mb-2">@(ViewBag.ResultInfo ?? "Son kayıtlar gösteriliyor.")</div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm" id="penaltyTable">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th>Resim</th>
+                                    <th>Tarih</th>
+                                    <th>Ad Soyad</th>
+                                    <th>Pasaport</th>
+                                    <th>Kimlik</th>
+                                    <th>Uyruk</th>
+                                    <th>Vize</th>
+                                    <th>Doğum</th>
+                                    <th>Kontrol</th>
+                                    <th>Onaylayan</th>
+                                    <th>Ceza (₺)</th>
+                                    <th>Kapı</th>
+                                    <th class="text-center">İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var data in Model)
+                                {
+                                    string resim = !string.IsNullOrEmpty(data.Resim) ? data.Resim : "no-image.png";
+                                    <tr>
+                                        <td>
+                                            <img src="/ccc/@resim" class="table-img" loading="lazy" decoding="async" onerror="this.src='/AdminTemplate/img/no-image.png'" />
+                                        </td>
+                                        <td>@(data.Tarih?.ToString("dd.MM.yyyy HH:mm"))</td>
+                                        <td><strong>@data.Name</strong></td>
+                                        <td><span class="badge-custom">@data.Pasaport</span></td>
+                                        <td>@data.Kimlik</td>
+                                        <td>@data.Uyruk</td>
+                                        <td>@data.Vize</td>
+                                        <td>@(data.Birth?.ToString("dd.MM.yyyy"))</td>
+                                        <td>@data.Kontrolm</td>
+                                        <td>@data.Onay</td>
+                                        <td class="text-danger fw-bold">
+                                            ₺ @{
+                                                decimal ceza;
+                                                if (!string.IsNullOrEmpty(data.Money) &&
+                                                    decimal.TryParse(data.Money, System.Globalization.NumberStyles.Any, new System.Globalization.CultureInfo("tr-TR"), out ceza))
+                                                {
+                                                    @ceza.ToString("N2")
+}
+                                                else
+                                                {
+                                                    @:0.00
+                                                }
+                                            }
+                                        </td>
+                                        <td><span class="badge-custom">@data.Kapi</span></td>
+                                        <td class="text-center">
+                                            <a href="/formyazdir/@data.Id" target="_blank" class="btn btn-sm btn-outline-secondary" title="Yazdır">🖨️</a>
+                                            <a onclick="deleteRecord('@data.Id')" class="btn btn-sm btn-danger" title="Sil">🗑️</a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="@Url.Content("~/js/isk-index.js")?v=1.0"></script>
+}

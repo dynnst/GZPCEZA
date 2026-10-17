@@ -1,0 +1,227 @@
+@model gzpegm.Models.ViewModels.EducationPackageImportViewModel
+@{
+    ViewBag.Title = "Eğitim Paketi İçe Aktar (.cezapkg)";
+    Layout = "~/Views/Shared/_Master.cshtml";
+}
+
+<style>
+    .ep-import-header {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: #ffffff;
+        border-radius: 12px;
+        padding: 24px 28px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 16px rgba(30, 60, 114, 0.12);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+    .ep-import-header h1 {
+        font-size: 20px;
+        font-weight: 700;
+        margin: 0;
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .import-card {
+        background: #ffffff;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+        padding: 28px;
+    }
+    .dropzone-box {
+        border: 2px dashed #94a3b8;
+        border-radius: 12px;
+        padding: 36px 20px;
+        text-align: center;
+        background: #f8fafc;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        position: relative;
+    }
+    .dropzone-box:hover, .dropzone-box.dragover {
+        border-color: #2563eb;
+        background: #eff6ff;
+    }
+    .dropzone-icon {
+        font-size: 44px;
+        color: #3b82f6;
+        margin-bottom: 12px;
+    }
+    .mode-card {
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 16px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        height: 100%;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    .mode-card:hover {
+        border-color: #93c5fd;
+        background: #f8fafc;
+    }
+    .mode-card.selected {
+        border-color: #2563eb;
+        background: #eff6ff;
+    }
+    .mode-radio {
+        margin-top: 3px;
+    }
+</style>
+
+<div class="ep-import-header">
+    <div>
+        <h1><i class="fas fa-file-import"></i> Eğitim Paketi İçe Aktar (.cezapkg)</h1>
+        <small style="color: rgba(255,255,255,0.85); font-size: 13px;">
+            Güvenli kaynaktan temin edilen .cezapkg dosyasını yükleyip kurs, içerik modülleri ve sınavları sisteme aktarın.
+        </small>
+    </div>
+    <div>
+        <a href="@Url.Action("Index")" class="btn btn-outline-light btn-sm">
+            <i class="fas fa-arrow-left"></i> Hub'a Dön
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="import-card mb-4">
+            @using (Html.BeginForm("Import", "EducationPackage", FormMethod.Post, new { enctype = "multipart/form-data", id = "importForm" }))
+            {
+                @Html.AntiForgeryToken()
+                if (!ViewData.ModelState.IsValid)
+                {
+                    @Html.ValidationSummary(false, "", new { @class = "alert alert-danger mb-4 rounded-lg" })
+                }
+
+                <div class="form-group mb-4">
+                    <label class="font-weight-bold mb-2"><i class="fas fa-archive text-primary mr-1"></i> Paket Arşiv Dosyası (.cezapkg)</label>
+                    <div class="dropzone-box" id="dropzoneBox" onclick="document.getElementById('packageFileInput').click();">
+                        <div class="dropzone-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <h5 class="font-weight-bold text-dark mb-1" id="filePromptText">Dosyayı buraya sürükleyin veya seçmek için tıklayın</h5>
+                        <p class="text-muted small mb-0" id="fileInfoText">
+                            Yalnızca <strong>.cezapkg</strong> formatı desteklenir &bull; Azami dosya boyutu: @ViewBag.MaximumPackageMb MB
+                        </p>
+                        <input type="file" id="packageFileInput" name="PackageFile" accept=".cezapkg" style="display:none;" required />
+                    </div>
+                </div>
+
+                <div class="form-group mb-4">
+                    <label class="font-weight-bold mb-2"><i class="fas fa-sliders-h text-primary mr-1"></i> İçe Aktarım Modu</label>
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <label class="mode-card selected" id="cardMode1">
+                                <input type="radio" name="Mode" value="1" class="mode-radio" checked />
+                                <div>
+                                    <strong class="text-dark d-block mb-1">Yeni Kurs Olarak Ekle</strong>
+                                    <small class="text-muted">Önerilen moddur. Çakışma olmadan yeni kurs, içerik ve sınav ID'leriyle taslak oluşturur.</small>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="mode-card" id="cardMode3">
+                                <input type="radio" name="Mode" value="3" class="mode-radio" />
+                                <div>
+                                    <strong class="text-dark d-block mb-1">Aynı Paket Varsa Atla</strong>
+                                    <small class="text-muted">Aynı paket kodu ve sürüm daha önce içe aktarılmışsa mükerrerlik oluşturmaz, atlar.</small>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center justify-content-between pt-3 border-top">
+                    <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+                        <i class="fas fa-times mr-1"></i> İptal
+                    </a>
+                    <button type="submit" class="btn btn-success px-4 py-2 font-weight-bold shadow-sm" id="submitBtn">
+                        <i class="fas fa-shield-alt mr-1"></i> Doğrula ve İçe Aktar
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="import-card mb-4" style="background: #f8fafc;">
+            <h5 class="font-weight-bold text-dark mb-3"><i class="fas fa-info-circle text-primary mr-1"></i> Aktarım Protokolü</h5>
+            <ul class="list-unstyled text-muted small mb-4" style="line-height: 1.8;">
+                <li class="mb-2"><i class="fas fa-check text-success mr-2"></i> <strong>Bütünlük Doğrulaması:</strong> Paket içindeki JSON manifesti ve SHA256 dosya hashleri incelenir.</li>
+                <li class="mb-2"><i class="fas fa-check text-success mr-2"></i> <strong>Güvenli Taslak:</strong> İçe aktarılan eğitim hemen yayına girmez; otomatik olarak 'Taslak' statüsünde oluşturulur.</li>
+                <li class="mb-2"><i class="fas fa-check text-success mr-2"></i> <strong>Medya Arşivi:</strong> Kurs ve soru görselleri sunucunun korumalı medya dizinine güvenle açılır.</li>
+                <li><i class="fas fa-check text-success mr-2"></i> <strong>Ön Kontrol:</strong> İçe aktarım bittiğinde sistem sizi doğrudan son inceleme paneline yönlendirir.</li>
+            </ul>
+
+            <div class="p-3 bg-white border rounded">
+                <div class="font-weight-bold text-dark small mb-1"><i class="fas fa-history text-secondary mr-1"></i> Geçmiş Kayıtlar</div>
+                <div class="small text-muted mb-2">Daha önce yüklenen paketleri ve durumlarını inceleyin.</div>
+                <a href="@Url.Action("Logs")" class="btn btn-outline-primary btn-sm btn-block font-weight-bold">
+                    İçe Aktarım Geçmişini Gör
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        var dropzone = document.getElementById('dropzoneBox');
+        var fileInput = document.getElementById('packageFileInput');
+        var promptText = document.getElementById('filePromptText');
+        var infoText = document.getElementById('fileInfoText');
+
+        fileInput.addEventListener('change', function () {
+            if (this.files && this.files.length > 0) {
+                var file = this.files[0];
+                var sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+                promptText.innerHTML = '<span class="text-success"><i class="fas fa-check-circle mr-1"></i> ' + file.name + '</span>';
+                infoText.innerHTML = 'Boyut: <strong>' + sizeMb + ' MB</strong> &bull; Dosya hazır';
+                dropzone.style.borderColor = '#16a34a';
+                dropzone.style.background = '#f0fdf4';
+            }
+        });
+
+        ['dragenter', 'dragover'].forEach(function (eventName) {
+            dropzone.addEventListener(eventName, function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                dropzone.classList.add('dragover');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(function (eventName) {
+            dropzone.addEventListener(eventName, function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                dropzone.classList.remove('dragover');
+            }, false);
+        });
+
+        dropzone.addEventListener('drop', function (e) {
+            if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files;
+                var event = new Event('change');
+                fileInput.dispatchEvent(event);
+            }
+        });
+
+        // Mod kartı seçimi
+        var radios = document.querySelectorAll('input[name="Mode"]');
+        radios.forEach(function (radio) {
+            radio.addEventListener('change', function () {
+                document.getElementById('cardMode1').classList.toggle('selected', radio.value === '1');
+                document.getElementById('cardMode3').classList.toggle('selected', radio.value === '3');
+            });
+        });
+    })();
+</script>

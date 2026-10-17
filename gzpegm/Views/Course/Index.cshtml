@@ -1,0 +1,1601 @@
+@model IEnumerable<gzpegm.Models.Courses>
+@using System
+@{
+    ViewBag.Title = "Ders ve Eğitim Yönetimi";
+    Layout = "~/Views/Shared/_Master.cshtml";
+    ViewBag.UseSummernote = true;
+    ViewBag.UseBootstrapFileUpload = true;
+
+    var currentUser = ViewBag.CurrentUser as gzpegm.Models.E_User;
+    var allCourses = Model != null ? new List<gzpegm.Models.Courses>(Model) : new List<gzpegm.Models.Courses>();
+
+    // Rol bazlı filtreleme
+    IEnumerable<gzpegm.Models.Courses> courses;
+    if (currentUser != null && string.Equals(currentUser.Role, "Admin", StringComparison.OrdinalIgnoreCase))
+    {
+        courses = allCourses;
+    }
+    else if (currentUser != null && string.Equals(currentUser.Role, "Teacher", StringComparison.OrdinalIgnoreCase))
+    {
+        courses = allCourses.Where(c => c.CreatedBy == currentUser.fldId).ToList();
+    }
+    else
+    {
+        courses = new List<gzpegm.Models.Courses>();
+    }
+
+    courses = courses.OrderByDescending(c => c.CreatedDate).ToList();
+    var courseList = courses as List<gzpegm.Models.Courses> ?? new List<gzpegm.Models.Courses>(courses);
+
+    var courseUsers = ViewBag.CourseUsers as Dictionary<int, string> ?? new Dictionary<int, string>();
+    var enrollmentCounts = ViewBag.EnrollmentCounts as Dictionary<int, int> ?? new Dictionary<int, int>();
+    var categories = ViewBag.Categories as List<gzpegm.Models.Categories> ?? new List<gzpegm.Models.Categories>();
+
+    int totalCourses = courseList.Count;
+    int activeCourses = courseList.Count(c => c.IsActive);
+    int passiveCourses = courseList.Count(c => !c.IsActive);
+    int totalEnrollments = courseList.Sum(c => enrollmentCounts.ContainsKey(c.CourseId) ? enrollmentCounts[c.CourseId] : (c.CourseEnrollments?.Count() ?? 0));
+}
+
+<div class="course-page-container">
+
+    <!-- ÜST BİLGİ VE AKSİYON BANNERI -->
+    <div class="course-hero-banner mb-4">
+        <div class="row align-items-center">
+            <div class="col-lg-8 col-md-7">
+                <div class="d-flex align-items-center">
+                    <div class="hero-icon-box mr-3">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <div>
+                        <h2 class="hero-title mb-1">Eğitim & Ders Yönetimi</h2>
+                        <p class="hero-desc mb-0">Kurum içi eğitimleri oluşturun, dijital içerikleri ve sınavları tek merkezden yönetin.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-5 text-md-right mt-3 mt-md-0">
+                <div class="d-flex justify-content-md-end gap-2 flex-wrap">
+                    <a href="@Url.Action("Index", "Category")" class="btn btn-outline-light hero-action-btn mr-2" title="Kategorileri Düzenle">
+                        <i class="fas fa-folder mr-1"></i> Kategoriler
+                    </a>
+                    @if (currentUser != null && (string.Equals(currentUser.Role, "Admin", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(currentUser.Role, "Teacher", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        <button type="button" class="btn btn-warning hero-action-btn font-weight-bold" data-toggle="modal" data-target="#addCourseModal">
+                            <i class="fas fa-plus-circle mr-1"></i> Yeni Ders Ekle
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BİLDİRİM MESAJLARI -->
+    @if (TempData["msgSuccess"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm mb-4" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-check-circle fa-lg mr-2 text-success"></i>
+                <div>
+                    <strong>İşlem Başarılı!</strong> @TempData["msgSuccess"]
+                </div>
+            </div>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Kapat">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+    @if (TempData["msgError"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-4" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-exclamation-triangle fa-lg mr-2 text-danger"></i>
+                <div>
+                    <strong>Hata Oluştu!</strong> @TempData["msgError"]
+                </div>
+            </div>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Kapat">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
+    <!-- İSTATİSTİK KARTLARI -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-sm-6 mb-3 mb-xl-0">
+            <div class="stat-card stat-primary">
+                <div class="stat-body">
+                    <div class="stat-info">
+                        <span class="stat-label">Toplam Ders</span>
+                        <h3 class="stat-value">@totalCourses</h3>
+                        <span class="stat-subtext"><i class="fas fa-book-open mr-1"></i>Kayıtlı Tüm Kurslar</span>
+                    </div>
+                    <div class="stat-icon-wrapper">
+                        <i class="fas fa-book"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-sm-6 mb-3 mb-xl-0">
+            <div class="stat-card stat-success">
+                <div class="stat-body">
+                    <div class="stat-info">
+                        <span class="stat-label">Yayında (Aktif)</span>
+                        <h3 class="stat-value text-success">@activeCourses</h3>
+                        <span class="stat-subtext"><i class="fas fa-eye mr-1"></i>Kursiyerlere Açık</span>
+                    </div>
+                    <div class="stat-icon-wrapper">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-sm-6 mb-3 mb-xl-0">
+            <div class="stat-card stat-warning">
+                <div class="stat-body">
+                    <div class="stat-info">
+                        <span class="stat-label">Pasif / Taslak</span>
+                        <h3 class="stat-value text-warning">@passiveCourses</h3>
+                        <span class="stat-subtext"><i class="fas fa-pause-circle mr-1"></i>Yayında Olmayan</span>
+                    </div>
+                    <div class="stat-icon-wrapper">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-sm-6 mb-3 mb-xl-0">
+            <div class="stat-card stat-info">
+                <div class="stat-body">
+                    <div class="stat-info">
+                        <span class="stat-label">Toplam Kayıt</span>
+                        <h3 class="stat-value text-info">@totalEnrollments</h3>
+                        <span class="stat-subtext"><i class="fas fa-user-graduate mr-1"></i>Kursiyer Katılımı</span>
+                    </div>
+                    <div class="stat-icon-wrapper">
+                        <i class="fas fa-users"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- GELİŞMİŞ FİLTRE & ARAMA ÇUBUĞU -->
+    <div class="filter-card card shadow-sm mb-4">
+        <div class="card-body p-3">
+            <div class="row align-items-center">
+                <!-- Arama Kutusu -->
+                <div class="col-lg-4 col-md-6 mb-2 mb-lg-0">
+                    <div class="input-group search-input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-muted"></i></span>
+                        </div>
+                        <input type="text" id="courseSearch" class="form-control border-left-0" placeholder="Ders adı, kategori veya eğitmen ara..." />
+                        <div class="input-group-append" id="clearSearchWrap" style="display:none;">
+                            <button class="btn btn-outline-secondary border-left-0" type="button" id="btnClearSearch"><i class="fas fa-times"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Kategori Filtresi -->
+                <div class="col-lg-3 col-md-6 mb-2 mb-lg-0">
+                    <select id="categoryFilter" class="form-control">
+                        <option value="">📁 Tüm Kategoriler (@categories.Count)</option>
+                        @foreach (var cat in categories)
+                        {
+                            <option value="@cat.CategoryName.ToLowerInvariant()">@cat.CategoryName</option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Durum Butonları (Tümü / Aktif / Pasif) -->
+                <div class="col-lg-3 col-md-6 mb-2 mb-lg-0">
+                    <div class="btn-group btn-group-toggle w-100" data-toggle="buttons">
+                        <label class="btn btn-outline-secondary btn-sm active" id="btnFilterAll">
+                            <input type="radio" name="statusFilter" value="all" checked> Tümü (@totalCourses)
+                        </label>
+                        <label class="btn btn-outline-success btn-sm" id="btnFilterActive">
+                            <input type="radio" name="statusFilter" value="active"> Aktif (@activeCourses)
+                        </label>
+                        <label class="btn btn-outline-warning btn-sm" id="btnFilterPassive">
+                            <input type="radio" name="statusFilter" value="passive"> Pasif (@passiveCourses)
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Görünüm Değiştirici & Sayfa Boyutu -->
+                <div class="col-lg-2 col-md-6 text-md-right">
+                    <div class="d-flex justify-content-end align-items-center">
+                        <div class="btn-group mr-2" role="group">
+                            <button type="button" id="btnViewGrid" class="btn btn-sm btn-primary active" title="Kart Görünümü">
+                                <i class="fas fa-th-large"></i>
+                            </button>
+                            <button type="button" id="btnViewTable" class="btn btn-sm btn-outline-primary" title="Tablo / Liste Görünümü">
+                                <i class="fas fa-list"></i>
+                            </button>
+                        </div>
+                        <select id="pageSizeSelect" class="form-control form-control-sm" style="width: auto;" title="Sayfa Başına Gösterim">
+                            <option value="8" selected>8'er</option>
+                            <option value="16">16'şar</option>
+                            <option value="24">24'er</option>
+                            <option value="9999">Tümü</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DERS LİSTESİ ALANI -->
+    @if (courseList.Count > 0)
+    {
+        <!-- 1. KART GÖRÜNÜMÜ (GRID) -->
+        <div id="courseGridView" class="course-grid-container">
+            <div class="row" id="courseCardsRow">
+                @foreach (var course in courseList)
+                {
+                    bool canEdit = currentUser != null &&
+                                   (string.Equals(currentUser.Role, "Admin", StringComparison.OrdinalIgnoreCase)
+                                    || (string.Equals(currentUser.Role, "Teacher", StringComparison.OrdinalIgnoreCase) && course.CreatedBy == currentUser.fldId));
+
+                    int enrollmentCount = enrollmentCounts.ContainsKey(course.CourseId)
+                        ? enrollmentCounts[course.CourseId]
+                        : (course.CourseEnrollments?.Count() ?? 0);
+
+                    var creatorName = courseUsers.ContainsKey(course.CreatedBy) ? courseUsers[course.CreatedBy] : "Eğitmen #" + course.CreatedBy;
+                    var categoryName = course.Categories != null ? course.Categories.CategoryName : "Genel";
+                    var defaultCoverImage = Url.Content("~/files/Egitim/91a7dd7d-56dc-41d3-a9bf-296a421966e2_155.jpg");
+                    var coverImage = string.IsNullOrWhiteSpace(course.CoverImage) || course.CoverImage.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+                        ? defaultCoverImage
+                        : Url.Content("~/files/Egitim/" + course.CoverImage);
+
+                    var plainDesc = string.IsNullOrEmpty(course.CourseDescription)
+                        ? "Bu ders için henüz bir açıklama eklenmemiş."
+                        : System.Text.RegularExpressions.Regex.Replace(course.CourseDescription, "<[^>]*>", "").Trim();
+                    if (plainDesc.Length > 120) { plainDesc = plainDesc.Substring(0, 117) + "..."; }
+
+                    var searchIndex = ((course.CourseTitle ?? "") + " " + plainDesc + " " + categoryName + " " + creatorName).ToLowerInvariant();
+
+                    <div class="col-xl-3 col-lg-4 col-md-6 mb-4 course-card-wrapper"
+                         data-search="@searchIndex"
+                         data-category="@categoryName.ToLowerInvariant()"
+                         data-status="@(course.IsActive ? "active" : "passive")">
+                        <div class="card h-100 modern-course-card border-0 shadow-sm">
+                            <!-- Kapak Görseli ve Üst Rozetler -->
+                            <div class="card-cover-wrapper">
+                                <img src="@coverImage" alt="@course.CourseTitle" class="card-cover-img" loading="lazy" />
+                                <div class="card-cover-overlay"></div>
+                                <span class="badge badge-category">
+                                    <i class="fas fa-tag mr-1"></i>@categoryName
+                                </span>
+                                <button type="button"
+                                        class="badge badge-status-pill @(course.IsActive ? "badge-status-active" : "badge-status-passive") toggle-status-btn"
+                                        data-id="@course.CourseId"
+                                        title="Durumu değiştirmek için tıklayın">
+                                    <i class="fas @(course.IsActive ? "fa-check-circle" : "fa-ban") mr-1"></i>
+                                    <span class="status-text">@(course.IsActive ? "Yayında" : "Pasif")</span>
+                                </button>
+                            </div>
+
+                            <!-- Kart İçeriği -->
+                            <div class="card-body p-3 d-flex flex-column">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="course-code-badge">#@course.CourseId</span>
+                                    <small class="text-muted"><i class="far fa-calendar-alt mr-1"></i>@(course.CreatedDate.HasValue ? course.CreatedDate.Value.ToString("dd.MM.yyyy") : "—")</small>
+                                </div>
+
+                                <h5 class="course-card-title mb-2" title="@course.CourseTitle">
+                                    @course.CourseTitle
+                                </h5>
+
+                                <p class="course-card-desc text-muted mb-3">
+                                    @plainDesc
+                                </p>
+
+                                <div class="course-card-meta mt-auto pt-2 border-top">
+                                    <div class="d-flex justify-content-between align-items-center text-muted small">
+                                        <div class="text-truncate mr-2" title="Eğitmen: @creatorName">
+                                            <i class="fas fa-user-circle text-primary mr-1"></i>@creatorName
+                                        </div>
+                                        <div class="d-flex align-items-center text-nowrap">
+                                            <i class="fas fa-user-graduate text-info mr-1"></i>
+                                            <strong class="text-dark">@enrollmentCount</strong>&nbsp;Öğrenci
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Kart Alt İşlem Butonları -->
+                            <div class="card-footer bg-light px-3 py-2 border-top">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <!-- Ana Aksiyon: İçerikleri Yönet -->
+                                    @if (canEdit)
+                                    {
+                                        <a href="@Url.Action("ManageContents", "Course", new { courseId = course.CourseId })"
+                                           class="btn btn-primary btn-sm flex-grow-1 mr-2 font-weight-bold"
+                                           title="Ders dokümanları, videoları ve bölümlerini yönetin">
+                                            <i class="fas fa-layer-group mr-1"></i> İçerikleri Yönet
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <a href="@Url.Action("Details", "Course", new { id = course.CourseId })"
+                                           class="btn btn-outline-primary btn-sm flex-grow-1 mr-2">
+                                            <i class="fas fa-eye mr-1"></i> Dersi İncele
+                                        </a>
+                                    }
+
+                                    <!-- Detay / Önizleme Butonu -->
+                                    <a href="@Url.Action("Details", "Course", new { id = course.CourseId })"
+                                       class="btn btn-outline-secondary btn-sm mr-2"
+                                       title="Dersi Önizle">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+
+                                    <!-- Diğer İşlemler Dropdown Menü -->
+                                    <div class="dropdown">
+                                        <button class="btn btn-light btn-sm border" type="button" id="courseMenu_@course.CourseId" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="Diğer İşlemler">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <div class="dropdown-menu dropdown-menu-right shadow border-0" aria-labelledby="courseMenu_@course.CourseId">
+                                            <h6 class="dropdown-header text-uppercase font-weight-bold">Ders İşlemleri</h6>
+
+                                            @if (canEdit)
+                                            {
+                                                <button type="button" class="dropdown-item" data-toggle="modal" data-target="#editCourseModal_@course.CourseId">
+                                                    <i class="fas fa-edit text-warning mr-2"></i> Dersi Düzenle
+                                                </button>
+                                                <button type="button" class="dropdown-item" data-toggle="modal" data-target="#addExamModalForCourse_@course.CourseId">
+                                                    <i class="fas fa-plus-circle text-info mr-2"></i> Sınav Ekle
+                                                </button>
+                                            }
+
+                                            <a class="dropdown-item" href="@Url.Action("Enrollments", "Course", new { courseId = course.CourseId })">
+                                                <i class="fas fa-users text-primary mr-2"></i> Kayıtlı Öğrenciler (@enrollmentCount)
+                                            </a>
+
+                                            <button type="button" class="dropdown-item toggle-status-btn" data-id="@course.CourseId">
+                                                <i class="fas @(course.IsActive ? "fa-ban text-secondary" : "fa-check text-success") mr-2"></i>
+                                                @(course.IsActive ? "Dersi Pasif Yap" : "Dersi Aktif Yap")
+                                            </button>
+
+                                            @if (canEdit)
+                                            {
+                                                <div class="dropdown-divider"></div>
+                                                <form method="post" action="@Url.Action("Delete", "Course")" class="d-inline"
+                                                      onsubmit="return confirmDeleteWithEnrollments(this, @enrollmentCount);">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@course.CourseId" />
+                                                    <button type="submit" class="dropdown-item text-danger">
+                                                        <i class="fas fa-trash-alt mr-2"></i> Dersi Sil
+                                                    </button>
+                                                </form>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- 2. TABLO GÖRÜNÜMÜ (LIST VIEW) -->
+        <div id="courseTableView" class="course-table-container" style="display:none;">
+            <div class="card shadow-sm border-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" id="coursesDataTable">
+                        <thead class="thead-light">
+                            <tr>
+                                <th style="width: 70px;">#ID</th>
+                                <th style="width: 80px;">Kapak</th>
+                                <th>Ders Başlığı & Kategori</th>
+                                <th>Eğitmen</th>
+                                <th class="text-center" style="width: 110px;">Öğrenci</th>
+                                <th style="width: 120px;">Eklenme</th>
+                                <th class="text-center" style="width: 110px;">Durum</th>
+                                <th class="text-right" style="width: 220px;">Hızlı İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var course in courseList)
+                            {
+                                bool canEdit = currentUser != null &&
+                                               (string.Equals(currentUser.Role, "Admin", StringComparison.OrdinalIgnoreCase)
+                                                || (string.Equals(currentUser.Role, "Teacher", StringComparison.OrdinalIgnoreCase) && course.CreatedBy == currentUser.fldId));
+
+                                int enrollmentCount = enrollmentCounts.ContainsKey(course.CourseId)
+                                    ? enrollmentCounts[course.CourseId]
+                                    : (course.CourseEnrollments?.Count() ?? 0);
+
+                                var creatorName = courseUsers.ContainsKey(course.CreatedBy) ? courseUsers[course.CreatedBy] : "Eğitmen #" + course.CreatedBy;
+                                var categoryName = course.Categories != null ? course.Categories.CategoryName : "Genel";
+                                var defaultCoverImage = Url.Content("~/files/Egitim/91a7dd7d-56dc-41d3-a9bf-296a421966e2_155.jpg");
+                                var coverImage = string.IsNullOrWhiteSpace(course.CoverImage) || course.CoverImage.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+                                    ? defaultCoverImage
+                                    : Url.Content("~/files/Egitim/" + course.CoverImage);
+
+                                var searchIndex = ((course.CourseTitle ?? "") + " " + categoryName + " " + creatorName).ToLowerInvariant();
+
+                                <tr class="course-table-row"
+                                    data-search="@searchIndex"
+                                    data-category="@categoryName.ToLowerInvariant()"
+                                    data-status="@(course.IsActive ? "active" : "passive")">
+                                    <td class="font-weight-bold text-muted">#@course.CourseId</td>
+                                    <td>
+                                        <img src="@coverImage" alt="Kapak" class="rounded shadow-xs table-cover-thumb" />
+                                    </td>
+                                    <td>
+                                        <div class="font-weight-bold text-dark mb-1">@course.CourseTitle</div>
+                                        <span class="badge badge-light border text-muted">
+                                            <i class="fas fa-tag mr-1 text-primary"></i>@categoryName
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <i class="fas fa-user-circle text-muted mr-1"></i>@creatorName
+                                    </td>
+                                    <td class="text-center">
+                                        <a href="@Url.Action("Enrollments", "Course", new { courseId = course.CourseId })" class="badge badge-info p-2 font-weight-normal" title="Öğrenci Listesi">
+                                            <i class="fas fa-users mr-1"></i>@enrollmentCount
+                                        </a>
+                                    </td>
+                                    <td class="text-muted small">
+                                        @(course.CreatedDate.HasValue ? course.CreatedDate.Value.ToString("dd.MM.yyyy") : "—")
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="button"
+                                                class="badge badge-status-pill @(course.IsActive ? "badge-status-active" : "badge-status-passive") toggle-status-btn border-0 cursor-pointer"
+                                                data-id="@course.CourseId"
+                                                title="Durumu değiştirmek için tıklayın">
+                                            <i class="fas @(course.IsActive ? "fa-check-circle" : "fa-ban") mr-1"></i>
+                                            <span class="status-text">@(course.IsActive ? "Yayında" : "Pasif")</span>
+                                        </button>
+                                    </td>
+                                    <td class="text-right">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            @if (canEdit)
+                                            {
+                                                <a href="@Url.Action("ManageContents", "Course", new { courseId = course.CourseId })"
+                                                   class="btn btn-primary" title="İçerikleri Yönet">
+                                                    <i class="fas fa-layer-group"></i>
+                                                </a>
+                                            }
+                                            <a href="@Url.Action("Details", "Course", new { id = course.CourseId })"
+                                               class="btn btn-outline-secondary" title="Detay / Önizle">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            @if (canEdit)
+                                            {
+                                                <button type="button" class="btn btn-outline-warning"
+                                                        data-toggle="modal" data-target="#editCourseModal_@course.CourseId" title="Dersi Düzenle">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-outline-info"
+                                                        data-toggle="modal" data-target="#addExamModalForCourse_@course.CourseId" title="Sınav Ekle">
+                                                    <i class="fas fa-plus-circle"></i>
+                                                </button>
+                                                <form method="post" action="@Url.Action("Delete", "Course")" class="d-inline"
+                                                      onsubmit="return confirmDeleteWithEnrollments(this, @enrollmentCount);">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@course.CourseId" />
+                                                    <button type="submit" class="btn btn-outline-danger" title="Dersi Sil">
+                                                        <i class="fas fa-trash-alt"></i>
+                                                    </button>
+                                                </form>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- BOŞ ARAMA SONUCU BİLDİRİMİ -->
+        <div id="courseEmptyState" class="empty-state-card text-center py-5 shadow-sm rounded bg-white mt-3" style="display:none;">
+            <div class="empty-icon-box mb-3">
+                <i class="fas fa-search fa-3x text-muted"></i>
+            </div>
+            <h4 class="font-weight-bold text-dark">Aramanıza Uygun Ders Bulunamadı</h4>
+            <p class="text-muted mb-3">Arama filtrenizi değiştirerek veya aşağıdaki butona basarak tüm dersleri tekrar görüntüleyebilirsiniz.</p>
+            <button type="button" class="btn btn-outline-primary" id="btnResetFilters">
+                <i class="fas fa-sync-alt mr-1"></i> Filtreleri Temizle
+            </button>
+        </div>
+
+        <!-- SAYFALANDIRMA (PAGINATION) -->
+        <div class="d-flex justify-content-between align-items-center flex-wrap mt-4">
+            <div class="text-muted small mb-2 mb-md-0" id="paginationInfo">
+                Toplam @totalCourses dersten gösteriliyor
+            </div>
+            <div id="coursePagination" class="pagination-wrapper"></div>
+        </div>
+    }
+    else
+    {
+        <!-- HİÇ DERS YOKSA BOŞ EKRAN -->
+        <div class="card shadow-sm border-0 text-center py-5">
+            <div class="card-body">
+                <div class="empty-icon-box mb-3 text-primary">
+                    <i class="fas fa-graduation-cap fa-4x"></i>
+                </div>
+                <h3 class="font-weight-bold text-dark">Henüz Bir Ders Eklenmemiş</h3>
+                <p class="text-muted max-w-500 mx-auto mb-4">
+                    Kurum içi personelinize eğitim vermek için ilk dersinizi oluşturabilir, içeriklerini ve sınavlarını ekleyebilirsiniz.
+                </p>
+                @if (currentUser != null && (string.Equals(currentUser.Role, "Admin", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(currentUser.Role, "Teacher", StringComparison.OrdinalIgnoreCase)))
+                {
+                    <button class="btn btn-primary btn-lg shadow-sm" data-toggle="modal" data-target="#addCourseModal">
+                        <i class="fas fa-plus-circle mr-2"></i> İlk Dersi Oluştur
+                    </button>
+                }
+            </div>
+        </div>
+    }
+
+</div>
+
+<!-- ============================================================== -->
+<!-- MODAL: YENİ DERS EKLE                                         -->
+<!-- ============================================================== -->
+<div class="modal fade" id="addCourseModal" tabindex="-1" role="dialog" aria-labelledby="addCourseModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable modal-extra-wide" style="max-width: 90vw; width: 1400px;" role="document">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header modal-hero-header text-white">
+                <div class="d-flex align-items-center">
+                    <div class="modal-icon-badge mr-3">
+                        <i class="fas fa-plus-circle fa-lg"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title font-weight-bold mb-0" id="addCourseModalLabel">Yeni Eğitim Dersi Oluştur</h5>
+                        <small class="text-white-50">Ders bilgilerini, kategorisini, kapak görselini ve detaylı içeriğini giriniz.</small>
+                    </div>
+                </div>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Kapat">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+
+            <form method="post" action="@Url.Action("Create", "Course")" enctype="multipart/form-data" id="createForm" class="needs-validation">
+                @Html.AntiForgeryToken()
+                <div class="modal-body p-4 bg-light">
+                    <!-- 1. TEMEL BİLGİLER KARTI -->
+                    <div class="card border-0 shadow-xs mb-3">
+                        <div class="card-header bg-white py-3 border-bottom">
+                            <h6 class="font-weight-bold mb-0 text-primary">
+                                <i class="fas fa-info-circle mr-2"></i>1. Temel Ders Bilgileri
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-8 mb-3">
+                                    <label class="form-label font-weight-semibold">
+                                        Ders Başlığı <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text bg-white"><i class="fas fa-heading text-muted"></i></span>
+                                        </div>
+                                        <input type="text" name="CourseTitle" class="form-control" placeholder="Örn: Pasaport Kanunu ve Sahtecilik Tespiti Eğitimi" required maxlength="200" />
+                                    </div>
+                                    <small class="form-text text-muted">Kursiyerlerin göreceği açık ve net ders adı.</small>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label font-weight-semibold">
+                                        Kategori <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text bg-white"><i class="fas fa-folder text-muted"></i></span>
+                                        </div>
+                                        <select name="CategoryId" class="form-control" required>
+                                            <option value="">Kategori Seçiniz...</option>
+                                            @foreach (var cat in categories)
+                                            {
+                                                <option value="@cat.CategoryId">@cat.CategoryName</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <small class="form-text text-muted">Dersin listeleneceği ana kategori.</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. AÇIKLAMA VE GÖRSEL KARTI -->
+                    <div class="card border-0 shadow-xs mb-3">
+                        <div class="card-header bg-white py-3 border-bottom">
+                            <h6 class="font-weight-bold mb-0 text-primary">
+                                <i class="fas fa-image mr-2"></i>2. Ders Tanıtımı & Kapak Görseli
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-7 mb-3">
+                                    <label class="form-label font-weight-semibold">Ders Kısa Açıklaması</label>
+                                    <textarea name="CourseDescription" class="form-control" rows="4" maxlength="500" placeholder="Bu eğitimin amacı, hedeflenen kazanımlar ve kapsam hakkında kısa bilgi yazınız..."></textarea>
+                                    <small class="form-text text-muted">Kart üzerinde gösterilecek özet bilgi (Maksimum 500 karakter).</small>
+                                </div>
+                                <div class="col-md-5 mb-3">
+                                    <label class="form-label font-weight-semibold">Kapak Görseli</label>
+                                    <div class="custom-file mb-2">
+                                        <input type="file" name="CoverImageFile" class="custom-file-input" id="addCoverImageInput" accept=".jpg,.jpeg,.png,.gif,.bmp" onchange="previewSelectedImage(this, 'addCoverPreview')">
+                                        <label class="custom-file-label" for="addCoverImageInput">Dosya Seçiniz...</label>
+                                    </div>
+                                    <small class="form-text text-muted mb-2">Önerilen boyut: 800x450 piksel (16:9). JPG, PNG (Max: 10MB)</small>
+                                    <div class="image-preview-container rounded border bg-white p-1 text-center" style="height: 120px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                                        <img id="addCoverPreview" src="@Url.Content("~/files/Egitim/91a7dd7d-56dc-41d3-a9bf-296a421966e2_155.jpg")" alt="Önizleme" style="max-height: 100%; max-width: 100%; object-fit: contain;" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. DETAYLI EĞİTİM İÇERİĞİ (SUMMERNOTE) -->
+                    <div class="card border-0 shadow-xs">
+                        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                            <h6 class="font-weight-bold mb-0 text-primary">
+                                <i class="fas fa-file-alt mr-2"></i>3. Detaylı Ders İçeriği (Zengin Metin Editörü)
+                            </h6>
+                            <span class="badge badge-light border">İsteğe Bağlı</span>
+                        </div>
+                        <div class="card-body">
+                            <textarea id="ResourceEditorAdd" name="ResourceHtml" class="form-control resource-editor" rows="8"></textarea>
+                            <small class="form-text text-muted mt-2">
+                                <i class="fas fa-info-circle mr-1"></i>Buraya ders notları, resimler, tablolar ve yönergeler ekleyebilirsiniz. Dilerseniz dersi oluşturduktan sonra <strong>"İçerikleri Yönet"</strong> alanından PDF ve videolar da yükleyebilirsiniz.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-white border-top px-4 py-3">
+                    <button type="button" class="btn btn-secondary px-4" data-dismiss="modal">
+                        <i class="fas fa-times mr-1"></i> Vazgeç
+                    </button>
+                    <button type="submit" class="btn btn-primary px-4 font-weight-bold">
+                        <i class="fas fa-check-circle mr-1"></i> Dersi Kaydet ve Yayına Al
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================== -->
+<!-- MODALLER: HER DERS İÇİN DÜZENLE & SINAV EKLE                    -->
+<!-- ============================================================== -->
+@foreach (var course in courseList)
+{
+    var currentCatId = course.CategoryId;
+    var defaultCover = Url.Content("~/files/Egitim/91a7dd7d-56dc-41d3-a9bf-296a421966e2_155.jpg");
+    var existingCover = string.IsNullOrWhiteSpace(course.CoverImage) || course.CoverImage.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+        ? defaultCover
+        : Url.Content("~/files/Egitim/" + course.CoverImage);
+
+    <!-- DERS DÜZENLE MODAL -->
+    <div class="modal fade" id="editCourseModal_@course.CourseId" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable modal-extra-wide" style="max-width: 90vw; width: 1400px;" role="document">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header modal-hero-header text-white">
+                    <div class="d-flex align-items-center">
+                        <div class="modal-icon-badge mr-3">
+                            <i class="fas fa-edit fa-lg"></i>
+                        </div>
+                        <div>
+                            <h5 class="modal-title font-weight-bold mb-0">Dersi Düzenle: @course.CourseTitle</h5>
+                            <small class="text-white-50">Ders ID: #@course.CourseId | Oluşturulma: @(course.CreatedDate.HasValue ? course.CreatedDate.Value.ToString("dd.MM.yyyy") : "—")</small>
+                        </div>
+                    </div>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Kapat">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+
+                <form method="post" action="@Url.Action("Edit", "Course")" enctype="multipart/form-data" class="edit-form needs-validation">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="CourseId" value="@course.CourseId" />
+
+                    <div class="modal-body p-4 bg-light">
+                        <div class="card border-0 shadow-xs mb-3">
+                            <div class="card-header bg-white py-3 border-bottom">
+                                <h6 class="font-weight-bold mb-0 text-primary"><i class="fas fa-info-circle mr-2"></i>Temel Bilgiler</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-8 mb-3">
+                                        <label class="form-label font-weight-semibold">Ders Başlığı <span class="text-danger">*</span></label>
+                                        <input type="text" name="CourseTitle" value="@course.CourseTitle" class="form-control" required maxlength="200" />
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label font-weight-semibold">Kategori <span class="text-danger">*</span></label>
+                                        <select name="CategoryId" class="form-control" required>
+                                            <option value="">Kategori Seçiniz...</option>
+                                            @foreach (var cat in categories)
+                                            {
+                                                <option value="@cat.CategoryId" @(course.CategoryId == cat.CategoryId ? "selected" : "")>@cat.CategoryName</option>
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card border-0 shadow-xs mb-3">
+                            <div class="card-header bg-white py-3 border-bottom">
+                                <h6 class="font-weight-bold mb-0 text-primary"><i class="fas fa-image mr-2"></i>Açıklama ve Görsel</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-7 mb-3">
+                                        <label class="form-label font-weight-semibold">Ders Kısa Açıklaması</label>
+                                        <textarea name="CourseDescription" class="form-control" rows="4" maxlength="500">@(string.IsNullOrEmpty(course.CourseDescription) ? "" : System.Text.RegularExpressions.Regex.Replace(course.CourseDescription, "<[^>]*>", ""))</textarea>
+                                    </div>
+                                    <div class="col-md-5 mb-3">
+                                        <label class="form-label font-weight-semibold">Kapak Görseli Değiştir</label>
+                                        <div class="custom-file mb-2">
+                                            <input type="file" name="CoverImageFile" class="custom-file-input" id="editCoverInput_@course.CourseId" accept=".jpg,.jpeg,.png,.gif,.bmp" onchange="previewSelectedImage(this, 'editCoverPreview_@course.CourseId')">
+                                            <label class="custom-file-label" for="editCoverInput_@course.CourseId">Yeni Görsel Seç (Opsiyonel)</label>
+                                        </div>
+                                        <div class="image-preview-container rounded border bg-white p-1 text-center" style="height: 120px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                                            <img id="editCoverPreview_@course.CourseId" src="@existingCover" alt="Mevcut Görsel" style="max-height: 100%; max-width: 100%; object-fit: contain;" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card border-0 shadow-xs">
+                            <div class="card-header bg-white py-3 border-bottom">
+                                <h6 class="font-weight-bold mb-0 text-primary"><i class="fas fa-file-alt mr-2"></i>Detaylı Ders Metni & HTML (Summernote)</h6>
+                            </div>
+                            <div class="card-body">
+                                <textarea id="ResourceEditor_@course.CourseId" name="ResourceHtml" class="form-control resource-editor" rows="8">@Html.Raw(course.CourseDescription ?? "")</textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer bg-white border-top px-4 py-3">
+                        <button type="button" class="btn btn-secondary px-4" data-dismiss="modal">İptal</button>
+                        <button type="submit" class="btn btn-success px-4 font-weight-bold">
+                            <i class="fas fa-save mr-1"></i> Değişiklikleri Kaydet
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- SINAV EKLE MODAL -->
+    <div class="modal fade" id="addExamModalForCourse_@course.CourseId" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-info text-white">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-plus-circle fa-2x mr-3"></i>
+                        <div>
+                            <h5 class="modal-title font-weight-bold mb-0">Yeni Sınav Ekle</h5>
+                            <small class="text-white-50">Ders: @course.CourseTitle</small>
+                        </div>
+                    </div>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Kapat">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+
+                <form method="post" action="@Url.Action("Create", "Exam")">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="CourseId" value="@course.CourseId" />
+
+                    <div class="modal-body p-4">
+                        <div class="alert alert-light border mb-4">
+                            <i class="fas fa-info-circle text-info mr-2"></i>
+                            Bu sınav doğrudan <strong>@course.CourseTitle</strong> kursuna bağlanacaktır. Sınavı oluşturduktan sonra soruları Sınav Yönetimi ekranından ekleyebilirsiniz.
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label class="form-label font-weight-semibold">Sınav Başlığı <span class="text-danger">*</span></label>
+                            <input type="text" name="ExamTitle" class="form-control" placeholder="Örn: 1. Dönem Değerlendirme Sınavı" required maxlength="200" />
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label class="form-label font-weight-semibold">Sınav Açıklaması / Talimatlar</label>
+                            <textarea name="ExamDescription" class="form-control" placeholder="Sınav kuralları, soru sayısı veya başarı şartları hakkında bilgi giriniz..." rows="3" maxlength="500"></textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label font-weight-semibold">Sınav Süresi (Dakika) <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <input type="number" name="Duration" class="form-control" value="60" min="1" max="300" required />
+                                    <div class="input-group-append">
+                                        <span class="input-group-text bg-white">dk</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label font-weight-semibold">Geçme Notu (100 Üzerinden) <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <input type="number" name="PassingScore" class="form-control" value="60" min="0" max="100" required />
+                                    <div class="input-group-append">
+                                        <span class="input-group-text bg-white">Puan</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer bg-light px-4 py-3">
+                        <button type="button" class="btn btn-secondary px-4" data-dismiss="modal">İptal</button>
+                        <button type="submit" class="btn btn-info px-4 font-weight-bold">
+                            <i class="fas fa-check mr-1"></i> Sınavı Oluştur
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@section Styles {
+    <style>
+        /* ============================================================ */
+        /* TEMEL DERS SAYFASI STİLLERİ (PORTO / BOOTSTRAP 4 İLE %100 UYUMLU) */
+        /* ============================================================ */
+        .course-page-container {
+            padding: 10px 0 40px;
+        }
+
+        /* HERO BANNER */
+        .course-hero-banner {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #ffffff;
+            border-radius: 14px;
+            padding: 24px 28px;
+            box-shadow: 0 8px 24px rgba(30, 60, 114, 0.22);
+        }
+
+        .hero-icon-box {
+            width: 58px;
+            height: 58px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.16);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .hero-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: -0.3px;
+        }
+
+        .hero-desc {
+            font-size: 13.5px;
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        .hero-action-btn {
+            border-radius: 8px;
+            padding: 8px 18px;
+            font-size: 13.5px;
+            transition: all 0.25s ease;
+        }
+
+        /* İSTATİSTİK KARTLARI */
+        .stat-card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 20px 22px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            border: 1px solid #eef2f7;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+        }
+
+        .stat-card::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+        }
+
+        .stat-primary::before { background: #3b82f6; }
+        .stat-success::before { background: #10b981; }
+        .stat-warning::before { background: #f59e0b; }
+        .stat-info::before { background: #06b6d4; }
+
+        .stat-body {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            color: #64748b;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 800;
+            margin: 0 0 4px;
+            color: #1e293b;
+            line-height: 1.1;
+        }
+
+        .stat-subtext {
+            font-size: 11.5px;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        .stat-icon-wrapper {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: #f8fafc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            color: #64748b;
+        }
+
+        .stat-primary .stat-icon-wrapper { background: #eff6ff; color: #3b82f6; }
+        .stat-success .stat-icon-wrapper { background: #ecfdf5; color: #10b981; }
+        .stat-warning .stat-icon-wrapper { background: #fffbeb; color: #f59e0b; }
+        .stat-info .stat-icon-wrapper { background: #ecfeff; color: #06b6d4; }
+
+        /* FİLTRE KARTI */
+        .filter-card {
+            border-radius: 12px;
+            border: 1px solid #eef2f7;
+            background: #ffffff;
+        }
+
+        .search-input-group .form-control {
+            border-radius: 0 8px 8px 0;
+            height: 40px;
+            font-size: 13.5px;
+        }
+
+        .search-input-group .input-group-text {
+            border-radius: 8px 0 0 8px;
+        }
+
+        /* MODERN DERS KARTLARI (GRID) */
+        .modern-course-card {
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.25s ease;
+            background: #ffffff;
+            border: 1px solid #eef2f7 !important;
+        }
+
+        .modern-course-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.1) !important;
+            border-color: #cbd5e1 !important;
+        }
+
+        .card-cover-wrapper {
+            position: relative;
+            height: 185px;
+            overflow: hidden;
+            background: #1e293b;
+        }
+
+        .card-cover-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.4s ease;
+        }
+
+        .modern-course-card:hover .card-cover-img {
+            transform: scale(1.04);
+        }
+
+        .card-cover-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.55) 100%);
+        }
+
+        .badge-category {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: rgba(15, 23, 42, 0.75);
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 5px 10px;
+            border-radius: 6px;
+            backdrop-filter: blur(4px);
+            z-index: 2;
+        }
+
+        .badge-status-pill {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 5px 10px;
+            border-radius: 20px;
+            z-index: 2;
+            cursor: pointer;
+            border: none;
+            transition: transform 0.15s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .badge-status-pill:hover {
+            transform: scale(1.06);
+        }
+
+        .badge-status-active {
+            background: #10b981;
+            color: #ffffff;
+        }
+
+        .badge-status-passive {
+            background: #ef4444;
+            color: #ffffff;
+        }
+
+        .course-code-badge {
+            font-size: 11px;
+            font-weight: 700;
+            color: #6366f1;
+            background: #eef2ff;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .course-card-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #1e293b;
+            line-height: 1.35;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            min-height: 40px;
+        }
+
+        .course-card-desc {
+            font-size: 12.5px;
+            line-height: 1.45;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            min-height: 36px;
+        }
+
+        /* TABLO GÖRÜNÜMÜ STİLLERİ */
+        .table-cover-thumb {
+            width: 52px;
+            height: 38px;
+            object-fit: cover;
+            border: 1px solid #e2e8f0;
+        }
+
+        #coursesDataTable thead th {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #475569;
+            background: #f8fafc;
+            border-top: none;
+            border-bottom: 2px solid #e2e8f0;
+            padding: 12px 14px;
+        }
+
+        #coursesDataTable tbody td {
+            padding: 12px 14px;
+            vertical-align: middle;
+            border-bottom: 1px solid #edf2f7;
+            font-size: 13.5px;
+        }
+
+        /* MODAL HERO HEADER */
+        .modal-hero-header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            border-bottom: none;
+            padding: 20px 24px;
+        }
+
+        .modal-icon-badge {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.16);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* SAYFALANDIRMA */
+        .pagination-wrapper {
+            display: flex;
+            gap: 6px;
+        }
+
+        .pagination-wrapper .page-btn {
+            min-width: 36px;
+            height: 36px;
+            border: 1px solid #e2e8f0;
+            background: #ffffff;
+            color: #334155;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .pagination-wrapper .page-btn:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            color: #0f172a;
+        }
+
+        .pagination-wrapper .page-btn.active {
+            background: #2563eb;
+            border-color: #2563eb;
+            color: #ffffff;
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+        }
+
+        .pagination-wrapper .page-btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .cursor-pointer {
+            cursor: pointer;
+        }
+
+        /* GENİŞLETİLMİŞ MODAL DÜZENİ (MODAL-XL / GENİŞ EKRAN) */
+        .modal-extra-wide,
+        .modal-dialog.modal-xl,
+        #addCourseModal .modal-dialog,
+        [id^="editCourseModal_"] .modal-dialog {
+            max-width: 90vw !important;
+            width: 1400px !important;
+            margin: 1.5rem auto !important;
+        }
+
+        .modal-dialog-scrollable .modal-content {
+            max-height: 90vh;
+        }
+
+        .modal-dialog-scrollable .modal-body {
+            max-height: calc(90vh - 140px);
+            overflow-y: auto;
+        }
+
+        @@media (min-width: 1600px) {
+            .modal-extra-wide,
+            .modal-dialog.modal-xl,
+            #addCourseModal .modal-dialog,
+            [id^="editCourseModal_"] .modal-dialog {
+                max-width: 86vw !important;
+                width: 1550px !important;
+            }
+        }
+
+        @@media (max-width: 991px) {
+            .modal-extra-wide,
+            .modal-dialog.modal-xl,
+            #addCourseModal .modal-dialog,
+            [id^="editCourseModal_"] .modal-dialog {
+                max-width: 96vw !important;
+                width: 96vw !important;
+                margin: 0.5rem auto !important;
+            }
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        // Kurs Silme Doğrulama Fonksiyonu
+        window.confirmDeleteWithEnrollments = function (form, enrollmentCount) {
+            if (enrollmentCount > 0) {
+                alert('⚠️ Dikkat! Bu kursa ' + enrollmentCount + ' öğrenci kayıtlı.\n\n' +
+                    'Kursu silmeden önce tüm öğrenci kayıtlarını silmelisiniz.\n\n' +
+                    'Lütfen önce "Kayıtlı Öğrenciler" ekranına giderek kayıtları temizleyiniz.');
+                return false;
+            }
+            return confirm('Bu dersi ve bağlı tüm içerikleri silmek istediğinizden emin misiniz?\nBu işlem geri alınamaz!');
+        };
+
+        // Kapak Görseli Önizleme Fonksiyonu
+        window.previewSelectedImage = function (input, previewImgId) {
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    $('#' + previewImgId).attr('src', e.target.result);
+                };
+                reader.readAsDataURL(input.files[0]);
+                // Dosya adını custom-file-label'a yaz
+                var fileName = input.files[0].name;
+                $(input).next('.custom-file-label').html(fileName);
+            }
+        };
+
+        $(document).ready(function () {
+            // ==========================================
+            // SAYFALANDIRMA VE FİLTRELEME YÖNETİMİ
+            // ==========================================
+            var currentPage = 1;
+            var pageSize = parseInt($('#pageSizeSelect').val(), 10) || 8;
+            var currentStatus = 'all';
+            var currentCategory = '';
+            var searchQuery = '';
+            var currentView = localStorage.getItem('cezam_course_view') || 'grid';
+
+            // Görünüm Modunu Uygula (Kart / Tablo)
+            function setViewMode(mode) {
+                currentView = mode;
+                localStorage.setItem('cezam_course_view', mode);
+
+                if (mode === 'table') {
+                    $('#courseGridView').hide();
+                    $('#courseTableView').show();
+                    $('#btnViewTable').addClass('btn-primary text-white').removeClass('btn-outline-primary');
+                    $('#btnViewGrid').removeClass('btn-primary text-white').addClass('btn-outline-primary');
+                } else {
+                    $('#courseTableView').hide();
+                    $('#courseGridView').show();
+                    $('#btnViewGrid').addClass('btn-primary text-white').removeClass('btn-outline-primary');
+                    $('#btnViewTable').removeClass('btn-primary text-white').addClass('btn-outline-primary');
+                }
+                applyFilterAndPagination();
+            }
+
+            $('#btnViewGrid').on('click', function () { setViewMode('grid'); });
+            $('#btnViewTable').on('click', function () { setViewMode('table'); });
+
+            // İlk görünümü başlat
+            setViewMode(currentView);
+
+            // Arama & Filtreleme Mantığı
+            function getFilteredElements() {
+                var isGrid = (currentView === 'grid');
+                var selector = isGrid ? '.course-card-wrapper' : '.course-table-row';
+
+                return $(selector).filter(function () {
+                    var $el = $(this);
+                    var itemSearch = ($el.data('search') || '').toString().toLocaleLowerCase('tr-TR');
+                    var itemCat = ($el.data('category') || '').toString().toLocaleLowerCase('tr-TR');
+                    var itemStatus = ($el.data('status') || '').toString();
+
+                    var matchesSearch = !searchQuery || itemSearch.indexOf(searchQuery) !== -1;
+                    var matchesCat = !currentCategory || itemCat === currentCategory;
+                    var matchesStatus = (currentStatus === 'all') || (itemStatus === currentStatus);
+
+                    return matchesSearch && matchesCat && matchesStatus;
+                });
+            }
+
+            function applyFilterAndPagination() {
+                var isGrid = (currentView === 'grid');
+                var allSelector = isGrid ? '.course-card-wrapper' : '.course-table-row';
+                var $all = $(allSelector);
+                var $filtered = getFilteredElements();
+
+                var totalCount = $filtered.length;
+                var totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+
+                if (currentPage > totalPages) {
+                    currentPage = totalPages;
+                }
+
+                // Hepsini gizle
+                $all.hide();
+
+                if (totalCount === 0) {
+                    $('#courseEmptyState').show();
+                    $('#paginationInfo').text('Eşleşen ders bulunamadı');
+                } else {
+                    $('#courseEmptyState').hide();
+                    var start = (currentPage - 1) * pageSize;
+                    var end = start + pageSize;
+                    $filtered.slice(start, end).fadeIn(150);
+
+                    var showStart = start + 1;
+                    var showEnd = Math.min(end, totalCount);
+                    $('#paginationInfo').text('Toplam ' + totalCount + ' dersten ' + showStart + ' - ' + showEnd + ' arası gösteriliyor');
+                }
+
+                renderPaginationControls(totalPages, totalCount);
+            }
+
+            function renderPaginationControls(totalPages, totalCount) {
+                var $wrap = $('#coursePagination');
+                $wrap.empty();
+
+                if (totalCount <= pageSize) {
+                    return;
+                }
+
+                // Önceki Butonu
+                $('<button type="button" class="page-btn">‹</button>')
+                    .prop('disabled', currentPage === 1)
+                    .on('click', function () {
+                        if (currentPage > 1) {
+                            currentPage--;
+                            applyFilterAndPagination();
+                            $('html, body').animate({ scrollTop: $('#courseSearch').offset().top - 80 }, 200);
+                        }
+                    })
+                    .appendTo($wrap);
+
+                // Sayfa Numaraları
+                var startPage = Math.max(1, currentPage - 2);
+                var endPage = Math.min(totalPages, startPage + 4);
+                if (endPage - startPage < 4) {
+                    startPage = Math.max(1, endPage - 4);
+                }
+
+                for (var p = startPage; p <= endPage; p++) {
+                    $('<button type="button" class="page-btn"></button>')
+                        .text(p)
+                        .toggleClass('active', p === currentPage)
+                        .on('click', (function (pageNum) {
+                            return function () {
+                                currentPage = pageNum;
+                                applyFilterAndPagination();
+                                $('html, body').animate({ scrollTop: $('#courseSearch').offset().top - 80 }, 200);
+                            };
+                        })(p))
+                        .appendTo($wrap);
+                }
+
+                // Sonraki Butonu
+                $('<button type="button" class="page-btn">›</button>')
+                    .prop('disabled', currentPage === totalPages)
+                    .on('click', function () {
+                        if (currentPage < totalPages) {
+                            currentPage++;
+                            applyFilterAndPagination();
+                            $('html, body').animate({ scrollTop: $('#courseSearch').offset().top - 80 }, 200);
+                        }
+                    })
+                    .appendTo($wrap);
+            }
+
+            // Olay Dinleyicileri (Event Listeners)
+            $('#courseSearch').on('input', function () {
+                searchQuery = ($(this).val() || '').toLocaleLowerCase('tr-TR').trim();
+                $('#clearSearchWrap').toggle(searchQuery.length > 0);
+                currentPage = 1;
+                applyFilterAndPagination();
+            });
+
+            $('#btnClearSearch').on('click', function () {
+                $('#courseSearch').val('');
+                searchQuery = '';
+                $(this).parent().hide();
+                currentPage = 1;
+                applyFilterAndPagination();
+            });
+
+            $('#categoryFilter').on('change', function () {
+                currentCategory = ($(this).val() || '').toLocaleLowerCase('tr-TR').trim();
+                currentPage = 1;
+                applyFilterAndPagination();
+            });
+
+            $('input[name="statusFilter"]').on('change', function () {
+                currentStatus = $(this).val();
+                currentPage = 1;
+                applyFilterAndPagination();
+            });
+
+            $('#pageSizeSelect').on('change', function () {
+                pageSize = parseInt($(this).val(), 10) || 8;
+                currentPage = 1;
+                applyFilterAndPagination();
+            });
+
+            $('#btnResetFilters').on('click', function () {
+                $('#courseSearch').val('');
+                $('#clearSearchWrap').hide();
+                searchQuery = '';
+                $('#categoryFilter').val('');
+                currentCategory = '';
+                $('input[name="statusFilter"][value="all"]').closest('label').button('toggle');
+                currentStatus = 'all';
+                currentPage = 1;
+                applyFilterAndPagination();
+            });
+
+            // ==========================================
+            // TEK TIKLA AKTİF/PASİF DURUM DEĞİŞTİRME (AJAX)
+            // ==========================================
+            $(document).on('click', '.toggle-status-btn', function (e) {
+                e.preventDefault();
+                var btn = $(this);
+                var courseId = btn.data('id');
+                var token = $('input[name="__RequestVerificationToken"]').first().val();
+
+                btn.prop('disabled', true);
+
+                $.post('@Url.Action("ToggleStatus", "Course")', {
+                    id: courseId,
+                    __RequestVerificationToken: token
+                })
+                .done(function (res) {
+                    btn.prop('disabled', false);
+                    if (res && res.success) {
+                        var isActive = res.isActive;
+                        var newStatus = isActive ? 'active' : 'passive';
+                        var newText = isActive ? 'Yayında' : 'Pasif';
+
+                        // Hem kartta hem tabloda ilgili kursun durumunu güncelle
+                        $('[data-id="' + courseId + '"]').each(function () {
+                            var el = $(this);
+                            el.removeClass('badge-status-active badge-status-passive')
+                              .addClass(isActive ? 'badge-status-active' : 'badge-status-passive');
+                            el.find('i').removeClass('fa-check-circle fa-ban fa-check')
+                              .addClass(isActive ? 'fa-check-circle' : 'fa-ban');
+                            el.find('.status-text').text(newText);
+                        });
+
+                        // Wrapper veri etiketini güncelle
+                        $('.course-card-wrapper[data-search*="' + courseId + '"], .course-table-row[data-search*="' + courseId + '"]').each(function () {
+                            $(this).attr('data-status', newStatus).data('status', newStatus);
+                        });
+
+                        // Filtreyi güncelle
+                        applyFilterAndPagination();
+                    } else {
+                        alert((res && res.message) ? res.message : 'Durum değiştirilemedi.');
+                    }
+                })
+                .fail(function () {
+                    btn.prop('disabled', false);
+                    alert('Sunucu ile iletişim kurulamadı.');
+                });
+            });
+
+            // ==========================================
+            // SUMMERNOTE LAZY INITIALIZATION (PERFORMANS İÇİN)
+            // ==========================================
+            function initSingleSummernote($editor) {
+                if (!$editor.length || $editor.data('sn-initialized')) return;
+
+                try {
+                    $editor.summernote({
+                        lang: 'tr-TR',
+                        height: 340,
+                        minHeight: 220,
+                        maxHeight: 600,
+                        dialogsInBody: true,
+                        toolbar: [
+                            ['style', ['style']],
+                            ['font', ['bold', 'underline', 'clear']],
+                            ['color', ['color']],
+                            ['para', ['ul', 'ol', 'paragraph']],
+                            ['table', ['table']],
+                            ['insert', ['link', 'picture', 'video']],
+                            ['view', ['fullscreen', 'codeview']]
+                        ],
+                        callbacks: {
+                            onImageUpload: function (files) {
+                                for (var i = 0; i < files.length; i++) {
+                                    uploadImageSummernote(files[i], this);
+                                }
+                            }
+                        }
+                    });
+                    $editor.data('sn-initialized', true);
+                } catch (err) {
+                    console.warn('Summernote başlatılamadı:', err);
+                }
+            }
+
+            function uploadImageSummernote(file, editor) {
+                var data = new FormData();
+                data.append('file', file);
+                var token = $('input[name="__RequestVerificationToken"]').first().val();
+                if (token) data.append('__RequestVerificationToken', token);
+
+                $.ajax({
+                    url: '@Url.Action("UploadImage", "Course")',
+                    method: 'POST',
+                    data: data,
+                    cache: false,
+                    contentType: false,
+                    processData: false
+                }).done(function (res) {
+                    if (res && res.success) {
+                        $(editor).summernote('insertImage', res.url);
+                    } else {
+                        alert('Resim yüklenemedi: ' + (res ? res.message : 'Hata'));
+                    }
+                }).fail(function () {
+                    alert('Resim sunucuya yüklenirken hata oluştu.');
+                });
+            }
+
+            // Yalnızca ilgili modal açıldığında Summernote'u yükle (DOM performansını korur)
+            $('.modal').on('shown.bs.modal', function () {
+                var $editor = $(this).find('.resource-editor');
+                if ($editor.length) {
+                    initSingleSummernote($editor);
+                }
+            });
+
+            // Form Submit Öncesi Summernote Kodunu Textarea'ya Senkronize Et
+            $(document).on('submit', '#createForm, .edit-form', function () {
+                var $form = $(this);
+                var $editor = $form.find('.resource-editor');
+                if ($editor.length && $editor.data('sn-initialized') && $editor.summernote) {
+                    try {
+                        $editor.val($editor.summernote('code'));
+                    } catch (e) { }
+                }
+            });
+
+            // Modal Kapatıldığında Temizleme
+            $('#addCourseModal').on('hidden.bs.modal', function () {
+                var f = $(this).find('form')[0];
+                if (f) f.reset();
+                $('#addCoverPreview').attr('src', '@Url.Content("~/files/Egitim/91a7dd7d-56dc-41d3-a9bf-296a421966e2_155.jpg")');
+                $(this).find('.custom-file-label').html('Dosya Seçiniz...');
+                var $editor = $('#ResourceEditorAdd');
+                if ($editor.length && $editor.data('sn-initialized') && $editor.summernote) {
+                    try { $editor.summernote('reset'); } catch (e) { }
+                }
+            });
+
+            // Alertleri 6 saniye sonra yavaşça kapat
+            setTimeout(function () {
+                $('.alert.alert-dismissible').fadeOut(400);
+            }, 6000);
+        });
+    </script>
+
+    @if (ViewBag.EditCourseId != null)
+    {
+        <script>
+            $(function () {
+                $('#editCourseModal_@ViewBag.EditCourseId').modal('show');
+            });
+        </script>
+    }
+}

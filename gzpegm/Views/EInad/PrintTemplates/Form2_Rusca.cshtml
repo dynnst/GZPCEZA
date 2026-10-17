@@ -1,0 +1,417 @@
+﻿@model gzpegm.Models.E_Inad
+@using System.Linq
+
+@{
+    Layout = null;
+
+    // ✅ Null kontrolü
+    if (Model == null)
+    {
+        <p>Form verisi bulunamadı.</p>
+        return;
+    }
+
+    // ✅ Seçili İNAD sebepleri
+    var seciliSebepler = new List<string>();
+    if (!string.IsNullOrWhiteSpace(Model.InadSebep))
+    {
+        foreach (var s in Model.InadSebep.Split(','))
+        {
+            seciliSebepler.Add(s.Trim());
+        }
+    }
+
+    // ✅ Uçağa Nakil
+    var nakil = Model.UcagaNakil ?? "";
+
+    // ✅ Beyan null kontrolü
+    string beyan = Model.Beyan ?? "";
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Kabul Edilemeyen Yolcu Formu</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 8.5pt; /* 9pt'den 8.5pt'ye düşürüldü */
+            margin: 8px; /* 10px'ten 8px'e düşürüldü */
+            line-height: 1.2; /* 1.3'ten 1.2'ye düşürüldü */
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 3px; /* 5px'ten 3px'e düşürüldü */
+        }
+
+        td {
+            padding: 0.5px 0; /* 1px'ten 0.5px'e düşürüldü */
+            vertical-align: top;
+        }
+
+        .section-title {
+            font-weight: bold;
+            border-bottom: 1px solid #000;
+            display: inline-block;
+            margin-bottom: 1px; /* 3px'ten 1px'e düşürüldü */
+        }
+
+        .checkbox {
+            font-family: 'Courier New', monospace;
+        }
+
+        /* Sıkıştırma için ek stiller */
+        .compact-table {
+            margin-bottom: 2px;
+        }
+
+        .compact-div {
+            margin-top: 2px;
+            margin-bottom: 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Resimleri -->
+    <table style="margin-bottom:1px;">
+        <tr>
+            <td style="width:33%; text-align:left; vertical-align:middle;">
+                <img src="@Url.Content("~/files/Inad/Resim1.png")" style="max-height:65px; max-width:100%; object-fit:contain;" />
+            </td>
+            @*<td style="width:34%; text-align:center; vertical-align:middle;">
+                <img src="@Url.Content("~/img/goc2.jpg")" style="max-height:65px; max-width:100%; object-fit:contain;" />
+            </td>
+            <td style="width:33%; text-align:right; vertical-align:middle;">
+                <img src="@Url.Content("~/img/goc3.jpg")" style="max-height:65px; max-width:100%; object-fit:contain;" />
+            </td>*@
+        </tr>
+    </table>
+
+    <!-- Başlık -->
+    <table style="text-align:center; margin-bottom:8px;">
+        <tr>
+            <td style="font-weight:bold; padding:2px;">
+                TC.&nbsp;@(Model.Valilik ?? "") VALİLİĞİ<br>
+                @(Model.Kapi ?? "") MÜLKİ İDARE AMİRLİĞİ<br>
+                                                        <br />
+                KABUL EDİLEMEYEN YOLCU FORMU
+            </td>
+        </tr>
+        <tr>
+            <td style="padding:1px;">INADMISSIBLE PASSENGER FORM</td>
+        </tr>
+    </table>
+
+  
+    <!-- Kimlik Bilgileri -->
+    <table style="font-size:8.5pt;">
+        <tr>
+            <td colspan="2" style="padding:0.5px 0;">
+                <span class="section-title">KİMLİK BİLGİLERİ / PASSENGER ID INFORMATION</span>
+            </td>
+            <td style="text-align:right; padding:0.5px 0; white-space:nowrap;">
+                Tarih / Date - Saat / Time: @(Model.TarihSaat?.ToString("dd.MM.yyyy HH:mm") ?? "")
+            </td>
+        </tr>
+
+        <tr>
+            <td style="width:35%; padding:0.5px 0;">Ad Soyadı / Name Surname</td>
+            <td style="width:3%; text-align:center;">:</td>
+            <td>@(Model.AdSoyad ?? "")</td>
+        </tr>
+
+        <tr>
+            <td style="padding:0.5px 0;">Doğum Tarihi / Date of Birth</td>
+            <td style="text-align:center;">:</td>
+            <td>@(Model.DogumT?.ToString("dd/MM/yyyy") ?? "")</td>
+        </tr>
+
+        <tr>
+            <td style="padding:0.5px 0;">Doğum Yeri / Place of Birth</td>
+            <td style="text-align:center;">:</td>
+            <td>@(Model.DogumY ?? "")</td>
+        </tr>
+
+        <tr>
+            <td style="padding:0.5px 0;">Cinsiyeti / Sex</td>
+            <td style="text-align:center;">:</td>
+            <td>@(Model.Cinsiyet ?? "")</td>
+        </tr>
+
+        <tr>
+            <td style="padding:0.5px 0;">Uyruğu / Nationality</td>
+            <td style="text-align:center;">:</td>
+            <td>@(Model.Uyruk ?? "")</td>
+        </tr>
+
+        <tr>
+            <td style="padding:0.5px 0;">Belge No / Document No</td>
+            <td style="text-align:center;">:</td>
+            <td>@(Model.BelgeNo ?? "")</td>
+        </tr>
+
+        <!-- Beyan -->
+        <tr>
+            <td colspan="3" style="padding:2px 0;">
+                <span class="checkbox">@(beyan == "Yolcu kimlik bilgileri yolcunun beyanına göredir." ? "( X )" : "(  )")</span>
+                Yolcu Kimlik bilgileri yolcunun beyanına göredir / Passenger ID information is based on the person's statement
+                <br />
+                <span class="checkbox">@(beyan == "Yolcu kimlik bilgileri hamili olduğu belgeye göredir." ? "( X )" : "(  )")</span>
+                Yolcu kimlik bilgileri hamili olduğu belgeye göredir / Passenger ID information is based on the person's document
+            </td>
+        </tr>
+    </table>
+
+    <!-- Geliş Bilgileri -->
+    <table style="margin-top:3px; font-size:8.5pt;">
+        <tr>
+            <td colspan="3" style="padding:0.5px 0;">
+                <span class="section-title">GELİŞ BİLGİLERİ / ARRIVAL DETAILS</span>
+            </td>
+        </tr>
+
+        <tr>
+            <td style="width:35%;">Taşıyıcı Hava Yolu / Aircraft Carrier</td>
+            <td style="width:3%; text-align:center;">:</td>
+            <td>@(Model.GelenHavayolu ?? "")</td>
+        </tr>
+
+        <tr>
+            <td>Uçuş Numarası / Flight Number</td>
+            <td style="text-align:center;">:</td>
+            <td>@(Model.GelenUcusNo ?? "")</td>
+        </tr>
+
+        <tr>
+            <td>Geldiği Yer / From</td>
+            <td style="text-align:center;">:</td>
+            <td>@(Model.GeldigiYer ?? "")</td>
+        </tr>
+
+        <tr>
+            <td>Geliş Tarih ve Saat / Date and Time</td>
+            <td style="text-align:center;">:</td>
+            <td>@(Model.GeldigiTarihSaat?.ToString("dd.MM.yyyy HH:mm") ?? "")</td>
+        </tr>
+    </table>
+
+    <!-- Gidiş Bilgileri -->
+    <table style="font-size:8.5pt; margin-top:3px;">
+        <tr>
+            <td colspan="3" style="padding:0.5px 0;">
+                <span class="section-title">GİDİŞ BİLGİLERİ / DEPARTURE DETAILS</span>
+            </td>
+        </tr>
+
+        <tr>
+            <td style="width:35%;">Taşıyıcı Hava Yolu / Aircraft Carrier</td>
+            <td style="width:3%; text-align:center;">:</td>
+            <td>@(Model.GidenHavayolu ?? "")</td>
+        </tr>
+
+        <tr>
+            <td>Uçuş Numarası / Flight Number</td>
+            <td style="text-align:center;">:</td>
+            <td>@(Model.GidisUcusNo ?? "")</td>
+        </tr>
+
+        <tr>
+            <td>Gideceği Yer / Destination</td>
+            <td style="text-align:center;">:</td>
+            <td>@(Model.GidisYer ?? "")</td>
+        </tr>
+
+        <tr>
+            <td>Gidiş Tarih ve Saat / Date and Time</td>
+            <td style="text-align:center;">:</td>
+            <td>@(Model.GidisTarihSaat?.ToString("dd.MM.yyyy HH:mm") ?? "")</td>
+        </tr>
+    </table>
+
+    <!-- Sebepler -->
+    <table style="margin-top:3px; font-size:10pt;">
+        <tr>
+            <td style="padding:1px 0; font-weight:bold;">
+                Bir yolcunun girişine aşağıdaki nedenlerle Göç İdaresi Genel Müdürlüğü (GİGM) tarafından izin verilmemiştir:
+            </td>
+        </tr>
+        <tr>
+            <td style="padding:1px 0;">
+                This passenger's entry into Turkey has been refused by the Directorate General of Migration Management (DGMM) for the following reasons:
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                <span class="checkbox">[ @(seciliSebepler.Contains("Geçerli bir seyahat belgesine sahip olmaması") ? "X" : " ") ]</span>
+                Geçerli bir seyahat belgesine sahip olmaması / Not holding a valid travel document (Law No 6458 Article 7-1a)
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                <span class="checkbox">[ @(seciliSebepler.Contains("Türkiye'ye girişi sakıncalı görülmesi") ? "X" : " ") ]</span>
+                Türkiye'ye girişi sakıncalı görülmesi / Not permitted to enter into Turkey due to public security (Law No 6458 Article 15-1c)
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                <span class="checkbox">[ @(seciliSebepler.Contains("Yeterli maddi imkâna sahip olmaması") ? "X" : " ") ]</span>
+                Yeterli maddi imkâna sahip olmaması / Not having sufficient financial resources (Law No 6458 Article 15-1g)
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                <span class="checkbox">[ @(seciliSebepler.Contains("Hakkında Türkiye'ye giriş yasağı bulunması") ? "X" : " ") ]</span>
+                Hakkında Türkiye'ye giriş yasağı bulunması / Entry ban (Law No 6458 Article 15-1b)
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                <span class="checkbox">[ @(seciliSebepler.Contains("Giriş vizesinin olmaması") ? "X" : " ") ]</span>
+                Giriş vizesinin olmaması / Not holding a visa (Law No 6458 Article 7-1a)
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                <span class="checkbox">[ @(seciliSebepler.Contains("Pasaport süresinin yetersiz olması") ? "X" : " ") ]</span>
+                Pasaport süresinin yetersiz olması / Insufficient passport validity period (Law No 6458 Article 7-1b)
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                <span class="checkbox">[ @(seciliSebepler.Contains("Sahte pasaport") ? "X" : " ") ]</span>
+                Sahte pasaport / Counterfeit passport (Law No 6458 Article 7-1b)
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                <span class="checkbox">[ @(seciliSebepler.Contains("Pasaportta tahrifat yapılmış olması") ? "X" : " ") ]</span>
+                Pasaportta tahrifat yapılmış olması / Altered passport (Law No 6458 Article 7-1b)
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                <span class="checkbox">[ @(seciliSebepler.Contains("Sahte vize-ikamet") ? "X" : " ") ]</span>
+                Sahte vize-ikamet / Counterfeit Visa-Residence (Law No 6458 Article 7-1a)
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                <span class="checkbox">[ @(seciliSebepler.Contains("Çalıntı belge") ? "X" : " ") ]</span>
+                Çalıntı belge / Stolen document (Law No 6458 Article 7-1a)
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                <span class="checkbox">[ @(seciliSebepler.Contains("180 günde 90 gün uygulamasının ihlali") ? "X" : " ") ]</span>
+                180 günde 90 gün uygulamasının ihlali / Violation of the duration of stay 90 days within 180 days (Law No 6458 Article 11-1)
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                <span class="checkbox">[ @(seciliSebepler.Contains("Türkiye'ye girmek istememesi") ? "X" : " ") ]</span>
+                Türkiye'ye girmek istememesi / Person does not want to enter into Turkey
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                <span class="checkbox">[ @(seciliSebepler.Contains("Diğer Sebepler / Other Reasons") ? "X" : " ") ]</span>
+                Diğer Sebepler / Other Reasons
+            </td>
+        </tr>
+    </table>
+
+    <!-- Üst Araması -->
+    <div style="margin-top:3px; line-height:1.2; text-align:justify; font-size:8.5pt;">
+        <strong>Üst Aramasında Bulunan Eşyalar / Found and kept goods during body search:</strong><br>
+
+        1- <br />
+        <span class="checkbox">( @(nakil.Contains("Esyalari ve evraklari teslim edildi") ? "X" : " ") )</span>
+        Şahsın eşyaları ve evrakları havayolu işleticisine/ yer hizmetleri kuruluşuna
+        tam ve sağlam olarak teslim edilmiştir.<br>
+        The whole and complete items and document of this person have been delivered
+        to the airport operator/ground handling service.
+        <br>
+
+        <span class="checkbox">( @(nakil.Contains("Refakat edilmesi gerekmektedir") ? "X" : " ") )</span>
+        Kabul edilemeyen yolcuya seyahati sırasında refakat edilmesi gerekmektedir /
+        The person who is an inadmissible passenger needs to be accompanied during her/his journey.
+        <br>
+        <div style="font-size:7.5pt; text-align:justify; line-height:1.1;">
+            7 Aralık 1944 Chicago Kongresine göre, Montreal Kongresi değişiklikleri ve 9. Uluslararası Sivil Havacılık Organizasyonu Kongresinde alınan kararlar doğrultusunda: Kabul Edilemez Yolcuyu, ilk çıkış yaptığı ülke tekrar kabul etmek zorundadır.<br>
+            In accordance with the Chicago Congress on 7 December 1944 along with the amendments to Montreal Congress and International Civil Aviation Organization Congress; the first country from which the inadmissible passenger has exited must admit the said passenger.
+        </div>
+    </div>
+
+    <table style="margin-top:3px; font-size:7.5pt; width:100%; border-collapse:collapse;">
+        <!-- ÜST BAŞLIKLAR -->
+        <tr>
+            <td style="text-align:center; width:33%; padding:0 3px;">
+                <div>
+                    <strong>GİGM Adına</strong><br>
+                    <em style="font-size:7pt;">On Behalf Of DGMM</em>
+                </div>
+            </td>
+
+            <td style="text-align:center; width:33%; padding:0 3px;">
+                <div>
+                    <strong>Özel Güvenlik</strong><br>
+                    <em style="font-size:7pt;">Private Security</em>
+                </div>
+            </td>
+
+            <td style="text-align:center; width:33%; padding:0 3px;">
+                <div>
+                    <strong>Hava Yolu / Yer Hiz.</strong><br>
+                    <em style="font-size:7pt;">Airline / Ground Services</em>
+                </div>
+            </td>
+        </tr>
+
+        <!-- VERİ ALANLARI -->
+        <tr>
+            <!-- GİGM -->
+            <td style="text-align:center; padding:2px 3px; vertical-align:middle;">
+                <div style="margin:0; line-height:1;">
+                    <span class="print-only">@Model.Personel</span>
+                </div>
+            </td>
+
+            <!-- ÖZEL GÜVENLİK -->
+            <td style="text-align:center; padding:2px 3px; vertical-align:middle;">
+                <div style="margin:0; line-height:1;">
+                    <span class="print-only">@Model.OzelGuvenlik</span>
+                </div>
+            </td>
+
+            <!-- HAVAYOLU -->
+            <td style="text-align:center; padding:2px 3px; vertical-align:middle;">
+                <div style="margin:0; line-height:1;">
+                    <span class="print-only">@Model.YerHizmetleriPersonel</span>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+
+</body>
+</html>
+<script>
+    window.print();
+</script>

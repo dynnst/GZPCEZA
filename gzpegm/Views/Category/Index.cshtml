@@ -1,0 +1,653 @@
+﻿@model IEnumerable<gzpegm.Models.Categories>
+
+@{
+    ViewBag.Title = "Kategori Yönetimi";
+    Layout = "~/Views/Shared/_Master.cshtml";
+}
+
+<div class="page-wrapper">
+    <div class="container-fluid p-0">
+        <!-- BAŞLIK BÖLÜMÜ -->
+        <div class="page-heading mb-4">
+            <div class="d-flex justify-content-between align-items-center flex-wrap">
+                <div>
+                    <h2 class="page-title">
+                        <span class="me-2">📁</span> Kategori Yönetimi
+                    </h2>
+                    <p class="page-subtitle">Kategorileri ekleyin, düzenleyin, pasifleştirin veya tamamen silin</p>
+                </div>
+                <button class="btn btn-primary btn-lg" onclick="openAddModal()">
+                    <span class="me-2">➕</span> Yeni Kategori Ekle
+                </button>
+            </div>
+        </div>
+
+        <!-- MESAJLAR -->
+        @if (TempData["msgSuccess"] != null)
+        {
+            <div class="alert alert-success">
+                <strong>✅ Başarılı!</strong> @TempData["msgSuccess"]
+            </div>
+        }
+        @if (TempData["msgError"] != null)
+        {
+            <div class="alert alert-danger">
+                <strong>❌ Hata!</strong> @TempData["msgError"]
+            </div>
+        }
+
+        <!-- ARAMA & TOPLAM KARTI -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="card-title mb-0">🔍 Kategori Ara</h4>
+                        <p class="card-subtitle mt-1">Kategori adına göre filtrele</p>
+                    </div>
+                    <div class="table-info">
+                        <span class="badge bg-primary">Toplam: @Model.Count()</span>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <input type="text" id="searchBox" class="form-control" placeholder="Kategori adı girin...">
+            </div>
+        </div>
+
+        <!-- KATEGORİ TABLOSU -->
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title mb-0">📋 Kategori Listesi</h4>
+                <p class="card-subtitle mt-1">Tüm kategoriler ve işlemler</p>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table" id="categoryTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 60px">#</th>
+                                <th>Kategori Adı</th>
+                                <th>Açıklama</th>
+                                <th style="width: 90px">Aktif</th>
+                                <th style="width: 280px">İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td class="fw-semibold">@item.CategoryId</td>
+                                    <td class="catName">@item.CategoryName</td>
+                                    <td>@item.Description</td>
+                                    <td>
+                                        @if (item.IsActive)
+                                        {
+                                            <span class="badge bg-success">Aktif</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">Pasif</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn btn-warning btn-sm" onclick="openEditModal(@item.CategoryId)">
+                                                ✏️ Düzenle
+                                            </button>
+
+                                            @using (Html.BeginForm("DeleteCategory", "Category", FormMethod.Post, new { @class = "d-inline" }))
+                                            {
+                                                @Html.AntiForgeryToken()
+                                                @Html.Hidden("id", item.CategoryId)
+                                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('⚠️ Bu kategori pasife alınacak. Kategoriye bağlı aktif kurslar varsa işlem iptal edilecek. Devam etmek istiyor musunuz?');">
+                                                    🚫 Pasife Al
+                                                </button>
+                                            }
+
+                                            @using (Html.BeginForm("ForceDeleteCategory", "Category", FormMethod.Post, new { @class = "d-inline" }))
+                                            {
+                                                @Html.AntiForgeryToken()
+                                                @Html.Hidden("id", item.CategoryId)
+                                                <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('🔥 DİKKAT! Bu kategori ve bağlı TÜM KURSLAR kalıcı olarak silinecek! Bu işlem geri alınamaz. Emin misiniz?');">
+                                                    🗑️ Tamamen Sil
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- YENİ KATEGORİ EKLEME MODALI (gradient başlıklı) -->
+<div id="addModal" class="modal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <h5 class="modal-title">
+                    <span class="me-2">➕</span> Yeni Kategori Ekle
+                </h5>
+                <button type="button" class="close" onclick="closeModal('addModal')">&times;</button>
+            </div>
+            @using (Html.BeginForm("AddCategory", "Category", FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">Kategori Adı <span class="text-danger">*</span></label>
+                        <input type="text" name="CategoryName" class="form-control" required />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Açıklama</label>
+                        <input type="text" name="Description" class="form-control" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addModal')">İptal</button>
+                    <button type="submit" class="btn btn-primary">Kaydet</button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- DÜZENLEME MODALLARI (her kategori için ayrı) -->
+@foreach (var item in Model)
+{
+    <div id="editModal_@item.CategoryId" class="modal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    <h5 class="modal-title">
+                        <span class="me-2">✏️</span> Kategori Düzenle
+                    </h5>
+                    <button type="button" class="close" onclick="closeModal('editModal_@item.CategoryId')">&times;</button>
+                </div>
+                @using (Html.BeginForm("EditCategory", "Category", FormMethod.Post))
+                {
+                    @Html.AntiForgeryToken()
+                    <div class="modal-body">
+                        @Html.Hidden("CategoryId", item.CategoryId)
+                        <div class="form-group">
+                            <label class="form-label">Kategori Adı</label>
+                            <input type="text" name="CategoryName" class="form-control" value="@item.CategoryName" required />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Açıklama</label>
+                            <input type="text" name="Description" class="form-control" value="@item.Description" />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Aktif mi?</label><br />
+                            <label class="switch">
+                                <input type="checkbox" name="IsActive" value="true" @(item.IsActive ? "checked" : "") />
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('editModal_@item.CategoryId')">İptal</button>
+                        <button type="submit" class="btn btn-primary">Güncelle</button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    /* ========== GENEL SAYFA YAPISI (Dersler sayfasındaki gibi) ========== */
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        background: #f5f7fb;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 0;
+    }
+
+    .page-wrapper {
+        padding: 20px;
+        background: #f5f7fb;
+        min-height: 100vh;
+    }
+
+    .container-fluid {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-heading {
+        margin-bottom: 30px;
+    }
+
+    .page-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: #333;
+        margin: 0 0 8px 0;
+    }
+
+    .page-subtitle {
+        font-size: 14px;
+        color: #999;
+        margin: 0;
+    }
+
+    /* KARTLAR */
+    .card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        background: white;
+        margin-bottom: 24px;
+    }
+
+    .card-header {
+        background: white;
+        border-bottom: 1px solid #eef2f7;
+        padding: 20px 25px;
+    }
+
+    .card-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+        margin: 0;
+    }
+
+    .card-subtitle {
+        font-size: 12px;
+        color: #999;
+        margin-top: 4px;
+    }
+
+    .card-body {
+        padding: 20px 25px;
+    }
+
+    /* TABLO */
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+    }
+
+        .table thead th {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #eef2f7;
+            font-weight: 600;
+            color: #666;
+            font-size: 13px;
+            padding: 15px;
+            text-align: left;
+        }
+
+        .table tbody tr {
+            border-bottom: 1px solid #eef2f7;
+            transition: background-color 0.2s ease;
+        }
+
+            .table tbody tr:hover {
+                background-color: #fafbfc;
+            }
+
+        .table tbody td {
+            padding: 15px;
+            vertical-align: middle;
+        }
+
+    .fw-semibold {
+        font-weight: 500;
+    }
+
+    /* BUTON GRUBU */
+    .action-buttons {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        font-size: 12px;
+        font-weight: 500;
+        border-radius: 6px;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+
+    .btn-sm {
+        padding: 5px 12px;
+        font-size: 12px;
+    }
+
+    .btn-primary {
+        background: #4361ee;
+        color: white;
+    }
+
+        .btn-primary:hover {
+            background: #3a56d4;
+        }
+
+    .btn-warning {
+        background: #ffc107;
+        color: #212529;
+    }
+
+        .btn-warning:hover {
+            background: #e0a800;
+        }
+
+    .btn-danger {
+        background: #dc3545;
+        color: white;
+    }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+    .btn-outline-danger {
+        background: transparent;
+        border: 1px solid #dc3545;
+        color: #dc3545;
+    }
+
+        .btn-outline-danger:hover {
+            background: #dc3545;
+            color: white;
+        }
+
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+    .btn-lg {
+        padding: 10px 20px;
+        font-size: 14px;
+    }
+
+    /* BADGE */
+    .badge {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .bg-success {
+        background-color: #28a745;
+        color: white;
+    }
+
+    .bg-danger {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .bg-primary {
+        background-color: #4361ee;
+        color: white;
+    }
+
+    /* ALERT */
+    .alert {
+        padding: 15px 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        background: white;
+        border-left: 4px solid;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .alert-success {
+        border-left-color: #28a745;
+        background: #f0fff4;
+        color: #155724;
+    }
+
+    .alert-danger {
+        border-left-color: #dc3545;
+        background: #fff5f5;
+        color: #721c24;
+    }
+
+    /* FORM */
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-label {
+        font-weight: 600;
+        font-size: 13px;
+        margin-bottom: 8px;
+        display: block;
+        color: #555;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #e1e5eb;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: 0.2s;
+    }
+
+        .form-control:focus {
+            border-color: #667eea;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+        }
+
+    /* TOGGLE SWITCH */
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 50px;
+        height: 24px;
+    }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        border-radius: 24px;
+        transition: 0.3s;
+    }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+
+    input:checked + .slider {
+        background-color: #28a745;
+    }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+    /* MODAL (dersler sayfasındaki gibi gradient) */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1050;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0,0,0,0.5);
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-dialog {
+        width: 500px;
+        max-width: 90%;
+        margin: 1.75rem auto;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    }
+
+    .modal-header {
+        padding: 20px 25px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: none;
+    }
+
+    .modal-title {
+        font-size: 20px;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .close {
+        background: none;
+        border: none;
+        font-size: 28px;
+        font-weight: 300;
+        cursor: pointer;
+        color: white;
+        opacity: 0.8;
+        line-height: 1;
+    }
+
+        .close:hover {
+            opacity: 1;
+        }
+
+    .modal-body {
+        padding: 25px;
+    }
+
+    .modal-footer {
+        background: #f8f9fa;
+        border-top: 1px solid #eef2f7;
+        padding: 15px 25px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    /* RESPONSIVE */
+    @@media (max-width: 768px) {
+        .page-wrapper {
+            padding: 15px;
+        }
+
+        .page-title {
+            font-size: 22px;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+            .action-buttons .btn {
+                justify-content: center;
+            }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        .modal-dialog {
+            width: calc(100% - 20px);
+        }
+    }
+</style>
+
+<script>
+    // Modal aç/kapa (saf JavaScript, jQuery yok)
+    function openAddModal() {
+        document.getElementById('addModal').style.display = 'flex';
+    }
+    function openEditModal(id) {
+        var modal = document.getElementById('editModal_' + id);
+        if (modal) modal.style.display = 'flex';
+    }
+    function closeModal(modalId) {
+        var modal = document.getElementById(modalId);
+        if (modal) modal.style.display = 'none';
+    }
+
+    // Arka plana tıklayınca kapat
+    window.onclick = function (event) {
+        var modals = document.querySelectorAll('.modal');
+        modals.forEach(function (modal) {
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+    }
+
+    // Arama (kategori adına göre)
+    document.getElementById('searchBox').addEventListener('keyup', function () {
+        var value = this.value.toLowerCase();
+        var rows = document.querySelectorAll('#categoryTable tbody tr');
+        rows.forEach(function (row) {
+            var catNameCell = row.querySelector('.catName');
+            if (catNameCell) {
+                var text = catNameCell.textContent.toLowerCase();
+                row.style.display = text.includes(value) ? '' : 'none';
+            }
+        });
+    });
+
+    // Otomatik alert kapatma (5 sn)
+    setTimeout(function () {
+        var alerts = document.querySelectorAll('.alert');
+        alerts.forEach(function (alert) {
+            alert.style.display = 'none';
+        });
+    }, 5000);
+</script>

@@ -1,0 +1,930 @@
+@model gzpegm.Models.ViewModels.LandingViewModel
+@using gzpegm.Models.ViewModels
+@using System.Linq
+@using gzpegm.ViewModels
+@using System.Text.RegularExpressions
+
+@functions {
+    private static readonly Regex _imgSrcRegex =
+        new Regex("<img[^>]+src\\s*=\\s*['\\\"]([^'\\\"]+)['\\\"]", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    private static readonly Regex _imgTagRegex =
+        new Regex("<img[^>]*>", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    private static readonly Regex _stripTagsRegex =
+        new Regex("<.*?>", RegexOptions.Singleline | RegexOptions.Compiled);
+
+    private string GetFirstImageSrc(string html)
+    {
+        if (string.IsNullOrEmpty(html)) return null;
+        var m = _imgSrcRegex.Match(html);
+        return m.Success ? m.Groups[1].Value : null;
+    }
+
+    private string RemoveFirstImageTag(string html)
+    {
+        if (string.IsNullOrEmpty(html)) return html;
+        return _imgTagRegex.Replace(html, "");
+    }
+
+    private string StripTags(string html)
+    {
+        if (string.IsNullOrEmpty(html)) return string.Empty;
+        return _stripTagsRegex.Replace(html, string.Empty);
+    }
+}
+
+@{
+    string defaultCourseImage = Url.Content("~/AdminTemplate/img/landing/default-course.jpg");
+    string defaultAvatar = Url.Content("~/AdminTemplate/img/landing/avatar1.jpg");
+    string defaultPoliceAvatar = Url.Content("~/files/user/police-xxl.png");
+    int totalCourses = Model.AllCourses != null ? Model.AllCourses.Count : 0;
+}
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="T.C. İçişleri Bakanlığı Emniyet Genel Müdürlüğü Hudut Kapıları Daire Başkanlığı Eğitim ve Kurs Portalı">
+    <meta name="author" content="EGM Hudut Kapıları Daire Başkanlığı">
+
+    <title>EGM HUDUT KAPILARI | Eğitim ve Kurs Portalı</title>
+    <link rel="icon" href="@Url.Content("~/files/logo/favicon-egm-32.png")" type="image/x-icon">
+
+    <link href="/AdminTemplate/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/AdminTemplate/css/animate.css" rel="stylesheet">
+    <link href="/AdminTemplate/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+    <link href="/AdminTemplate/css/style.css" rel="stylesheet">
+    <link href="~/css/custom.css" rel="stylesheet" />
+    <link href="/Content/landing-page.css" rel="stylesheet" />
+
+    <style>
+        /* EK MODERN LANDING STILLERI */
+        .fb-logo-text {
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            font-size: 16px;
+            color: #ffffff;
+        }
+        .fb-logo-sub {
+            display: block;
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.75);
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            line-height: 1;
+        }
+        .landing-stats-strip {
+            background: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+            margin-bottom: 40px;
+        }
+        .landing-stat-card {
+            padding: 18px 14px;
+            border-radius: 12px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            transition: all 0.25s ease;
+        }
+        .landing-stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(30, 60, 114, 0.08);
+            border-color: #93c5fd;
+        }
+        .stat-icon-circle {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: #ffffff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            margin-bottom: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+        }
+        .stat-num {
+            font-size: 26px;
+            font-weight: 800;
+            color: #0f172a;
+            line-height: 1.1;
+            margin-bottom: 3px;
+        }
+        .stat-label {
+            font-size: 11.5px;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .slider-img {
+            height: 520px;
+            object-fit: cover;
+            width: 100%;
+            filter: brightness(0.85);
+        }
+        .carousel-caption.slider-box {
+            background: rgba(7, 23, 57, 0.85) !important;
+            backdrop-filter: blur(12px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.18) !important;
+            border-radius: 16px !important;
+            padding: 24px 28px !important;
+            max-width: 560px !important;
+            left: 50px !important;
+            bottom: 50px !important;
+            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35) !important;
+        }
+        .slider-badge-cat {
+            display: inline-block;
+            background: #ffc107;
+            color: #0f172a;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 4px 12px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .course-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            background: #ffffff;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow: hidden;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.03);
+        }
+        .course-card:hover {
+            transform: translateY(-5px);
+            border-color: #1e3c72;
+            box-shadow: 0 12px 28px rgba(30, 60, 114, 0.12);
+        }
+        .category-tag-over {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(6px);
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 20px;
+            z-index: 2;
+        }
+        .recent-exam-card {
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.03);
+            background: #ffffff;
+            transition: all 0.25s ease;
+        }
+        .recent-exam-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 24px rgba(30, 60, 114, 0.1);
+            border-color: #93c5fd;
+        }
+        .team-member img {
+            border: 3px solid #e2e8f0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transition: all 0.25s ease;
+        }
+        .team-member:hover img {
+            transform: scale(1.05);
+            border-color: #1e3c72;
+        }
+        @@media (max-width: 768px) {
+            .carousel-caption.slider-box {
+                max-width: 92% !important;
+                left: 4% !important;
+                bottom: 20px !important;
+                padding: 16px !important;
+            }
+            .slider-img {
+                height: 420px;
+            }
+        }
+    </style>
+</head>
+
+<body id="page-top" class="landing-page no-skin-config">
+
+    <!-- Global antiforgery token form for teacher request -->
+    <form id="teacherRequestFormGlobal">@Html.AntiForgeryToken()</form>
+
+    <!-- Giriş sonrası yeni kurs bildirimi toast -->
+    @if (ViewBag.NewCourseTitles != null)
+    {
+        var briefs = ViewBag.NewCourseTitles as System.Collections.Generic.List<gzpegm.Models.CourseBrief>;
+        if (briefs != null && briefs.Count > 0)
+        {
+            <div class="custom-toast-container">
+                <div class="toast custom-toast" id="newCoursesToast" role="alert" aria-live="assertive" aria-atomic="true" data-delay="8000">
+                    <div class="toast-head">
+                        <div class="icon"><i class="fa fa-bell"></i></div>
+                        <div style="flex:1">
+                            <div style="font-size:13px;font-weight:700;color:#212529;">Yeni Eğitim Eklendi</div>
+                            <div style="font-size:12px;color:#6c757d;">Sisteme yeni eklenen eğitim modülü</div>
+                        </div>
+                        <button type="button" class="close" data-dismiss="toast" aria-label="Kapat" style="opacity:0.7">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="toast-body">
+                        @{
+                            var b = briefs.First();
+                            var thumb = string.IsNullOrEmpty(b.CoverImage)
+                                        ? defaultCourseImage
+                                        : (b.CoverImage.StartsWith("http", System.StringComparison.OrdinalIgnoreCase) ? b.CoverImage : Url.Content("~/files/Egitim/" + b.CoverImage));
+                            var created = b.CreatedDate.HasValue ? b.CreatedDate.Value.ToString("dd.MM.yyyy") : "";
+                        }
+                        <div style="display:flex; gap:12px; align-items:center;">
+                            <img class="thumb" src="@thumb" loading="lazy" onerror="this.onerror=null;this.src='@defaultCourseImage';" />
+                            <div style="flex:1;">
+                                <div class="title"><a href="@Url.Action("Details","Course", new { id = b.CourseId })" style="color:inherit;text-decoration:none;">@b.CourseTitle</a></div>
+                                <div class="meta">@created</div>
+                            </div>
+                        </div>
+                        <div class="actions">
+                            <a href="@Url.Action("Details","Course", new { id = b.CourseId })" class="btn btn-sm btn-outline-primary">Detay</a>
+                            <a href="@Url.Action("StudentIndex","Course")" class="btn btn-sm btn-primary">Tümünü Gör</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+
+    <!-- ÜST NAVBAR -->
+    <div class="fb-navbar-wrapper">
+        <nav class="fb-navbar" role="navigation" aria-label="site navigation">
+            <div class="fb-left">
+                <a class="fb-logo d-flex align-items-center text-white" href="@Url.Action("Index", "Landing")" style="text-decoration:none;">
+                    <i class="fa fa-shield text-warning mr-2" style="font-size: 24px;"></i>
+                    <div>
+                        <span class="fb-logo-text">EGM HUDUT KAPILARI</span>
+                        <span class="fb-logo-sub">EĞİTİM &amp; GELİŞİM PORTALI</span>
+                    </div>
+                </a>
+            </div>
+
+            <div class="fb-right">
+                <ul class="fb-nav-icons" role="menu" aria-label="menu">
+                    <li><a class="page-scroll" href="#page-top" title="Anasayfa"><i class="fa fa-home"></i><span class="nav-text">ANASAYFA</span></a></li>
+                    <li><a class="page-scroll" href="#categories" title="Kategoriler"><i class="fa fa-folder-open"></i><span class="nav-text">KATEGORİLER</span></a></li>
+                    <li><a class="page-scroll" href="#features" title="Son Kurslar"><i class="fa fa-star"></i><span class="nav-text">SON KURSLAR</span></a></li>
+                    <li><a class="page-scroll" href="#courses" title="Bütün Kurslar"><i class="fa fa-list"></i><span class="nav-text">BÜTÜN KURSLAR</span></a></li>
+                    <li><a class="page-scroll" href="#recent-exams" title="Son Sınavlar"><i class="fa fa-file-text-o"></i><span class="nav-text">SON SINAVLAR</span></a></li>
+                    <li><a class="page-scroll" href="#team" title="Eğitimciler"><i class="fa fa-users"></i><span class="nav-text">EĞİTİMCİLER</span></a></li>
+                    <li><a class="page-scroll" href="#testimonials" title="Yorumlar"><i class="fa fa-comment"></i><span class="nav-text">YORUMLAR</span></a></li>
+                    <li><a class="page-scroll" href="#contact" title="İletişim"><i class="fa fa-phone"></i><span class="nav-text">İLETİŞİM</span></a></li>
+                    @if (Model.IsAuthenticated)
+                    {
+                        var roleNavItem = Model.CurrentUser?.Role ?? "";
+                        if (!string.Equals(roleNavItem, "Admin", System.StringComparison.OrdinalIgnoreCase) &&
+                            !string.Equals(roleNavItem, "Teacher", System.StringComparison.OrdinalIgnoreCase))
+                        {
+                            <li>
+                                <a href="#" id="teacherRequestAnchorNav" title="Eğitimci Ol">
+                                    <i class="fa fa-user-plus"></i>
+                                    <span class="nav-text">EĞİTİMCİ OL</span>
+                                </a>
+                            </li>
+                        }
+                    }
+                </ul>
+
+                @if (Model.IsAuthenticated)
+                {
+                    var avatarUrl = string.IsNullOrEmpty(Model.CurrentUser?.fldPicture)
+                                    ? defaultAvatar
+                                    : (Model.CurrentUser.fldPicture.StartsWith("http", System.StringComparison.OrdinalIgnoreCase)
+                                       ? Model.CurrentUser.fldPicture
+                                       : Url.Content("~/files/User/" + Model.CurrentUser.fldPicture));
+                    var roleNav = Model.CurrentUser?.Role ?? "";
+
+                    <div class="fb-user">
+                        <img src="@avatarUrl" alt="avatar" class="fb-avatar" loading="lazy" onerror="this.onerror=null;this.src='@defaultAvatar';" />
+                        <span class="fb-user-name">@((Model.CurrentUser != null) ? (Model.CurrentUser.fldName + " " + Model.CurrentUser.fldLastName) : "Hoşgeldiniz")</span>
+                        <a class="btn btn-sm btn-info text-white ml-2 font-weight-bold" href="@Url.Action("StudentIndex", "Course")">
+                            <i class="fa fa-graduation-cap mr-1"></i> Kurs Kataloğu
+                        </a>
+                        <a class="btn btn-sm btn-warning text-dark ml-1 font-weight-bold" href="@Url.Action("Index", "Home")">
+                            <i class="fa fa-dashboard mr-1"></i> Ceza Sistemi
+                        </a>
+                        @if (!string.Equals(roleNav, "Admin", System.StringComparison.OrdinalIgnoreCase) &&
+                             !string.Equals(roleNav, "Teacher", System.StringComparison.OrdinalIgnoreCase))
+                        {
+                            <button id="teacherRequestBtnNav" class="btn btn-sm btn-outline-light ml-1">Eğitimci Ol</button>
+                        }
+                        <a class="btn btn-sm btn-outline-light ml-1" href="@Url.Action("Logout", "Giris")" title="Güvenli Çıkış">
+                            <i class="fa fa-sign-out"></i> ÇIKIŞ
+                        </a>
+                    </div>
+                }
+                else
+                {
+                    <div class="fb-user">
+                        <a class="btn btn-sm btn-warning text-dark font-weight-bold px-3" href="@Url.Action("Index", "Giris", new { direct = true })">
+                            <i class="fa fa-sign-in mr-1"></i> GİRİŞ YAP
+                        </a>
+                    </div>
+                }
+            </div>
+        </nav>
+    </div>
+
+    <!-- CAROUSEL SLIDER -->
+    <div id="inSlider" class="carousel slide" data-ride="carousel">
+        <ol class="carousel-indicators">
+            @for (int i = 0; i < Model.SliderCourses.Count; i++)
+            {
+                <li data-target="#inSlider" data-slide-to="@i" class="@(i == 0 ? "active" : "")"></li>
+            }
+        </ol>
+
+        <div class="carousel-inner" role="listbox">
+            @for (int i = 0; i < Model.SliderCourses.Count; i++)
+            {
+                var item = Model.SliderCourses[i];
+
+                var sliderImageUrl = string.IsNullOrEmpty(item.CoverImage)
+                                     ? defaultCourseImage
+                                     : (item.CoverImage.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+                                        ? item.CoverImage
+                                        : Url.Content("~/files/Egitim/" + item.CoverImage));
+
+                var rawDesc = item.CourseDescription;
+                var descImageSrc = GetFirstImageSrc(rawDesc);
+                var cleanedDesc = string.IsNullOrEmpty(rawDesc)
+                                  ? "Açıklama bulunmamaktadır."
+                                  : StripTags(RemoveFirstImageTag(rawDesc));
+
+                var maxLength = 140;
+                var descToShow = cleanedDesc.Length > maxLength ? cleanedDesc.Substring(0, maxLength) + "..." : cleanedDesc;
+
+                <div class="carousel-item @(i == 0 ? "active" : "")">
+                    <a href="@Url.Action("Details", "Course", new { id = item.CourseId })" title="@item.CourseTitle">
+                        <img src="@sliderImageUrl" class="d-block w-100 slider-img" alt="@item.CourseTitle" loading="lazy" onerror="this.onerror=null;this.src='@defaultCourseImage';" />
+                    </a>
+
+                    <div class="carousel-caption text-left slider-box">
+                        @if (!string.IsNullOrEmpty(item.CategoryName))
+                        {
+                            <span class="slider-badge-cat mb-2"><i class="fa fa-tag mr-1"></i> @item.CategoryName</span>
+                        }
+
+                        <h2 class="text-white font-weight-bold mb-2" style="font-size:24px; line-height:1.3; text-shadow: 0 2px 8px rgba(0,0,0,0.5);">
+                            @item.CourseTitle
+                        </h2>
+
+                        <p class="text-light mb-3" style="font-size:13.5px; line-height:1.5;">@descToShow</p>
+
+                        <div class="d-flex align-items-center flex-wrap gap-2">
+                            <a href="@Url.Action("Details", "Course", new { id = item.CourseId })" class="btn btn-warning font-weight-bold text-dark mr-2">
+                                <i class="fa fa-play-circle mr-1"></i> Eğitime Başla
+                            </a>
+                            <a href="@Url.Action("StudentIndex", "Course")" class="btn btn-outline-light font-weight-bold">
+                                <i class="fa fa-th-large mr-1"></i> Kurs Kataloğu
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <a class="carousel-control-prev" href="#inSlider" role="button" data-slide="prev">
+            <span class="carousel-control-prev-icon"></span>
+            <span class="sr-only">Önceki</span>
+        </a>
+
+        <a class="carousel-control-next" href="#inSlider" role="button" data-slide="next">
+            <span class="carousel-control-next-icon"></span>
+            <span class="sr-only">Sonraki</span>
+        </a>
+    </div>
+
+    <!-- HIZLI İSTATİSTİK ŞERİDİ -->
+    <section class="landing-stats-strip py-4">
+        <div class="container">
+            <div class="row text-center">
+                <div class="col-6 col-md-3 mb-3 mb-md-0">
+                    <div class="landing-stat-card">
+                        <div class="stat-icon-circle text-primary"><i class="fa fa-book"></i></div>
+                        <div class="stat-num">@totalCourses</div>
+                        <div class="stat-label">Aktif Eğitim Modülü</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3 mb-3 mb-md-0">
+                    <div class="landing-stat-card">
+                        <div class="stat-icon-circle text-warning"><i class="fa fa-clipboard"></i></div>
+                        <div class="stat-num">@Model.TotalExamCount</div>
+                        <div class="stat-label">Değerlendirme Sınavı</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="landing-stat-card">
+                        <div class="stat-icon-circle text-success"><i class="fa fa-users"></i></div>
+                        <div class="stat-num">@(Model.Teachers != null ? Model.Teachers.Count : 0)</div>
+                        <div class="stat-label">Uzman Eğitmen</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="landing-stat-card">
+                        <div class="stat-icon-circle text-info"><i class="fa fa-check-circle"></i></div>
+                        <div class="stat-num">@Model.TotalParticipantCount</div>
+                        <div class="stat-label">Tamamlanan Sınav</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- EN YENİ KURSLAR -->
+    <section id="features" class="container services mt-2">
+        <div class="row">
+            <div class="col-lg-12 text-center mb-4">
+                <div class="navy-line"></div>
+                <h1 class="font-weight-bold" style="color:#0f172a;">En Yeni Eğitimler</h1>
+                <p class="text-muted">Hudut kapıları personeline yönelik en güncel mesleki ve mevzuat eğitimleri.</p>
+            </div>
+        </div>
+
+        <div class="row">
+            @foreach (var course in Model.LatestCourses)
+            {
+                var latestImageUrl = string.IsNullOrEmpty(course.CoverImage)
+                                     ? defaultCourseImage
+                                     : (course.CoverImage.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+                                        ? course.CoverImage
+                                        : Url.Content("~/files/Egitim/" + course.CoverImage));
+
+                var raw = course.CourseDescription;
+                var cleaned = string.IsNullOrEmpty(raw) ? "Açıklama bulunmamaktadır." : StripTags(RemoveFirstImageTag(raw));
+                var shortDesc = cleaned.Length > 95 ? cleaned.Substring(0, 95) + "..." : cleaned;
+
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="card h-100 course-card">
+                        <div class="position-relative" style="height: 180px; overflow: hidden; background: #0f172a;">
+                            <img class="card-img-top feature-img w-100 h-100" src="@latestImageUrl" alt="@course.CourseTitle" loading="lazy" style="object-fit:cover;" onerror="this.onerror=null;this.src='@defaultCourseImage';" />
+                            @if (!string.IsNullOrEmpty(course.CategoryName))
+                            {
+                                <span class="category-tag-over">@course.CategoryName</span>
+                            }
+                        </div>
+
+                        <div class="card-body d-flex flex-column p-3">
+                            <h5 class="card-title font-weight-bold mb-2" style="font-size: 15px; height: 42px; line-height: 1.35; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                                @course.CourseTitle
+                            </h5>
+
+                            <p class="card-text text-muted mb-3" style="font-size: 12.5px; height: 38px; line-height: 1.45; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                                @shortDesc
+                            </p>
+
+                            <div class="mt-auto pt-2">
+                                <a class="btn btn-sm btn-primary btn-block font-weight-bold"
+                                   href="@Url.Action("Details", "Course", new { id = course.CourseId })">
+                                    <i class="fa fa-arrow-circle-right mr-1"></i> Kurs Detayı
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </section>
+
+    <!-- KURS KATEGORİLERİ -->
+    <section id="categories" class="container features" style="padding: 60px 0 40px 0;">
+        <div class="row">
+            <div class="col-lg-12 text-center mb-4">
+                <div class="navy-line"></div>
+                <h1 class="font-weight-bold" style="color:#0f172a;">Kurs Kategorileri<br /> <span class="text-primary" style="font-size:22px;">İlgi Alanınıza Göre Keşfedin</span></h1>
+                <p class="text-muted">Farklı uzmanlık alanlarındaki eğitim modüllerini inceleyin ve yetkinliğinizi artırın.</p>
+            </div>
+        </div>
+
+        <!-- Categories Grid -->
+        <div class="row" id="categoriesGrid">
+            <div class="col-12 text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="sr-only">Kategoriler yükleniyor...</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- TÜM MEVCUT KURSLAR -->
+    <section id="courses" class="container features" style="padding: 40px 0 60px 0;">
+        <div class="row">
+            <div class="col-lg-12 text-center mb-4">
+                <div class="navy-line"></div>
+                <h1 class="font-weight-bold" style="color:#0f172a;">Tüm Eğitim Kataloğu<br /> <span class="text-primary" style="font-size:22px;">Öğrenme Yolculuğunuza Başlayın</span></h1>
+                <p class="text-muted">Görevinize yönelik hazırlanmış geniş eğitim yelpazesini inceleyin.</p>
+            </div>
+        </div>
+
+        <!-- Courses Grid -->
+        <div class="row">
+            @foreach (var course in Model.AllCourses)
+            {
+                var latestImageUrl = string.IsNullOrEmpty(course.CoverImage)
+                                     ? defaultCourseImage
+                                     : (course.CoverImage.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+                                        ? course.CoverImage
+                                        : Url.Content("~/files/Egitim/" + course.CoverImage));
+
+                var raw = course.CourseDescription;
+                var cleaned = string.IsNullOrEmpty(raw) ? "Açıklama bulunmamaktadır." : StripTags(RemoveFirstImageTag(raw));
+                var excerpt = cleaned.Length > 95 ? cleaned.Substring(0, 95) + "..." : cleaned;
+
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="card h-100 course-card">
+                        <div class="position-relative" style="height: 190px; overflow: hidden; background: #0f172a;">
+                            <img src="@latestImageUrl"
+                                 alt="@course.CourseTitle"
+                                 loading="lazy"
+                                 class="w-100 h-100"
+                                 style="object-fit: cover;"
+                                 onerror="this.onerror=null;this.src='@defaultCourseImage';" />
+                            @if (!string.IsNullOrEmpty(course.CategoryName))
+                            {
+                                <span class="category-tag-over">@course.CategoryName</span>
+                            }
+                        </div>
+
+                        <div class="card-body d-flex flex-column p-3">
+                            <h5 class="card-title font-weight-bold mb-2" style="font-size: 16px; height: 44px; line-height: 1.35; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                                @course.CourseTitle
+                            </h5>
+
+                            <p class="card-text text-muted mb-3" style="font-size: 13px; height: 38px; line-height: 1.45; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                                @excerpt
+                            </p>
+
+                            <div class="mt-auto pt-2">
+                                <a href="@Url.Action("Details", "Course", new { id = course.CourseId })"
+                                   class="btn btn-primary btn-block font-weight-bold">
+                                    <i class="fa fa-play-circle mr-1"></i> Eğitime Git
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- View All Courses Button -->
+        <div class="row">
+            <div class="col-lg-12 text-center" style="margin-top: 20px;">
+                <a href="@Url.Action("StudentIndex", "Course")" class="btn btn-primary btn-lg px-4 py-2 font-weight-bold" style="border-radius: 8px;">
+                    <i class="fa fa-th-large mr-2"></i> Bütün Kursları Kataloğunda Gör (@totalCourses Kurs)
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- SON SINAVLAR -->
+    @if (Model.RecentExams != null && Model.RecentExams.Count > 0)
+    {
+        <section id="recent-exams" class="container features mt-2 mb-5">
+            <div class="row">
+                <div class="col-12 text-center mb-4">
+                    <div class="navy-line"></div>
+                    <h1 class="font-weight-bold" style="color:#0f172a;">Değerlendirme Sınavları</h1>
+                    <p class="text-muted">En son gerçekleştirilen sınavlar ve katılım özetleri</p>
+                </div>
+            </div>
+
+            <div class="row">
+                @foreach (var exam in Model.RecentExams)
+                {
+                    <div class="col-lg-4 col-md-6 mb-4 d-flex">
+                        <div class="card recent-exam-card p-3 h-100 w-100 d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h5 class="mb-0 text-truncate font-weight-bold" title="@exam.ExamTitle" style="font-size:15px; color:#0f172a;">@exam.ExamTitle</h5>
+                                @if (exam.LastTakenDate.HasValue)
+                                {
+                                    <span class="badge badge-light text-muted small"><i class="fa fa-calendar-o mr-1"></i>@exam.LastTakenDate.Value.ToString("dd.MM.yyyy")</span>
+                                }
+                            </div>
+
+                            <p class="mb-1 small"><strong>Kurs:</strong> <span class="text-muted">@exam.CourseTitle</span></p>
+                            <p class="mb-1 small"><strong>Katılımcı:</strong> <span class="badge badge-info">@exam.ParticipantCount Kişi</span></p>
+                            <p class="mb-3 small"><strong>Ortalama Puan:</strong> <span class="badge badge-success">@Math.Round(exam.AverageScore, 1)</span></p>
+
+                            <div class="mt-auto pt-2">
+                                <a href="@Url.Action("AvailableExams", "StudentExam")" class="btn btn-sm btn-primary btn-block font-weight-bold">
+                                    <i class="fa fa-pencil-square-o mr-1"></i> Sınava Katıl
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="row mt-2">
+                <div class="col-12">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-stretch">
+                        <div class="card exam-stat-card course-card mb-3 mr-md-3 p-3 w-100">
+                            <h6 class="mb-2 font-weight-bold text-dark"><i class="fa fa-star text-warning mr-1"></i> En Popüler Sınav</h6>
+                            @if (Model.MostPopularExam != null)
+                            {
+                                <div class="text-dark font-weight-bold">@Model.MostPopularExam.ExamTitle</div>
+                                <div class="text-muted small">@Model.MostPopularExam.ParticipantCount Katılımcı</div>
+                            }
+                            else
+                            {
+                                <div class="text-muted">Veri yok</div>
+                            }
+                        </div>
+
+                        <div class="card exam-stat-card course-card mb-3 mr-md-3 p-3 w-100">
+                            <h6 class="mb-2 font-weight-bold text-dark"><i class="fa fa-graduation-cap text-primary mr-1"></i> En Çok Girilen Kurs</h6>
+                            @if (!string.IsNullOrEmpty(Model.MostPopularCourse))
+                            {
+                                <div class="text-dark font-weight-bold">@Model.MostPopularCourse</div>
+                                <div class="text-muted small">@Model.MostPopularCourseCount Sınav Girişi</div>
+                            }
+                            else
+                            {
+                                <div class="text-muted">Veri yok</div>
+                            }
+                        </div>
+
+                        <div class="card exam-stat-card course-card mb-3 p-3 w-100">
+                            <h6 class="mb-2 font-weight-bold text-dark"><i class="fa fa-calendar text-info mr-1"></i> Bu Hafta</h6>
+                            <div class="text-dark font-weight-bold" style="font-size:18px;">@(Model.WeeklyExams != null ? Model.WeeklyExams.Count : 0)</div>
+                            <div class="text-muted small">Hafta içinde tamamlanan sınav</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    }
+
+    <!-- EĞİTİMCİLERİMİZ -->
+    <section id="team" class="gray-section team py-5">
+        <div class="container">
+            <div class="row mb-4">
+                <div class="col-lg-12 text-center">
+                    <div class="navy-line"></div>
+                    <h1 class="font-weight-bold" style="color:#0f172a;">Eğitimci Kadromuz</h1>
+                    <p class="text-muted">Alanında uzman polis amirleri ve eğitmen personelimiz.</p>
+                </div>
+            </div>
+
+            <div class="row">
+                @if (Model.Teachers != null && Model.Teachers.Count > 0)
+                {
+                    foreach (var teacher in Model.Teachers)
+                    {
+                        var pictureUrl = string.IsNullOrEmpty(teacher.fldPicture)
+                                         ? defaultAvatar
+                                         : (teacher.fldPicture.StartsWith("http", System.StringComparison.OrdinalIgnoreCase)
+                                            ? teacher.fldPicture
+                                            : Url.Content("~/files/User/" + teacher.fldPicture));
+
+                        <div class="col-sm-4 mb-4 wow fadeInUp">
+                            <div class="team-member text-center p-3 bg-white rounded shadow-sm">
+                                <img src="@pictureUrl" class="img-fluid rounded-circle mb-3" alt="@teacher.fldName @teacher.fldLastName" style="width:110px;height:110px;object-fit:cover;" loading="lazy" onerror="this.onerror=null;this.src='@defaultAvatar';" />
+                                <h4 class="font-weight-bold mb-1"><span class="text-primary">@teacher.fldName</span> @teacher.fldLastName</h4>
+                                @if (!string.IsNullOrWhiteSpace(teacher.fldTitle))
+                                {
+                                    <p class="text-muted small mb-1"><strong>@teacher.fldTitle</strong></p>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(teacher.fldDeputy))
+                                {
+                                    <p class="text-muted small mb-2">@teacher.fldDeputy</p>
+                                }
+                                <div style="min-height:32px;">
+                                    @if (!string.IsNullOrWhiteSpace(teacher.fldEmail))
+                                    {
+                                        <a href="mailto:@teacher.fldEmail" class="btn btn-sm btn-outline-secondary mb-2"><i class="fa fa-envelope mr-1"></i> @teacher.fldEmail</a>
+                                    }
+                                </div>
+
+                                <a href="@Url.Action("InstructorCourses", "Course", new { teacherId = teacher.fldId })" class="btn btn-sm btn-outline-primary btn-block font-weight-bold mt-2">
+                                    <i class="fa fa-book mr-1"></i> Bu Eğitmenin Kursları
+                                </a>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="col-12 text-center mt-3">
+                        <a href="@Url.Action("AllInstructors", "Course")" class="btn btn-outline-primary px-4 py-2 font-weight-bold">
+                            <i class="fa fa-users mr-1"></i> Tüm Eğitmen Kadrosunu Listele
+                        </a>
+                    </div>
+                }
+                else
+                {
+                    <div class="col-12 text-center">
+                        <p class="text-muted">Eğitici bilgisi bulunamadı.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+
+    <!-- KULLANICI YORUMLARI -->
+    <section id="testimonials" class="navy-section testimonials py-5" style="background: linear-gradient(135deg, #071739 0%, #112959 50%, #1e3c72 100%);">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12 text-center wow zoomIn text-white">
+                    <i class="fa fa-comment big-icon mb-3" style="font-size:42px; opacity:0.85;"></i>
+                    <h1 class="font-weight-bold">Personelimiz Ne Diyor?</h1>
+                    <div class="testimonials-text mx-auto" style="max-width:760px; font-size:14.5px; opacity:0.9; line-height:1.6;">
+                        <i>Platformumuz üzerinden tamamlanan eğitimler ve operasyonel modüller hakkında personelin paylaştığı geri bildirimler ve deneyimler.</i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="comments gray-section py-5" style="margin-top: 0">
+        <div class="container">
+            <div class="row features-block">
+                @if (Model.Comments != null && Model.Comments.Count > 0)
+                {
+                    foreach (var comment in Model.Comments)
+                    {
+                        var commentAvatar = comment.User != null && !string.IsNullOrEmpty(comment.User.fldPicture)
+                                            ? Url.Content("~/files/user/" + comment.User.fldPicture.TrimStart('/'))
+                                            : defaultPoliceAvatar;
+
+                        <div class="col-lg-4 col-md-6 mb-4">
+                            <div class="bubble p-3 bg-white rounded shadow-sm border" style="font-size:13.5px; line-height:1.5;">
+                                "@comment.Message"
+                            </div>
+                            <div class="comments-avatar d-flex align-items-center mt-3">
+                                <img alt="avatar"
+                                     src="@commentAvatar"
+                                     class="rounded-circle mr-3"
+                                     loading="lazy"
+                                     style="width:46px; height:46px; object-fit:cover; border: 2px solid #cbd5e1;"
+                                     onerror="this.onerror=null;this.src='@defaultPoliceAvatar';">
+                                <div class="media-body">
+                                    <div class="commens-name font-weight-bold" style="font-size:14px; color:#0f172a;">
+                                        @comment.Name
+                                    </div>
+                                    <small class="text-muted">
+                                        @(comment.Date.HasValue ? comment.Date.Value.ToString("dd.MM.yyyy HH:mm") : "")
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="col-12 text-center py-4">
+                        <p class="text-muted">Henüz yayınlanmış yorum bulunmamaktadır.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+
+    <!-- İLETİŞİM VE FOOTER -->
+    <section id="contact" class="gray-section contact py-5">
+        <div class="container">
+            <div class="row mb-4">
+                <div class="col-lg-12 text-center">
+                    <div class="navy-line"></div>
+                    <h1 class="font-weight-bold" style="color:#0f172a;">İletişim &amp; Destek</h1>
+                    <p class="text-muted">Eğitim süreçleri ve teknik destek talepleriniz için bizimle iletişime geçin.</p>
+                </div>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="contact-info text-center p-4 bg-white rounded shadow-sm h-100">
+                        <i class="fa fa-map-marker fa-2x text-primary mb-3"></i>
+                        <h4 class="font-weight-bold mb-2">Başkanlık Adresi</h4>
+                        <address class="text-muted small mb-0">
+                            <strong>Emniyet Genel Müdürlüğü</strong><br />
+                            Hudut Kapıları Daire Başkanlığı<br />
+                            Çevrimiçi Personel Eğitim Sistemi
+                        </address>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="contact-info text-center p-4 bg-white rounded shadow-sm h-100">
+                        <i class="fa fa-envelope fa-2x text-primary mb-3"></i>
+                        <h4 class="font-weight-bold mb-2">E-posta &amp; Mesaj</h4>
+                        <p class="text-muted small mb-0">
+                            <strong>Doğrudan İletişim:</strong><br />
+                            <a href="@Url.Action("PublicMessage", "Landing")" class="btn btn-sm btn-outline-primary mt-2">
+                                <i class="fa fa-paper-plane mr-1"></i> Bize Mesaj Gönderin
+                            </a>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="contact-info text-center p-4 bg-white rounded shadow-sm h-100">
+                        <i class="fa fa-graduation-cap fa-2x text-primary mb-3"></i>
+                        <h4 class="font-weight-bold mb-2">Eğitim Koordinasyonu</h4>
+                        <p class="text-muted small mb-0">
+                            Kurs içerikleri ve sınav süreçleri hakkında bilgi almak için eğitim koordinatörleriyle iletişime geçebilirsiniz.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hızlı Linkler -->
+            <div class="row mt-4">
+                <div class="col-lg-12 text-center">
+                    <div class="quick-links">
+                        @if (Model.IsAuthenticated)
+                        {
+                            <a href="@Url.Action("StudentIndex", "Course")" class="btn btn-outline-primary btn-sm mx-1 mb-2"><i class="fa fa-book mr-1"></i> Kurs Kataloğu</a>
+                            <a href="@Url.Action("AvailableExams", "StudentExam")" class="btn btn-outline-primary btn-sm mx-1 mb-2"><i class="fa fa-clipboard mr-1"></i> Sınavlar</a>
+                            <a href="@Url.Action("Index", "Home")" class="btn btn-outline-warning text-dark btn-sm mx-1 mb-2"><i class="fa fa-dashboard mr-1"></i> Ceza Sistemi</a>
+                            <a href="@Url.Action("AllInstructors", "Course")" class="btn btn-outline-primary btn-sm mx-1 mb-2"><i class="fa fa-users mr-1"></i> Eğitmenler</a>
+                            <a href="@Url.Action("Logout", "Giris")" class="btn btn-outline-danger btn-sm mx-1 mb-2"><i class="fa fa-sign-out mr-1"></i> Çıkış Yap</a>
+                        }
+                        else
+                        {
+                            <a href="#courses" class="btn btn-outline-primary btn-sm mx-1 mb-2">Kurslar</a>
+                            <a href="#team" class="btn btn-outline-primary btn-sm mx-1 mb-2">Eğitmenler</a>
+                            <a href="#testimonials" class="btn btn-outline-primary btn-sm mx-1 mb-2">Yorumlar</a>
+                            <a href="@Url.Action("Index", "Giris", new { direct = true })" class="btn btn-primary btn-sm mx-1 mb-2"><i class="fa fa-sign-in mr-1"></i> Giriş Yap</a>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Copyright & Bilgi -->
+            <div class="row">
+                <div class="col-lg-12 text-center mt-4">
+                    <hr class="my-4">
+                    <p class="mb-1 font-weight-bold text-dark">
+                        &copy; @DateTime.Now.Year T.C. İçişleri Bakanlığı Emniyet Genel Müdürlüğü
+                    </p>
+                    <p class="text-muted small mb-2">
+                        Hudut Kapıları Daire Başkanlığı - Personel Eğitim ve Değerlendirme Portalı
+                    </p>
+                    <div class="mt-3">
+                        <a href="@Url.Action("Privacy", "Landing")" class="text-muted small mx-2"><i class="fa fa-lock mr-1"></i> Gizlilik Politikası</a>
+                        <a href="@Url.Action("Terms", "Landing")" class="text-muted small mx-2"><i class="fa fa-file-text mr-1"></i> Kullanım Koşulları</a>
+                        <a href="@Url.Action("Help", "Landing")" class="text-muted small mx-2"><i class="fa fa-life-ring mr-1"></i> Yardım</a>
+                        <a href="@Url.Action("FAQ", "Landing")" class="text-muted small mx-2"><i class="fa fa-question-circle mr-1"></i> SSS</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SCRIPTS -->
+    <script src="/AdminTemplate/js/jquery-3.1.1.min.js"></script>
+    <script src="/AdminTemplate/js/popper.min.js"></script>
+    <script src="/AdminTemplate/js/bootstrap.js"></script>
+    <script src="/AdminTemplate/js/plugins/wow/wow.min.js"></script>
+
+    <script>
+        window.landingConfig = {
+            courseDetailsUrl: '@Url.Action("Details", "Course")',
+            courseListUrl: '@Url.Action("StudentIndex", "Course")',
+            searchUrl: '@Url.Action("Search", "Landing")',
+            teacherRequestUrl: '@Url.Action("TeacherRequest", "Landing")',
+            loginUrl: '@Url.Action("Index", "Giris", new { direct = true })',
+            landingUrl: '@Url.Action("Index", "Landing")',
+            categoriesUrl: '@Url.Action("GetActiveCategories", "Landing")',
+            coursesByCategoryUrl: '@Url.Action("CoursesByCategory", "Landing")',
+            defaultCourseImage: '/AdminTemplate/img/landing/default-course.jpg',
+            hasLoginError: @Html.Raw(System.Web.Helpers.Json.Encode(TempData["msgError"] != null))
+        };
+    </script>
+    <script src="/js/landing-page.js"></script>
+
+    @if (TempData["msgError"] != null)
+    {
+        <div class="modal fade" id="loginAlertModal" tabindex="-1" role="dialog" aria-labelledby="loginAlertLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header bg-warning text-dark">
+                        <h5 class="modal-title font-weight-bold" id="loginAlertLabel">Uyarı</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Kapat">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        @TempData["msgError"]
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" id="loginRedirectBtn">Giriş Sayfasına Git</button>
+                        <button type="button" class="btn btn-secondary" id="homeRedirectBtn">Anasayfaya Dön</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+</body>
+</html>

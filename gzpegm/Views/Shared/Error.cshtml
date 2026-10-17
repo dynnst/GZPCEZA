@@ -1,0 +1,25 @@
+@{
+    Layout = "~/Views/Shared/_Master.cshtml";
+    ViewBag.Title = "Hata Oluştu";
+    var ex = ViewBag.Exception as Exception ?? HttpContext.Current?.Server?.GetLastError()?.GetBaseException();
+}
+
+<section class="card">
+    <header class="card-header">
+        <h2 class="card-title"><i class="fas fa-exclamation-circle text-danger"></i> Hata Oluştu</h2>
+    </header>
+    <div class="card-body">
+        <div class="alert alert-danger">
+            <strong>Üzgünüz!</strong> Sistemde bir hata meydana geldi.
+        </div>
+        <p class="lead">Lütfen daha sonra tekrar deneyiniz. Eğer sorun devam ederse, sistem yöneticisine başvurunuz.</p>
+        <p>
+            <a href="@Url.Action("Index", "Home")" class="btn btn-primary">
+                <i class="fas fa-home"></i> Ana Sayfaya Dön
+            </a>
+            <a href="javascript:history.back()" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Geri Dön
+            </a>
+        </p>
+    </div>
+</section>

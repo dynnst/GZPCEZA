@@ -1,0 +1,338 @@
+﻿@model List<gzpegm.Models.CertificateRequest>
+@{
+    ViewBag.Title = "Bekleyen Sertifika Talepleri";
+    Layout = "~/Views/Shared/_Master.cshtml";
+}
+
+<head>
+    <style>
+        .request-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .request-card:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .request-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .request-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .request-date {
+            font-size: 13px;
+            color: #7b8a8b;
+        }
+
+        .request-details {
+            margin-bottom: 15px;
+        }
+
+        .detail-row {
+            display: flex;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #495057;
+            min-width: 120px;
+        }
+
+        .detail-value {
+            color: #666;
+            flex: 1;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .btn-approve {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-approve:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+
+        .btn-reject {
+            background: linear-gradient(135deg, #dc3545 0%, #ff6b6b 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-reject:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .empty-state-text {
+            font-size: 18px;
+            color: #6c757d;
+        }
+
+        .page-header {
+            margin-bottom: 30px;
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .page-subtitle {
+            font-size: 14px;
+            color: #7b8a8b;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 25px;
+            border: 1px solid #888;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-header {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+
+        .modal-body {
+            margin-bottom: 20px;
+        }
+
+        .modal-textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-family: Arial, sans-serif;
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: black;
+        }
+    </style>
+</head>
+
+<div class="container" style="padding: 30px 0;">
+    <div class="page-header">
+        <h1 class="page-title">
+            <i class="fas fa-certificate"></i> Bekleyen Sertifika Talepleri
+        </h1>
+        <p class="page-subtitle">  rencilerin sertifika taleplerini onayla veya reddet</p>
+    </div>
+
+    @if (Model != null && Model.Count > 0)
+    {
+        foreach (var request in Model)
+        {
+            <div class="request-card">
+                <div class="request-header">
+                    <div>
+                        <div class="request-title">
+                            @if (request.E_User != null)
+                            {
+                                @($"{request.E_User.fldName} {request.E_User.fldLastName}")
+                            }
+                            else
+                            {
+                                <span class="text-muted">Kullan c  bilgisi bulunamad </span>
+                            }
+                        </div>
+                    </div>
+                    <div class="request-date">
+                        <i class="fas fa-calendar-alt"></i>
+                        @request.RequestDate.ToString("dd.MM.yyyy HH:mm")
+                    </div>
+                </div>
+
+                <div class="request-details">
+                    <div class="detail-row">
+                        <span class="detail-label"><strong>Kurs:</strong></span>
+                        <span class="detail-value">
+                            @if (request.Courses != null)
+                            {
+                                @request.Courses.CourseTitle
+                            }
+                            else
+                            {
+                                <span class="text-muted">Kurs bilgisi bulunamad </span>
+                            }
+                        </span>
+                    </div>
+
+                    <div class="detail-row">
+                        <span class="detail-label"><strong>Talep ID:</strong></span>
+                        <span class="detail-value">#@request.RequestId</span>
+                    </div>
+
+                    <div class="detail-row">
+                        <span class="detail-label"><strong>E-posta:</strong></span>
+                        <span class="detail-value">
+                            @if (request.E_User != null)
+                            {
+                                @request.E_User.fldEmail
+                            }
+                            else
+                            {
+                                <span class="text-muted">E-posta bulunamad </span>
+                            }
+                        </span>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <form method="post" action="@Url.Action("Approve", "Certificate")" style="display:inline;">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="requestId" value="@request.RequestId" />
+                        <button type="submit" class="btn-approve">
+                            <i class="fas fa-check"></i> Onayla
+                        </button>
+                    </form>
+
+                    <button type="button" class="btn-reject" onclick="openRejectModal(@request.RequestId)">
+                        <i class="fas fa-times"></i> Reddet
+                    </button>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="empty-state-text">
+                Bekleyen sertifika talebi yok. T m talepler i lenmi tir.
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Reddet Modal -->
+<div id="rejectModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeRejectModal()">&times;</span>
+        <div class="modal-header">Talebi Reddet</div>
+        <form method="post" action="@Url.Action("Reject", "Certificate")">
+            @Html.AntiForgeryToken()
+            <input type="hidden" id="requestIdInput" name="requestId" />
+            <div class="modal-body">
+                <label for="adminNote" style="display: block; margin-bottom: 10px; font-weight: 600;">
+                    Red Nedeni:
+                </label>
+                <textarea id="adminNote" name="adminNote" class="modal-textarea" placeholder="Reddin nedenini a  klay n z..." required></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeRejectModal()">
+                    <i class="fas fa-times"></i>  ptal
+                </button>
+                <button type="submit" class="btn-reject">
+                    <i class="fas fa-trash"></i> Reddet
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openRejectModal(requestId) {
+        document.getElementById('requestIdInput').value = requestId;
+        document.getElementById('rejectModal').style.display = 'block';
+    }
+
+    function closeRejectModal() {
+        document.getElementById('rejectModal').style.display = 'none';
+        document.getElementById('adminNote').value = '';
+    }
+
+    window.onclick = function (event) {
+        var modal = document.getElementById('rejectModal');
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+    }
+</script>

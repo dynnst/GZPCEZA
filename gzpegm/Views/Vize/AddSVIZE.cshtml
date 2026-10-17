@@ -1,0 +1,125 @@
+﻿@model gzpegm.Models.E_Sartli
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>İkamet İzni Şartlı Giriş Formu</title>
+    <style>
+
+        .nisan {
+            transform: rotate(-90deg);
+            margin-top: 350px;
+            margin-bottom: 1px;
+            height: 620px;
+            width: 900px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    @for (int i = 0; i < 2; i++)
+    {
+        <div class="nisan">
+            <form>
+                <h2 style="text-align:center">180 GÜNDE 90 GÜN UYGULAMASI KAPSAMINDA İKAMET İZNİ ŞARTLI GİRİŞ BİLGİ FORMU</h2>
+                <h3 style="text-align:center">INFORMATION FORM ON RESIDENCE PERMIT CONDITIONAL ENTRY WITHIN THE SCOPE OF 90 DAYS IN 180 DAYS IMPLEMENTATION</h3>
+            </form>
+
+            <table style="border:solid" width="900px">
+                <tr>
+                    <td>
+                        <ul style="border:solid">
+                            <li>
+                                Kayıtlara göre 6458 Sayılı Yabancılar ve  Uluslararası Koruma Kanununun 11 inci maddesinin birinci fıkrası kapsamında 180 günde 90 gün kalma süresini doldurduğunuz anlaşılmıştır.
+                            </li>
+                            <hr />
+                            <li>As per the records it is understood that you have expired 90 days stay period within 180 days within the scope of first paragraph of article 11 of the Law on Foreigners and International Protection No. 6458.</li>
+                        </ul>
+                    </td>
+                    <td>
+                        <ul style="border:solid">
+                            <li>Ancak, yaşadığınız il/ilçedeki Yabancılar Şube Müdürlüğüne/ Yabancılar Büro Amirliğine en geç 10 gün içinde ikamet izni talebinde bulunma koşulunu yerine getirmeyi kabul ettiğiniz takdirde ülkeye girişiniz yapılabilecektir.</li>
+                            <hr />
+                            <li>However, your entry to the country may be permitted in the case that you accept the fulfill the condition of applying for residence permit within 10 days to the Foreigners Branch Directorate/Foreigners Bureau Directorship in the province/town that you live.</li>
+                        </ul>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2" style="width: 99.8834%; text-align:center;">
+                        <strong>Kabul Ediyorum / Kabul Etmiyorum</strong><br />
+                        <em style="color:#7F7F7F;">I Accept / I Do Not Accept</em>
+                    </td>
+                </tr>
+            </table>
+
+            <table style="width:1000px; text-align: center">
+                <tr>
+                    <td>&nbsp;</td>
+                    <td>GÖREVLİ (<strong><em>OFFICAL</em></strong>)</td>
+                    <td>&nbsp;</td>
+                    <td><strong>YABANCI </strong>(<strong><em>FOREIGNER</em></strong>)</td>
+                </tr>
+                <tr>
+                    <td style="text-align: left"><strong>Adı Soyadı  (</strong>Name Surname <strong>)</strong></td>
+                    <td style="text-align: left"><p><strong>@Model.fldBy</strong></p></td>
+                    <td style="text-align: left"><p><strong>Adı Soyadı (</strong>Name Surname<strong>)</strong></p></td>
+                    <td>@Model.fldName</td>
+                </tr>
+                <tr>
+                    <td style="text-align: left"><strong>Ünvanı (<em>Title</em>)</strong></td>
+                    <td style="text-align: left">Sorumlu Amir / Sorumlu Amir V.</td>
+                    <td style="text-align: left"><strong>Uyruğu</strong>(<em>Nationality</em>)</td>
+                    <td>@Model.fldOrgin</td>
+                </tr>
+                <tr>
+                    <td style="text-align: left"><strong>Tarihi(Date)</strong></td>
+                    <td style="text-align: left">@Model.fldDate.Value.ToString("dd.MM.yyyy")</td>
+                    <td style="text-align: left"><p><strong>Doğum Tarihi (</strong><em>Date</em><strong>)</strong></p></td>
+                    <td>@Model.fldBdate.Value.ToString("dd.MM.yyyy")</td>
+                </tr>
+                <tr>
+                    <td style="text-align: left"><strong>İmza(Signature)</strong></td>
+                    <td style="text-align: left">&nbsp;</td>
+                    <td style="text-align: left"><p><strong>Tarih/İmza(</strong><em>Date/Signature</em><strong>)</strong></p></td>
+                    <td>@Model.fldDate.Value.ToString("dd.MM.yyyy")</td>
+                </tr>
+            </table>
+
+            <tr>
+                <td colspan="2">
+                    <p>Not: Bu belge iki suret düzenlenerek bir sureti yabancıya verilecektir.</p>
+                </td>
+            </tr>
+        </div>
+
+        @* İlk nüsha sonrası sayfa sonu, ikinci nüsha baştan başlar *@
+        if (i == 0)
+        {
+            <div style="page-break-after: always;"></div>
+        }
+    }
+
+    <script>
+        window.print();
+    </script>
+</body>
+</html>
+
+<script>
+    // Yazdırmadan önce kullanıcıyı uyar
+    function printTwoCopies() {
+        var confirmPrint = confirm("Bu belge iki nüsha olarak yazdırılacaktır. Devam etmek istiyor musunuz?");
+        if (confirmPrint) {
+            window.print(); // Kullanıcı onayladıysa yazdır
+        } else {
+            alert("Yazdırma işlemi iptal edildi."); // İptal ise bilgi ver
+        }
+    }
+
+    // Sayfa yüklendiğinde otomatik popup göstermek için
+    window.onload = function () {
+        printTwoCopies();
+    }
+</script>
+
+

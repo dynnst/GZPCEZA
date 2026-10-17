@@ -1,0 +1,145 @@
+@model gzpegm.Models.ViewModels.SendMessageViewModel
+@{
+    Layout = "~/Views/Shared/_Master.cshtml";
+    ViewBag.Title = "Toplu Mesaj Gönder";
+}
+
+@section Styles {
+    <link href="@Url.Content("~/css/mesaj.css")?v=1.2" rel="stylesheet" />
+}
+
+<section class="card">
+    <header class="card-header bg-warning">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h2 class="card-title text-white">
+                    <i class="fas fa-users mr-1"></i> Toplu Mesaj Gönder (Tüm Kullanıcılara)
+                </h2>
+                <p class="card-subtitle text-white-50">Sistemdeki tüm aktif kullanıcılara duyuru veya genel bilgilendirme iletin</p>
+            </div>
+            <div class="col-md-6 text-right mt-2 mt-md-0">
+                <a href="@Url.Action("Inbox", "Mesaj")" class="btn btn-light text-dark">
+                    <i class="fas fa-inbox"></i> Gelen Kutusu
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <div class="card-body">
+        <div class="bulk-info">
+            <h5><i class="fas fa-info-circle"></i> Bilgilendirme</h5>
+            <p class="mb-0">
+                Bu özellik ile sistemdeki <strong>tüm aktif kullanıcılara</strong> aynı anda mesaj gönderebilirsiniz.
+                Mesaj, her kullanıcıya ayrı ayrı iletilecektir ve gönderim süreci canlı ilerleme çubuğuyla takip edilecektir.
+            </p>
+        </div>
+
+        @using (Html.BeginForm("SendBulk", "Mesaj", FormMethod.Post, new { @class = "form-horizontal", id = "bulkForm" }))
+        {
+            @Html.AntiForgeryToken()
+
+            if (TempData["msgError"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-circle mr-1"></i> @TempData["msgError"]
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Kapat">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            }
+
+            <div class="form-group row">
+                <label class="col-md-2 col-form-label">Alıcılar</label>
+                <div class="col-md-10">
+                    <input type="text" class="form-control" value="Tüm Aktif Kullanıcılar" readonly disabled />
+                    <small class="form-text text-muted">
+                        <i class="fas fa-users mr-1"></i> Mesaj, sistemdeki tüm aktif personele tek seferde gönderilecektir.
+                    </small>
+                </div>
+            </div>
+
+            <div class="form-group row">
+                <label class="col-md-2 col-form-label">Konu <span class="text-danger">*</span></label>
+                <div class="col-md-10">
+                    @Html.TextBoxFor(m => m.Subject, new
+                    {
+                        @class = "form-control",
+                        placeholder = "Duyuru veya mesaj konusunu giriniz...",
+                        maxlength = "200",
+                        required = "required",
+                        id = "subjectInput"
+                    })
+                    <span class="char-counter" id="subjectCounter">0 / 200</span>
+                    @Html.ValidationMessageFor(m => m.Subject, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <div class="form-group row">
+                <label class="col-md-2 col-form-label">Mesaj <span class="text-danger">*</span></label>
+                <div class="col-md-10">
+                    @Html.TextAreaFor(m => m.Message, new
+                    {
+                        @class = "form-control",
+                        rows = "10",
+                        placeholder = "Duyuru veya genel mesaj metnini buraya yazınız...",
+                        maxlength = "4000",
+                        required = "required",
+                        id = "messageInput"
+                    })
+                    <span class="char-counter" id="messageCounter">0 / 4000</span>
+                    @Html.ValidationMessageFor(m => m.Message, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <div class="form-group row">
+                <div class="col-md-10 offset-md-2">
+                    <button type="submit" id="startBulkBtn" class="btn btn-warning mr-1">
+                        <i class="fas fa-paper-plane mr-1"></i> Toplu Gönderimi Başlat
+                    </button>
+                    <a href="@Url.Action("Inbox", "Mesaj")" class="btn btn-secondary">
+                        <i class="fas fa-times mr-1"></i> İptal
+                    </a>
+                </div>
+            </div>
+        }
+    </div>
+</section>
+
+<!-- Progress Modal -->
+<div class="modal fade progress-modal" id="bulkProgressModal" tabindex="-1" role="dialog" aria-labelledby="bulkProgressLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="bulkProgressLabel">
+                    <i class="fas fa-spinner fa-pulse mr-1"></i> Toplu Gönderim İlerleme
+                </h5>
+            </div>
+            <div class="modal-body">
+                <p id="progressStatus" class="font-weight-bold text-muted mb-2">Hazırlanıyor...</p>
+                <div class="progress mb-3" style="height: 18px;">
+                    <div id="bulkProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" aria-valuemin="0" aria-valuemax="100" style="width: 0%"></div>
+                </div>
+                <div class="row">
+                    <div class="col-6"><strong>Toplam Alıcı:</strong> <span id="totalCount" class="badge badge-secondary">0</span></div>
+                    <div class="col-6"><strong>Başarıyla Gönderilen:</strong> <span id="successCount" class="badge badge-success">0</span></div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-6"><strong>Başarısız:</strong> <span id="failCount" class="badge badge-danger">0</span></div>
+                    <div class="col-6 text-right"><small id="currentRecipient" class="text-muted"></small></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelBulkBtn" type="button" class="btn btn-secondary" data-dismiss="modal">İptal</button>
+                <button id="closeBulkBtn" type="button" class="btn btn-primary" data-dismiss="modal" style="display:none">Kapat</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <div id="mesaj-bulk-config"
+         data-url-recipients="@Url.Action("GetRecipients", "Mesaj")"
+         data-url-send="@Url.Action("SendToRecipient", "Mesaj")"
+         style="display:none;"></div>
+    <script src="@Url.Content("~/js/mesaj-bulk.js")?v=1.2"></script>
+}

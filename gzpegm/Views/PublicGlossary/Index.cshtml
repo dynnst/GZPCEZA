@@ -1,0 +1,806 @@
+﻿@model List<gzpegm.Models.DocumentTerms>
+@{
+    ViewBag.Title = "Terimler Sözlüğü";
+    Layout = "~/Views/Shared/_Master.cshtml";
+}
+
+<style>
+    /* ===== GLOSSARY INDEX PAGE STYLES ===== */
+    /* (tüm CSS kodu aynı kalsın) */
+
+    .glossary-header {
+        background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+        color: white;
+        padding: 50px 20px;
+        text-align: center;
+        margin-bottom: 40px;
+        border-radius: 0;
+    }
+
+    .glossary-header-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .glossary-header h1 {
+        font-size: 2.8rem;
+        margin: 0 0 15px 0;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    .glossary-header p {
+        font-size: 1.1rem;
+        opacity: 0.9;
+        margin: 0;
+    }
+
+    .glossary-wrapper {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px 60px 20px;
+    }
+
+    .alphabet-index {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 30px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .alphabet-index-title {
+        width: 100%;
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .alphabet-index-title i {
+            color: #1e40af;
+        }
+
+    .alphabet-letter {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 36px;
+        height: 36px;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        background: white;
+        color: #1f2937;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+        .alphabet-letter:hover {
+            border-color: #1e40af;
+            background: #f0f6ff;
+            color: #1e40af;
+        }
+
+        .alphabet-letter.active {
+            background: #1e40af;
+            color: white;
+            border-color: #1e40af;
+        }
+
+        .alphabet-letter.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            color: #9ca3af;
+        }
+
+            .alphabet-letter.disabled:hover {
+                background: white;
+                border-color: #d1d5db;
+                color: #9ca3af;
+            }
+
+    .glossary-search-box {
+        background: white;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 30px;
+        margin-bottom: 40px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .search-title {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+        .search-title i {
+            color: #1e40af;
+        }
+
+    .search-form {
+        display: grid;
+        grid-template-columns: 1fr 250px;
+        gap: 15px;
+        align-items: end;
+    }
+
+    .search-input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+        .search-input-wrapper i {
+            position: absolute;
+            left: 12px;
+            color: #9ca3af;
+            pointer-events: none;
+        }
+
+        .search-input-wrapper input {
+            width: 100%;
+            padding: 12px 12px 12px 40px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+            .search-input-wrapper input:focus {
+                outline: none;
+                border-color: #1e40af;
+                box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+            }
+
+    .category-select {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 1rem;
+        background-color: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+        .category-select:focus {
+            outline: none;
+            border-color: #1e40af;
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+        }
+
+    .search-buttons {
+        display: flex;
+        gap: 10px;
+        grid-column: 1 / -1;
+    }
+
+    .btn-search,
+    .btn-reset {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 6px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+    }
+
+    .btn-search {
+        background: #1e40af;
+        color: white;
+        flex: 1;
+    }
+
+        .btn-search:hover {
+            background: #1e3a8a;
+        }
+
+    .btn-reset {
+        background: #e5e7eb;
+        color: #1f2937;
+        flex: 0.5;
+    }
+
+        .btn-reset:hover {
+            background: #d1d5db;
+        }
+
+    .glossary-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 40px;
+    }
+
+    .stat-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 25px;
+        text-align: center;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #1e40af;
+        display: block;
+        margin-bottom: 8px;
+    }
+
+    .stat-label {
+        font-size: 0.95rem;
+        color: #6b7280;
+        font-weight: 600;
+    }
+
+    .alphabetic-section {
+        margin-bottom: 50px;
+    }
+
+    .section-letter-header {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #1e40af;
+        padding: 20px 0 15px 0;
+        border-top: 3px solid #1e40af;
+        margin-top: 40px;
+        margin-bottom: 20px;
+    }
+
+        .section-letter-header:first-of-type {
+            margin-top: 0;
+            border-top: none;
+            padding-top: 0;
+        }
+
+    .terms-list {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        margin-bottom: 40px;
+    }
+
+    .term-item {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        padding: 20px;
+        text-decoration: none;
+        color: #1f2937;
+        transition: all 0.3s ease;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+
+        .term-item:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-color: #1e40af;
+            transform: translateX(4px);
+        }
+
+    .term-item-content {
+        flex: 1;
+    }
+
+    .term-item-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1e40af;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+        .term-item-title i {
+            font-size: 1rem;
+            opacity: 0.6;
+        }
+
+    .term-item-definition {
+        font-size: 0.95rem;
+        color: #6b7280;
+        line-height: 1.6;
+        margin-bottom: 10px;
+    }
+
+    .term-item-meta {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        font-size: 0.85rem;
+        color: #9ca3af;
+        flex-wrap: wrap;
+    }
+
+    .term-category {
+        display: inline-block;
+        background: #dbeafe;
+        color: #1e40af;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-weight: 600;
+    }
+
+    .term-creator {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #f3f4f6;
+        color: #4b5563;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-weight: 500;
+    }
+
+        .term-creator i {
+            font-size: 0.8rem;
+            color: #1e40af;
+        }
+
+    .term-item-arrow {
+        color: #1e40af;
+        font-size: 1.2rem;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        margin-left: 15px;
+    }
+
+    .term-item:hover .term-item-arrow {
+        opacity: 1;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 80px 20px;
+        background: white;
+        border-radius: 8px;
+        border: 2px dashed #e5e7eb;
+    }
+
+    .empty-state-icon {
+        font-size: 4rem;
+        color: #d1d5db;
+        margin-bottom: 20px;
+    }
+
+    .empty-state h3 {
+        font-size: 1.3rem;
+        color: #1f2937;
+        margin-bottom: 10px;
+    }
+
+    .empty-state p {
+        color: #6b7280;
+        margin-bottom: 25px;
+        font-size: 1rem;
+    }
+
+    .empty-state-link {
+        display: inline-block;
+        background: #1e40af;
+        color: white;
+        padding: 12px 30px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+        .empty-state-link:hover {
+            background: #1e3a8a;
+        }
+
+    .category-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 30px;
+        padding: 15px;
+        background: #f9fafb;
+        border-radius: 6px;
+    }
+
+    .category-list-title {
+        width: 100%;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #6b7280;
+        margin-bottom: 10px;
+    }
+
+    .category-chip {
+        display: inline-block;
+        background: white;
+        border: 1px solid #d1d5db;
+        color: #1f2937;
+        padding: 8px 16px;
+        border-radius: 20px;
+        text-decoration: none;
+        font-size: 0.9rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+        .category-chip:hover {
+            background: #1e40af;
+            color: white;
+            border-color: #1e40af;
+        }
+
+        .category-chip.active {
+            background: #1e40af;
+            color: white;
+            border-color: #1e40af;
+        }
+
+    @@media (max-width: 768px) {
+        .glossary-header h1 {
+            font-size: 1.8rem;
+        }
+
+        .glossary-header p {
+            font-size: 1rem;
+        }
+
+        .search-form {
+            grid-template-columns: 1fr;
+        }
+
+        .search-buttons {
+            grid-column: auto;
+        }
+
+        .term-item {
+            flex-direction: column;
+        }
+
+        .term-item-arrow {
+            margin-left: 0;
+            margin-top: 10px;
+        }
+
+        .glossary-stats {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .alphabet-letter {
+            min-width: 32px;
+            height: 32px;
+            font-size: 0.85rem;
+        }
+
+        .section-letter-header {
+            font-size: 1.5rem;
+        }
+
+        .term-item-meta {
+            gap: 10px;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .glossary-header {
+            padding: 30px 15px;
+        }
+
+            .glossary-header h1 {
+                font-size: 1.5rem;
+            }
+
+        .glossary-wrapper {
+            padding: 0 15px 40px 15px;
+        }
+
+        .glossary-search-box {
+            padding: 20px;
+        }
+
+        .search-title {
+            font-size: 1.1rem;
+        }
+
+        .btn-search,
+        .btn-reset {
+            padding: 10px 16px;
+            font-size: 0.9rem;
+        }
+
+        .glossary-stats {
+            grid-template-columns: 1fr;
+        }
+
+        .alphabet-letter {
+            min-width: 28px;
+            height: 28px;
+            font-size: 0.75rem;
+        }
+
+        .section-letter-header {
+            font-size: 1.3rem;
+        }
+
+        .term-item-meta {
+            gap: 8px;
+        }
+
+        .term-category,
+        .term-creator {
+            font-size: 0.8rem;
+            padding: 3px 10px;
+        }
+    }
+    /* Sayfalama */
+    .pagination {
+        gap: 4px;
+    }
+
+        .pagination .page-link {
+            border-radius: 6px !important;
+            border: 1px solid #d1d5db;
+            color: #1e40af;
+            padding: 8px 14px;
+            transition: all 0.2s ease;
+        }
+
+        .pagination .page-item.active .page-link {
+            background: #1e40af;
+            border-color: #1e40af;
+            color: white;
+        }
+
+        .pagination .page-item.disabled .page-link {
+            color: #9ca3af;
+        }
+
+        .pagination .page-link:hover {
+            background: #f0f6ff;
+            border-color: #1e40af;
+        }
+</style>
+
+<!-- Header -->
+<div class="glossary-header">
+    <div class="glossary-header-container">
+        <h1><i class="fas fa-book"></i> Terimler Sözlüğü</h1>
+        <p style="color: white;">Dokümantasyon ve adli bilimlerle ilgili terimlar hakkında kapsamlı bilgi</p>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="glossary-wrapper">
+    <!-- Stats -->
+    <div class="glossary-stats">
+        <div class="stat-card">
+            <span class="stat-number">@Model.Count()</span>
+            <span class="stat-label">Toplam Terim</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number">@ViewBag.Categories.Count</span>
+            <span class="stat-label">Kategori</span>
+        </div>
+    </div>
+
+    <!-- Alphabetic Index -->
+    <div class="alphabet-index">
+        <div class="alphabet-index-title">
+            <i class="fas fa-list"></i>
+            Alfabetik İndeks
+        </div>
+
+        <!-- 0-9 -->
+        <a href="@Url.Action("Index", "PublicGlossary", new { letter = "0-9" })" class="alphabet-letter @(ViewBag.SelectedLetter == "0-9" ? "active" : "")">
+            0-9
+        </a>
+
+        <!-- A-Z -->
+        @foreach (char letter in "ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ")
+        {
+            <a href="@Url.Action("Index", "PublicGlossary", new { letter = letter.ToString() })" class="alphabet-letter @(ViewBag.SelectedLetter == letter.ToString() ? "active" : "")">
+                @letter
+            </a>
+        }
+    </div>
+
+    <!-- Search Box -->
+    <div class="glossary-search-box">
+        <div class="search-title">
+            <i class="fas fa-search"></i>
+            Terim Ara
+        </div>
+        <form method="get" action="@Url.Action("Index", "PublicGlossary")" class="search-form">
+            <div class="search-input-wrapper">
+                <i class="fas fa-magnifying-glass"></i>
+                <input type="text"
+                       id="searchInput"
+                       name="q"
+                       placeholder="Terim, kategori veya tanım ara..."
+                       value="@ViewBag.SearchQuery"
+                       autocomplete="off" />
+            </div>
+
+            <select id="categorySelect" name="category" class="category-select">
+                <option value="">Tüm Kategoriler</option>
+                @foreach (var cat in ViewBag.Categories)
+                {
+                    <option value="@cat" @(ViewBag.CurrentCategory == cat ? "selected" : "")>@cat</option>
+                }
+            </select>
+
+            <div class="search-buttons">
+                <button type="submit" class="btn-search">
+                    <i class="fas fa-search"></i> Ara
+                </button>
+                <a href="@Url.Action("Index", "PublicGlossary")" class="btn-reset">
+                    <i class="fas fa-times"></i> Temizle
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Category Quick Filter -->
+    @if (ViewBag.Categories != null && ViewBag.Categories.Count > 0)
+    {
+        <div class="category-list">
+            <span class="category-list-title">Kategoriler:</span>
+            <a href="@Url.Action("Index", "PublicGlossary")"
+               class="category-chip @(!string.IsNullOrWhiteSpace(ViewBag.CurrentCategory) ? "" : "active")">
+                Tümü
+            </a>
+            @foreach (var cat in ViewBag.Categories)
+            {
+                <a href="@Url.Action("Index", "PublicGlossary", new { category = cat })"
+                   class="category-chip @(ViewBag.CurrentCategory == cat ? "active" : "")">
+                    @cat
+                </a>
+            }
+        </div>
+    }
+
+    <!-- Results by Letter -->
+    @if (Model.Count > 0)
+    {
+        int currentPage = ViewBag.CurrentPage ?? 1;
+        int totalPages = ViewBag.TotalPages ?? 1;
+        int totalCount = ViewBag.TotalCount ?? 0;
+        int pageSize = ViewBag.PageSize ?? 20;
+        string q = ViewBag.SearchQuery as string;
+        string cat = ViewBag.CurrentCategory as string;
+        string ltr = ViewBag.SelectedLetter as string;
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <small class="text-muted">
+                Toplam <strong>@totalCount</strong> terimden
+                <strong>@(((currentPage - 1) * pageSize) + 1)</strong> -
+                <strong>@Math.Min(currentPage * pageSize, totalCount)</strong> arası gösteriliyor
+            </small>
+        </div>
+
+        <div class="terms-list">
+            @foreach (var term in Model)
+            {
+                <a href="@Url.Action("Details", "PublicGlossary", new { id = term.Id })" class="term-item">
+                    <div class="term-item-content">
+                        <h3 class="term-item-title">
+                            <i class="fas fa-circle" style="font-size: 0.4rem;"></i>
+                            @term.Term
+                        </h3>
+                        <p class="term-item-definition">
+                            @{
+                                var preview = !string.IsNullOrWhiteSpace(term.Definition)
+                                    ? (term.Definition.Length > 200 ? term.Definition.Substring(0, 200) + "..." : term.Definition)
+                                    : "Tanım bulunmamaktadır.";
+                            }
+                            @Html.Raw(preview)
+                        </p>
+                        <div class="term-item-meta">
+                            <span class="term-category">@term.Category</span>
+                            @if (!string.IsNullOrWhiteSpace(term.AdSoyad))
+                            {
+                                <span class="term-creator" title="Sicil: @term.Sicil">
+                                    <i class="fas fa-user"></i> @term.AdSoyad
+                                </span>
+                            }
+                            @if (term.CreatedAt.HasValue)
+                            {
+                                <span>@term.CreatedAt.Value.ToString("dd.MM.yyyy")</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="term-item-arrow"><i class="fas fa-chevron-right"></i></div>
+                </a>
+            }
+        </div>
+
+        if (totalPages > 1)
+        {
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center flex-wrap" style="gap: 6px;">
+                    @* Önceki *@
+                    <li class="page-item @(currentPage <= 1 ? "disabled" : "")">
+                        <a class="page-link" href="@Url.Action("Index","PublicGlossary", new { q=q, category=cat, letter=ltr, page=currentPage-1 })">
+                            <i class="fas fa-angle-left"></i>
+                        </a>
+                    </li>
+
+                    @* Sayfa numaraları *@
+                    @{
+                        int startP = Math.Max(1, currentPage - 2);
+                        int endP = Math.Min(totalPages, currentPage + 2);
+                    }
+                    @if (startP > 1)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" href="@Url.Action("Index","PublicGlossary", new { q=q, category=cat, letter=ltr, page=1 })">1</a>
+                        </li>
+                        if (startP > 2)
+                        {
+                            <li class="page-item disabled"><span class="page-link">…</span></li>
+}
+                    }
+                    @for (int p = startP; p <= endP; p++)
+                    {
+                        <li class="page-item @(p == currentPage ? "active" : "")">
+                            <a class="page-link" href="@Url.Action("Index","PublicGlossary", new { q=q, category=cat, letter=ltr, page=p })">@p</a>
+                        </li>
+                    }
+                    @if (endP < totalPages)
+                    {
+                        if (endP < totalPages - 1)
+                        {
+                            <li class="page-item disabled"><span class="page-link">…</span></li>
+ }
+                        <li class="page-item">
+                            <a class="page-link" href="@Url.Action("Index","PublicGlossary", new { q=q, category=cat, letter=ltr, page=totalPages })">@totalPages</a>
+                        </li>
+                    }
+
+                    @* Sonraki *@
+                    <li class="page-item @(currentPage >= totalPages ? "disabled" : "")">
+                        <a class="page-link" href="@Url.Action("Index","PublicGlossary", new { q=q, category=cat, letter=ltr, page=currentPage+1 })">
+                            <i class="fas fa-angle-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        }
+    }
+    else
+    {
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="fas fa-search"></i>
+            </div>
+            <h3>Sonuç Bulunamadı</h3>
+            <p>Aradığınız kriterlere uygun terim bulunmamaktadır.</p>
+            <a href="@Url.Action("Index", "PublicGlossary")" class="empty-state-link">
+                Tüm Terimler
+            </a>
+        </div>
+    }
+</div>

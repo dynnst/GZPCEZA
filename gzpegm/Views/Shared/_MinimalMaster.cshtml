@@ -1,0 +1,66 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewBag.Title</title>
+
+    <!-- Bootstrap 4 -->
+    <link rel="stylesheet" href="~/vendor/bootstrap/css/bootstrap.css" />
+    <!-- DataTables Bootstrap 4 -->
+    <link rel="stylesheet" href="~/vendor/datatables/media/css/dataTables.bootstrap4.css" />
+
+    <!-- Font Awesome (opsiyonel, ikon eklemek için) -->
+    <link rel="stylesheet" href="~/vendor/font-awesome/css/fontawesome-all.min.css" />
+
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: "Segoe UI", sans-serif;
+        }
+
+        h3 {
+            margin-bottom: 20px;
+            color: #343a40;
+        }
+
+        #historyTable {
+            width: 100% !important;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+            #historyTable th, #historyTable td {
+                text-align: center;
+                vertical-align: middle;
+            }
+
+            #historyTable tbody tr:hover {
+                background-color: #e9ecef;
+            }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            padding: 0.3rem 0.6rem;
+            margin: 0 2px;
+            border-radius: 0.3rem;
+        }
+
+        .table-responsive {
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0px 0px 10px rgba(0,0,0,0.05);
+        }
+    </style>
+
+    <!-- JS -->
+    <script src="~/vendor/jquery/jquery.js"></script>
+    <script src="~/vendor/bootstrap/js/bootstrap.bundle.js"></script>
+    <script src="~/vendor/datatables/media/js/jquery.dataTables.js"></script>
+    <script src="~/vendor/datatables/media/js/dataTables.bootstrap4.js"></script>
+</head>
+<body>
+    <div class="container mt-4">
+        @RenderBody()
+    </div>
+</body>
+</html>

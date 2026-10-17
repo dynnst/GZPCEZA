@@ -1,0 +1,19 @@
+﻿@{
+    var controller = Convert.ToString(ViewContext.RouteData.Values["controller"]);
+    var action = Convert.ToString(ViewContext.RouteData.Values["action"]);
+
+    if (string.Equals(controller, "Landing", StringComparison.OrdinalIgnoreCase))
+    {
+        Layout = null;
+    }
+    else if (string.Equals(controller, "EInad", StringComparison.OrdinalIgnoreCase) &&
+             !string.IsNullOrEmpty(action) &&
+             action.StartsWith("Print", StringComparison.OrdinalIgnoreCase))
+    {
+        Layout = null;
+    }
+    else
+    {
+        Layout = "~/Views/Shared/_Layout.cshtml";
+    }
+}

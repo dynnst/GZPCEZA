@@ -1,0 +1,260 @@
+@model IEnumerable<gzpegm.Models.ViewModels.BorderItemViewModel>
+@using System.Linq
+
+@{
+    Layout = "~/Views/Shared/_Master.cshtml";
+    ViewBag.Title = "Sınır Kapıları Yönetimi";
+    ViewBag.UseDataTables = true;
+    ViewBag.UseDataTablesExport = true;
+    var totalCount = Model?.Count() ?? 0;
+    var totalPersonnel = Model?.Sum(x => x.PersonnelCount) ?? 0;
+}
+
+@section Styles {
+    <link href="@Url.Content("~/css/border-index.css")?v=1.2" rel="stylesheet" />
+}
+
+<div id="border-config"
+     data-add-url="@Url.Action("addborder", "Border")"
+     data-delete-url="@Url.Action("deleteborder", "Border")"
+     data-personnel-url="@Url.Action("GetBorderPersonnel", "Border")"
+     style="display:none;"></div>
+
+@Html.AntiForgeryToken()
+
+<div class="page-wrapper">
+    <!-- BAŞLIK & İSTATİSTİK BÖLÜMÜ -->
+    <div class="page-heading mb-4 d-flex justify-content-between align-items-center flex-wrap">
+        <div class="mb-2 mb-md-0">
+            <h1 class="page-title">
+                <i class="fas fa-archway text-primary me-2"></i>Sınır Kapıları
+            </h1>
+            <p class="text-muted mb-0">Sistemde tanımlı tüm hudut ve sınır kapılarını listeleyin, kayıtlı personelleri inceleyin, yeni kapı ekleyin veya silin.</p>
+        </div>
+        <div class="d-flex align-items-center flex-wrap gap-2">
+            <span class="badge badge-primary px-3 py-2 mr-2" style="font-size: 13px;">
+                <i class="fas fa-archway mr-1"></i> Toplam: @totalCount Sınır Kapısı
+            </span>
+            <span class="badge badge-info px-3 py-2 mr-2" style="font-size: 13px;">
+                <i class="fas fa-users mr-1"></i> Toplam: @totalPersonnel Personel
+            </span>
+            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addBorderModal">
+                <i class="fas fa-plus-circle mr-1"></i> Yeni Kapı Ekle
+            </button>
+        </div>
+    </div>
+
+    <!-- TABLO KARTI -->
+    <div class="row">
+        <div class="col-lg-12">
+            <section class="card border-card shadow-sm">
+                <header class="card-header border-bottom d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="card-title text-dark font-weight-bold mb-1">
+                            <i class="fas fa-table text-secondary mr-2"></i>Sınır Kapıları Listesi
+                        </h2>
+                        <p class="card-subtitle text-muted mb-0">Kapıya veya personel butonuna tıklayarak kayıtlı personelleri detaylı tabloda görüntüleyebilirsiniz.</p>
+                    </div>
+                </header>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped table-hover mb-0" id="borderDataTable">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th style="width: 60px;" class="text-center">#</th>
+                                    <th>Sınır Kapısı Adı</th>
+                                    <th style="width: 170px;" class="text-center">Kayıtlı Personel</th>
+                                    <th style="width: 120px;" class="text-center">Kayıt No</th>
+                                    <th style="width: 110px;" class="text-center">İşlemler</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model != null && Model.Any())
+                                {
+                                    int counter = 1;
+                                    foreach (var data in Model.OrderBy(x => x.fldName))
+                                    {
+                                        <tr id="row-border-@data.fldId">
+                                            <td class="text-center font-weight-bold text-muted">@counter</td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <span class="border-icon-pill mr-2">
+                                                        <i class="fas fa-archway text-primary"></i>
+                                                    </span>
+                                                    <a href="javascript:void(0);"
+                                                       class="font-weight-bold text-dark border-link-btn btn-view-personnel"
+                                                       data-border="@data.fldName"
+                                                       title="@data.fldName personellerini görüntülemek için tıklayınız">
+                                                        @data.fldName
+                                                    </a>
+                                                </div>
+                                            </td>
+                                            <td class="text-center">
+                                                @if (data.PersonnelCount > 0)
+                                                {
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-personnel-badge btn-view-personnel"
+                                                            data-border="@data.fldName"
+                                                            title="@data.fldName kapısındaki personelleri görüntüle">
+                                                        <i class="fas fa-users mr-1"></i>
+                                                        <span class="font-weight-bold">@data.PersonnelCount</span> Personel
+                                                    </button>
+                                                }
+                                                else
+                                                {
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-personnel-empty btn-view-personnel"
+                                                            data-border="@data.fldName"
+                                                            title="@data.fldName kapısında kayıtlı personel bulunmuyor">
+                                                        <i class="fas fa-user-slash mr-1"></i>
+                                                        <span>0 Personel</span>
+                                                    </button>
+                                                }
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge badge-light text-secondary border font-weight-semibold">ID: @data.fldId</span>
+                                            </td>
+                                            <td class="text-center actions">
+                                                <button type="button" class="btn btn-sm btn-outline-danger rounded-circle btn-delete-border"
+                                                        data-id="@data.fldId"
+                                                        data-name="@data.fldName"
+                                                        title="Sınır Kapısını Sil">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        counter++;
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+
+<!-- KAYITLI PERSONEL LİSTESİ MODALI -->
+<div class="modal fade" id="borderPersonnelModal" tabindex="-1" role="dialog" aria-labelledby="borderPersonnelModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-gradient-primary text-white py-3">
+                <div class="d-flex align-items-center">
+                    <div class="modal-header-icon mr-3">
+                        <i class="fas fa-users-cog fa-2x"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title font-weight-bold mb-0" id="borderPersonnelModalLabel">
+                            <span id="modalBorderName">Sınır Kapısı</span>
+                        </h5>
+                        <small class="text-white-50">Kapıya Kayıtlı Personel Listesi</small>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center">
+                    <span class="badge badge-light text-primary px-3 py-2 mr-3 font-weight-bold" id="modalPersonnelCountBadge">
+                        0 Personel
+                    </span>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Kapat" style="opacity: 0.9;">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            </div>
+            <div class="modal-body p-4">
+                <!-- Yükleniyor Göstergesi -->
+                <div id="personnelLoading" class="text-center py-5" style="display:none;">
+                    <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                        <span class="sr-only">Yükleniyor...</span>
+                    </div>
+                    <h6 class="text-muted font-weight-semibold">Personel listesi yükleniyor, lütfen bekleyiniz...</h6>
+                </div>
+
+                <!-- Boş Durum Göstergesi -->
+                <div id="personnelEmpty" class="text-center py-5" style="display:none;">
+                    <div class="empty-state-icon mb-3">
+                        <i class="fas fa-user-slash fa-3x text-muted" style="opacity: 0.5;"></i>
+                    </div>
+                    <h5 class="text-dark font-weight-bold">Kayıtlı Personel Bulunamadı</h5>
+                    <p class="text-muted mb-0">Bu sınır kapısına kayıtlı herhangi bir personel bulunmamaktadır.</p>
+                </div>
+
+                <!-- Tablo Kapsayıcısı -->
+                <div id="personnelTableWrapper" style="display:none;">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped table-hover align-middle mb-0" id="modalPersonnelTable" style="width:100%;">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th style="width: 50px;" class="text-center">#</th>
+                                    <th style="width: 110px;" class="text-center">Sicil No</th>
+                                    <th style="min-width: 220px;">Adı Soyadı</th>
+                                    <th style="min-width: 200px;">Ünvan / Görev</th>
+                                    <th style="min-width: 220px;">İletişim</th>
+                                    <th style="width: 110px;" class="text-center">Rol</th>
+                                    <th style="width: 100px;" class="text-center">Durum</th>
+                                    <th style="width: 150px;" class="text-center">Son Giriş</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modalPersonnelTableBody">
+                                <!-- AJAX dinamik satırlar -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light py-2">
+                <small class="text-muted mr-auto">
+                    <i class="fas fa-info-circle mr-1"></i> Personeller kullanıcı profilindeki 'Hudut Kapısı' bilgisine göre otomatik filtrelenmektedir.
+                </small>
+                <button type="button" class="btn btn-secondary px-4" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i> Kapat
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- YENİ SINIR KAPISI EKLEME MODALI -->
+<div class="modal fade" id="addBorderModal" tabindex="-1" role="dialog" aria-labelledby="addBorderModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title font-weight-bold" id="addBorderModalLabel">
+                    <i class="fas fa-plus-circle mr-1"></i> Yeni Sınır Kapısı Ekle
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Kapat">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="addBorderForm">
+                <div class="modal-body">
+                    <div class="form-group mb-3">
+                        <label for="borderNameInput" class="form-label font-weight-semibold">
+                            Sınır Kapısı İsmi <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text"><i class="fas fa-archway"></i></span>
+                            </div>
+                            <input type="text" id="borderNameInput" name="border" class="form-control"
+                                   placeholder="Örn: GAZİPAŞA-HAVA veya SARP" required autocomplete="off" />
+                        </div>
+                        <small class="form-text text-muted mt-1">
+                            Kapı ismi otomatik olarak büyük harfe çevrilecektir.
+                        </small>
+                    </div>
+                    <div id="addBorderAlert" class="alert alert-danger" style="display:none;" role="alert"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">İptal</button>
+                    <button type="submit" id="btnAddBorderSubmit" class="btn btn-primary">
+                        <i class="fas fa-save mr-1"></i> Kaydet
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="@Url.Content("~/js/border-index.js")?v=1.2"></script>
+}

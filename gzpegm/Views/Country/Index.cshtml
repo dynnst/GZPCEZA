@@ -1,0 +1,284 @@
+@{
+    ViewBag.UseSummernote = true;
+}
+@model List<gzpegm.Models.Country>
+
+
+
+<div class="container mt-4">
+    <h2 class="mb-3">Ülke Bilgileri</h2>
+    <div class="d-flex mb-3">
+        <input type="text" id="aramaKutusu" class="form-control me-2" placeholder="Ülke ara...">
+        <button class="btn btn-success" id="btnYeniDers" data-bs-toggle="modal" data-bs-target="#dersModal">
+            <i class="fa fa-plus"></i> Yeni Ders Ekle
+        </button>
+    </div>
+    <div class="row" id="ulkeListesi"></div>
+    <div class="text-center my-3" id="pagination"></div>
+</div>
+
+<!-- Ders Ekle / Düzenle Modal -->
+<div class="modal fade" id="dersModal" tabindex="-1" aria-labelledby="dersModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <form id="dersForm" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title" id="dersModalLabel"><i class="fa fa-book"></i> Ders Bilgileri</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="DersBaslik" class="form-label">Başlık <span class="text-danger">*</span></label>
+                        <input type="text" id="DersBaslik" name="Title" class="form-control" maxlength="200" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="DersDosya" class="form-label">Dosya (Video / Resim)</label>
+                        <input type="file" id="DersDosya" name="File" class="form-control" accept="image/*,video/*" />
+                        <small class="form-text text-muted">İsteğe bağlı - Resim veya video yükleyebilirsiniz.</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="DersIcerik" class="form-label">Detaylı Açıklama</label>
+                        <textarea id="DersIcerik" name="Content" class="form-control summernote" placeholder="Ders içeriğini buraya yazın (isteğe bağlı)"></textarea>
+                        <small class="form-text text-muted">İsteğe bağlı - Resim ve zengin metin ekleyebilirsiniz.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fa fa-times"></i> Kapat</button>
+                    <button type="submit" class="btn btn-primary" id="btnKaydetDers"><i class="fa fa-save"></i> Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Bayrak gösterim modalları (mevcut kullandığınız modal id'lerine uyumlu şablon) -->
+<!-- Ulke detay modal (mevcut kodunuz bu id'leri kullanıyor) -->
+<div class="modal fade" id="ulkeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body">
+                <img id="modalBayrak" src="" alt="Bayrak" class="img-fluid mb-3" />
+                <pre id="modalIcerik" style="white-space: pre-wrap;"></pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bayrak zoom modal -->
+<div class="modal fade" id="bayrakZoomModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center">
+                <img id="bayrakZoomImg" src="" alt="Bayrak Zoom" class="img-fluid" />
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let ulkeler = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model));
+    let sayfa = 1;
+    const sayfaBoyutu = 20;
+
+    const ulkeListesiEl = document.getElementById("ulkeListesi");
+    const aramaKutusu = document.getElementById("aramaKutusu");
+
+    function gosterListe(liste) {
+        ulkeListesiEl.innerHTML = '';
+        const toplamSayfa = Math.max(1, Math.ceil(liste.length / sayfaBoyutu));
+        if (sayfa > toplamSayfa) sayfa = toplamSayfa;
+
+        const bas = (sayfa - 1) * sayfaBoyutu;
+        const son = bas + sayfaBoyutu;
+        const altListe = liste.slice(bas, son);
+
+        altListe.forEach(u => {
+            const div = document.createElement('div');
+            div.classList.add('col-12','col-md-6');
+            div.innerHTML = `
+                <div class="ulkeKart" onclick="gosterBilgi('${u.Name}','${u.Capital}','${u.Population}','${u.FlagUrl}')">
+                    <img src="${u.FlagUrl}" alt="Bayrak" class="img-fluid">
+                    <div class="ulkeKart-body">${u.Name}</div>
+                </div>`;
+            ulkeListesiEl.appendChild(div);
+        });
+
+        document.getElementById('pagination').innerHTML = `
+            <button class="btn btn-sm btn-primary me-2" onclick="oncekiSayfa()" ${sayfa===1?'disabled':''}>Önceki</button>
+            <span>${sayfa}/${toplamSayfa}</span>
+            <button class="btn btn-sm btn-primary ms-2" onclick="sonrakiSayfa()" ${sayfa===toplamSayfa?'disabled':''}>Sonraki</button>
+        `;
+    }
+
+    function filtreliListe() {
+        const filtre = aramaKutusu.value.toLowerCase();
+        return ulkeler.filter(u => u.Name.toLowerCase().includes(filtre));
+    }
+
+    function sonrakiSayfa(){ sayfa++; gosterListe(filtreliListe()); }
+    function oncekiSayfa(){ sayfa--; gosterListe(filtreliListe()); }
+
+    aramaKutusu.addEventListener('input',()=>{ sayfa=1; gosterListe(filtreliListe()); });
+
+    function gosterBilgi(name, capital, population, flagUrl){
+        document.getElementById('modalBayrak').src = flagUrl;
+        document.getElementById('modalIcerik').textContent = `${name}\nBaşkent: ${capital}\nNüfus: ${population}`;
+        new bootstrap.Modal(document.getElementById('ulkeModal')).show();
+    }
+
+    document.getElementById('modalBayrak')?.addEventListener('click', () => {
+        const src = document.getElementById('modalBayrak').src;
+        if(src){
+            document.getElementById('bayrakZoomImg').src = src;
+            new bootstrap.Modal(document.getElementById('bayrakZoomModal')).show();
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded',()=> gosterListe(ulkeler));
+</script>
+
+@section Styles {
+    <link href="~/css/Summernote/summernote-bs4.css" rel="stylesheet" />
+    <style>
+        /* Hafif görüntü iyileştirmeleri modal içeriği için */
+        .ulkeKart {
+            cursor: pointer;
+            padding: 10px;
+            border: 1px solid #e7eaec;
+            border-radius: 6px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            background: #fff;
+        }
+
+            .ulkeKart img {
+                width: 60px;
+                height: 40px;
+                object-fit: cover;
+                border-radius: 3px;
+            }
+
+        .ulkeKart-body {
+            font-weight: 600;
+        }
+        /* Summernote Z-index düzeltmeleri (modal içinde düzgün çalışması için) */
+        .note-popover {
+            z-index: 2000 !important;
+        }
+
+        .note-handle {
+            z-index: 2000 !important;
+        }
+    </style>
+}
+
+@section Scripts {
+    <script src="~/css/Summernote/summernote-bs4.js"></script>
+    <script src="~/css/Summernote/lang/summernote-tr-TR.js"></script>
+
+    <script>
+        (function () {
+            // jQuery kullanımı Summernote için gereklidir. Projede jQuery varsa bu block çalışacaktır.
+            $(document).ready(function () {
+                // Summernote init
+                $('.summernote').summernote({
+                    lang: 'tr-TR',
+                    height: 300,
+                    minHeight: 200,
+                    maxHeight: 500,
+                    dialogsInBody: true,
+                    toolbar: [
+                        ['style', ['style']],
+                        ['font', ['bold', 'underline', 'clear']],
+                        ['fontname', ['fontname']],
+                        ['color', ['color']],
+                        ['para', ['ul', 'ol', 'paragraph']],
+                        ['table', ['table']],
+                        ['insert', ['link', 'picture', 'video']],
+                        ['view', ['fullscreen', 'codeview', 'help']]
+                    ],
+                    callbacks: {
+                        onImageUpload: function (files) {
+                            for (let i = 0; i < files.length; i++) {
+                                uploadImage(files[i], this);
+                            }
+                        }
+                    }
+                });
+
+                // Resim yükleme fonksiyonu - DocumentTerms sayfasındaki uygulamanın aynısı.
+                function uploadImage(file, editor) {
+                    let data = new FormData();
+                    data.append("file", file);
+
+                    $.ajax({
+                        data: data,
+                        type: "POST",
+                        // Eğer CountryController içinde UploadImage action yoksa, aynı UploadImage action'ını eklemeniz gerekir.
+                        url: '@Url.Action("UploadImage", "Country")',
+                        cache: false,
+                        contentType: false,
+                        processData: false,
+                        success: function (result) {
+                            if (result && result.success) {
+                                $(editor).summernote('insertImage', result.url);
+                            } else {
+                                alert('Resim yükleme başarısız: ' + (result ? result.message : 'Bilinmeyen hata'));
+                            }
+                        },
+                        error: function () {
+                            alert('Resim yükleme başarısız oldu!');
+                        }
+                    });
+                }
+
+                // Yeni ders butonuna tıklandığında modalı temizle
+                $('#btnYeniDers').on('click', function () {
+                    $('#dersForm')[0].reset();
+                    $('.summernote').summernote('reset'); // içerikleri temizle
+                    $('#dersModalLabel').text('Yeni Ders Ekle');
+                });
+
+                // Ders form submit (örnek AJAX gönderim - controller tarafı uyarlanmalı)
+                $('#dersForm').on('submit', function (e) {
+                    // Varsayılan gönderimi engelle ve formu AJAX ile gönder (isteğe bağlı)
+                    // Burada sunucu tarafında bir action implementasyonu varsa onu çağırabilirsiniz.
+                    // Örnek (placeholder) - kaldırabilir veya kendi endpoint'inize uyarlayabilirsiniz.
+                    e.preventDefault();
+
+                    var form = new FormData(this);
+                    form.set('Content', $('.summernote').summernote('code'));
+
+                    $('#btnKaydetDers').prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Kaydediliyor...');
+
+                    $.ajax({
+                        url: '@Url.Action("Save", "Country")',
+                        type: 'POST',
+                        data: form,
+                        cache: false,
+                        contentType: false,
+                        processData: false,
+                        success: function (res) {
+                            $('#btnKaydetDers').prop('disabled', false).html('<i class="fa fa-save"></i> Kaydet');
+                            if (res && res.success) {
+                                // Başarılıysa modalı kapat ve listeyi yenile (sunucuya göre uyarlayın)
+                                $('#dersModal').modal('hide');
+                                location.reload(); // veya ajax ile sadece listeyi güncelleyin
+                            } else {
+                                alert('Kaydetme hatası: ' + (res ? res.message : 'Bilinmeyen hata'));
+                            }
+                        },
+                        error: function () {
+                            $('#btnKaydetDers').prop('disabled', false).html('<i class="fa fa-save"></i> Kaydet');
+                            alert('Kaydetme sırasında hata oluştu!');
+                        }
+                    });
+                });
+            });
+        })();
+    </script>
+}

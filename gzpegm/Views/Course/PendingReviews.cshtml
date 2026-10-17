@@ -1,0 +1,382 @@
+﻿@model List<gzpegm.Models.ViewModels.PendingCourseReviewItemViewModel>
+@using System
+@using gzpegm.Models
+@{
+    ViewBag.Title = "Bekleyen Kurs Yorumları";
+    Layout = "~/Views/Shared/_Master.cshtml";
+}
+
+<div class="page-wrapper">
+    <div class="container-fluid p-0">
+        <!-- BAŞLIK BÖLÜMÜ -->
+        <div class="page-heading mb-4">
+            <div class="d-flex justify-content-between align-items-center flex-wrap">
+                <div>
+                    <h2 class="page-title">
+                        <span class="me-2">⭐</span> Bekleyen Kurs Yorumları
+                    </h2>
+                    <p class="page-subtitle">Admin onayı bekleyen yorumları inceleyin, onaylayın veya reddedin</p>
+                </div>
+                <div class="table-info">
+                    <span class="badge bg-primary">Bekleyen: @(Model?.Count ?? 0)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- FİLTRE KARTI -->
+        <div class="card mb-4">
+            <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <h4 class="card-title mb-0">🔍 Filtrele</h4>
+                <p class="card-subtitle mt-1" style="color: rgba(255,255,255,0.8);">Kursa göre yorumları filtreleyin</p>
+            </div>
+            <div class="card-body">
+                <form method="get" action="@Url.Action("PendingReviews", "Course")" class="filter-form">
+                    <div class="row align-items-end">
+                        <div class="col-md-6">
+                            <label class="form-label">Kurs Seçin</label>
+                            <select name="courseId" class="form-select">
+                                <option value="">Tümü</option>
+                                @if (ViewBag.Courses != null)
+                                {
+                                    foreach (var c in (IEnumerable<Courses>)ViewBag.Courses)
+                                    {
+                                        var selected = (ViewBag.CourseId != null && (int)ViewBag.CourseId == c.CourseId) ? "selected" : "";
+                                        <option value="@c.CourseId" @selected>@c.CourseTitle</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <button type="submit" class="btn btn-primary w-100">📋 Filtrele</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- YORUM LİSTESİ KARTI -->
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h4 class="card-title mb-0">📝 Yorum Listesi</h4>
+            </div>
+            <div class="card-body p-0">
+                @if (Model == null || Model.Count == 0)
+                {
+                    <div class="alert alert-info m-3">
+                        <strong>ℹ️ Bilgi:</strong> Bekleyen yorum bulunmuyor.
+                    </div>
+                }
+                else
+                {
+                    <div class="table-toolbar p-3">
+                        <input type="text" id="tableSearch" class="form-control" placeholder="🔍 Tablo içinde ara (kullanıcı, yorum, kurs)" style="max-width: 350px;">
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table" id="reviewsTable">
+                            <thead>
+                                <tr>
+                                    <th>Kurs</th>
+                                    <th>Kullanıcı</th>
+                                    <th>Puan</th>
+                                    <th>Yorum</th>
+                                    <th>Tarih</th>
+                                    <th style="width: 200px;">İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var r in Model)
+                                {
+                                    <tr data-review-id="@r.ReviewId">
+                                        <td>@r.CourseTitle</td>
+                                        <td>@r.UserFullName</td>
+                                        <td><span class="rating-badge">@r.Rating ⭐</span></td>
+                                        <td class="comment-cell" title="@r.Comment">@r.Comment</td>
+                                        <td>@r.CreatedDate.ToString("dd.MM.yyyy HH:mm")</td>
+                                        <td>
+                                            <div class="action-buttons">
+                                                <form method="post" action="@Url.Action("ApproveReview", "Course")" class="d-inline approve-form">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="reviewId" value="@r.ReviewId" />
+                                                    <input type="hidden" name="courseId" value="@(ViewBag.CourseId ?? "")" />
+                                                    <button type="submit" class="btn btn-success btn-sm">✅ Onayla</button>
+                                                </form>
+                                                <form method="post" action="@Url.Action("DeleteReview", "Course")" class="d-inline delete-form" onsubmit="return confirm('Bu yorumu silmek istediğinize emin misiniz?');">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="reviewId" value="@r.ReviewId" />
+                                                    <input type="hidden" name="courseId" value="@(ViewBag.CourseId ?? "")" />
+                                                    <button type="submit" class="btn btn-danger btn-sm">🗑️ Sil</button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* ========== GENEL SAYFA YAPISI ========== */
+    * { box-sizing: border-box; }
+    body {
+        background: #f5f7fb;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 0;
+    }
+    .page-wrapper {
+        padding: 20px;
+        background: #f5f7fb;
+        min-height: 100vh;
+    }
+    .container-fluid {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+    .page-heading {
+        margin-bottom: 30px;
+    }
+    .page-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: #333;
+        margin: 0 0 8px 0;
+    }
+    .page-subtitle {
+        font-size: 14px;
+        color: #999;
+        margin: 0;
+    }
+    .table-info {
+        background: white;
+        padding: 6px 12px;
+        border-radius: 30px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        background: white;
+        margin-bottom: 24px;
+    }
+    .card-header {
+        background: white;
+        border-bottom: 1px solid #eef2f7;
+        padding: 20px 25px;
+    }
+    .card-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin: 0;
+    }
+    .card-subtitle {
+        font-size: 12px;
+        margin-top: 4px;
+        color: rgba(0,0,0,0.6);
+    }
+    .card-body {
+        padding: 20px 25px;
+    }
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+    }
+    .table thead th {
+        background-color: #f8f9fa;
+        border-bottom: 2px solid #eef2f7;
+        font-weight: 600;
+        color: #666;
+        font-size: 13px;
+        padding: 15px;
+        text-align: left;
+    }
+    .table tbody tr {
+        border-bottom: 1px solid #eef2f7;
+        transition: background-color 0.2s ease;
+    }
+    .table tbody tr:hover {
+        background-color: #fafbfc;
+    }
+    .table tbody td {
+        padding: 15px;
+        vertical-align: middle;
+    }
+    .comment-cell {
+        max-width: 400px;
+        white-space: normal;
+        word-break: break-word;
+        line-height: 1.4;
+    }
+    .rating-badge {
+        display: inline-block;
+        background: #ffc107;
+        color: #212529;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    .action-buttons {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        font-size: 12px;
+        font-weight: 500;
+        border-radius: 6px;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s ease;
+    }
+    .btn-sm {
+        padding: 5px 12px;
+        font-size: 12px;
+    }
+    .btn-primary {
+        background: #4361ee;
+        color: white;
+    }
+    .btn-primary:hover { background: #3a56d4; }
+    .btn-success {
+        background: #28a745;
+        color: white;
+    }
+    .btn-success:hover { background: #218838; }
+    .btn-danger {
+        background: #dc3545;
+        color: white;
+    }
+    .btn-danger:hover { background: #c82333; }
+    .w-100 { width: 100%; }
+    .badge {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    .bg-primary {
+        background-color: #4361ee;
+        color: white;
+    }
+    .bg-dark {
+        background-color: #343a40;
+        color: white;
+    }
+    .alert {
+        padding: 15px 20px;
+        border-radius: 10px;
+        background: white;
+        border-left: 4px solid;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        margin: 16px;
+    }
+    .alert-info {
+        border-left-color: #17a2b8;
+        background: #e3f2fd;
+        color: #0c5460;
+    }
+    .form-label {
+        font-weight: 600;
+        font-size: 13px;
+        margin-bottom: 6px;
+        display: block;
+        color: #555;
+    }
+    .form-control, .form-select {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #e1e5eb;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: 0.2s;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #667eea;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+    }
+    .filter-form .row {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+    .filter-form .col-md-6 {
+        flex: 1;
+        min-width: 200px;
+    }
+    @@media (max-width: 768px) {
+        .page-wrapper { padding: 15px; }
+        .page-title { font-size: 22px; }
+        .action-buttons { flex-direction: column; align-items: stretch; }
+        .action-buttons .btn { justify-content: center; }
+        .table-responsive { overflow-x: auto; }
+        .filter-form .row { flex-direction: column; }
+        .comment-cell { max-width: 250px; }
+    }
+    .table-toolbar {
+        background: white;
+        border-bottom: 1px solid #eef2f7;
+        padding: 12px 16px;
+    }
+    .d-inline { display: inline-block; }
+    .mt-1 { margin-top: 4px; }
+    .mb-0 { margin-bottom: 0; }
+    .mb-4 { margin-bottom: 24px; }
+    .me-2 { margin-right: 8px; }
+    .p-0 { padding: 0; }
+    .p-3 { padding: 16px; }
+    .m-3 { margin: 16px; }
+    .text-white { color: white; }
+</style>
+
+<script>
+    (function () {
+        var searchInput = document.getElementById('tableSearch');
+        if (searchInput) {
+            var table = document.getElementById('reviewsTable');
+            var rows = table ? table.querySelectorAll('tbody tr') : [];
+            searchInput.addEventListener('keyup', function () {
+                var term = this.value.toLowerCase();
+                for (var i = 0; i < rows.length; i++) {
+                    var text = rows[i].innerText.toLowerCase();
+                    rows[i].style.display = text.includes(term) ? '' : 'none';
+                }
+            });
+        }
+
+        var approveForms = document.querySelectorAll('.approve-form');
+        for (var i = 0; i < approveForms.length; i++) {
+            approveForms[i].addEventListener('submit', function (e) {
+                var btn = this.querySelector('button[type="submit"]');
+                if (btn) {
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Onaylanıyor...';
+                    btn.disabled = true;
+                }
+            });
+        }
+
+        var deleteForms = document.querySelectorAll('.delete-form');
+        for (var i = 0; i < deleteForms.length; i++) {
+            deleteForms[i].addEventListener('submit', function (e) {
+                var btn = this.querySelector('button[type="submit"]');
+                if (btn) {
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Siliniyor...';
+                    btn.disabled = true;
+                }
+            });
+        }
+    })();
+</script>

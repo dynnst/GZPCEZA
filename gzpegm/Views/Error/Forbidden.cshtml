@@ -1,0 +1,32 @@
+@{
+    Layout = "~/Views/Shared/_Master.cshtml";
+    ViewBag.Title = "Yetkisiz Erişim";
+}
+
+<section class="card">
+    <header class="card-header">
+        <h2 class="card-title"><i class="fas fa-lock"></i> 403 - Yetkisiz Erişim</h2>
+    </header>
+    <div class="card-body">
+        <div class="alert alert-warning">
+            <strong>Erişim Reddedildi!</strong> Bu sayfaya erişim yetkiniz bulunmamaktadır.
+        </div>
+        <p class="lead">
+            Aradığınız işlem için gerekli yetki seviyesine sahip değilsiniz.
+        </p>
+        <div class="row">
+            <div class="col-md-6">
+                <h5>Yapabilecekleriniz:</h5>
+                <ul>
+                    <li><a href="@Url.Action("Index", "Home")">Ana Sayfaya Dön</a></li>
+                    <li><a href="@Url.Action("Index", "Landing")">Giriş Sayfasına Dön</a></li>
+                    <li><a href="@Url.Action("Logout", "Giris")">Çıkış Yap</a></li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h5>Yardım İçin:</h5>
+                <p>Eğer bu bir hata ise veya yetkinizin olması gerekiyorsa, lütfen sistem yöneticisine başvurunuz.</p>
+            </div>
+        </div>
+    </div>
+</section>

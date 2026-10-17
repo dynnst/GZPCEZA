@@ -1,0 +1,568 @@
+/* ==========================================================================
+   Ceza Hesaplama Stilleri (calculate-index.css) - EGM Polis Teması
+   ========================================================================== */
+
+/* Genel Form & Tipografi Ayarları */
+#calculate-form,
+#calculate-form * {
+    min-width: 0;
+}
+
+.calculate-card {
+    border-radius: 14px;
+    border: 1px solid rgba(0, 119, 182, 0.15);
+    box-shadow: 0 4px 20px rgba(10, 25, 47, 0.07);
+    overflow: hidden;
+    background: #ffffff;
+    margin-bottom: 2rem;
+}
+
+/* Header Tasarımı */
+.calculate-header {
+    background: linear-gradient(135deg, #0a192f 0%, #0f274a 60%, #1e3a8a 100%);
+    color: #ffffff;
+    padding: 1.25rem 1.75rem;
+    border-bottom: 2px solid #0284c7;
+    position: relative;
+}
+
+.calculate-header .card-title {
+    color: #ffffff;
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    margin: 0;
+}
+
+.calculate-header .card-subtitle {
+    color: #cbd5e1;
+    font-size: 0.88rem;
+    margin-top: 0.25rem;
+}
+
+.calculate-header-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: rgba(2, 132, 199, 0.2);
+    border: 1px solid rgba(0, 210, 255, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    color: #38bdf8;
+    box-shadow: 0 0 15px rgba(2, 132, 199, 0.25);
+    flex-shrink: 0;
+}
+
+/* Sayaç & Aksiyon Hapı */
+.stat-pill {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    border-radius: 30px;
+    padding: 0.4rem 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.85rem;
+    color: #e2e8f0;
+}
+
+.stat-pill .stat-label {
+    margin-right: 0.4rem;
+    color: #94a3b8;
+}
+
+.stat-pill .stat-value {
+    font-size: 0.95rem;
+    font-weight: 700;
+    background: #0284c7;
+    color: #ffffff;
+    padding: 0.2rem 0.6rem;
+}
+
+.btn-reset-calc {
+    border-radius: 20px;
+    padding: 0.45rem 1rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.btn-reset-calc:hover {
+    background: #dc2626;
+    border-color: #dc2626;
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
+/* Adım Bölüm Başlıkları */
+.calc-step-card {
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.calc-step-card:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+}
+
+.calc-step-title {
+    display: flex;
+    align-items: center;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 1.2rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.step-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    color: #ffffff;
+    font-size: 0.85rem;
+    font-weight: 800;
+    margin-right: 0.65rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    flex-shrink: 0;
+}
+
+.step-primary { background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); }
+.step-warning { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+.step-success { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+.step-danger  { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+.step-info    { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); }
+
+/* Form Elemanları ve Grid */
+#calculate-form .control-label {
+    font-weight: 600;
+    color: #334155;
+    font-size: 0.88rem;
+    margin-bottom: 0.35rem;
+}
+
+#calculate-form .form-control {
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    font-size: 0.92rem;
+    color: #0f172a;
+    transition: all 0.2s ease;
+    padding: 0.45rem 0.75rem;
+}
+
+#calculate-form .form-control:focus {
+    border-color: #0284c7;
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+}
+
+#calculate-form .form-control[readonly] {
+    background-color: #f8fafc;
+    color: #1e293b;
+    font-weight: 600;
+}
+
+#calculate-form .input-group-text {
+    border-radius: 8px 0 0 8px;
+    background-color: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-right: none;
+    color: #0284c7;
+}
+
+#calculate-form .input-group .form-control {
+    border-radius: 0 8px 8px 0;
+}
+
+/* Gün Farkı Alanı */
+.pair-diff {
+    font-weight: 700 !important;
+    text-align: center;
+    background-color: #f0fdf4 !important;
+    color: #166534 !important;
+    border-color: #bbf7d0 !important;
+    transition: all 0.2s ease;
+}
+
+.pair-diff:placeholder-shown {
+    background-color: #f8fafc !important;
+    color: #94a3b8 !important;
+    border-color: #cbd5e1 !important;
+    font-weight: 500 !important;
+}
+
+/* Giriş-Çıkış Butonları */
+.btn-gc-action {
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.88rem;
+    padding: 0.45rem 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+
+.btn-gc-add {
+    background-color: #0284c7;
+    border-color: #0284c7;
+    color: #ffffff;
+}
+
+.btn-gc-add:hover {
+    background-color: #0369a1;
+    border-color: #0369a1;
+    color: #ffffff;
+    box-shadow: 0 3px 10px rgba(2, 132, 199, 0.3);
+}
+
+.btn-gc-remove {
+    background-color: #fee2e2;
+    border-color: #fecaca;
+    color: #b91c1c;
+}
+
+.btn-gc-remove:hover {
+    background-color: #fca5a5;
+    border-color: #f87171;
+    color: #7f1d1d;
+}
+
+/* Tarih Satırları Konteyneri & Satırlar */
+.date-rows-container {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1rem 0.85rem 0.5rem 0.85rem;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.date-pair-row {
+    margin-left: 0;
+    margin-right: 0;
+    padding: 0.5rem;
+    border-radius: 10px;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.date-pair-row:hover {
+    background-color: #ffffff;
+}
+
+.date-pair-row.extra {
+    background: #ffffff;
+    border: 1px dashed #93c5fd;
+    padding: 0.75rem 0.5rem;
+    margin-bottom: 0.85rem;
+    animation: fadeInSlide 0.25s ease-out;
+}
+
+.date-pair-row.extra:hover {
+    background: #f0f7ff;
+    border-color: #60a5fa;
+}
+
+.date-pair-row .row-badge {
+    font-size: 0.75rem;
+    padding: 0.25em 0.55em;
+    border-radius: 6px;
+    vertical-align: middle;
+}
+
+.date-pair-row .btn-remove-row {
+    color: #ef4444;
+    border: 1px solid #fca5a5;
+    background: #ffffff;
+    transition: all 0.2s ease;
+}
+
+.date-pair-row .btn-remove-row:hover {
+    color: #ffffff;
+    background-color: #dc2626;
+    border-color: #dc2626;
+    transform: scale(1.05);
+}
+
+.pair-diff {
+    background-color: #f1f5f9 !important;
+    font-weight: 700;
+    color: #0f172a;
+    text-align: center;
+    border-color: #cbd5e1;
+}
+
+.pair-diff:not([value=""]):not(:placeholder-shown) {
+    background-color: #e0f2fe !important;
+    color: #0369a1 !important;
+    border-color: #7dd3fc !important;
+}
+
+/* Koşullu Vize Kutuları */
+.conditional-alert-box {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    margin-top: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+/* Stat & KPI Kartları (Adım 2) */
+.kpi-tile {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 1rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+    margin-bottom: 1rem;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.kpi-tile.kpi-warning {
+    border-left: 4px solid #f59e0b;
+    background: #fffdfa;
+}
+
+.kpi-tile.kpi-danger {
+    border-left: 4px solid #ef4444;
+    background: #fffafb;
+}
+
+.kpi-tile.kpi-info {
+    border-left: 4px solid #0284c7;
+    background: #f8fbff;
+}
+
+.kpi-tile.kpi-success {
+    border-left: 4px solid #10b981;
+    background: #f6fdf9;
+}
+
+.kpi-title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748b;
+    margin-bottom: 0.4rem;
+}
+
+.kpi-value {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.kpi-value-highlight {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: #dc2626;
+}
+
+/* Harç ve Finansal Döküm (Adım 3) */
+.exchange-rate-banner {
+    background: linear-gradient(135deg, #f0fdf4 0%, #e6fcf5 100%);
+    border: 1px solid #bbf7d0;
+    border-radius: 10px;
+    padding: 0.75rem 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+}
+
+.exchange-rate-banner .rate-badge {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #15803d;
+    background: #ffffff;
+    padding: 0.35rem 0.85rem;
+    border-radius: 20px;
+    border: 1px solid #86efac;
+}
+
+.fee-breakdown-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0.85rem;
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+.fee-breakdown-card .fee-label {
+    font-size: 0.78rem;
+    color: #64748b;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.fee-breakdown-card .fee-input {
+    font-size: 1.05rem;
+    font-weight: 700;
+    text-align: center;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+}
+
+/* TOPLAM TUTAR BÜYÜK KART */
+.grand-total-card {
+    background: linear-gradient(135deg, #0a192f 0%, #1e3a8a 100%);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    color: #ffffff;
+    box-shadow: 0 4px 15px rgba(10, 25, 47, 0.15);
+    margin-bottom: 1.5rem;
+}
+
+.grand-total-card .total-label {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #93c5fd;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.grand-total-card .total-amount-display {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #38bdf8;
+    letter-spacing: -0.5px;
+    line-height: 1.1;
+}
+
+.grand-total-card .form-control {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    font-size: 1.5rem;
+    font-weight: 800;
+}
+
+/* Tahdit Karar Alert (Adım 4) */
+#lastalert {
+    border-radius: 10px;
+    padding: 1.2rem 1.5rem;
+    font-size: 1.05rem;
+    line-height: 1.6;
+    border-width: 1px;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.08);
+}
+
+#lastalert strong {
+    font-size: 1.15rem;
+    color: #991b1b;
+}
+
+/* Tutanak Formu (Adım 5) */
+.form-print-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.5rem;
+}
+
+.btn-generate-form {
+    border-radius: 10px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    padding: 0.75rem 1.75rem;
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+    border: none;
+    color: #ffffff;
+    box-shadow: 0 4px 14px rgba(2, 132, 199, 0.3);
+    transition: all 0.25s ease;
+}
+
+.btn-generate-form:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(2, 132, 199, 0.4);
+    background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
+    color: #ffffff;
+}
+
+.btn-step-action {
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    padding: 0.55rem 1.25rem;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+}
+
+.btn-step-action:hover {
+    transform: translateY(-1px);
+}
+
+/* Gizli Bölümler İçin Animasyon */
+#veri, #hes2, #hes3, #hes4, #hes5, #form {
+    animation: fadeInSlide 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeInSlide {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive Düzenlemeler */
+@media (max-width: 991.98px) {
+    .calculate-header {
+        padding: 1rem 1.25rem;
+    }
+
+    .calculate-header .card-title {
+        font-size: 1.2rem;
+    }
+
+    .calc-step-card {
+        padding: 1rem;
+    }
+
+    .btn-gc-action {
+        margin-top: 0.5rem;
+    }
+
+    .grand-total-card .total-amount-display {
+        font-size: 1.6rem;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .calculate-header-icon {
+        display: none;
+    }
+
+    .stat-pill {
+        width: 100%;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+    }
+
+    .btn-reset-calc {
+        width: 100%;
+    }
+}

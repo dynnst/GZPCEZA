@@ -1,0 +1,484 @@
+@using gzpegm.Models
+@model List<E_Messages>
+@{
+    ViewBag.Title = "Bekleyen Yorumlar";
+    Layout = "~/Views/Shared/_Master.cshtml";
+    ViewBag.UseDataTables = true;
+}
+
+@Html.AntiForgeryToken()
+
+
+<div class="page-wrapper">
+    <div class="container-fluid p-0">
+        <div class="page-heading mb-4">
+            <h2 class="page-title">
+                <i class="fas fa-comments me-2"></i> Bekleyen Yorumlar
+                <span class="badge-custom badge-warning-custom ms-2">@ViewBag.TotalRecords</span>
+            </h2>
+            <p class="page-subtitle">Kullanıcılar tarafından gönderilen ve onay bekleyen yorumlar</p>
+        </div>
+
+        <div class="card">
+            <div class="card-header" style="background: linear-gradient(135deg, #f0ad4e 0%, #ec971f 100%); color: white;">
+                <h4 class="card-title mb-0"><i class="fas fa-list me-2"></i> Onay Bekleyen Yorumlar</h4>
+                <p class="card-subtitle mt-1" style="color: rgba(255,255,255,0.8);">Toplam @ViewBag.TotalRecords yorum bekliyor</p>
+            </div>
+            <div class="card-body p-0">
+                @if (Model != null && Model.Any())
+                {
+                    // Sondan başa doğru göstermek için tarih alanına göre azalan sırada sırala
+                    var sorted = Model.OrderByDescending(c => c.fldDateTime ?? System.DateTime.MinValue).ToList();
+                    <div class="table-responsive">
+                        <table class="table table-striped table-bordered table-hover dataTables-example" id="pendingCommentsTable">
+                            <thead>
+                                <tr>
+                                    <th>Adı</th>
+                                    <th>E-posta</th>
+                                    <th>Telefon</th>
+                                    <th>Yorum</th>
+                                    <th>Tarih</th>
+                                    <th>İşlemler</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var comment in sorted)
+                                {
+                                    var preview = !string.IsNullOrEmpty(comment.fldMessage) && comment.fldMessage.Length > 50
+                                        ? comment.fldMessage.Substring(0, 50) + "..."
+                                        : comment.fldMessage;
+
+                                    <tr>
+                                        <td><strong>@comment.fldSendByName</strong></td>
+                                        <td>@comment.fldSendByMail</td>
+                                        <td>@comment.fldSendByPhone</td>
+                                        <td><small>@preview</small></td>
+                                        <td data-order="@(comment.fldDateTime.HasValue ? comment.fldDateTime.Value.ToString("yyyy-MM-dd HH:mm:ss") : "")">
+                                            <small class="text-muted">
+                                                @(comment.fldDateTime.HasValue
+                                                    ? comment.fldDateTime.Value.ToString("dd.MM.yyyy HH:mm")
+                                                    : "")
+                                            </small>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <button type="button" class="btn btn-success btn-action" onclick="approveComment(@comment.fldId)" title="Onayla">
+                                                    <i class="fas fa-check"></i> Onayla
+                                                </button>
+                                                <button type="button" class="btn btn-danger btn-action" onclick="rejectComment(@comment.fldId)" title="Reddet">
+                                                    <i class="fas fa-trash"></i> Reddet
+                                                </button>
+                                                <button type="button" class="btn btn-info btn-action" onclick="viewComment(@comment.fldId, '@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(comment.fldMessage ?? ""))')" title="Görüntüle">
+                                                    <i class="fas fa-eye"></i> Görüntüle
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <th>Adı</th>
+                                    <th>E-posta</th>
+                                    <th>Telefon</th>
+                                    <th>Yorum</th>
+                                    <th>Tarih</th>
+                                    <th>İşlemler</th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-5">
+                        <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                        <h5 class="text-muted">Bekleyen yorum bulunmuyor</h5>
+                        <p class="text-muted">Tüm yorumlar onaylanmıştır.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="viewCommentModal" tabindex="-1" role="dialog" aria-labelledby="viewCommentLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewCommentLabel">
+                    <i class="fas fa-comment-dots me-2"></i>Yorum Detayı
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="commentContent" class="comment-content"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Kapat</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function antiForgeryToken() {
+        return $('input[name="__RequestVerificationToken"]').val();
+    }
+
+    function approveComment(commentId) {
+        if (confirm('Bu yorumu onaylamak istediğinize emin misiniz?')) {
+            $.ajax({
+                url: '@Url.Action("ApproveComment", "Landing")',
+                type: 'POST',
+                data: { id: commentId, __RequestVerificationToken: antiForgeryToken() },
+                dataType: 'json',
+                success: function (response) {
+                    if (response.success) {
+                        alert(response.message);
+                        location.reload();
+                    } else {
+                        alert('Hata: ' + response.message);
+                    }
+                },
+                error: function () {
+                    alert('Bir hata oluştu.');
+                }
+            });
+        }
+    }
+
+    function rejectComment(commentId) {
+        if (confirm('Bu yorumu reddetmek ve silmek istediğinize emin misiniz?')) {
+            $.ajax({
+                url: '@Url.Action("RejectComment", "Landing")',
+                type: 'POST',
+                data: { id: commentId, __RequestVerificationToken: antiForgeryToken() },
+                dataType: 'json',
+                success: function (response) {
+                    if (response.success) {
+                        alert(response.message);
+                        location.reload();
+                    } else {
+                        alert('Hata: ' + response.message);
+                    }
+                },
+                error: function () {
+                    alert('Bir hata oluştu.');
+                }
+            });
+        }
+    }
+
+    function viewComment(commentId, commentText) {
+        var safeText = $('<div/>').text(commentText).html();
+        $('#commentContent').html('<p class="mb-0">' + safeText.replace(/\n/g, '<br>') + '</p>');
+        $('#viewCommentModal').modal('show');
+    }
+</script>
+
+@section Styles {
+    <style>
+        .page-wrapper {
+            padding: 20px;
+            background: #f5f7fb;
+            min-height: 100vh;
+        }
+
+        .container-fluid {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #333;
+            margin: 0 0 8px;
+        }
+
+        .page-subtitle {
+            font-size: 14px;
+            color: #999;
+        }
+
+        .badge-custom {
+            display: inline-block;
+            padding: 6px 14px;
+            font-size: 14px;
+            font-weight: 700;
+            border-radius: 30px;
+            color: #fff;
+        }
+
+        .badge-warning-custom {
+            background: linear-gradient(135deg, #f0ad4e 0%, #ec971f 100%);
+        }
+
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            background: white;
+            margin-bottom: 24px;
+        }
+
+        .card-header {
+            padding: 20px 25px;
+            border-bottom: 1px solid #eef2f7;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .card-subtitle {
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 0;
+        }
+
+            .table thead th {
+                background: #f8f9fa;
+                border-bottom: 2px solid #eef2f7;
+                font-weight: 600;
+                color: #666;
+                font-size: 13px;
+                padding: 15px;
+            }
+
+            .table tbody tr {
+                border-bottom: 1px solid #eef2f7;
+                transition: .2s;
+            }
+
+                .table tbody tr:hover {
+                    background: #fafbfc;
+                }
+
+            .table tbody td {
+                padding: 15px;
+                vertical-align: middle;
+            }
+
+            .table tfoot th {
+                background: #f8f9fa;
+                border-top: 2px solid #eef2f7;
+                font-weight: 600;
+                color: #666;
+                font-size: 13px;
+                padding: 15px;
+            }
+
+        .btn-group-sm .btn {
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 6px;
+            margin: 0 3px;
+            transition: all 0.2s ease;
+            border: none;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #1cc88a 0%, #13855e 100%);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #e74a3b 0%, #be2617 100%);
+            color: white;
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #36b9cc 0%, #258391 100%);
+            color: white;
+        }
+
+            .btn-success:hover, .btn-danger:hover, .btn-info:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+                filter: brightness(1.05);
+            }
+
+        /* Modal */
+        .modal-content {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-header {
+            border-bottom: 1px solid #edf2f7;
+            padding: 20px 25px;
+            background: linear-gradient(135deg, #f8fafd 0%, #ffffff 100%);
+            border-radius: 16px 16px 0 0;
+        }
+
+        .modal-title {
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .modal-body {
+            padding: 25px;
+        }
+
+        .comment-content {
+            background-color: #f8fafd;
+            padding: 20px;
+            border-radius: 12px;
+            font-size: 15px;
+            line-height: 1.6;
+            color: #2d3748;
+        }
+
+        .modal-footer {
+            border-top: 1px solid #edf2f7;
+            padding: 15px 25px;
+        }
+
+        .btn-secondary {
+            background-color: #e2e8f0;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 30px;
+            color: #4a5568;
+        }
+
+            .btn-secondary:hover {
+                background-color: #cbd5e0;
+            }
+
+        /* DataTable Özel Stil */
+        .dataTables_wrapper {
+            padding: 15px;
+        }
+
+            .dataTables_wrapper .dataTables_length {
+                margin-bottom: 15px;
+            }
+
+            .dataTables_wrapper .dataTables_filter {
+                margin-bottom: 15px;
+            }
+
+                .dataTables_wrapper .dataTables_filter input {
+                    border: 1px solid #e1e5eb;
+                    border-radius: 8px;
+                    padding: 8px 12px;
+                    margin-left: 0.5em;
+                }
+
+            .dataTables_wrapper .dataTables_info {
+                padding-top: 0.85em;
+                font-size: 12px;
+            }
+
+            .dataTables_wrapper .dataTables_paginate {
+                padding-top: 0.5em;
+                text-align: right;
+            }
+
+                .dataTables_wrapper .dataTables_paginate .paginate_button {
+                    padding: 5px 10px;
+                    margin: 0 2px;
+                    border-radius: 4px;
+                    border: 1px solid #ddd;
+                    background: white;
+                    color: #333;
+                    cursor: pointer;
+                    transition: .2s;
+                    display: inline-block;
+                }
+
+                    .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+                        background: #f0ad4e;
+                        color: white;
+                        border-color: #f0ad4e;
+                    }
+
+                    .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+                        background: #f0ad4e;
+                        color: white;
+                        border-color: #f0ad4e;
+                    }
+
+                    .dataTables_wrapper .dataTables_paginate .paginate_button.disabled {
+                        opacity: 0.5;
+                        cursor: not-allowed;
+                    }
+
+        @@media (max-width: 768px) {
+            .page-wrapper {
+                padding: 15px;
+            }
+
+            .page-title {
+                font-size: 22px;
+            }
+
+            .table-responsive {
+                overflow-x: auto;
+            }
+
+            .btn-group-sm .btn {
+                padding: 4px 8px;
+                font-size: 10px;
+            }
+
+            .dataTables_wrapper .dataTables_length,
+            .dataTables_wrapper .dataTables_filter {
+                text-align: left;
+            }
+
+            .dataTables_wrapper .dataTables_paginate {
+                text-align: center;
+            }
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('#pendingCommentsTable').DataTable({
+                pageLength: 10,
+                responsive: true,
+                ordering: true,
+                // Varsayılan sıralamayı tarih sütununa göre azalan yap
+                order: [[4, "desc"]],
+                searching: true,
+                info: true,
+                lengthChange: true,
+                autoWidth: false,
+                columnDefs: [
+                    { orderable: false, targets: 5 }
+                ],
+                language: {
+                    search: "Ara:",
+                    lengthMenu: "Sayfada _MENU_ kayıt göster",
+                    info: "_TOTAL_ kayıttan _START_ ile _END_ arası gösteriliyor",
+                    infoEmpty: "Veri yok",
+                    infoFiltered: "(_MAX_ toplam kayıttan filtrelendi)",
+                    paginate: {
+                        first: "İlk",
+                        last: "Son",
+                        next: "Sonraki",
+                        previous: "Önceki"
+                    },
+                    emptyTable: "Bekleyen yorum yok"
+                }
+            });
+        });
+    </script>
+}

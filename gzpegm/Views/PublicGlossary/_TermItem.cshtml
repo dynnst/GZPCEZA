@@ -1,0 +1,28 @@
+@model gzpegm.Models.DocumentTerms
+
+<a href="@Url.Action("Details", "PublicGlossary", new { id = Model.Id })" class="term-item">
+    <div class="term-item-content">
+        <h3 class="term-item-title">
+            <i class="fas fa-circle" style="font-size: 0.4rem;"></i>
+            @Model.Term
+        </h3>
+        <p class="term-item-definition">
+            @{
+                var preview = Model.Definition.Length > 200
+                    ? Model.Definition.Substring(0, 200) + "..."
+                    : Model.Definition;
+            }
+            @Html.Raw(preview)
+        </p>
+        <div class="term-item-meta">
+            <span class="term-category">@Model.Category</span>
+            @if (Model.CreatedAt.HasValue)
+            {
+                <span>@Model.CreatedAt.Value.ToString("dd.MM.yyyy")</span>
+            }
+        </div>
+    </div>
+    <div class="term-item-arrow">
+        <i class="fas fa-chevron-right"></i>
+    </div>
+</a>

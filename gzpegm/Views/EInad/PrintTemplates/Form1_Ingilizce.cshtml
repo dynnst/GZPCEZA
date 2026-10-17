@@ -1,0 +1,560 @@
+@model gzpegm.Models.E_Inad
+@using System.Linq
+
+@{
+    Layout = null;
+
+    if (Model == null)
+    {
+        <p>Form verisi bulunamadı.</p>
+        return;
+    }
+
+    var seciliSebepler = new List<string>();
+    if (!string.IsNullOrWhiteSpace(Model.InadSebep))
+    {
+        foreach (var s in Model.InadSebep.Split(','))
+        {
+            seciliSebepler.Add((s ?? "").Trim().ToLowerInvariant());
+        }
+    }
+    DateTime parsedTarihSaat;
+    bool tarihSaatValid = DateTime.TryParse(Convert.ToString(Model.TarihSaat), out parsedTarihSaat);
+    var nakil = (Model.UcagaNakil ?? "").ToLowerInvariant();
+    var beyan = (Model.Beyan ?? "").Trim();
+    Func<string, bool> hasSebep = (s) => seciliSebepler.Contains((s ?? "").Trim().ToLowerInvariant());
+
+    // Üst araması için modelden gelen listeyi hazırla (virgül veya noktalı virgül ile ayrılmışsa al)
+    var ustItems = new List<string>();
+    if (!string.IsNullOrWhiteSpace(Model.UstAramaEsya))
+    {
+        ustItems = Model.UstAramaEsya
+            .Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(x => x.Trim())
+            .Where(x => !string.IsNullOrEmpty(x))
+            .ToList();
+    }
+
+    // Sol sütun: 1..3, Sağ sütun: 4..6 (yoksa boş satır)
+    var leftItems = Enumerable.Range(0, 3)
+        .Select(i => i < ustItems.Count ? ustItems[i] : "")
+        .ToList();
+    var rightItems = Enumerable.Range(0, 3)
+        .Select(i => (i + 3) < ustItems.Count ? ustItems[i + 3] : "")
+        .ToList();
+    // AdSoyad'ı soyadı ve ad olarak ayırma işlemi
+    string adSoyad = (Model.AdSoyad ?? "").Trim();
+    string ad = "";
+    string soyad = "";
+
+    if (!string.IsNullOrWhiteSpace(adSoyad))
+    {
+        var parts = adSoyad
+            .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
+            .ToList();
+
+        if (parts.Count == 1)
+        {
+            soyad = parts[0];
+            ad = "-";
+        }
+        else
+        {
+            soyad = parts.Last();                 // Son kelime soyad
+            ad = string.Join(" ", parts.Take(parts.Count - 1));  // Kalan hepsi ad
+        }
+    }
+
+}
+<HEAD>
+    <style>
+        /* Görsel olarak tüm metinleri büyük harfe çevir */
+
+        .form1-header, .form1-header * {
+            text-transform: uppercase;
+        }
+        /* Yazdırma sırasında arka plan renklerini korumaya yönelik - tarayıcıya bağlı çalışır */
+        .form1-header,
+        table, td, th {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            /* color-adjust: exact; kaldırıldı (tarayıcı tanımıyor) */
+        }
+
+        /* Sayfanın üstünde boşluk kalmaması için body/containers sıfırla (gerekirse global değil sadece bu template) */
+        body, html {
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Tablo hücrelerinde arka plan belirtildiyse kesin uygulama */
+        .inad-table-cell {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+    </style>
+</HEAD> <div>
+    @* Üst kısma eklenecek stil: tüm metinleri görsel olarak BÜYÜK yapar ve yazdırmada arka plan renklerini korumaya çalışır *@
+    <div style="margin:0; padding:0;">
+        <div class="form1-header" style="display:flex; align-items:center; width:100%; margin:0; padding:0;">
+            <!-- Sol logo -->
+            <div style="flex:0 0 auto; margin:0; padding:0;">
+                <img src='@Url.Content("~/files/Inad/Resim1.png")' alt="Logo" style="height:66px; width:auto; display:block; margin:0; padding:0;" />
+            </div>
+
+            <!-- Ortadaki başlıklar (tam ortalanmış) -->
+            <div style="flex:1 1 auto; text-align:center; margin:0; padding:0 8px;">
+                <div style="font-weight:bold; font-size:10pt; line-height:1; margin:0; padding:0;">T.C.</div>
+                @* Server-side olarak da kesin büyük harf için ToUpperInvariant() ekledim *@
+                <div style="line-height:1; margin:2px 0 0 0; padding:0;">@((Model?.Valilik ?? "").ToUpperInvariant()) VALİLİĞİ</div>
+                <div style="line-height:1; margin:2px 0 0 0; padding:0;">@((Model?.Kapi ?? "").ToUpperInvariant()) MÜLKİ İDARE AMİRLİĞİ</div>
+                <div style="margin-top:6px; font-weight:bold; font-size:11pt; line-height:1.05; margin:6px 0 0 0; padding:0;">KABUL EDİLEMEYEN YOLCU BİLGİ FORMU</div>
+                <div style="margin-top:2px; font-size:9pt; line-height:1; margin:2px 0 0 0; padding:0;">INADMISSIBLE PASSENGER INFORMATION FORM</div>
+            </div>
+
+            <!-- Sağda boşluk (denge için, istersen kaldır) -->
+            <div style="flex:0 0 66px; margin:0; padding:0;"></div>
+        </div>
+    </div>
+
+    <table style="border-collapse:collapse; width:100%;">
+
+
+
+        <tbody>
+            <!-- ÜST BAŞLIKLAR -->
+            <tr style="height:8pt;">
+                <td colspan="2" style="border-right:0.75pt solid; border-bottom:0.75pt solid; padding:2pt; background:#bfbfbf; text-align:center; font-size:8pt;">
+                    <strong>YOLCU KİMLİK BİLGİLERİ / PASSENGER IDENTITY INFORMATION</strong>
+                </td>
+                <td colspan="2" style="border-left:0.75pt solid; border-bottom:0.75pt solid; padding:2pt; background:#bfbfbf; text-align:center; font-size:8pt;">
+                    <strong>DÜZENLEME BİLGİLERİ / ISSUE INFORMATION</strong>
+                </td>
+            </tr>
+
+            <!-- SOYADI -->
+            <tr>
+                <td style="border:0.75pt solid; padding:2pt; font-size:8pt;"><strong>Soyadı</strong><br />Surname</td>
+                <td style="border:0.75pt solid; padding:2pt; font-size:8pt;"><strong>@soyad</strong></td>
+                <td style="border:0.75pt solid; padding:2pt; font-size:8pt;"><strong>Tarih</strong><br />Date</td>
+                <td style="border:0.75pt solid; padding:2pt; font-size:8pt;"><strong>  @(tarihSaatValid ? parsedTarihSaat.ToString("dd.MM.yyyy") : "")</strong></td>
+            </tr>
+
+            <!-- AD -->
+            <tr style="background:#d9d9d9;">
+                <td style="border:0.75pt solid; padding:2pt; font-size:8pt;"><strong>Adı</strong><br />Name</td>
+                <td style="border:0.75pt solid; padding:2pt; font-size:8pt;"><strong>@ad</strong></td>
+                <td style="border:0.75pt solid; padding:2pt; font-size:8pt;"><strong>Saat</strong><br />Time</td>
+                <td style="border:0.75pt solid; padding:2pt; font-size:8pt;"> @(tarihSaatValid ? parsedTarihSaat.ToString("HH:mm:ss") : "")</td>
+            </tr>
+
+            <!-- DOĞUM TARİHİ -->
+            <tr>
+                <td style="border:0.75pt solid; padding:2pt; font-size:8pt;"><strong>Doğum Tarihi</strong><br />Date of Birth</td>
+                <td style="border:0.75pt solid; padding:2pt; font-size:8pt;"><strong>@(Model.DogumT?.ToString("dd.MM.yyyy"))</strong></td>
+                <td colspan="2" style="border:0.75pt solid; background:#bfbfbf; text-align:center; padding:2pt; font-size:8pt;">
+                    <strong>YOLCU GELİŞ BİLGİLERİ / PASSENGER ARRIVAL INFORMATION</strong>
+                </td>
+            </tr>
+
+            <!-- DOĞUM YERİ -->
+            <tr style="background:#d9d9d9;">
+                <td style="border:0.75pt solid; padding:2pt; font-size:8pt;"><strong>Doğum Yeri</strong><br />Place of Birth</td>
+                <td style="border:0.75pt solid; padding:2pt; font-size:8pt;"><strong>@Model.DogumY</strong></td>
+                <td style="border:0.75pt solid; padding:2pt; font-size:8pt;"><strong>Taşıyıcı Havayolu</strong><br />Carrier Airline</td>
+                <td style="border:0.75pt solid; padding:2pt; font-size:8pt;"><strong>@Model.GelenHavayolu</strong></td>
+            </tr>
+
+            <!-- CİNSİYET -->
+            <tr>
+                <td style="border:0.75pt solid; padding:2pt; font-size:8pt;"><strong>Cinsiyeti</strong><br />Sex</td>
+                <td style="border:0.75pt solid; padding:2pt; font-size:8pt;"><strong>@Model.Cinsiyet</strong></td>
+                <td style="border:0.75pt solid; padding:2pt; font-size:8pt;"><strong>Uçuş Numarası</strong><br />Flight Number</td>
+                <td style="border:0.75pt solid; padding:2pt; font-size:8pt;"><strong>@Model.GelenUcusNo</strong></td>
+            </tr>
+
+            <!-- UYRUK -->
+            <tr style="background:#d9d9d9;">
+                <td style="border:0.75pt solid; padding:2pt; font-size:8pt;"><strong>Uyruğu</strong><br />Nationality</td>
+                <td style="border:0.75pt solid; padding:2pt; font-size:8pt;"><strong>@Model.Uyruk</strong></td>
+                <td style="border:0.75pt solid; padding:2pt; font-size:8pt;"><strong>Geldiği Yer</strong><br />Place of Origin</td>
+                <td style="border:0.75pt solid; padding:2pt; font-size:8pt;"><strong>@Model.GeldigiYer</strong></td>
+            </tr>
+
+            <!-- PASAPORT -->
+            <tr>
+                <td style="border:0.75pt solid; padding:2pt; font-size:8pt;"><strong>Pasaport No</strong><br />Passport No</td>
+                <td style="border:0.75pt solid; padding:2pt; font-size:8pt;"><strong>@Model.PasaportNo</strong></td>
+                <td style="border:0.75pt solid; padding:2pt; font-size:8pt;"><strong>Tarih ve Saat</strong><br />Date and Time</td>
+                <td style="border:0.75pt solid; padding:2pt; font-size:8pt;"><strong>@Model.GeldigiTarihSaat</strong></td>
+            </tr>
+
+            <!-- KABUL EDİLEMEYEN YOLCU BİLGİLERİ KUTUSU -->
+            <tr>
+                <td colspan="4" style="border:0.75pt solid; padding:2pt;">
+                    <div style="background:#bfbfbf; padding:3pt; margin-bottom:3pt; text-align:center; font-size:7pt;">
+                        <strong>KABUL EDİLEMEYEN YOLCU BİLGİLERİ / INFORMATION ABOUT THE INADMISSIBLE PASSENGER</strong>
+                    </div>
+                    <p style="margin:3pt 0; font-size:6pt; text-align:justify;">
+                        Aşağıda belirtilen sebeplerden dolayı 6458 sayılı Yabancılar ve Uluslararası Koruma Kanunu çerçevesinde hakkınızda "Kabul edilemeyen yolcu (INAD)" kararı alındığı için Türkiye'ye girişinize izin verilmemiştir.
+                        Due to the reasons stated below, under the Law No. 6458 on Foreigners and International Protection, you have been classified as an "Inadmissible Passenger (INAD)" and entry to Türkiye has been denied.
+                    </p>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div style="text-align:center;">
+        <table cellspacing="0" cellpadding="0" style="margin-right: auto; margin-left: auto; border: 0.75pt solid rgb(0, 0, 0); border-collapse: collapse; width: 100%;">
+            <tbody>
+                <tr style="height:9.9pt;">
+                    <td style="width:8.95pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:top;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;">
+                            @Html.Raw(hasSebep("Geçerli bir seyahat belgesine sahip olmaması") ? "X" : "&nbsp;")
+                        </p>
+                    </td>
+                    <td style="width:472.55pt; border-top-style:solid; border-top-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong><span style="font-size:7.5pt;">Geçerli bir seyahat belgesine sahip olmaması</span></strong><span style="font-size:7.5pt;">&nbsp;/&nbsp;</span>Lack of a valid travel document</p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:8.95pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:top; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;">
+                            @Html.Raw(hasSebep("Türkiye'ye girişi sakıncalı görülmesi") ? "X" : "&nbsp;")
+                        </p>
+                    </td>
+                    <td style="width:472.55pt; border-top-style:solid; border-top-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong><span style="font-size:7.5pt;">Türkiye'ye girişi sakıncalı görülmesi</span></strong><span style="font-size:7.5pt;">&nbsp;/</span><span style="font-size:7.5pt;">&nbsp;&nbsp;</span>Entry into Türkiye is deemed unsafe</p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:8.95pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:top;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;">
+                            @Html.Raw(hasSebep("Yeterli maddi imkâna sahip olmaması") ? "X" : "&nbsp;")
+                        </p>
+                    </td>
+                    <td style="width:472.55pt; border-top-style:solid; border-top-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong><span style="font-size:7.5pt;">Yeterli maddi imkana sahip olmaması</span></strong><span style="font-size:7.5pt;">&nbsp;/</span><span style="font-size:7.5pt;">&nbsp;&nbsp;</span>Lack of adequate financial means</p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:8.95pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:top; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;">
+                            @Html.Raw(hasSebep("Hakkında Türkiye'ye giriş yasağı bulunması") ? "X" : "&nbsp;")
+                        </p>
+                    </td>
+                    <td style="width:472.55pt; border-top-style:solid; border-top-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong><span style="font-size:7.5pt;">Hakkında Türkiye'ye giriş yasağı bulunması</span></strong><span style="font-size:7.5pt;">&nbsp;/</span><span style="font-size:7.5pt;">&nbsp;&nbsp;</span>The presence of an entry ban for Türkiye</p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:8.95pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:top;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;">
+                            @Html.Raw(hasSebep("Giriş vizesinin olmaması") ? "X" : "&nbsp;")
+                        </p>
+                    </td>
+                    <td style="width:472.55pt; border-top-style:solid; border-top-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong><span style="font-size:7.5pt;">Giriş vizesinin olmaması</span></strong><span style="font-size:7.5pt;">&nbsp;/</span><span style="font-size:7.5pt;">&nbsp;&nbsp;</span>Lack of an entry visa</p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:8.95pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:top; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;">
+                            @Html.Raw(hasSebep("Pasaport süresinin yetersiz olması") ? "X" : "&nbsp;")
+                        </p>
+                    </td>
+                    <td style="width:472.55pt; border-top-style:solid; border-top-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong><span style="font-size:7.5pt;">Pasaport süresinin yeterli olmaması</span></strong><span style="font-size:7.5pt;">&nbsp;/&nbsp;</span>The validity of the passport is inadequate for entry</p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:8.95pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:top;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;">
+                            @Html.Raw(hasSebep("Sahte pasaport") ? "X" : "&nbsp;")
+                        </p>
+                    </td>
+                    <td style="width:472.55pt; border-top-style:solid; border-top-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong><span style="font-size:7.5pt;">Sahte pasaport</span></strong><span style="font-size:7.5pt;">&nbsp;/&nbsp;</span>Fake passport</p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:8.95pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:top; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;">
+                            @Html.Raw(hasSebep("Pasaportta tahrifat yapılmış olması") ? "X" : "&nbsp;")
+                        </p>
+                    </td>
+                    <td style="width:472.55pt; border-top-style:solid; border-top-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong><span style="font-size:7.5pt;">Pasaportta tahrifat yapılmış olması</span></strong><span style="font-size:7.5pt;">&nbsp;/&nbsp;</span>Forged passport</p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:8.95pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:top;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;">
+                            @Html.Raw(hasSebep("Sahte vize-ikamet") ? "X" : "&nbsp;")
+                        </p>
+                    </td>
+                    <td style="width:472.55pt; border-top-style:solid; border-top-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong><span style="font-size:7.5pt;">Sahte vize-ikamet</span></strong><span style="font-size:7.5pt;">&nbsp;/&nbsp;</span>Fake visa-residency</p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:8.95pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:top; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;">
+                            @Html.Raw(hasSebep("Çalıntı belge") ? "X" : "&nbsp;")
+                        </p>
+                    </td>
+                    <td style="width:472.55pt; border-top-style:solid; border-top-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong><span style="font-size:7.5pt;">Çalıntı belge</span></strong><span style="font-size:7.5pt;">&nbsp;/&nbsp;</span>Stolen document</p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:8.95pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:top;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;">
+                            @Html.Raw(hasSebep("180 günde 90 gün uygulamasının ihlali") ? "X" : "&nbsp;")
+                        </p>
+                    </td>
+                    <td style="width:472.55pt; border-top-style:solid; border-top-width:0.75pt; border-left-style:solid; border-left-width:0.75pt;border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong><span style="font-size:7.5pt;">180 günde 90 gün uygulamasının ihlali</span></strong><span style="font-size:7.5pt;">&nbsp;/&nbsp;</span>Violation of 90 days stay rule within 180 days</p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:8.95pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:top; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;">
+                            @Html.Raw(hasSebep("Türkiye'ye girmek istememesi") ? "X" : "&nbsp;")
+                        </p>
+                    </td>
+                    <td style="width:472.55pt; border-top-style:solid; border-top-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong><span style="font-size:7.5pt;">Türkiye'ye girmek istememesi</span></strong><span style="font-size:7.5pt;">&nbsp;/&nbsp;</span>Unwillingness to enter Türkiye</p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:8.95pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:top;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;">
+                            @Html.Raw(hasSebep("Diğer Sebepler / Other Reasons") ? "X" : "&nbsp;")
+                        </p>
+                    </td>
+                    <td style="width:472.55pt; border-top-style:solid; border-top-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;">
+                            <strong><span style="font-size:7.5pt;">Diğer sebepler: @Html.Raw(HttpUtility.HtmlEncode(Model.DigerSebepAciklama ?? ""))</span></strong>
+                            <span style="font-size:7.5pt;">&nbsp;/&nbsp;</span>Other reasons
+                        </p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <table style="border-collapse:collapse; width:100%; margin-top:4pt;">
+        <tr>
+            <td style="border:0.75pt solid; padding:3pt; background:#bfbfbf;">
+                <div style="font-size:7pt; text-align:justify; margin-bottom:4pt;">
+                    <strong style="font-size:6pt;">Bu karara karşı vatandaşı olduğunuz veya yasal olarak bulunduğunuz ülkedeki Türk konsolosluklarına itirazda bulunabilirsiniz.</strong><br />
+                    <span style="font-size:7pt;">You may appeal this decision at Turkish consulates in the country of which you are a citizen or in the country where you are legally present.</span>
+                </div>
+                <div style="font-size:7pt; text-align:justify; background:#ffffff; padding:2pt;">
+                    <strong style="font-size:6pt;">Hakkınızda Türkiye'ye giriş yasağı bulunuyorsa, vatandaşı olduğunuz veya yasal olarak bulunduğunuz ülkedeki Türk Konsolosluklarından amacına uygun özel meşruhatlı vize alarak gelmeniz durumunda Türkiye'ye giriş yapabilirsiniz.</strong><br />
+                    <span style="font-size:7pt;">If you are subject to an entry ban to Türkiye, you may be allowed to enter Turkey if you obtain a special entry visa with appropriate authorization from Turkish consulates in your country of citizenship or the country where you are legally present.</span>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <div style="text-align:center;">
+        <table cellspacing="0" cellpadding="0" style="margin-right: auto; margin-left: auto; border: 0.75pt solid rgb(0, 0, 0); border-collapse: collapse; width: 100%;">
+            <tbody>
+                <tr style="height:12.75pt;">
+                    <td colspan="2" style="width:489.95pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#bfbfbf;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; text-align:center; font-size:8pt;"><strong>GİDİŞ BİLGİLERİ /&nbsp;</strong>DEPARTURE INFORMATION</p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td colspan="2" style="width:489.95pt; border-top-style:solid; border-top-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong>Geri dönüş yapacağınız uçuş bilgileri aşağıdadır./</strong> Below is your return flight information.</p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:180.4pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong>Taşıyıcı Havayolu</strong> / Carrier Airline</p>
+                    </td>
+                    <td style="width:298.75pt; border-top-style:solid; border-top-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong>@Model.GidenHavayolu</strong></p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:180.4pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong>Uçuş Numarası</strong> / Flight Number</p>
+                    </td>
+                    <td style="width:298.75pt; border-top-style:solid; border-top-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong>@Model.GidisUcusNo</strong></p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:180.4pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong>Gideceği Yer</strong> / Destination</p>
+                    </td>
+                    <td style="width:298.75pt; border-top-style:solid; border-top-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong>@Model.GidisYer</strong></p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:180.4pt; border-top-style:solid; border-top-width:0.75pt; border-right-style:solid; border-right-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong>Tarih ve Saat</strong> / Date and Time</p>
+                    </td>
+                    <td style="width:298.75pt; border-top-style:solid; border-top-width:0.75pt; border-left-style:solid; border-left-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:8pt;"><strong>@(Model.GidisTarihSaat.HasValue ? Model.GidisTarihSaat.Value.ToString("dd.MM.yyyy HH:mm") : "")</strong></p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <p style="margin-top:0pt; margin-bottom:0pt; line-height:108%; font-size:8pt;"><strong>&nbsp;</strong></p>
+    <div style="text-align:center;">
+        <table cellspacing="0" cellpadding="0" style="margin-right: auto; margin-left: auto; border: 0.75pt solid rgb(0, 0, 0); border-collapse: collapse; width: 100%;">
+            <tbody>
+                <tr style="height:12.75pt;">
+                    <td style="width:488.6pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#bfbfbf;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; text-align:center; font-size:8pt;"><strong>DİĞER BİLGİLER /&nbsp;</strong>OTHER INFORMATION<strong>&nbsp;</strong></p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:488.6pt; border-top-style:solid; border-top-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; text-align:justify; line-height:80%; font-size:7.5pt;"><strong>Bu andan itibaren geri dönüş işlemlerinizle gelmiş olduğunuz havayolu şirketi veya yer hizmeti veren şirket ilgilenecektir.</strong></p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:488.6pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:7.5pt;">From this point forward, the airline or the ground services provider will be responsible for managing the procedures related to your return.</p>
+                    </td>
+                </tr>
+                <tr style="height:17pt;">
+                    <td style="width:488.6pt; border-top-style:solid; border-top-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; text-align:justify; line-height:80%; font-size:7.5pt;"><strong>Uçuşunuza kadarki herhangi bir zamanda havayolu şirketinin planlamasını beklemeden kendi imkanlarınızla kendi &uuml;lkenize veya kabul edilebileceğiniz başka bir &uuml;lkeye havayolu şirketlerinin kabul etmesi halinde gitme hakkına sahipsiniz.</strong></p>
+                    </td>
+                </tr>
+                <tr style="height:17pt;">
+                    <td style="width:488.6pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:top; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; line-height:80%; font-size:7.5pt;">Subject to approval by the airline companies, you have the option to arrange your return to your home country or any other nation where you are granted entry by your own means. You are not required to wait for the airline company to make these arrangements, and you may choose a date that suits you best.</p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:488.6pt; border-top-style:solid; border-top-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; text-align:justify; line-height:80%; font-size:7.5pt;"><strong>Uçuş zamanınıza kadar yemek içmek gibi ihtiyaçlarınız bu şirketler tarafından karşılanacaktır.</strong></p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:488.6pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:top;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:7.5pt;">Your basic needs, such as food and beverages, will be covered by these companies until your flight.</p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:488.6pt; border-top-style:solid; border-top-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; text-align:justify; line-height:80%; font-size:7.5pt;"><strong>Uçuşunuza kadar havalimanı işletmecisi tarafından tahsis edilen Kabul edilemeyen yolcu misafirhanesinde kalacaksınız.</strong></p>
+                    </td>
+                </tr>
+                <tr style="height:9.9pt;">
+                    <td style="width:488.6pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; font-size:7.5pt;">You will be staying in the Inadmissible Passenger guesthouse allocated by the airline management until your flight.</p>
+                    </td>
+                </tr>
+                <tr style="height:17.65pt;">
+                    <td style="width:488.6pt; border-top-style:solid; border-top-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; text-align:justify; line-height:80%; font-size:7.5pt;"><strong>Odada bulunan tuvalet, lavabo, banyo, yatak ve varsa televizyon, radyo, wifi (havalimanı işletmecisinin sağladığı kadar) imkanlarından &uuml;cretsiz olarak faydalanabilirsiniz.</strong></p>
+                    </td>
+                </tr>
+                <tr style="height:8pt;">
+                    <td style="width:488.6pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:top;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; line-height:90%; font-size:7.5pt;">You can use the toilet, sink, shower, bed, and, if available, television, radio, WiFi as provided by the airport operator) in the room, free of charge.</p>
+                    </td>
+                </tr>
+                <tr style="height:17pt;">
+                    <td style="width:488.6pt; border-top-style:solid; border-top-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; text-align:justify; line-height:80%; font-size:7.5pt;"><strong>Yakınlarınıza bilgi vermek veya başka g&ouml;r&uuml;şmeler yapmak i&ccedil;in misafirhane girişinde bulunan uluslararası ve şehirlerarası g&ouml;r&uuml;şmelerde a&ccedil;ık olan ve kredi kartı veya telefon kartı ile &ccedil;alışan ankes&ouml;rl&uuml; telefonları kullanabilirsiniz.</strong></p>
+                    </td>
+                </tr>
+                <tr style="height:17pt;">
+                    <td style="width:488.6pt; border-bottom-style:solid; border-bottom-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:top; background-color:#d9d9d9;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; line-height:80%; font-size:7.5pt;">To inform your relatives or to make other calls, you can make use of the payphones located at the guesthouse entrance, which are equipped for international and long-distance calls and accept credit cards or phone cards.</p>
+                    </td>
+                </tr>
+                <tr style="height:17pt;">
+                    <td style="width:488.6pt; border-top-style:solid; border-top-width:0.75pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:middle;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; text-align:justify; line-height:80%; font-size:7.5pt;"><strong>Havalimanında kaldığınız s&uuml;re boyunca size yardım ve refakat etmek &uuml;zere havalimanı &ouml;zel g&uuml;venlik şirketinden bir g&ouml;revli yanınızda bulunacak. Herhangi bir ihtiyacınız olursa bu g&uuml;venlik g&ouml;revlisinden yardım isteyebilirsiniz.</strong></p>
+                    </td>
+                </tr>
+                <tr style="height:17pt;">
+                    <td style="width:488.6pt; padding-right:5.03pt; padding-left:5.03pt; vertical-align:top;">
+                        <p style="margin-top:0pt; margin-bottom:0pt; text-align:justify; line-height:80%; font-size:7.5pt;">During your stay at the airport, an officer from the airport&apos;s private security company will assist and accompany you. You may ask this security guard for assistance if you need anything.</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+   
+    <div style="text-align:center;">
+        <table cellspacing="0" cellpadding="0"
+               style="margin:auto; border-collapse:collapse; width:100%;">
+            <tbody>
+
+                <!-- ÜST BAŞLIKLAR -->
+                <tr style="height:14pt;">
+                    <!-- Sol başlık -->
+                    <td style="width:201.6pt; text-align:center; font-size:8pt; vertical-align:top; padding:0 5.4pt;">
+                        <strong>TEBLİĞ EDEN / NOTIFYING PARTY </strong>
+                    </td>
+
+                    <!-- Orta boş -->
+                    <td style="width:53pt;"></td>
+
+                    <!-- Sağ başlık -->
+                    <td style="width:212.4pt; text-align:center; font-size:8pt; vertical-align:top; padding:0 5.4pt;">
+                        <strong>TEBELLÜĞ EDEN / NOTIFIED PARTY </strong>
+                    </td>
+                </tr>
+
+                <!-- İSİMLER VE ALT BAŞLIK -->
+                <tr style="height:12pt;">
+                    <!-- Sol isim -->
+                    <td style="text-align:center; font-size:8pt; vertical-align:top; padding:0 5.4pt;">
+                        @Html.Raw(HttpUtility.HtmlEncode(ViewBag.NotifyName ?? ""))
+                    </td>
+
+                    <!-- Orta boş -->
+                    <td></td>
+
+                    <!-- Sağ isim ve alt başlık -->
+                    <td style="text-align:center; font-size:8pt; vertical-align:top; padding:0 5.4pt;">
+                        <!-- İsim -->
+                        @Html.Raw(HttpUtility.HtmlEncode(ViewBag.NotifiedName ?? Model.AdSoyad ?? ""))
+
+                        <!-- Alt başlık -->
+                        <p style="margin:2pt 0 0 0; font-size:8pt; font-weight:bold;">
+                            KABUL EDİLEMEYEN YOLCU / INADMISSIBLE PASSENGER
+                        </p>
+                    </td>
+                </tr>
+
+            </tbody>
+        </table>
+    </div>
+
+</div>
+<script>
+    (function () {
+        function doPrint() {
+            try {
+                window.focus();
+                setTimeout(function () { window.print(); }, 250);
+            } catch (e) {
+                if (window.console && window.console.error) {
+                    console.error('Auto print failed:', e);
+                }
+            }
+        }
+
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            doPrint();
+        } else {
+            document.addEventListener('DOMContentLoaded', doPrint);
+        }
+    })();
+</script>

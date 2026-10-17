@@ -1,0 +1,650 @@
+@{
+    Layout = null;
+}
+
+<!doctype html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Mesaj Gönder - Emniyet Eğitim Sistemi</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="@Url.Content("~/files/logo/favicon-egm-32.png")" type="image/x-icon">
+    <link rel="stylesheet" href="@Url.Content("~/vendor/bootstrap/css/bootstrap.css")" />
+    <link rel="stylesheet" href="@Url.Content("~/vendor/font-awesome/css/fontawesome-all.min.css")" />
+
+    <style>
+        :root {
+            --night-0: #020817;
+            --glass-border: rgba(255,255,255,.18);
+            --gold: #f7c873;
+            --cyan: #52d7ff;
+            --green: #35f0a1;
+            --red: #ff6b7f;
+            --text-soft: rgba(255,255,255,.72);
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
+            width: 100%;
+            min-height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+            color: #fff;
+            background: var(--night-0);
+        }
+
+        body { overflow-x: hidden; }
+
+        .message-scene {
+            position: relative;
+            min-height: 100vh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 34px 18px;
+            background:
+                radial-gradient(circle at 14% 18%, rgba(82,215,255,.16), transparent 31%),
+                radial-gradient(circle at 86% 14%, rgba(247,200,115,.16), transparent 34%),
+                linear-gradient(135deg, #010510 0%, #071426 45%, #112b43 100%);
+        }
+
+        .bgvid {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: .48;
+            filter: saturate(1.08) contrast(1.08) brightness(.70);
+            transform: scale(1.025);
+            z-index: 0;
+        }
+
+        .scene-overlay {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+            background:
+                linear-gradient(90deg, rgba(1,5,16,.90) 0%, rgba(1,5,16,.52) 42%, rgba(1,5,16,.88) 100%),
+                radial-gradient(circle at 50% 48%, transparent 0%, rgba(0,0,0,.46) 72%);
+        }
+
+        .scene-overlay::before {
+            content: "";
+            position: absolute;
+            inset: -18%;
+            background:
+                conic-gradient(from 145deg at 48% 54%, transparent 0 18%, rgba(82,215,255,.14) 21%, transparent 29% 54%, rgba(247,200,115,.12) 58%, transparent 68% 100%);
+            animation: slowSweep 18s linear infinite;
+            opacity: .72;
+        }
+
+        .scene-overlay::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+            background-size: 52px 52px;
+            mask-image: linear-gradient(to bottom, transparent, #000 20%, #000 82%, transparent);
+            animation: gridDrift 12s ease-in-out infinite alternate;
+        }
+
+        .cinema-beam {
+            position: absolute;
+            top: -40%;
+            left: -28%;
+            width: 44%;
+            height: 190%;
+            transform: rotate(22deg);
+            z-index: 2;
+            pointer-events: none;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,.15), transparent);
+            filter: blur(20px);
+            animation: lightPass 8.5s ease-in-out infinite;
+        }
+
+        .security-frame {
+            position: absolute;
+            inset: 24px;
+            z-index: 2;
+            pointer-events: none;
+            border: 1px solid rgba(255,255,255,.10);
+            border-radius: 28px;
+            box-shadow: inset 0 0 70px rgba(82,215,255,.06);
+        }
+
+        .message-shell {
+            position: relative;
+            z-index: 5;
+            width: min(1060px, 100%);
+            display: grid;
+            grid-template-columns: .95fr 500px;
+            gap: 34px;
+            align-items: center;
+        }
+
+        .hero-copy {
+            padding: 28px;
+            text-shadow: 0 10px 34px rgba(0,0,0,.46);
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 13px;
+            border: 1px solid rgba(255,255,255,.16);
+            border-radius: 999px;
+            color: rgba(255,255,255,.82);
+            background: rgba(255,255,255,.06);
+            letter-spacing: .12em;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            backdrop-filter: blur(10px);
+        }
+
+        .eyebrow i { color: var(--gold); }
+
+        .hero-copy h1 {
+            margin: 24px 0 14px;
+            font-size: clamp(34px, 4.8vw, 58px);
+            line-height: .98;
+            font-weight: 800;
+            letter-spacing: -.055em;
+        }
+
+        .hero-copy h1 span {
+            display: block;
+            color: var(--gold);
+        }
+
+        .hero-copy p {
+            max-width: 570px;
+            margin: 0;
+            color: var(--text-soft);
+            font-size: 16px;
+            line-height: 1.75;
+        }
+
+        .message-card {
+            position: relative;
+            overflow: hidden;
+            padding: 28px;
+            border-radius: 26px;
+            background: linear-gradient(145deg, rgba(7,18,35,.80), rgba(7,18,35,.50));
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 28px 90px rgba(0,0,0,.52), inset 0 1px 0 rgba(255,255,255,.16);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        .message-card::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+                linear-gradient(120deg, rgba(255,255,255,.17), transparent 26%),
+                radial-gradient(circle at 92% 8%, rgba(82,215,255,.16), transparent 34%);
+            pointer-events: none;
+        }
+
+        .message-card::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--cyan), var(--gold), transparent);
+            animation: scanTop 4s ease-in-out infinite;
+        }
+
+        .card-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .brand-mark {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            margin-bottom: 18px;
+        }
+
+        .brand-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .brand-emblem {
+            width: 54px;
+            height: 54px;
+            border-radius: 18px;
+            display: grid;
+            place-items: center;
+            background: linear-gradient(145deg, rgba(247,200,115,.22), rgba(82,215,255,.10));
+            border: 1px solid rgba(247,200,115,.36);
+            box-shadow: 0 14px 28px rgba(0,0,0,.24);
+        }
+
+        .brand-emblem i {
+            color: var(--gold);
+            font-size: 22px;
+        }
+
+        .brand-text small {
+            display: block;
+            color: rgba(255,255,255,.58);
+            font-size: 11px;
+            letter-spacing: .10em;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .brand-text strong {
+            display: block;
+            font-size: 18px;
+            line-height: 1.15;
+        }
+
+        .back-login {
+            color: rgba(255,255,255,.76);
+            background: rgba(255,255,255,.07);
+            border: 1px solid rgba(255,255,255,.12);
+            border-radius: 13px;
+            padding: 10px 12px;
+            font-size: 12px;
+            font-weight: 800;
+            text-decoration: none;
+            transition: transform .18s ease, background .18s ease, border-color .18s ease;
+        }
+
+        .back-login:hover,
+        .back-login:focus {
+            color: #fff;
+            text-decoration: none;
+            transform: translateY(-2px);
+            background: rgba(82,215,255,.12);
+            border-color: rgba(82,215,255,.34);
+            outline: none;
+        }
+
+        .message-title { margin-bottom: 18px; }
+
+        .message-title h2 {
+            margin: 0;
+            font-size: 27px;
+            font-weight: 800;
+            letter-spacing: -.03em;
+        }
+
+        .message-title p {
+            margin: 7px 0 0;
+            color: rgba(255,255,255,.62);
+            font-size: 13px;
+        }
+
+        .form-field { margin-bottom: 12px; }
+
+        .form-field label {
+            display: block;
+            margin-bottom: 7px;
+            color: rgba(255,255,255,.70);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: .02em;
+        }
+
+        .input-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-height: 48px;
+            padding: 0 14px;
+            border-radius: 15px;
+            background: rgba(0,0,0,.28);
+            border: 1px solid rgba(255,255,255,.13);
+            transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+        }
+
+        .input-wrap.textarea {
+            align-items: flex-start;
+            padding-top: 13px;
+        }
+
+        .input-wrap:focus-within {
+            border-color: rgba(82,215,255,.60);
+            box-shadow: 0 0 0 4px rgba(82,215,255,.10);
+            transform: translateY(-1px);
+        }
+
+        .input-wrap i {
+            color: rgba(255,255,255,.62);
+            width: 18px;
+            text-align: center;
+            margin-top: 2px;
+        }
+
+        .form-control {
+            width: 100%;
+            min-height: 48px;
+            padding: 0;
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 14px;
+            box-shadow: none;
+        }
+
+        textarea.form-control {
+            min-height: 130px;
+            padding-top: 2px;
+            resize: vertical;
+        }
+
+        .form-control::placeholder { color: rgba(255,255,255,.44); }
+
+        .form-control:focus {
+            background: transparent;
+            color: #fff;
+            box-shadow: none;
+            outline: none;
+        }
+
+        .btn-send {
+            position: relative;
+            width: 100%;
+            border: none;
+            border-radius: 16px;
+            overflow: hidden;
+            padding: 14px 18px;
+            color: #071426;
+            font-size: 15px;
+            font-weight: 900;
+            letter-spacing: .08em;
+            background: linear-gradient(135deg, #ffe2a6, #f7c873 48%, #d99843);
+            box-shadow: 0 16px 34px rgba(247,200,115,.22);
+            cursor: pointer;
+            transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+        }
+
+        .btn-send:hover,
+        .btn-send:focus {
+            transform: translateY(-2px);
+            box-shadow: 0 22px 44px rgba(247,200,115,.30);
+            filter: brightness(1.04);
+            outline: none;
+        }
+
+        .message-box {
+            min-height: 24px;
+            margin-top: 14px;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        .message-box .error { color: var(--red); }
+        .message-box .success { color: var(--green); }
+
+        .system-note {
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid rgba(255,255,255,.10);
+            color: rgba(255,255,255,.50);
+            font-size: 11px;
+            line-height: 1.5;
+            text-align: center;
+        }
+
+        @@keyframes slowSweep {
+            0% { transform: rotate(0deg) scale(1); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+
+        @@keyframes lightPass {
+            0%, 18% { transform: translateX(-30%) rotate(22deg); opacity: 0; }
+            40%, 56% { opacity: .75; }
+            100% { transform: translateX(340%) rotate(22deg); opacity: 0; }
+        }
+
+        @@keyframes gridDrift {
+            from { transform: translate3d(0,0,0); opacity: .45; }
+            to { transform: translate3d(18px,14px,0); opacity: .70; }
+        }
+
+        @@keyframes scanTop {
+            0%, 100% { opacity: .35; transform: scaleX(.45); }
+            50% { opacity: 1; transform: scaleX(1); }
+        }
+
+        @@media (max-width: 960px) {
+            .message-scene {
+                align-items: flex-start;
+                padding-top: 28px;
+                padding-bottom: 28px;
+            }
+
+            .message-shell {
+                grid-template-columns: 1fr;
+                gap: 18px;
+            }
+
+            .hero-copy {
+                padding: 10px 4px;
+                text-align: center;
+            }
+
+            .hero-copy p {
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            .message-card {
+                width: min(500px, 100%);
+                margin: 0 auto;
+            }
+        }
+
+        @@media (max-width: 560px) {
+            .security-frame {
+                inset: 12px;
+                border-radius: 20px;
+            }
+
+            .message-card {
+                padding: 22px;
+                border-radius: 22px;
+            }
+
+            .brand-mark {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .back-login {
+                width: 100%;
+                text-align: center;
+            }
+        }
+
+        @@media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: .001ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: .001ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="message-scene">
+        <video class="bgvid" autoplay muted loop playsinline preload="metadata" poster="@Url.Content("~/img/bayrak3.jpg")">
+            <source src="@Url.Content("~/files/girisvideo.mp4")" type="video/mp4">
+        </video>
+
+        <div class="scene-overlay"></div>
+        <div class="cinema-beam"></div>
+        <div class="security-frame"></div>
+
+        <section class="message-shell" aria-label="Mesaj gönder ekranı">
+            <div class="hero-copy">
+                <div class="eyebrow">
+                    <i class="fas fa-paper-plane"></i>
+                    Üye olmadan mesaj gönder
+                </div>
+                <h1>
+                    Bize ulaşın,
+                    <span>mesajınızı iletin.</span>
+                </h1>
+                <p>
+                    Hesabınız yoksa ad, e-posta ve telefon bilgilerinizi girerek yöneticilere mesaj bırakabilirsiniz.
+                </p>
+            </div>
+
+            <div class="message-card">
+                <div class="card-content">
+                    <div class="brand-mark">
+                        <div class="brand-left">
+                            <div class="brand-emblem">
+                                <i class="fas fa-envelope-open-text"></i>
+                            </div>
+                            <div class="brand-text">
+                                <small>Emniyet Eğitim Sistemi</small>
+                                <strong>Mesaj Gönder</strong>
+                            </div>
+                        </div>
+                        <a href="@Url.Content("~/giris")" class="back-login">
+                            <i class="fas fa-sign-in-alt"></i> Giriş Yap
+                        </a>
+                    </div>
+
+                    <div class="message-title">
+                        <h2>İletişim Formu</h2>
+                        <p>Mesajınız yönetici ekranına düşer ve kontrol edilir.</p>
+                    </div>
+
+                    <form action="@Url.Content("~/Mesaj")" method="post" autocomplete="on">
+                        @Html.AntiForgeryToken()
+
+                        <div class="form-field">
+                            <label for="name">Ad Soyad</label>
+                            <div class="input-wrap">
+                                <i class="fas fa-user"></i>
+                                <input id="name"
+                                       name="name"
+                                       type="text"
+                                       class="form-control"
+                                       placeholder="Adınız ve soyadınız"
+                                       required
+                                       minlength="3"
+                                       maxlength="100"
+                                       autocomplete="name" />
+                            </div>
+                        </div>
+
+                        <div class="form-field">
+                            <label for="email">E-posta</label>
+                            <div class="input-wrap">
+                                <i class="fas fa-envelope"></i>
+                                <input id="email"
+                                       name="email"
+                                       type="email"
+                                       class="form-control"
+                                       placeholder="ornek@eposta.com"
+                                       required
+                                       maxlength="150"
+                                       autocomplete="email" />
+                            </div>
+                        </div>
+
+                        <div class="form-field">
+                            <label for="phone">Telefon</label>
+                            <div class="input-wrap">
+                                <i class="fas fa-phone"></i>
+                                <input
+    id="phone"
+    name="phone"
+    type="tel"
+    inputmode="tel"
+    pattern="[0-9+\s()\-]{7,30}"
+                                       class="form-control"
+                                       placeholder="Telefon numaranız"
+                                       required
+                                       minlength="7"
+                                       maxlength="30"
+                                       autocomplete="tel" />
+                            </div>
+                        </div>
+
+                        <div class="form-field">
+                            <label for="message">Mesajınız</label>
+                            <div class="input-wrap textarea">
+                                <i class="fas fa-comment-dots"></i>
+                                <textarea id="message"
+                                          name="message"
+                                          class="form-control"
+                                          placeholder="Mesajınızı ayrıntılı olarak yazınız..."
+                                          required
+                                          minlength="10"
+                                          maxlength="4000"
+                                          spellcheck="false"></textarea>
+                            </div>
+                        </div>
+
+                        <button type="submit"
+                                class="btn-send"
+                                id="btnSend">
+                            MESAJI GÖNDER
+                        </button>
+                    </form>
+
+                    <div class="message-box"
+                         role="alert"
+                         aria-live="polite">
+                        @if (ViewBag.Error != null)
+                        {
+                            <div class="error">@ViewBag.Error</div>
+                        }
+                        @if (ViewBag.Success != null)
+                        {
+                            <div class="success">@ViewBag.Success</div>
+                        }
+                    </div>
+
+                    <div class="system-note">
+                        Gönderilen mesajlar yönetici kontrolüne alınır. Lütfen iletişim bilgilerinizi doğru yazınız.
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="@Url.Content("~/vendor/jquery/jquery.js")"></script>
+    <script src="@Url.Content("~/vendor/bootstrap/js/bootstrap.js")"></script>
+    <script>
+        $("form").on("submit", function () {
+
+            var btn = $("#btnSend");
+
+            if (btn.prop("disabled"))
+                return false;
+
+            btn.prop("disabled", true);
+
+            btn.text("GÖNDERİLİYOR...");
+
+            return true;
+        });
+    </script>
+</body>
+</html>

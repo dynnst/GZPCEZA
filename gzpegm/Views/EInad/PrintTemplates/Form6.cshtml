@@ -1,0 +1,523 @@
+﻿@using System.Text
+@{
+    Layout = null;
+    Response.ContentType = "text/html; charset=utf-8";
+
+    string tarih = DateTime.Now.ToString("dd.MM.yyyy");
+    string saat = DateTime.Now.ToString("HH:mm");
+
+    Func<string, string, string, string> getField = (name, format, def) =>
+    {
+        var prop = Model?.GetType().GetProperty(name);
+        if (prop == null) return def;
+
+        var val = prop.GetValue(Model);
+        if (val == null) return def;
+
+        if (val is DateTime dt)
+            return string.IsNullOrEmpty(format) ? dt.ToString() : dt.ToString(format);
+
+        return val.ToString();
+    };
+}
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Üst Arama Tutanağı</title>
+
+    <style>
+        /* ----- GENEL STİLLER ----- */
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 11pt;
+            margin: 40px 50px;
+            line-height: 1.4;
+            color: #000;
+            background: #fafafa;
+        }
+
+        .doc-header-no {
+            font-weight: bold;
+            font-size: 11pt;
+            margin-bottom: 15px;
+        }
+
+        .tutanak-title {
+            text-align: center;
+            font-size: 14pt;
+            font-weight: bold;
+            margin-bottom: 25px;
+            letter-spacing: 0.5px;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 12pt;
+            font-weight: bold;
+            margin-top: 15px;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+
+        /* ----- TABLO VE LİSTE YAPILARI ----- */
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+
+        .info-table td {
+            padding: 3px 0;
+            vertical-align: top;
+        }
+
+        .info-table td.label-col {
+            width: 280px;
+            font-weight: normal;
+        }
+
+        .info-table td.colon-col {
+            width: 15px;
+            text-align: center;
+        }
+
+        .info-table td.value-col {
+            font-weight: normal;
+        }
+
+        /* ----- INPUT ALANLARI (Ekran) ----- */
+        .field-input {
+            border: none;
+            border-bottom: 1px solid #777;
+            background: transparent;
+            padding: 2px 4px;
+            font-family: inherit;
+            font-size: inherit;
+            width: 90%;
+            outline: none;
+        }
+
+        .field-input:focus {
+            border-bottom-color: #0056b3;
+            background: rgba(0, 86, 179, 0.05);
+        }
+
+        /* ----- EŞYA LİSTESİ MADDELERİ (Dinamik) ----- */
+        .esya-container {
+            margin: 10px 0 10px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .esya-madde-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .esya-madde-input {
+            flex: 1;
+            border: none;
+            border-bottom: 1px solid #888;
+            background: transparent;
+            padding: 3px 6px;
+            font-family: inherit;
+            font-size: inherit;
+            outline: none;
+        }
+
+        .madde-sil-btn {
+            background: #d9534f;
+            border: none;
+            color: #fff;
+            padding: 2px 10px;
+            border-radius: 4px;
+            font-size: 9pt;
+            cursor: pointer;
+        }
+
+        .madde-ekle-btn {
+            background: #337ab7;
+            border: none;
+            color: #fff;
+            padding: 5px 15px;
+            border-radius: 4px;
+            font-size: 10pt;
+            cursor: pointer;
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .esya-print-list {
+            list-style-type: decimal;
+            padding-left: 30px;
+            margin: 5px 0 15px 0;
+        }
+
+        .content-text {
+            text-align: justify;
+            margin-top: 15px;
+            margin-bottom: 25px;
+            text-indent: 1.5cm;
+        }
+
+        /* ----- İMZA VE TESLİM ALANLARI ----- */
+        .signatures-table {
+            width: 100%;
+            margin-top: 30px;
+            border-collapse: collapse;
+            text-align: center;
+        }
+
+        .signatures-table td {
+            vertical-align: top;
+            padding: 10px;
+            width: 33.33%;
+        }
+
+        .sig-header {
+            font-weight: bold;
+            font-size: 10.5pt;
+            margin-bottom: 10px;
+        }
+
+        .sig-name {
+            margin-top: 35px;
+            font-weight: bold;
+        }
+
+        .teslim-container {
+            margin-top: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            font-size: 10pt;
+        }
+
+        .checkbox-box {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 1px solid #000;
+            vertical-align: middle;
+            margin-left: 5px;
+        }
+
+        /* ----- YAZDIR BUTONU ----- */
+        .print-button-container {
+            text-align: center;
+            margin-top: 40px;
+        }
+
+        .print-button-container button {
+            background: #28a745;
+            border: none;
+            color: #fff;
+            padding: 10px 30px;
+            border-radius: 4px;
+            font-size: 12pt;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* ----- BASKI (PRINT) STİLLERİ ----- */
+
+        @@page {
+    margin: 0; /* Tarayıcının varsayılan üst/alt bilgilerini gizler */
+}
+        @@media print {
+            .screen-only,
+            .print-button-container {
+                display: none !important;
+            }
+
+            .print-only {
+                display: inline !important;
+                visibility: visible !important;
+            }
+
+            body {
+                background: #fff !important;
+                margin: 20px 30px !important;
+                font-size: 11pt;
+            }
+
+            .field-input,
+            .esya-madde-input {
+                border: none !important;
+                background: transparent !important;
+                padding: 0 !important;
+            }
+
+            ul.esya-print-list {
+                display: block !important;
+            }
+        }
+    </style>
+
+    <script>
+        function addMadde() {
+            var container = document.getElementById('esyaContainer');
+            var count = container.querySelectorAll('.esya-madde-box').length + 1;
+            var newBox = document.createElement('div');
+            newBox.className = 'esya-madde-box';
+            newBox.innerHTML = '<input type="text" class="esya-madde-input" data-index="' + count + '" placeholder="' + count + '. Eşya / Madde" />' +
+                '<button type="button" class="madde-sil-btn screen-only" onclick="removeMadde(this)">Sil</button>';
+            container.appendChild(newBox);
+        }
+
+        function removeMadde(btn) {
+            var box = btn.parentElement;
+            box.remove();
+            var boxes = document.querySelectorAll('.esya-madde-box');
+            boxes.forEach(function (b, idx) {
+                var input = b.querySelector('.esya-madde-input');
+                if (input) {
+                    input.dataset.index = idx + 1;
+                    input.placeholder = (idx + 1) + '. Eşya / Madde';
+                }
+            });
+        }
+
+        function updatePrintFields() {
+            var fields = [
+                'UstNo', 'YapildigiYer', 'YapildigiTarihSaat', 'TcNo', 'AdSoyad',
+                'BabaAnneAdi', 'DogumYeriTarihi', 'CiltAileSiraNo', 'NufusIlIlce',
+                'NufusMahalleKoy', 'IkametAdresi', 'MeslekAylikGelir', 'IsAdresi',
+                'Telefon', 'Eposta', 'EgitimDurumu', 'MedeniHalCinsiyet',
+                'OlayNo', 'OlayTarihiSaati', 'OlayTuru', 'UstAramaNedeni',
+                'YapanAdSoyad', 'HazurunAdSoyad', 'YakalananAdSoyad'
+            ];
+
+            fields.forEach(function (f) {
+                var inp = document.getElementById('inp_' + f);
+                var spn = document.getElementById('sp_' + f);
+                if (inp && spn) spn.innerText = inp.value || '';
+            });
+
+            // Dinamik Eşya Listesi Transferi
+            var esyaInputs = document.querySelectorAll('.esya-madde-input');
+            var esyaList = document.getElementById('sp_EsyaListesi');
+            if (esyaList) {
+                esyaList.innerHTML = '';
+                esyaInputs.forEach(function (inp) {
+                    var val = inp.value.trim();
+                    if (val !== '') {
+                        var li = document.createElement('li');
+                        li.textContent = val;
+                        esyaList.appendChild(li);
+                    }
+                });
+            }
+        }
+
+        function printPage() {
+            updatePrintFields();
+            window.print();
+        }
+    </script>
+</head>
+
+<body>
+
+  
+
+    <div class="tutanak-title">ÜST ARAMA TUTANAĞI</div>
+
+    <!-- ÜST BİLGİLER -->
+    <table class="info-table">
+        <tr>
+            <td class="label-col">Tutanağın Yapıldığı Yer</td>
+            <td class="colon-col">:</td>
+            <td class="value-col">
+                <input id="inp_YapildigiYer" class="field-input screen-only" value="@getField("YapildigiYer", null, "Antalya Gazipaşa Havalimanı Şube Müdürlüğü")" />
+                <span id="sp_YapildigiYer" class="print-only">@getField("YapildigiYer", null, "Antalya Gazipaşa Havalimanı Şube Müdürlüğü")</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="label-col">Tutanağın Yapıldığı Tarih ve Saat</td>
+            <td class="colon-col">:</td>
+            <td class="value-col">
+                <input id="inp_YapildigiTarihSaat" class="field-input screen-only" value="@getField("YapildigiTarihSaat", "dd.MM.yyyy HH:mm", tarih + " " + saat)" />
+                <span id="sp_YapildigiTarihSaat" class="print-only">@getField("YapildigiTarihSaat", "dd.MM.yyyy HH:mm", tarih + " " + saat)</span>
+            </td>
+        </tr>
+    </table>
+
+    <div class="section-title">YAKALANAN ŞAHSIN KİMLİK BİLGİLERİ</div>
+
+    <!-- KİMLİK BİLGİLERİ TABLOSU -->
+    <table class="info-table">
+        <tr>
+            <td class="label-col">Kimlik Beyan Tipi</td>
+            <td class="colon-col">:</td>
+            <td class="value-col">
+                <input id="inp_KimlikBeyanTipi" class="field-input screen-only" value="@getField("Beyan", null, "")" />
+                <span id="sp_KimlikBeyanTipi" class="print-only">@getField("Beyan", null, "")</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="label-col">Kimlik No-Pasaport No</td>
+            <td class="colon-col">:</td>
+            <td class="value-col">
+                <input id="inp_TcNo" class="field-input screen-only" value="@getField("KimlikNo", null, "")" />
+                <span id="sp_TcNo" class="print-only">@getField("KimlikNo", null, "")</span>/
+                <input id="inp_PasaportNo" class="field-input screen-only" value="@getField("PasaportNo", null, "")" />
+                <span id="sp_PasaportNo" class="print-only">@getField("PasaportNo", null, "")</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="label-col">Adı ve Soyadı</td>
+            <td class="colon-col">:</td>
+            <td class="value-col">
+                <input id="inp_AdSoyad" class="field-input screen-only" value="@getField("AdSoyad", null, "")" />
+                <span id="sp_AdSoyad" class="print-only">@getField("AdSoyad", null, "")</span>
+            </td>
+        </tr>
+       
+        <tr>
+            <td class="label-col">Doğum Tarihi</td>
+            <td class="colon-col">:</td>
+            <td class="value-col">
+                <input id="inp_DogumTarihi" class="field-input screen-only" value="@getField("DogumT", "dd.MM.yyyy", "")" />
+                <span id="sp_DogumTarihi" class="print-only">@getField("DogumT", "dd.MM.yyyy", "")</span>
+            </td>
+        </tr> 
+      
+        <tr>
+            <td class="label-col">Doğum Yeri</td>
+            <td class="colon-col">:</td>
+            <td class="value-col">
+                <input id="inp_DogumYeriTarihi" class="field-input screen-only" value="@getField("DogumY", null, "")" />
+                <span id="sp_DogumYeriTarihi" class="print-only">@getField("DogumY", null, "")</span>
+            </td>
+        </tr>         
+      
+     
+        <tr>
+            <td class="label-col">Cinsiyeti</td>
+            <td class="colon-col">:</td>
+            <td class="value-col">
+                <input id="inp_MedeniHalCinsiyet" class="field-input screen-only" value="@getField("Cinsiyet", null, "")" />
+                <span id="sp_MedeniHalCinsiyet" class="print-only">@getField("Cinsiyet", null, "")</span>
+            </td>
+        </tr>      
+        <tr>
+            <td class="label-col"><strong>ÜST ARAMA NEDENİ</strong></td>
+            <td class="colon-col">:</td>
+            <td class="value-col">
+                <input id="inp_UstAramaNedeni" class="field-input screen-only" value="@getField("InadSebep", null, "")" />
+                <span id="sp_UstAramaNedeni" class="print-only">@getField("InadSebep", null, "")</span>
+            </td>
+        </tr>
+    </table>
+
+    <div style="font-weight: bold; margin-top: 10px;">EŞYA LİSTESİ</div>
+
+    <!-- DİNAMİK EŞYA LİSTESİ (EKRAN) -->
+    <div class="screen-only">
+        <div id="esyaContainer" class="esya-container">
+            @{
+                var esyaMetin = getField("UstAramaEsya", null, "");
+                if (!string.IsNullOrWhiteSpace(esyaMetin))
+                {
+                    var maddeler = esyaMetin.Split(new[] { "\r\n", "\r", "\n", ",", ";" }, StringSplitOptions.RemoveEmptyEntries);
+                    int mIndex = 0;
+                    foreach (var m in maddeler)
+                    {
+                        if (!string.IsNullOrWhiteSpace(m))
+                        {
+                            mIndex++;
+                            <div class="esya-madde-box">
+                                <input type="text" class="esya-madde-input" data-index="@mIndex" value="@m.Trim()" placeholder="@mIndex. Eşya / Madde" />
+                                <button type="button" class="madde-sil-btn" onclick="removeMadde(this)">Sil</button>
+                            </div>
+                        }
+                    }
+                    if (mIndex == 0)
+                    {
+                        <div class="esya-madde-box">
+                            <input type="text" class="esya-madde-input" data-index="1" placeholder="1. Eşya / Madde" />
+                            <button type="button" class="madde-sil-btn" onclick="removeMadde(this)">Sil</button>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="esya-madde-box">
+                        <input type="text" class="esya-madde-input" data-index="1" placeholder="1. Eşya / Madde" />
+                        <button type="button" class="madde-sil-btn" onclick="removeMadde(this)">Sil</button>
+                    </div>
+                }
+            }
+        </div>
+        <button type="button" class="madde-ekle-btn" onclick="addMadde()">+ Eşya Ekle</button>
+    </div>
+
+    <!-- DİNAMİK EŞYA LİSTESİ (BASKI) -->
+    <ul id="sp_EsyaListesi" class="print-only esya-print-list">
+        @{
+            var printEsyaMetin = getField("UstAramaEsya", null, "");
+            if (!string.IsNullOrWhiteSpace(printEsyaMetin))
+            {
+                var printMaddeler = printEsyaMetin.Split(new[] { "\r\n", "\r", "\n", ",", ";" }, StringSplitOptions.RemoveEmptyEntries);
+                foreach (var m in printMaddeler)
+                {
+                    if (!string.IsNullOrWhiteSpace(m))
+                    {
+                        <li>@m.Trim()</li>
+                    }
+                }
+            }
+        }
+    </ul>
+
+    <!-- KAPANIŞ METNİ -->
+    <div class="content-text">
+        İş bu üst arama tutanağı tarafımızca düzenlenerek elde edilen eşyalardan zapt ve müsadereye tabi olmayanlar iade edildikten sonra, tutanak hazır bulunanlarca okutturulup, doğruluğu anlaşıldıktan sonra taraflarca imza altına alındı. Bu tutanağın bir sureti şüpheli/sanık/yakalanan kişiye verilmiştir.<span id="sp_TutanakTarihSaat">@getField("YapildigiTarihSaat", "dd.MM.yyyy HH:mm", tarih + " " + saat)</span>
+    </div>
+
+    <!-- İMZA ALANLARI -->
+    <table class="signatures-table">
+        <tr>
+            <td class="sig-header">ÜST ARAMASINI YAPAN</td>
+            <td class="sig-header">HAZURUN</td>
+            <td class="sig-header">YAKALANAN VE ÜSTÜ ARANAN</td>
+        </tr>
+        <tr>
+            <td>
+                <input id="inp_YapanAdSoyad" class="field-input screen-only" value="@getField("YapanAdSoyad", null, "")" placeholder="Adı Soyadı / Sicil" />
+                <div id="sp_YapanAdSoyad" class="print-only sig-name">@getField("YapanAdSoyad", null, "")</div>
+            </td>
+            <td>
+                <input id="inp_HazurunAdSoyad" class="field-input screen-only" value="@getField("Sicil", null, "")" placeholder="Adı Soyadı / Unvan" />
+                <div id="sp_HazurunAdSoyad" class="print-only sig-name">@getField("Sicil", null, "")</div>
+            </td>
+            <td>
+                <input id="inp_YakalananAdSoyad" class="field-input screen-only" value="@getField("AdSoyad", null, "")" placeholder="Adı Soyadı" />
+                <div id="sp_YakalananAdSoyad" class="print-only sig-name">@getField("AdSoyad", null, "")</div>
+            </td>
+        </tr>
+    </table>
+
+    <!-- ALT TESLİM BİLGİSİ VE KUTULAR -->
+    <div style="margin-top: 25px; text-align: center;">
+        <span>Üst aramamda çıkan eşyaları eksiksiz olarak teslim aldım.</span>
+        <span style="margin-left: 15px;">EVET <span class="checkbox-box"></span></span>
+        <span style="margin-left: 15px;">HAYIR <span class="checkbox-box"></span></span>
+    </div>
+
+ 
+
+    <!-- YAZDIR BUTONU -->
+    <div class="print-button-container screen-only">
+        <button onclick="printPage()">🖨️ Yazdır</button>
+    </div>
+
+</body>
+</html>

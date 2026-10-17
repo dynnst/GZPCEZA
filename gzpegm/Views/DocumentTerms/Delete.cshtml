@@ -1,0 +1,27 @@
+﻿@model gzpegm.Models.DocumentTerms
+@{
+    ViewBag.Title = "Delete";
+    Layout = "~/Views/Shared/_Master.cshtml";
+}
+
+<h2>Terim Sil</h2>
+
+<h4>Silinecek Terim</h4>
+<hr />
+<div>
+    <dl class="dl-horizontal">
+        <dt>Term</dt>
+        <dd>@Model.Term</dd>
+        <dt>Category</dt>
+        <dd>@Model.Category</dd>
+        <dt>CreatedAt</dt>
+        <dd>@(Model.CreatedAt.HasValue ? Model.CreatedAt.Value.ToString("dd.MM.yyyy") : "")</dd>
+    </dl>
+
+    @using (Html.BeginForm("Delete", "DocumentTerms", FormMethod.Post))
+    {
+        @Html.AntiForgeryToken()
+        @Html.HiddenFor(m => m.Id)
+        <input type="submit" value="Sil" class="btn btn-danger" /> @Html.ActionLink("İptal", "Index", null, new { @class = "btn btn-default" })
+    }
+</div>

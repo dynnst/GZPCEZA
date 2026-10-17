@@ -1,0 +1,316 @@
+@{
+    Layout = "~/Views/Shared/_Master.cshtml";
+    ViewBag.Title = "Ceza Brifing Grafikleri";
+    var currentTheme = ViewBag.CurrentTheme as string ?? "light";
+    bool isAdmin = ViewBag.IsAdmin == true;
+    string userBorder = ViewBag.UserBorder as string ?? "";
+    string userFullName = ViewBag.UserFullName as string ?? "";
+}
+
+<link href="~/AdminTemplate/css/bootstrap.min.css" rel="stylesheet" />
+<link href="~/AdminTemplate/font-awesome/css/font-awesome.css" rel="stylesheet" />
+<link href="~/AdminTemplate/css/animate.css" rel="stylesheet" />
+<link href="~/AdminTemplate/css/style.css" rel="stylesheet" />
+
+<link href="@Url.Content("~/css/ceza-grafik.css")?v=1.0" rel="stylesheet" />
+
+<div id="cezagrafik-config"
+     data-is-admin="@(isAdmin ? "true" : "false")"
+     data-user-border="@userBorder"
+     data-url-borders="@Url.Action("GetBorders", "Grafik")"
+     data-url-chart-data="@Url.Action("ChartData", "Grafik")"
+     style="display:none;"></div>
+
+<div id="page-wrapper" class="@(currentTheme == "dark" ? "theme-dark" : "")">
+    <div class="wrapper wrapper-content animated fadeInRight briefing-shell">
+        <div class="briefing-toolbar" id="briefingHeader">
+            <div class="d-flex justify-content-between flex-wrap align-items-center">
+                <div>
+                    <h1 class="briefing-title">
+                        <i class="fa fa-bar-chart"></i> Pasaport Ceza Brifing Grafikleri
+                        @if (!isAdmin && !string.IsNullOrEmpty(userBorder))
+                        {
+                            <span class="label label-primary" style="font-size: 13px; vertical-align: middle; margin-left: 8px;"><i class="fa fa-shield"></i> Yetkili Kapı: @userBorder</span>
+                        }
+                        else if (isAdmin)
+                        {
+                            <span class="label label-success" style="font-size: 13px; vertical-align: middle; margin-left: 8px;"><i class="fa fa-star"></i> Sistem Yöneticisi (Tüm Kapılar)</span>
+                        }
+                    </h1>
+                    <p class="briefing-subtitle">
+                        @if (!isAdmin && !string.IsNullOrEmpty(userBorder))
+                        {
+                            <span><strong>@userBorder</strong> hudut kapısına ait brifing grafikleri, tablo ve rapor çıktı paneli</span>
+                        }
+                        else
+                        {
+                            <span>Müdürlük brifingleri için genel hudut kapıları grafik, tablo ve rapor çıktı paneli</span>
+                        }
+                    </p>
+                    <div class="print-meta" id="reportMeta">Rapor hazırlanıyor...</div>
+                </div>
+                <div class="action-row">
+                    <button type="button" class="btn btn-primary" id="applyFilterBtn"><i class="fa fa-search"></i> Filtrele</button>
+                    <button type="button" class="btn btn-default" id="resetFilterBtn"><i class="fa fa-refresh"></i> Sıfırla</button>
+                    <button type="button" class="btn btn-info" id="downloadReportBtn"><i class="fa fa-file-image-o"></i> Rapor Görseli</button>
+                    <button type="button" class="btn btn-success" id="downloadAllBtn"><i class="fa fa-download"></i> Tüm Bölümler</button>
+                    <button type="button" class="btn btn-warning" id="printBtn"><i class="fa fa-print"></i> Yazdır / PDF</button>
+                </div>
+            </div>
+
+            <div class="filter-grid">
+                <div>
+                    <label for="borderFilter">Hudut Kapısı</label>
+                    @if (isAdmin)
+                    {
+                        <select id="borderFilter" class="form-control">
+                            <option value="">Tümü (Tüm Hudut Kapıları)</option>
+                        </select>
+                    }
+                    else
+                    {
+                        <select id="borderFilter" class="form-control" disabled style="background-color: #f1f5f9; cursor: not-allowed; font-weight: 600;">
+                            <option value="@userBorder" selected>@(!string.IsNullOrEmpty(userBorder) ? userBorder : "Atanmış Kapı Yok")</option>
+                        </select>
+                        <small class="text-info" style="display:block; margin-top:3px;"><i class="fa fa-lock"></i> Yetki: <strong>@(!string.IsNullOrEmpty(userBorder) ? userBorder : "Yetki Tanımsız")</strong></small>
+                    }
+                </div>
+                <div>
+                    <label for="startDateFilter">Başlangıç Tarihi</label>
+                    <input type="date" id="startDateFilter" class="form-control" />
+                </div>
+                <div>
+                    <label for="endDateFilter">Bitiş Tarihi</label>
+                    <input type="date" id="endDateFilter" class="form-control" />
+                </div>
+                <div>
+                    <label for="quickRange">Hızlı Aralık</label>
+                    <select id="quickRange" class="form-control">
+                        <option value="">Serbest</option>
+                        <option value="7">Son 7 gün</option>
+                        <option value="30">Son 30 gün</option>
+                        <option value="90">Son 90 gün</option>
+                        <option value="365">Son 1 yıl</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div id="reportArea">
+            <div class="row" id="summaryCards">
+                <div class="col-sm-6 col-lg-3 mb-3">
+                    <div class="briefing-card">
+                        <span>Toplam Hesaplama</span>
+                        <strong id="sumCalculations">0</strong>
+                        <small>Seçili filtreye göre</small>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3 mb-3">
+                    <div class="briefing-card money">
+                        <span>Toplam Ceza Tutarı</span>
+                        <strong id="sumMoney">0 TL</strong>
+                        <small id="sumAverage">Ortalama: 0 TL</small>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3 mb-3">
+                    <div class="briefing-card country">
+                        <span>@(isAdmin ? "Ülke / Kapı Kapsamı" : "Ülke Kapsamı")</span>
+                        <strong id="sumScope">0 / 0</strong>
+                        <small>@(isAdmin ? "Ülke / hudut kapısı" : "İşlem yapılan yabancı ülke")</small>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3 mb-3">
+                    <div class="briefing-card inad">
+                        <span>İnad / Şartlı / Tahdit</span>
+                        <strong id="sumInadSartli">0 / 0</strong>
+                        <small>Ek operasyon göstergesi</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-6">
+                    <section class="chart-panel" id="section-tahdit-code">
+                        <div class="chart-header">
+                            <h5>Tahdit Formları - Kod Dağılımı</h5>
+                            <button class="btn btn-sm btn-info download-section-btn" data-section="section-tahdit-code"><i class="fa fa-download"></i> İndir</button>
+                        </div>
+                        <div class="chart-body">
+                            <div class="chart-frame"><canvas id="tahditCodeChart"></canvas></div>
+                            <div id="tahditCodeTable" class="chart-table"></div>
+                        </div>
+                    </section>
+                </div>
+                <div class="col-lg-6">
+                    <section class="chart-panel" id="section-tahdit-user">
+                        <div class="chart-header">
+                            <h5>Tahdit Formları - İlk 10 Kullanıcı</h5>
+                            <button class="btn btn-sm btn-info download-section-btn" data-section="section-tahdit-user"><i class="fa fa-download"></i> İndir</button>
+                        </div>
+                        <div class="chart-body">
+                            <div class="chart-frame"><canvas id="tahditUserChart"></canvas></div>
+                            <div id="tahditUserTable" class="chart-table"></div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-8">
+                    <section class="chart-panel" id="section-monthly">
+                        <div class="chart-header">
+                            <h5>Aylık Hesaplama ve Ceza Tutarı</h5>
+                            <button class="btn btn-sm btn-info download-section-btn" data-section="section-monthly"><i class="fa fa-download"></i> İndir</button>
+                        </div>
+                        <div class="chart-body">
+                            <div class="chart-frame tall"><canvas id="monthlyChart"></canvas></div>
+                            <div id="monthlyTable" class="chart-table"></div>
+                        </div>
+                    </section>
+                </div>
+                <div class="col-lg-4">
+                    <section class="chart-panel" id="section-country">
+                        <div class="chart-header">
+                            <h5>En Fazla Ceza Kesilen Ülkeler</h5>
+                            <button class="btn btn-sm btn-info download-section-btn" data-section="section-country"><i class="fa fa-download"></i> İndir</button>
+                        </div>
+                        <div class="chart-body">
+                            <div class="chart-frame tall"><canvas id="countryChart"></canvas></div>
+                            <div id="countryTable" class="chart-table"></div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-6">
+                    <section class="chart-panel" id="section-border-money">
+                        <div class="chart-header">
+                            <h5>Kapı Bazında Ceza Tutarı</h5>
+                            <button class="btn btn-sm btn-info download-section-btn" data-section="section-border-money"><i class="fa fa-download"></i> İndir</button>
+                        </div>
+                        <div class="chart-body">
+                            <div class="chart-frame"><canvas id="borderMoneyChart"></canvas></div>
+                            <div id="borderMoneyTable" class="chart-table"></div>
+                        </div>
+                    </section>
+                </div>
+                <div class="col-lg-6">
+                    <section class="chart-panel" id="section-personnel">
+                        <div class="chart-header">
+                            <h5>En Çok İşlem Yapan Personel</h5>
+                            <button class="btn btn-sm btn-info download-section-btn" data-section="section-personnel"><i class="fa fa-download"></i> İndir</button>
+                        </div>
+                        <div class="chart-body">
+                            <div class="chart-frame"><canvas id="personnelChart"></canvas></div>
+                            <div id="personnelTable" class="chart-table"></div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-6">
+                    <section class="chart-panel" id="section-daily">
+                        <div class="chart-header">
+                            <h5>Son 30 Gün Günlük Eğilim</h5>
+                            <button class="btn btn-sm btn-info download-section-btn" data-section="section-daily"><i class="fa fa-download"></i> İndir</button>
+                        </div>
+                        <div class="chart-body">
+                            <div class="chart-frame"><canvas id="dailyChart"></canvas></div>
+                            <div id="dailyTable" class="chart-table"></div>
+                        </div>
+                    </section>
+                </div>
+                <div class="col-lg-6">
+                    <section class="chart-panel" id="section-hourly">
+                        <div class="chart-header">
+                            <h5>Saatlik Yoğunluk</h5>
+                            <button class="btn btn-sm btn-info download-section-btn" data-section="section-hourly"><i class="fa fa-download"></i> İndir</button>
+                        </div>
+                        <div class="chart-body">
+                            <div class="chart-frame"><canvas id="hourlyChart"></canvas></div>
+                            <div id="hourlyTable" class="chart-table"></div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-4">
+                    <section class="chart-panel" id="section-penalty">
+                        <div class="chart-header">
+                            <h5>Ceza Türü Dağılımı</h5>
+                            <button class="btn btn-sm btn-info download-section-btn" data-section="section-penalty"><i class="fa fa-download"></i> İndir</button>
+                        </div>
+                        <div class="chart-body">
+                            <div class="chart-frame"><canvas id="penaltyChart"></canvas></div>
+                            <div id="penaltyTable" class="chart-table"></div>
+                        </div>
+                    </section>
+                </div>
+                <div class="col-lg-4">
+                    <section class="chart-panel" id="section-inad">
+                        <div class="chart-header">
+                            <h5>İnad Sebep Dağılımı</h5>
+                            <button class="btn btn-sm btn-info download-section-btn" data-section="section-inad"><i class="fa fa-download"></i> İndir</button>
+                        </div>
+                        <div class="chart-body">
+                            <div class="chart-frame"><canvas id="inadChart"></canvas></div>
+                            <div id="inadTable" class="chart-table"></div>
+                        </div>
+                    </section>
+                </div>
+                <div class="col-lg-4">
+                    <section class="chart-panel" id="section-sartli">
+                        <div class="chart-header">
+                            <h5>Şartlı Kişiler Kapı Dağılımı</h5>
+                            <button class="btn btn-sm btn-info download-section-btn" data-section="section-sartli"><i class="fa fa-download"></i> İndir</button>
+                        </div>
+                        <div class="chart-body">
+                            <div class="chart-frame"><canvas id="sartliChart"></canvas></div>
+                            <div id="sartliTable" class="chart-table"></div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-6">
+                    <section class="chart-panel" id="section-users">
+                        <div class="chart-header">
+                            <h5>Kullanıcı Rolleri</h5>
+                            <button class="btn btn-sm btn-info download-section-btn" data-section="section-users"><i class="fa fa-download"></i> İndir</button>
+                        </div>
+                        <div class="chart-body">
+                            <div class="chart-frame"><canvas id="userRoleChart"></canvas></div>
+                            <div id="userRoleTable" class="chart-table"></div>
+                        </div>
+                    </section>
+                </div>
+                <div class="col-lg-6">
+                    <section class="chart-panel" id="section-education">
+                        <div class="chart-header">
+                            <h5>Eğitim ve Sınav Göstergeleri</h5>
+                            <button class="btn btn-sm btn-info download-section-btn" data-section="section-education"><i class="fa fa-download"></i> İndir</button>
+                        </div>
+                        <div class="chart-body">
+                            <div class="chart-frame"><canvas id="educationChart"></canvas></div>
+                            <div id="educationTable" class="chart-table"></div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="loading-overlay"><i class="fa fa-spinner fa-pulse fa-3x"></i><br />İşleniyor...</div>
+
+<script src="~/AdminTemplate/js/jquery-3.1.1.min.js"></script>
+<script src="~/AdminTemplate/js/popper.min.js"></script>
+<script src="~/AdminTemplate/js/bootstrap.js"></script>
+<script src="~/AdminTemplate/js/plugins/chartJs/Chart.min.js"></script>
+<script src="~/AdminTemplate/js/plugins/html2canvas/html2canvas.min.js"></script>
+
+<script src="@Url.Content("~/js/ceza-grafik.js")?v=1.0"></script>

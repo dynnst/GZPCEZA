@@ -1,0 +1,268 @@
+/* ==========================================================================
+   Ceza Brifing Grafikleri Stilleri (ceza-grafik.css)
+   ========================================================================== */
+
+:root {
+    --brief-bg: #f4f6f8;
+    --brief-panel: #ffffff;
+    --brief-text: #1f2933;
+    --brief-muted: #667085;
+    --brief-line: #d9e2ec;
+    --brief-blue: #2563eb;
+    --brief-green: #16896f;
+    --brief-red: #c2413a;
+    --brief-amber: #b7791f;
+    --brief-indigo: #4f46e5;
+}
+
+#page-wrapper {
+    background: var(--brief-bg) !important;
+    margin: 0 !important;
+    min-height: auto !important;
+    padding: 12px !important;
+    width: 100% !important;
+}
+
+.content-body {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+}
+
+.briefing-shell {
+    color: var(--brief-text);
+}
+
+.briefing-toolbar,
+.briefing-card,
+.chart-panel {
+    background: var(--brief-panel);
+    border: 1px solid var(--brief-line);
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, .05);
+}
+
+.briefing-toolbar {
+    padding: 14px;
+    margin-bottom: 14px;
+}
+
+.briefing-title {
+    margin: 0 0 4px;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--brief-text);
+}
+
+.briefing-subtitle {
+    margin: 0;
+    color: var(--brief-muted);
+    font-size: 13px;
+}
+
+.filter-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(160px, 1fr));
+    gap: 10px;
+    align-items: end;
+    margin-top: 14px;
+}
+
+.filter-grid label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #344054;
+    margin-bottom: 4px;
+}
+
+.action-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    margin-top: 12px;
+}
+
+.briefing-card {
+    padding: 14px;
+    height: 100%;
+    min-height: 118px;
+    border-left: 4px solid var(--brief-blue);
+}
+
+.briefing-card.money { border-left-color: var(--brief-green); }
+.briefing-card.country { border-left-color: var(--brief-amber); }
+.briefing-card.inad { border-left-color: var(--brief-red); }
+.briefing-card.sartli { border-left-color: var(--brief-indigo); }
+
+.briefing-card span {
+    display: block;
+    color: var(--brief-muted);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.briefing-card strong {
+    display: block;
+    font-size: 26px;
+    line-height: 1.15;
+    margin-top: 8px;
+    color: var(--brief-text);
+    word-break: break-word;
+}
+
+.briefing-card small {
+    display: block;
+    color: var(--brief-muted);
+    margin-top: 6px;
+}
+
+.chart-panel {
+    margin-bottom: 14px;
+    overflow: hidden;
+}
+
+.chart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--brief-line);
+}
+
+.chart-header h5 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--brief-text);
+}
+
+.chart-body {
+    padding: 12px 14px 14px;
+}
+
+.chart-frame {
+    position: relative;
+    height: 290px;
+    width: 100%;
+}
+
+.chart-frame.tall {
+    height: 350px;
+}
+
+.chart-table {
+    margin-top: 12px;
+    max-height: 230px;
+    overflow: auto;
+    border: 1px solid var(--brief-line);
+    border-radius: 6px;
+}
+
+.chart-table table {
+    margin-bottom: 0 !important;
+    font-size: 12px;
+    background: #fff;
+}
+
+.chart-table th {
+    background: #eef2f6;
+    color: #344054;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    white-space: nowrap;
+}
+
+.loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(255, 255, 255, .88);
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    color: #1f2933;
+    font-size: 18px;
+}
+
+.empty-state {
+    padding: 18px;
+    color: var(--brief-muted);
+    text-align: center;
+    border: 1px dashed var(--brief-line);
+    border-radius: 6px;
+    background: #fbfcfd;
+}
+
+.print-meta {
+    color: var(--brief-muted);
+    font-size: 12px;
+    margin-top: 6px;
+}
+
+@media (max-width: 992px) {
+    .filter-grid {
+        grid-template-columns: repeat(2, minmax(160px, 1fr));
+    }
+}
+
+@media (max-width: 576px) {
+    #page-wrapper {
+        padding: 8px !important;
+    }
+
+    .filter-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .action-row {
+        justify-content: stretch;
+    }
+
+    .action-row .btn {
+        width: 100%;
+    }
+
+    .chart-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .chart-frame,
+    .chart-frame.tall {
+        height: 260px;
+    }
+}
+
+@media print {
+    body,
+    #page-wrapper {
+        background: #ffffff !important;
+    }
+
+    .navbar-static-side,
+    .navbar,
+    .footer,
+    .minimalize-styl-2,
+    .action-row,
+    .filter-grid,
+    .download-section-btn {
+        display: none !important;
+    }
+
+    #page-wrapper {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .chart-panel,
+    .briefing-card,
+    .briefing-toolbar {
+        box-shadow: none !important;
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+}

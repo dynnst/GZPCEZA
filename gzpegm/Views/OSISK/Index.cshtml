@@ -1,0 +1,183 @@
+@model IEnumerable<gzpegm.Models.E_IsK>
+@{
+    Layout = "~/Views/Shared/_Master.cshtml";
+    ViewBag.UseDataTables = true;
+    ViewBag.Title = "Hudut Kapısı İstatistikleri";
+    var tahditStats = ViewBag.TahditStats as gzpegm.Models.ViewModels.TahditStatisticsViewModel ?? new gzpegm.Models.ViewModels.TahditStatisticsViewModel();
+}
+
+<div class="page-wrapper">
+    <!-- BAŞLIK BÖLÜMÜ -->
+    <div class="page-heading mb-4">
+        <h1 class="page-title">
+            <i class="fas fa-chart-line me-2"></i>Hudut Kapınıza Ait İstatistik Bilgileri
+        </h1>
+        <p class="text-muted">Ceza işlemleri ve personel performans istatistikleri</p>
+    </div>
+
+    <!-- İSTATİSTİK KARTLARI (4 ADET) -->
+    <div class="row mb-4">
+        <!-- Toplam Kesilen Ceza Sayısı -->
+        <div class="col-md-6 col-xl-3 mb-3">
+            <div class="stat-card stat-card-primary">
+                <div class="stat-icon">
+                    <i class="fas fa-gavel"></i>
+                </div>
+                <div class="stat-content">
+                    <h5>Toplam Kesilen Ceza Sayısı</h5>
+                    <h2>@ViewBag.KesilenToplamCeza</h2>
+                    <small>toplam işlem</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toplam Kesilen Ceza Miktarı -->
+        <div class="col-md-6 col-xl-3 mb-3">
+            <div class="stat-card stat-card-success">
+                <div class="stat-icon">
+                    <i class="fas fa-dollar-sign"></i>
+                </div>
+                <div class="stat-content">
+                    <h5>Toplam Kesilen Ceza Miktarı</h5>
+                    <h2>@ViewBag.toplam</h2>
+                    <small>TL</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- En Çok Cezai İşlem Yapan Personel -->
+        <div class="col-md-6 col-xl-3 mb-3">
+            <div class="stat-card stat-card-info">
+                <div class="stat-icon">
+                    <i class="fas fa-user-check"></i>
+                </div>
+                <div class="stat-content">
+                    <h5>En Çok İşlem Yapan Personel</h5>
+                    <h2>@ViewBag.EnCokIslemYapanPersonel</h2>
+                    <small>@ViewBag.EnCokIslemYapanAdi</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- En Fazla Ceza Kesilen Miktar -->
+        <div class="col-md-6 col-xl-3 mb-3">
+            <div class="stat-card stat-card-warning">
+                <div class="stat-icon">
+                    <i class="fas fa-chart-bar"></i>
+                </div>
+                <div class="stat-content">
+                    <h5>En Fazla Ceza Kesilen Miktar</h5>
+                    <h2>@ViewBag.EnFazlaCezaMiktari</h2>
+                    <small>tek işlemde</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-lg-4 mb-3">
+            <div class="stat-card stat-card-warning">
+                <div class="stat-icon"><i class="fas fa-ban"></i></div>
+                <div class="stat-content">
+                    <h5>Seçili Aralık Tahdit Formu</h5>
+                    <h2>@tahditStats.AllTotal</h2>
+                    <small>kapı filtresine göre</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-8 mb-3">
+            <div class="card">
+                <div class="card-header"><h4 class="card-title mb-0">Tahdit Kodu Dağılımı</h4></div>
+                <div class="card-body p-0">
+                    <div class="table-responsive tahdit-code-table-wrap">
+                        <table class="table table-sm mb-0">
+                            <thead><tr><th>Tahdit</th><th>İdari</th><th class="text-right">Adet</th></tr></thead>
+                            <tbody>
+                                @if (tahditStats.AllByCode.Any())
+                                {
+                                    foreach (var item in tahditStats.AllByCode)
+                                    {
+                                        <tr><td>@item.TahditCode</td><td>@item.IdariTahditCode</td><td class="text-right">@item.Count</td></tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr><td colspan="3" class="text-center text-muted">Seçili aralıkta tahdit formu yok.</td></tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- YAPILAN İŞLEM LİSTESİ KARTI -->
+    <div class="row mb-4">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-header d-flex align-items-center justify-content-between flex-wrap">
+                    <div>
+                        <h4 class="card-title mb-0">
+                            <i class="fas fa-list me-2"></i>Yapılan İşlem Listesi
+                        </h4>
+                        <p class="card-subtitle">Bu bölümde yapılan işlemleri görüntüleyebilir ve formunu yazdırabilirsiniz.</p>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="p-3">
+                        @{
+                            var selectedHours = ViewBag.SelectedHours ?? 24;
+                            var fromVal = ViewBag.From != null ? ((DateTime)ViewBag.From).ToString("yyyy-MM-dd") : "";
+                            var toVal = ViewBag.To != null ? ((DateTime)ViewBag.To).ToString("yyyy-MM-dd") : "";
+                            var baseUrl = Url.Action("osIskExport", "OSISK");
+                            var currentParams = "?hours=" + selectedHours;
+                            if (!string.IsNullOrEmpty(fromVal)) { currentParams += "&from=" + fromVal; }
+                            if (!string.IsNullOrEmpty(toVal)) { currentParams += "&to=" + toVal; }
+                            var exportPdfUrl = baseUrl + currentParams + "&export=pdf";
+                            var exportXlsUrl = baseUrl + currentParams + "&export=excel";
+                        }
+
+                        <form method="get" action="@Url.Action("Index","OSISK")" class="form-inline mb-2">
+                            <label class="mr-2">Zaman:</label>
+                            <select name="hours" class="form-control mr-2">
+                                <option value="24" @(selectedHours==24?"selected":"")>24 Saat</option>
+                                <option value="168" @(selectedHours==168?"selected":"")>7 Gün</option>
+                                <option value="720" @(selectedHours==720?"selected":"")>30 Gün</option>
+                                <option value="8760" @(selectedHours==8760?"selected":"")>1 Yıl</option>
+                            </select>
+                            <input type="date" name="from" value="@fromVal" class="form-control mr-2" />
+                            <input type="date" name="to" value="@toVal" class="form-control mr-2" />
+                            <button type="submit" class="btn btn-primary mr-2">Filtrele</button>
+                            <a href="@exportPdfUrl" class="btn btn-outline-secondary mr-1">PDF</a>
+                            <a href="@exportXlsUrl" class="btn btn-outline-secondary">Excel</a>
+                        </form>
+                    </div>
+                    <div class="table-responsive">
+                        <table id="processTable" class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>İşlem Tarihi</th>
+                                    <th>Adı Soyadı</th>
+                                    <th>Onaylayan</th>
+                                    <th>Kapı</th>
+                                    <th class="text-center">İşlemler</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link href="@Url.Content("~/css/osisk-index.css")?v=1.0" rel="stylesheet" />
+}
+
+@section Scripts {
+    <script src="@Url.Content("~/js/osisk-index.js")?v=1.0"></script>
+}
