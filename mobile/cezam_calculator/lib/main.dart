@@ -187,6 +187,7 @@ class _CalculatorPageState extends State<CalculatorPage> {
       final countries = countriesForSelection(data.countries);
       _country = countries.isNotEmpty ? countries.first : '';
     });
+    _syncSystemSettingsWithApi(silent: true);
   }
 
   void _applyDataDefaults(CezamData data) {
@@ -322,6 +323,101 @@ class _CalculatorPageState extends State<CalculatorPage> {
         'Content-Type': 'application/json',
         if (_authToken != null) 'Authorization': 'Bearer $_authToken',
       };
+
+  Future<bool> _syncSystemSettingsWithApi({bool silent = false}) async {
+    try {
+      final response = await http
+          .get(Uri.parse('$_apiBaseUrl/system-settings'), headers: _jsonHeaders)
+          .timeout(const Duration(seconds: 4));
+
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body) as Map<String, dynamic>;
+        final usd = (json['usd'] as num?)?.toDouble();
+        final eur = (json['eur'] as num?)?.toDouble();
+        final gbp = (json['gbp'] as num?)?.toDouble();
+        final singleEntryVisaFee =
+            (json['singleEntryVisaFee'] as num?)?.toDouble();
+        final defterPrice = (json['defterPrice'] as num?)?.toDouble();
+
+        if (usd != null || singleEntryVisaFee != null || defterPrice != null) {
+          final tgvh = [..._data.tgvh];
+          if (singleEntryVisaFee != null) {
+            final fee = TgvhRule(
+                year: DateTime.now().year.toString(),
+                price: singleEntryVisaFee);
+            if (tgvh.isEmpty) {
+              tgvh.add(fee);
+            } else {
+              tgvh[tgvh.length - 1] = fee;
+            }
+          }
+
+          final updatedData = CezamData(
+            generatedAt: _data.generatedAt,
+            exchange: {
+              'USD': usd ?? _data.exchange['USD'] ?? 1.0,
+              'EUR': eur ?? _data.exchange['EUR'] ?? 1.0,
+              'GBP': gbp ?? _data.exchange['GBP'] ?? 1.0,
+              'TRY': 1.0,
+            },
+            defterPrice: defterPrice ?? _data.defterPrice,
+            embeddedCountries: _data.embeddedCountries,
+            tgvh: tgvh,
+            uvr: _data.uvr,
+            auh: _data.auh,
+            tkod: _data.tkod,
+          );
+
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString(
+              'cezam_data', jsonEncode(updatedData.toJson()));
+
+          if (mounted) {
+            setState(() {
+              _data = updatedData;
+              _applyDataDefaults(updatedData);
+            });
+            if (!silent) {
+              _showMessage(
+                  'Sistem ayarları sunucudan başarıyla güncellendi.');
+            }
+          }
+          return true;
+        }
+      }
+    } catch (_) {
+      // Offline fallback
+    }
+    return false;
+  }
+
+  Future<bool> _saveSettingsToServer(CezamData data) async {
+    if (!_isAdmin) return false;
+    if (_authToken == 'local-admin' || _authToken == null) return false;
+
+    try {
+      final lastFee = data.tgvh.isNotEmpty ? data.tgvh.last.price : null;
+      final body = jsonEncode({
+        'usd': data.exchange['USD'],
+        'eur': data.exchange['EUR'],
+        'gbp': data.exchange['GBP'],
+        'singleEntryVisaFee': lastFee,
+        'defterPrice': data.defterPrice,
+      });
+
+      final response = await http
+          .post(
+            Uri.parse('$_apiBaseUrl/system-settings'),
+            headers: _jsonHeaders,
+            body: body,
+          )
+          .timeout(const Duration(seconds: 5));
+
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
 
   Future<void> _saveAuthState() async {
     final prefs = await SharedPreferences.getInstance();
@@ -852,6 +948,9 @@ class _CalculatorPageState extends State<CalculatorPage> {
       MaterialPageRoute(
         builder: (_) => SystemSettingsPage(
           initialData: _data,
+          apiBaseUrl: _apiBaseUrl,
+          authToken: _authToken,
+          isAdmin: _isAdmin,
           initialManualSettings: ManualCalculationSettings(
             oneTime: readInt(_manualOneTimeController),
             longStay: readInt(_manualLongController),
@@ -886,8 +985,14 @@ class _CalculatorPageState extends State<CalculatorPage> {
       _error = null;
     });
     await _saveManualSettings();
-    _showMessage(
-        'Sistem ayarlar\u0131 \u00e7evrimd\u0131\u015f\u0131 olarak kaydedildi.');
+    final serverOk = await _saveSettingsToServer(updated.data);
+    if (serverOk) {
+      _showMessage(
+          'Sistem ayarları sunucuya ve yerel önbelleğe kaydedildi.');
+    } else {
+      _showMessage(
+          'Sistem ayarları çevrimdışı olarak kaydedildi.');
+    }
   }
 
   Future<void> _calculate() async {
@@ -1718,29 +1823,30 @@ class _CalculatorPageState extends State<CalculatorPage> {
       );
 
   String _preliminaryText() =>
-      '6458 say?l? Yabanc?lar ve Uluslararas? Koruma Kanunun 9 uncu maddesi uyar?nca ger?ekle?tirilen de?erlendirme neticesinde, ????. Valili?i (?l G?? ?daresi M?d?rl???) taraf?ndan hakk?n?zda ?n izin karar? al?nm??t?r. - As a result of the evaluation conducted in accordance with the Article 9 of the Law on Foreigners and International Protection numbered 6458, Governorship of ????. (Provincial Directorate of Migration Management) has resolved to adopt a preliminary permission decision against you.\n'
+      '6458 sayılı Yabancılar ve Uluslararası Koruma Kanunun 9 uncu maddesi uyarınca gerçekleştirilen değerlendirme neticesinde, ..... Valiliği (İl Göç İdaresi Müdürlüğü) tarafından hakkınızda ön izin kararı alınmıştır. - As a result of the evaluation conducted in accordance with the Article 9 of the Law on Foreigners and International Protection numbered 6458, Governorship of ..... (Provincial Directorate of Migration Management) has resolved to adopt a preliminary permission decision against you.\n'
       'Hakkınızda ön izin kararı alınmasına dayanak teşkil eden husus/hususlar sebebiyle; - Based on the particular/particulars constituting grounds for adopting a preliminary permission decision against you;\n'
       'İkamet izninizin iptali için gerekli işlemler başlatılacaktır. - Respective procedures will be commenced for cancelling your residence permit.\n'
-      '?al??ma izninizin iptali i?in gerekli i?lemler ba?lat?lacakt?r. - Respective procedures will be commenced for cancelling your work permit.\n'
+      'Çalışma izninizin iptali için gerekli işlemler başlatılacaktır. - Respective procedures will be commenced for cancelling your work permit.\n'
       'İdari para cezanızı ödememeniz nedeni ile hakkınızda alınan ön izin kararı, idari para cezasının ödendiğine ilişkin makbuzun idareye tebliğ edilmesi halinde kaldırılır ve girişinize engel olacak başka bir hususun bulunmaması kaydıyla Türkiye’ye girişinize izin verilir.\n'
       'The preliminary permission decision adopted against you on the grounds of non-payment of the administrative fine imposed on you will be rescinded provided that the receipt of payment of the respective administrative fine is submitted to the directorate, and the permission of entry to Turkey will be granted to you on condition that no other particulars barring you from entering Turkey are determined.\n'
-      '?n ?zin Karar?na Kar?? Yarg? Yoluna Ba?vuru - Resort to the Jurisdiction Against the Preliminary Permission Decision\n'
-      '?ahs?n?z veya yasal temsilciniz ya da avukat?n?z taraf?ndan, ?n izin karar?na kar??, karar?n tebli?inden itibaren 60 (altm??) g?n i?inde idare mahkemesine ba?vurulabilir. - You or your legal representative or lawyer may appeal against the preliminary permission decision to the Administrative Court within 60 (sixty) days from the notification of the decision.\n'
+      'Ön İzin Kararına Karşı Yargı Yoluna Başvuru - Resort to the Jurisdiction Against the Preliminary Permission Decision\n'
+      'Şahsınız veya yasal temsilciniz ya da avukatınız tarafından, ön izin kararına karşı, kararın tebliğinden itibaren 60 (altmış) gün içinde idare mahkemesine başvurulabilir. - You or your legal representative or lawyer may appeal against the preliminary permission decision to the Administrative Court within 60 (sixty) days from the notification of the decision.\n'
       'Mahkemeye başvuran kişi, ön izin kararı veren makama da başvurusunu bildirir. - The applicant who applied to the Court also notifies the authority of the preliminary permission decision.\n'
       'Mahkemeye yapılan başvurular ön izin kararını durdurmaz. - Applications made to the Court does not suspend the preliminary permission decision.';
 
   String _entryBanBullets() =>
-      '? Hakk?n?zda giri? yasa?? karar? al?nmas?na dayanak te?kil eden husus/hususlar sebebiyle; - Based on the particular/particulars constituting grounds for imposing an entry ban on you;\n'
+      '• Hakkınızda giriş yasağı kararı alınmasına dayanak teşkil eden husus/hususlar sebebiyle; - Based on the particular/particulars constituting grounds for imposing an entry ban on you;\n'
       '• İkamet izninizin iptali için gerekli işlemler başlatılacaktır. - Respective procedures will be commenced for cancelling your residence permit.\n'
-      '? ?al??ma izninizin iptali i?in gerekli i?lemler ba?lat?lacakt?r. - Respective procedures will be commenced for cancelling your work permit.\n'
-      '? T?rkiye?ye giri?inizin yasakl? oldu?u s?re i?erisinde giri? yapmak istemeniz halinde, T?rkiye Cumhuriyeti D?? Temsilciliklerinden amac?na uygun ?zel me?ruhatl? vize alman?z gerekmektedir. - If you wish to enter Turkey during the period of your entry ban, you are required to obtain the relevant visa from Foreign Representative Offices of the Republic of Turkey.\n'
-      '? Hakk?n?zda tahsis edilen giri? yasa?? s?resinin sona ermesi y?z seksen g?nde doksan g?n kural?n?n uygulanmas?na engel te?kil etmemektedir. Her hal?k?rda vizenin veya vize muafiyetinin T?rkiye?de sa?lad??? kal?? s?resi, her y?z seksen g?nde doksan g?n? ge?emez.\n'
-      '? Hakk?n?zda al?nan giri? yasa?? karar?n?n s?resi dolmu? olsa dahi idari para cezan?z? ?dememenizden kaynaklanan ?n izin karar?na ili?kin h?k?mler sakl?d?r. - All provisions with respect to the preliminary permission decision stemming from the non-payment of your administrative fine are reserved.';
+      '• Çalışma izninizin iptali için gerekli işlemler başlatılacaktır. - Respective procedures will be commenced for cancelling your work permit.\n'
+      '• Türkiye’ye girişinizin yasaklı olduğu süre içerisinde giriş yapmak istemeniz halinde, Türkiye Cumhuriyeti Dış Temsilciliklerinden amacına uygun özel meşruhatlı vize almanız gerekmektedir. - If you wish to enter Turkey during the period of your entry ban, you are required to obtain the relevant visa from Foreign Representative Offices of the Republic of Turkey.\n'
+      '• Hakkınızda tahsis edilen giriş yasağı süresinin sona ermesi yüz seksen günde doksan gün kuralının uygulanmasına engel teşkil etmemektedir. Her halükarda vizenin veya vize muafiyetinin Türkiye’de sağladığı kalış süresi, her yüz seksen günde doksan günü geçemez.\n'
+      '• Hakkınızda alınan giriş yasağı kararının süresi dolmuş olsa dahi idari para cezanızı ödememenizden kaynaklanan ön izin kararına ilişkin hükümler saklıdır. - All provisions with respect to the preliminary permission decision stemming from the non-payment of your administrative fine are reserved.';
 
   String _appealBullets() =>
-      '? ?ahs?n?z veya yasal temsilciniz ya da avukat?n?z taraf?ndan, giri? yasa?? karar?na kar??, karar?n tebli?inden itibaren 60 (altm??) g?n i?inde idare mahkemesine ba?vurulabilir. - You or your legal representative or lawyer may appeal against the entry ban decision to the Administrative Court within 60 days from the notification of the decision.\n'
-      '? Mahkemeye ba?vuran ki?i, giri? yasa?? karar? veren makama da ba?vurusunu bildirir. - The applicant who applied to the Court also notifies the authority of the entry ban decision.\n'
-      '? Mahkemeye yap?lan ba?vurular giri? yasa?? karar?n? durdurmaz. - Applications made to the Court does not suspend the entry ban decision.';
+      '• Şahsınız veya yasal temsilciniz ya da avukatınız tarafından, giriş yasağı kararına karşı, kararın tebliğinden itibaren 60 (altmış) gün içinde idare mahkemesine başvurulabilir. - You or your legal representative or lawyer may appeal against the entry ban decision to the Administrative Court within 60 days from the notification of the decision.\n'
+      '• Mahkemeye başvuran kişi, giriş yasağı kararı veren makama da başvurusunu bildirir. - The applicant who applied to the Court also notifies the authority of the entry ban decision.\n'
+      '• Mahkemeye yapılan başvurular giriş yasağı kararını durdurmaz. - Applications made to the Court does not suspend the entry ban decision.';
+
 
   @override
   Widget build(BuildContext context) {
@@ -2245,11 +2351,17 @@ class SystemSettingsPage extends StatefulWidget {
       dayStep: 0,
       currency: 'USD',
     ),
+    this.apiBaseUrl,
+    this.authToken,
+    this.isAdmin = false,
     super.key,
   });
 
   final CezamData initialData;
   final ManualCalculationSettings initialManualSettings;
+  final String? apiBaseUrl;
+  final String? authToken;
+  final bool isAdmin;
 
   @override
   State<SystemSettingsPage> createState() => _SystemSettingsPageState();
@@ -2423,6 +2535,102 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
       paidType: old.paidType,
     );
     if (notify) _message('Tahdit kural\u0131 tasla\u011fa uyguland\u0131.');
+  }
+
+  bool _isSyncing = false;
+
+  Future<void> _fetchServerSettings() async {
+    final url = widget.apiBaseUrl;
+    if (url == null || url.isEmpty) {
+      _message('Sunucu API adresi tanımsız.');
+      return;
+    }
+
+    setState(() => _isSyncing = true);
+    try {
+      final response = await http
+          .get(Uri.parse('$url/system-settings'), headers: {
+            'Content-Type': 'application/json',
+            if (widget.authToken != null)
+              'Authorization': 'Bearer ${widget.authToken}',
+          })
+          .timeout(const Duration(seconds: 4));
+
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body) as Map<String, dynamic>;
+        final usd = (json['usd'] as num?)?.toDouble();
+        final eur = (json['eur'] as num?)?.toDouble();
+        final gbp = (json['gbp'] as num?)?.toDouble();
+        final singleEntryVisaFee =
+            (json['singleEntryVisaFee'] as num?)?.toDouble();
+        final defterPrice = (json['defterPrice'] as num?)?.toDouble();
+
+        setState(() {
+          if (usd != null) _usd.text = usd.toString();
+          if (eur != null) _eur.text = eur.toString();
+          if (gbp != null) _gbp.text = gbp.toString();
+          if (singleEntryVisaFee != null) {
+            _visaFee.text = singleEntryVisaFee.toString();
+          }
+          if (defterPrice != null) _defter.text = defterPrice.toString();
+        });
+        _message('Sunucudan güncel kurlar ve harçlar başarıyla çekildi.');
+      } else {
+        _message('Sunucudan ayarlar alınamadı (HTTP ${response.statusCode}).');
+      }
+    } catch (e) {
+      _message('Sunucuya bağlanılamadı: $e');
+    } finally {
+      if (mounted) setState(() => _isSyncing = false);
+    }
+  }
+
+  Future<void> _saveGeneralSettingsToServer() async {
+    final url = widget.apiBaseUrl;
+    final token = widget.authToken;
+
+    if (!widget.isAdmin ||
+        token == null ||
+        token == 'local-admin' ||
+        url == null) {
+      _message('Ayarlar yerel taslağa uygulandı (Çevrimdışı mod).');
+      return;
+    }
+
+    setState(() => _isSyncing = true);
+    try {
+      final body = jsonEncode({
+        'usd': readDouble(_usd),
+        'eur': readDouble(_eur),
+        'gbp': readDouble(_gbp),
+        'singleEntryVisaFee': readDouble(_visaFee),
+        'defterPrice': readDouble(_defter),
+      });
+
+      final response = await http
+          .post(
+            Uri.parse('$url/system-settings'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+            body: body,
+          )
+          .timeout(const Duration(seconds: 5));
+
+      if (response.statusCode == 200) {
+        _message('Kurlar ve harç bedelleri sunucuya başarıyla kaydedildi!');
+      } else if (response.statusCode == 403) {
+        _message(
+            'Yetkisiz işlem: Sadece admin sistem ayarlarını güncelleyebilir.');
+      } else {
+        _message('Sunucu hatası: HTTP ${response.statusCode}');
+      }
+    } catch (e) {
+      _message('Sunucuya kaydedilemedi, yerel taslak güncellendi.');
+    } finally {
+      if (mounted) setState(() => _isSyncing = false);
+    }
   }
 
   void _saveAndClose() {
@@ -2721,14 +2929,89 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
   Widget _generalTab() => ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _two(_number('USD / TRY', _usd), _number('EUR / TRY', _eur)),
-          const SizedBox(height: 12),
-          _number('GBP / TRY', _gbp),
-          const SizedBox(height: 12),
-          _two(_number('Defter bedeli (TL)', _defter),
-              _number('Vize harc\u0131 (TL)', _visaFee)),
-          const SizedBox(height: 20),
-          Text('Veri tarihi: ${_draft.generatedAt ?? '-'}'),
+          Card(
+            elevation: 2,
+            margin: const EdgeInsets.only(bottom: 16),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.currency_exchange,
+                          color: Color(0xff0a7cff)),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Döviz Kurları (Günlük Kur / Exchange)',
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  _two(_number('USD / TRY (Dolar)', _usd),
+                      _number('EUR / TRY (Euro)', _eur)),
+                  const SizedBox(height: 12),
+                  _number('GBP / TRY (İngiliz Sterlini)', _gbp),
+                ],
+              ),
+            ),
+          ),
+          Card(
+            elevation: 2,
+            margin: const EdgeInsets.only(bottom: 16),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.account_balance, color: Colors.orange),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Harç ve Defter Bedelleri (TGVH & Defter)',
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  _two(
+                    _number('Tek Girişlik Vize Harcı (TGVH - TL)', _visaFee),
+                    _number('Defter Bedeli (TL)', _defter),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (widget.isAdmin) ...[
+            FilledButton.icon(
+              onPressed: _isSyncing ? null : _saveGeneralSettingsToServer,
+              icon: _isSyncing
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Icon(Icons.cloud_upload),
+              label: const Text('Kurları ve Harçları Sunucuya Kaydet'),
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: _isSyncing ? null : _fetchServerSettings,
+              icon: const Icon(Icons.cloud_download),
+              label: const Text('Sunucudaki Güncel Değerleri Çek'),
+            ),
+            const SizedBox(height: 16),
+          ],
+          Text('Veri oluşturulma tarihi: ${_draft.generatedAt ?? '-'}'),
           Text(
               'UVR: ${_draft.uvr.length}  AUH: ${_draft.auh.length}  Tahdit: ${_draft.tkod.length}'),
         ],

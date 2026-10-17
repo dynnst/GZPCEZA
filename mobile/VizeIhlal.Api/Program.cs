@@ -21,6 +21,7 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddSingleton<AuthStore>();
+builder.Services.AddSingleton<SystemSettingsStore>();
 
 var app = builder.Build();
 
@@ -130,6 +131,28 @@ app.MapPost("/admin/assign-plan", (HttpRequest httpRequest, AssignPlanRequest re
     return user is null
         ? Results.NotFound(new { message = "Kullanıcı bulunamadı." })
         : Results.Ok(UserResponse.From(user));
+});
+
+app.MapGet("/system-settings", (SystemSettingsStore settingsStore) =>
+{
+    return Results.Ok(settingsStore.GetSettings());
+});
+
+app.MapPost("/system-settings", (HttpRequest httpRequest, SystemSettingsUpdateRequest request, AuthStore store, SystemSettingsStore settingsStore) =>
+{
+    var admin = store.GetUserByBearer(httpRequest);
+    if (admin is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    if (admin.Role != "admin")
+    {
+        return Results.Forbid();
+    }
+
+    var updated = settingsStore.UpdateSettings(request, admin.Email);
+    return Results.Ok(updated);
 });
 
 app.Run();
@@ -547,3 +570,110 @@ sealed record UsageResponse(
             user.SubscriptionExpiresAtUtc);
     }
 }
+
+sealed record SystemSettingsUpdateRequest(
+    double? Usd,
+    double? Eur,
+    double? Gbp,
+    double? SingleEntryVisaFee,
+    double? DefterPrice
+);
+
+sealed class SystemSettingsModel
+{
+    public double Usd { get; set; } = 33.50;
+    public double Eur { get; set; } = 36.20;
+    public double Gbp { get; set; } = 43.10;
+    public double SingleEntryVisaFee { get; set; } = 3100.0;
+    public double DefterPrice { get; set; } = 565.0;
+    public string UpdatedAt { get; set; } = "";
+    public string UpdatedBy { get; set; } = "system";
+}
+
+sealed class SystemSettingsStore
+{
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = true
+    };
+
+    private readonly string _filePath;
+    private readonly object _sync = new();
+    private SystemSettingsModel _settings;
+
+    public SystemSettingsStore(IWebHostEnvironment environment)
+    {
+        var dataDirectory = Path.Combine(environment.ContentRootPath, "Data");
+        Directory.CreateDirectory(dataDirectory);
+        _filePath = Path.Combine(dataDirectory, "system-settings.json");
+        _settings = LoadOrSeed();
+    }
+
+    public SystemSettingsModel GetSettings()
+    {
+        lock (_sync)
+        {
+            return _settings;
+        }
+    }
+
+    public SystemSettingsModel UpdateSettings(SystemSettingsUpdateRequest request, string adminEmail)
+    {
+        lock (_sync)
+        {
+            if (request.Usd.HasValue && request.Usd.Value > 0)
+                _settings.Usd = request.Usd.Value;
+
+            if (request.Eur.HasValue && request.Eur.Value > 0)
+                _settings.Eur = request.Eur.Value;
+
+            if (request.Gbp.HasValue && request.Gbp.Value > 0)
+                _settings.Gbp = request.Gbp.Value;
+
+            if (request.SingleEntryVisaFee.HasValue && request.SingleEntryVisaFee.Value >= 0)
+                _settings.SingleEntryVisaFee = request.SingleEntryVisaFee.Value;
+
+            if (request.DefterPrice.HasValue && request.DefterPrice.Value >= 0)
+                _settings.DefterPrice = request.DefterPrice.Value;
+
+            _settings.UpdatedAt = DateTimeOffset.UtcNow.ToString("o");
+            _settings.UpdatedBy = adminEmail;
+
+            File.WriteAllText(_filePath, JsonSerializer.Serialize(_settings, JsonOptions));
+            return _settings;
+        }
+    }
+
+    private SystemSettingsModel LoadOrSeed()
+    {
+        if (File.Exists(_filePath))
+        {
+            try
+            {
+                var json = File.ReadAllText(_filePath);
+                return JsonSerializer.Deserialize<SystemSettingsModel>(json, JsonOptions) ?? CreateDefaultSettings();
+            }
+            catch
+            {
+                return CreateDefaultSettings();
+            }
+        }
+
+        var defaults = CreateDefaultSettings();
+        File.WriteAllText(_filePath, JsonSerializer.Serialize(defaults, JsonOptions));
+        return defaults;
+    }
+
+    private static SystemSettingsModel CreateDefaultSettings() => new()
+    {
+        Usd = 33.50,
+        Eur = 36.20,
+        Gbp = 43.10,
+        SingleEntryVisaFee = 3100.0,
+        DefterPrice = 565.0,
+        UpdatedAt = DateTimeOffset.UtcNow.ToString("o"),
+        UpdatedBy = "system"
+    };
+}
+

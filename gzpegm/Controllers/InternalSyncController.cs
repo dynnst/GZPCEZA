@@ -1,4 +1,5 @@
 using CryptoHelper;
+using gzpegm.Cont;
 using gzpegm.Helpers;
 using gzpegm.Models;
 using System;
@@ -180,6 +181,118 @@ namespace gzpegm.Controllers
             catch (Exception ex)
             {
                 return Json(new { success = false, message = "Kullanıcı detayları alınamadı: " + ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Sistem ayarlarını (Döviz Kurları, Tek Giriş Vize Harcı, Defter Bedeli) döner.
+        /// Mobil uygulama ve sunucular arası senkronizasyon için kullanılır.
+        /// </summary>
+        [HttpGet]
+        [Route("internal-sync/system-settings")]
+        [Route("system-settings")]
+        public JsonResult GetSystemSettings()
+        {
+            try
+            {
+                var contEx = new ContExchange();
+                var contTg = new tgvh();
+
+                var exchange = contEx.GetAllExchange();
+                var defter = contTg.GetDefter();
+                var currentYear = DateTime.Now.Year.ToString();
+                var tgvhItem = contTg.checkTGVH(currentYear) ?? contTg.GetTGVH().OrderByDescending(t => t.fldYear).FirstOrDefault();
+
+                double.TryParse(exchange?.fldDollar?.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double usd);
+                double.TryParse(exchange?.fldEuro?.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double eur);
+                double.TryParse(exchange?.fldPaund?.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double gbp);
+                double.TryParse(defter?.fldPrice?.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double defterPrice);
+                double.TryParse(tgvhItem?.fldPrice?.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double singleEntryVisaFee);
+
+                return Json(new
+                {
+                    success = true,
+                    usd = usd > 0 ? usd : 1.0,
+                    eur = eur > 0 ? eur : 1.0,
+                    gbp = gbp > 0 ? gbp : 1.0,
+                    singleEntryVisaFee = singleEntryVisaFee > 0 ? singleEntryVisaFee : 0.0,
+                    defterPrice = defterPrice > 0 ? defterPrice : 0.0,
+                    updatedAt = DateTime.Now.ToString("s")
+                }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Sistem ayarları alınamadı: " + ex.Message }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// Admin yetkisiyle veya senkronizasyon anahtarıyla sistem ayarlarını günceller.
+        /// </summary>
+        [HttpPost]
+        [Route("internal-sync/system-settings")]
+        [Route("system-settings")]
+        public JsonResult UpdateSystemSettings(double? usd, double? eur, double? gbp, double? singleEntryVisaFee, double? defterPrice, string syncSecret)
+        {
+            if (!ValidateSecurity())
+            {
+                var role = Session?["Role"]?.ToString();
+                var auth = Session?["UserAuth"]?.ToString();
+                if (Session?["user"] == null || (role != "Admin" && auth != "2"))
+                {
+                    return Json(new { success = false, message = "Yetkisiz işlem. Admin yetkisi veya geçerli senkronizasyon anahtarı gereklidir." });
+                }
+            }
+
+            try
+            {
+                var contEx = new ContExchange();
+                var contTg = new tgvh();
+
+                var currentExchange = contEx.GetAllExchange();
+                string newUsd = usd.HasValue && usd.Value > 0 ? usd.Value.ToString("F2", System.Globalization.CultureInfo.InvariantCulture) : currentExchange?.fldDollar ?? "1";
+                string newEur = eur.HasValue && eur.Value > 0 ? eur.Value.ToString("F2", System.Globalization.CultureInfo.InvariantCulture) : currentExchange?.fldEuro ?? "1";
+                string newGbp = gbp.HasValue && gbp.Value > 0 ? gbp.Value.ToString("F2", System.Globalization.CultureInfo.InvariantCulture) : currentExchange?.fldPaund ?? "1";
+
+                contEx.EditExchange(newEur, newUsd, newGbp);
+
+                if (defterPrice.HasValue && defterPrice.Value >= 0)
+                {
+                    contTg.EditDefter(defterPrice.Value.ToString("F2", System.Globalization.CultureInfo.InvariantCulture), "TRY");
+                }
+
+                if (singleEntryVisaFee.HasValue && singleEntryVisaFee.Value >= 0)
+                {
+                    var currentYear = DateTime.Now.Year.ToString();
+                    var check = contTg.checkTGVH(currentYear);
+                    if (check != null)
+                    {
+                        using (var db = new GZPEGM1())
+                        {
+                            var existing = db.E_TGVH.FirstOrDefault(t => t.fldYear.Trim() == currentYear.Trim());
+                            if (existing != null)
+                            {
+                                existing.fldPrice = singleEntryVisaFee.Value.ToString("F2", System.Globalization.CultureInfo.InvariantCulture);
+                                db.SaveChanges();
+                            }
+                        }
+                    }
+                    else
+                    {
+                        contTg.addTGVH(singleEntryVisaFee.Value.ToString("F2", System.Globalization.CultureInfo.InvariantCulture), currentYear);
+                    }
+                }
+
+                return Json(new
+                {
+                    success = true,
+                    message = "Sistem ayarları (Döviz Kurları, Tek Giriş Vize Harcı, Defter Bedeli) başarıyla güncellendi.",
+                    updatedAt = DateTime.Now.ToString("s")
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Sistem ayarları güncellenirken hata oluştu: " + ex.Message });
             }
         }
     }
