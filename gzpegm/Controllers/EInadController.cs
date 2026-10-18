@@ -374,6 +374,79 @@ namespace gzpegm.Controllers
             }
         }
 
+        [HttpPost]
+        public ActionResult ScanPassportImage()
+        {
+            var user = GetCurrentUser();
+            if (user == null)
+                return JsonUtf8(new { success = false, message = "Lütfen sisteme giriş yapın." });
+
+            if (Request.Files.Count == 0 || Request.Files[0] == null || Request.Files[0].ContentLength == 0)
+                return JsonUtf8(new { success = false, message = "Lütfen bir pasaport görseli seçin." });
+
+            var file = Request.Files[0];
+            var ext = System.IO.Path.GetExtension(file.FileName ?? "").ToLowerInvariant();
+            var allowedExts = new[] { ".jpg", ".jpeg", ".png", ".bmp", ".webp", ".jfif" };
+            if (!allowedExts.Contains(ext))
+                return JsonUtf8(new { success = false, message = "Desteklenmeyen dosya formatı. Lütfen JPG veya PNG yükleyin." });
+
+            var tempDir = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "App_Data", "TempUploads");
+            if (!System.IO.Directory.Exists(tempDir))
+                System.IO.Directory.CreateDirectory(tempDir);
+
+            var tempFile = System.IO.Path.Combine(tempDir, Guid.NewGuid().ToString("N") + ext);
+            file.SaveAs(tempFile);
+
+            try
+            {
+                var scriptPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "App_Data", "PassportOcr.ps1");
+                if (!System.IO.File.Exists(scriptPath))
+                {
+                    return JsonUtf8(new { success = false, message = "OCR betiği bulunamadı." });
+                }
+
+                var psi = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "powershell.exe",
+                    Arguments = string.Format("-NoProfile -ExecutionPolicy Bypass -File \"{0}\" -imagePath \"{1}\"", scriptPath, tempFile),
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    StandardOutputEncoding = System.Text.Encoding.UTF8
+                };
+
+                using (var proc = System.Diagnostics.Process.Start(psi))
+                {
+                    var output = proc.StandardOutput.ReadToEnd();
+                    proc.WaitForExit(15000);
+
+                    if (string.IsNullOrWhiteSpace(output))
+                    {
+                        return JsonUtf8(new { success = false, message = "OCR çıktısı alınamadı." });
+                    }
+
+                    var jsonStartIndex = output.IndexOf('{');
+                    var jsonEndIndex = output.LastIndexOf('}');
+                    if (jsonStartIndex >= 0 && jsonEndIndex > jsonStartIndex)
+                    {
+                        var cleanJson = output.Substring(jsonStartIndex, jsonEndIndex - jsonStartIndex + 1);
+                        return Content(cleanJson, "application/json", System.Text.Encoding.UTF8);
+                    }
+
+                    return JsonUtf8(new { success = false, message = "OCR çıktısı ayrıştırılamadı." });
+                }
+            }
+            catch (Exception ex)
+            {
+                return JsonUtf8(new { success = false, message = "Hata: " + ex.Message });
+            }
+            finally
+            {
+                try { if (System.IO.File.Exists(tempFile)) System.IO.File.Delete(tempFile); } catch { }
+            }
+        }
+
         [HttpGet]
         public JsonResult GetInad(int id)
         {

@@ -290,29 +290,59 @@ function playScanBeep() {
     } catch (e) { }
 }
 
+function cleanOcrMrzLine(line) {
+    if (!line) return "";
+    var cleaned = line.toUpperCase().replace(/\s+/g, '');
+    // OCR tarafından bazen '<' karakteri 'K', 'C', '(' veya '{' olarak okunabilir
+    cleaned = cleaned.replace(/^P[KC]/, 'P<');
+    cleaned = cleaned.replace(/^I[KC]/, 'I<');
+    cleaned = cleaned.replace(/K{2,}/g, function (match) { return '<'.repeat(match.length); });
+    cleaned = cleaned.replace(/C{2,}/g, function (match) { return '<'.repeat(match.length); });
+    cleaned = cleaned.replace(/[\(\{]/g, '<');
+    cleaned = cleaned.replace(/[\)\}]/g, '<');
+    return cleaned;
+}
+
 function parseAndApplyMrz(rawText, sourceName) {
     if (!rawText || !rawText.trim()) return false;
 
-    // Temizle ve satırları ayır
     var cleanText = rawText.replace(/\r/g, '\n').replace(/\t/g, '\n');
-    var lines = cleanText.split('\n')
-        .map(function (s) { return s.trim(); })
-        .filter(function (s) { return s.length > 0; });
+    var rawLines = cleanText.split('\n')
+        .map(function (s) { return cleanOcrMrzLine(s.trim()); })
+        .filter(function (s) { return s.length >= 20; });
 
-    if (lines.length < 2) {
-        // Tek satırda peş peşe gelmiş olabilir (örneğin 88 karakterlik kesintisiz akış)
-        if (cleanText.length >= 88 && cleanText.indexOf('P<') >= 0) {
-            var pIndex = cleanText.indexOf('P<');
-            var firstLine = cleanText.substr(pIndex, 44);
-            var secondLine = cleanText.substr(pIndex + 44, 44);
-            lines = [firstLine, secondLine];
-        } else {
-            return false;
+    var line1 = "";
+    var line2 = "";
+
+    // 1. Durum: Satırlar arasında P< ile başlayan satırı ve ardından gelen satırı bul
+    for (var idx = 0; idx < rawLines.length; idx++) {
+        var cur = rawLines[idx];
+        if (cur.indexOf('P<') === 0 || cur.indexOf('I<') === 0) {
+            line1 = cur;
+            if (idx + 1 < rawLines.length) {
+                line2 = rawLines[idx + 1];
+            }
+            break;
         }
     }
 
-    var line1 = lines[0].replace(/\s+/g, '');
-    var line2 = lines[1].replace(/\s+/g, '');
+    // 2. Durum: Eğer tek satırda peş peşe 88 karakter geldiyse
+    if (!line1 && cleanText.length >= 80) {
+        var compact = cleanText.replace(/\s+/g, '');
+        var pIdx = compact.indexOf('P<');
+        if (pIdx >= 0 && compact.length >= pIdx + 88) {
+            line1 = compact.substr(pIdx, 44);
+            line2 = compact.substr(pIdx + 44, 44);
+        }
+    }
+
+    // 3. Durum: Ham satırlardan son iki satırı dene
+    if (!line1 && rawLines.length >= 2) {
+        line1 = rawLines[rawLines.length - 2];
+        line2 = rawLines[rawLines.length - 1];
+    }
+
+    if (!line1 || !line2) return false;
 
     var surname = "";
     var givenNames = "";
@@ -357,6 +387,8 @@ function parseAndApplyMrz(rawText, sourceName) {
     }
 
     var fullName = (surname + ' ' + givenNames).trim();
+    if (!fullName && !passportNo) return false;
+
     if (fullName) $('#AdSoyad').val(fullName);
     if (passportNo) $('#PasaportNo').val(passportNo);
     if (sex) $('#Cinsiyet').val(sex);
@@ -387,7 +419,7 @@ function parseAndApplyMrz(rawText, sourceName) {
     }, 1500);
 
     $('#accKimlik').collapse('show');
-    $('#mrzInputText').val(lines[0] + '\n' + lines[1]);
+    $('#mrzInputText').val(line1 + '\n' + line2);
 
     return true;
 }
@@ -421,13 +453,11 @@ function initHardwareScannerListener() {
 
         var char = String.fromCharCode(e.which);
 
-        // Donanımsal okuyucu basışları çok hızlıdır (delta < 50ms)
-        // Eğer 150ms'den uzun sürdüyse ve buffer henüz MRZ satırı içermiyorsa buffer'ı sıfırla
         if (delta > 150 && scannerBuffer.indexOf('P<') === -1 && scannerBuffer.indexOf('I<') === -1) {
             scannerBuffer = "";
         }
 
-        if (e.which === 13) { // Enter tuşu
+        if (e.which === 13) {
             if (scannerBuffer.length >= 44 && (scannerBuffer.indexOf('P<') >= 0 || scannerBuffer.indexOf('I<') >= 0)) {
                 e.preventDefault();
                 processHardwareScan(scannerBuffer);
@@ -439,7 +469,6 @@ function initHardwareScannerListener() {
 
             clearTimeout(scannerTimer);
             scannerTimer = setTimeout(function () {
-                // Enter basılmadan 44x2 satır bittiğinde de algıla
                 if (scannerBuffer.length >= 88 && (scannerBuffer.indexOf('P<') >= 0 || scannerBuffer.indexOf('I<') >= 0)) {
                     processHardwareScan(scannerBuffer);
                     scannerBuffer = "";
@@ -449,7 +478,6 @@ function initHardwareScannerListener() {
     });
 
     function processHardwareScan(capturedText) {
-        // Modal açık değilse otomatik aç
         if (!$('#inadModal').hasClass('show')) {
             openAdd();
             setTimeout(function () {
@@ -462,32 +490,57 @@ function initHardwareScannerListener() {
 }
 
 /* ==========================================================================
-   PASAPORT FOTOĞRAFI YÜKLEME & MRZ AYRIŞTIRMA (DROPZONE)
+   PASAPORT FOTOĞRAFI YÜKLEME & MRZ AYRIŞTIRMA (DROPZONE & AJAX OCR)
    ========================================================================== */
 function initPassportPhotoUpload() {
     var dropzone = $('#passportDropzone');
     var fileInput = $('#passportPhotoInput');
 
-    dropzone.off('click').on('click', function () {
-        fileInput.click();
+    // Tarayıcının görsel dosyasını yeni sekmede veya doğrudan sayfada açmasını KESİN OLARAK engelle
+    window.addEventListener("dragover", function (e) { e.preventDefault(); }, false);
+    window.addEventListener("drop", function (e) { e.preventDefault(); }, false);
+    $(document).off('dragenter dragover dragleave drop').on('dragenter dragover dragleave drop', function (e) {
+        e.preventDefault();
     });
 
-    dropzone.on('dragover', function (e) {
+    // Tıklayarak dosya seçme
+    dropzone.off('click').on('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        fileInput.trigger('click');
+    });
+
+    $('#btnBrowsePassport').off('click').on('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        fileInput.trigger('click');
+    });
+
+    fileInput.off('click').on('click', function (e) {
+        e.stopPropagation();
+    });
+
+    // Sürükle-Bırak Olayları
+    dropzone.off('dragenter dragover').on('dragenter dragover', function (e) {
         e.preventDefault();
         e.stopPropagation();
         dropzone.addClass('dragover');
     });
 
-    dropzone.on('dragleave drop', function (e) {
+    dropzone.off('dragleave dragend').on('dragleave dragend', function (e) {
         e.preventDefault();
         e.stopPropagation();
         dropzone.removeClass('dragover');
     });
 
-    dropzone.on('drop', function (e) {
-        var files = e.originalEvent.dataTransfer.files;
-        if (files && files.length > 0) {
-            handlePassportFile(files[0]);
+    dropzone.off('drop').on('drop', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.removeClass('dragover');
+
+        var dt = e.originalEvent.dataTransfer;
+        if (dt && dt.files && dt.files.length > 0) {
+            handlePassportFile(dt.files[0]);
         }
     });
 
@@ -497,7 +550,9 @@ function initPassportPhotoUpload() {
         }
     });
 
-    $('#btnRemovePhoto').off('click').on('click', function () {
+    $('#btnRemovePhoto').off('click').on('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
         fileInput.val('');
         $('#passportPreviewContainer').hide();
         $('#passportPreviewImg').attr('src', '');
@@ -507,25 +562,64 @@ function initPassportPhotoUpload() {
 
     function handlePassportFile(file) {
         if (!file.type.match('image.*')) {
-            alert('Lütfen geçerli bir görsel dosyası (JPG, PNG) seçin.');
+            alert('Lütfen geçerli bir görsel dosyası (JPG, PNG, WEBP) seçin.');
             return;
         }
 
+        // 1. Görsel önizlemesini hemen göster
         var reader = new FileReader();
         reader.onload = function (e) {
             var dataUrl = e.target.result;
             $('#passportPreviewImg').attr('src', dataUrl);
             $('#photoFileName').text(file.name + ' (' + Math.round(file.size / 1024) + ' KB)');
-            $('#photoStatusText').html('<i class="fas fa-spinner fa-spin text-info mr-1"></i> Görsel işleniyor ve MRZ taranıyor...');
+            $('#photoStatusText').html('<i class="fas fa-spinner fa-spin text-info mr-1"></i> Pasaport fotoğrafı taranıyor, optik karakterler (OCR) okunuyor...');
             $('#passportPreviewContainer').show();
-
-            // Görsel taranıyor bildirimi
-            setTimeout(function () {
-                $('#photoStatusText').html('<i class="fas fa-check-circle text-success mr-1"></i> Görsel yüklendi. MRZ bölgesini manuel doğrulayabilir veya ayrıştırabilirsiniz.');
-                showEInadStatus('<i class="fas fa-image mr-1"></i> Pasaport görseli başarıyla yüklendi. Ayrıştırma yapıldı.', 'info');
-            }, 800);
         };
         reader.readAsDataURL(file);
+
+        // 2. Sunucu tarafı Windows OCR servisine gönder
+        var formData = new FormData();
+        formData.append('file', file);
+        formData.append('__RequestVerificationToken', getAntiForgeryToken());
+
+        $.ajax({
+            url: getEinadUrl('data-url-scan-image', '/EInad/ScanPassportImage'),
+            type: 'POST',
+            data: formData,
+            contentType: false,
+            processData: false,
+            success: function (res) {
+                if (res && res.success) {
+                    var parsed = false;
+
+                    // A) mrz1 ve mrz2 adaylarından ayrıştırmayı dene
+                    if (res.mrz1 && res.mrz2) {
+                        parsed = parseAndApplyMrz(res.mrz1 + '\n' + res.mrz2, 'Pasaport Fotoğrafı (OCR)');
+                    }
+
+                    // B) Olmazsa ham OCR metninin tamamından ayrıştır
+                    if (!parsed && res.rawText) {
+                        parsed = parseAndApplyMrz(res.rawText, 'Pasaport Fotoğrafı (OCR)');
+                    }
+
+                    if (parsed) {
+                        $('#photoStatusText').html('<i class="fas fa-check-circle text-success mr-1"></i> MRZ başarıyla okundu ve form alanları dolduruldu!');
+                        showEInadStatus('<i class="fas fa-check-circle mr-1"></i> Pasaport fotoğrafından kimlik bilgileri başarıyla aktarıldı.', 'success');
+                    } else {
+                        $('#photoStatusText').html('<i class="fas fa-exclamation-triangle text-warning mr-1"></i> Görsel yüklendi ancak MRZ satırları net okunamadı. Lütfen ışık ve netliği kontrol edin.');
+                        if (res.rawText) {
+                            $('#mrzInputText').val(res.rawText);
+                            $('#tab-mrz-link').tab('show');
+                        }
+                    }
+                } else {
+                    $('#photoStatusText').html('<i class="fas fa-times-circle text-danger mr-1"></i> ' + (res.message || 'Görsel taranamadı.'));
+                }
+            },
+            error: function () {
+                $('#photoStatusText').html('<i class="fas fa-times-circle text-danger mr-1"></i> Sunucu hatası oluştu.');
+            }
+        });
     }
 }
 

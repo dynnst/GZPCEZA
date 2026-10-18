@@ -8201,6 +8201,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
+    <Content Include="App_Data\PassportOcr.ps1" />
     <Folder Include="aspnet_client\system_web\2_0_50727\" />
     <Folder Include="aspnet_client\system_web\4_0_30319\" />
     <Folder Include="ccc\dilekce\" />

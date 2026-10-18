@@ -401,24 +401,29 @@
                                 <div class="tab-content" id="mrzTabsContent">
                                     <!-- TAB 1: Görsel Yükle (Dropzone) -->
                                     <div class="tab-pane fade show active" id="tab-photo" role="tabpanel">
+                                        <!-- Gizli dosya seçici (dropzone dışında, event bubbling çakışması olmaması için) -->
+                                        <input type="file" id="passportPhotoInput" accept="image/*" style="display:none;">
+
                                         <div class="einad-dropzone" id="passportDropzone">
-                                            <input type="file" id="passportPhotoInput" accept="image/*" class="d-none">
                                             <div class="dropzone-icon">
                                                 <i class="fas fa-cloud-upload-alt"></i>
                                             </div>
                                             <div class="font-weight-bold text-dark mb-1">
-                                                Pasaport Fotoğrafını Buraya Sürükleyip Bırakın veya Tıklayın
+                                                Pasaport Fotoğrafını Buraya Sürükleyip Bırakın
                                             </div>
-                                            <p class="small text-muted mb-0">
+                                            <p class="small text-muted mb-2">
                                                 JPG, PNG veya WEBP formatında pasaport görüntüsü yükleyin. Sistem MRZ bölgesini otomatik algılar.
                                             </p>
+                                            <button type="button" class="btn btn-sm btn-info px-3 font-weight-bold" id="btnBrowsePassport">
+                                                <i class="fas fa-folder-open mr-1"></i> Veya Bilgisayardan Fotoğraf Seç
+                                            </button>
                                         </div>
 
                                         <!-- Önizleme ve Sonuç Kutusu -->
                                         <div id="passportPreviewContainer" style="display:none;" class="passport-preview-box">
                                             <img id="passportPreviewImg" src="" alt="Pasaport Önizleme" class="passport-thumbnail" />
                                             <div class="flex-grow-1">
-                                                <div id="photoStatusText" class="small font-weight-bold text-dark">Görsel yüklendi, işleniyor...</div>
+                                                <div id="photoStatusText" class="small font-weight-bold text-dark">Görsel yüklendi, taranıyor...</div>
                                                 <div id="photoFileName" class="text-muted small"></div>
                                             </div>
                                             <div>
@@ -844,6 +849,7 @@
          data-url-get-countries="@Url.Action("GetCountries", "EInad")"
          data-url-delete-inad="@Url.Action("DeleteInad", "EInad")"
          data-url-update-status="@Url.Action("UpdateStatus", "EInad")"
+         data-url-scan-image="@Url.Action("ScanPassportImage", "EInad")"
          style="display:none;"></div>
     <script src="@Url.Content("~/js/einad-index.js")?v=2.0"></script>
 }
