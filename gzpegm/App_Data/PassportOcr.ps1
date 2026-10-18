@@ -3,6 +3,20 @@ param(
     [string]$imagePath
 )
 
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
+
+function Normalize-MrzLine([string]$str) {
+    if ([string]::IsNullOrWhiteSpace($str)) { return "" }
+    $s = $str.Replace(" ", "").ToUpper()
+    $s = $s -replace "[\u00AB\u00BB\u2039\u203A\uFFFD\(\)\{\}\[\]]", "<"
+    $s = $s -replace "^P[KC«‹]", "P<"
+    $s = $s -replace "^I[KC«‹]", "I<"
+    $s = $s -replace "K{2,}", "<<"
+    $s = $s -replace "C{2,}", "<<"
+    return $s
+}
+
 try {
     if (-not (Test-Path $imagePath)) {
         Write-Output '{"success":false,"message":"Görsel dosyası bulunamadı."}'
@@ -58,12 +72,11 @@ try {
 
     # Normalize lines to find MRZ candidates
     # In passports, MRZ is 44 chars (TD3) or 30/36 chars (TD1/TD2)
-    # OCR sometimes misinterprets '<' as 'K', '(', '{', etc.
     $mrzCandidates = @()
     foreach ($line in $extractedLines) {
-        $norm = $line.Replace(" ", "").ToUpper()
+        $norm = Normalize-MrzLine $line
         if ($norm.Length -ge 24) {
-            if ($norm.StartsWith("P") -or $norm.StartsWith("I") -or $norm.Contains("<") -or $norm -match "^[A-Z0-9<]{28,}$") {
+            if ($norm.StartsWith("P<") -or $norm.StartsWith("P") -or $norm.StartsWith("I<") -or $norm.StartsWith("I") -or $norm.Contains("<") -or $norm -match "^[A-Z0-9<]{24,}$") {
                 $mrzCandidates += $norm
             }
         }
@@ -76,8 +89,8 @@ try {
         $mrz1 = $mrzCandidates[$mrzCandidates.Count - 2]
         $mrz2 = $mrzCandidates[$mrzCandidates.Count - 1]
     } elseif ($extractedLines.Count -ge 2) {
-        $mrz1 = $extractedLines[$extractedLines.Count - 2].Replace(" ", "").ToUpper()
-        $mrz2 = $extractedLines[$extractedLines.Count - 1].Replace(" ", "").ToUpper()
+        $mrz1 = Normalize-MrzLine $extractedLines[$extractedLines.Count - 2]
+        $mrz2 = Normalize-MrzLine $extractedLines[$extractedLines.Count - 1]
     }
 
     $resultObj = [PSCustomObject]@{

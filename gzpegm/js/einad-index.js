@@ -269,7 +269,9 @@ var _isoCountryMap = {
     'SRB': 'Sırbistan', 'SVK': 'Slovakya', 'SVN': 'Slovenya', 'ESP': 'İspanya', 'SWE': 'İsveç',
     'CHE': 'İsviçre', 'SYR': 'Suriye', 'TJK': 'Tacikistan', 'TUN': 'Tunus', 'TUR': 'Türkiye',
     'TKM': 'Türkmenistan', 'UKR': 'Ukrayna', 'ARE': 'Birleşik Arap Emirlikleri', 'GBR': 'İngiltere',
-    'USA': 'Amerika Birleşik Devletleri', 'UZB': 'Özbekistan'
+    'USA': 'Amerika Birleşik Devletleri', 'UZB': 'Özbekistan', 'SOM': 'Somali', 'SDN': 'Sudan',
+    'YEM': 'Yemen', 'NGA': 'Nijerya', 'GHA': 'Gana', 'ETH': 'Etiyopya', 'KEN': 'Kenya',
+    'LBN': 'Lübnan', 'DZA': 'Cezayir', 'MAR': 'Fas', 'EGY': 'Mısır', 'IRQ': 'Irak', 'IRN': 'İran'
 };
 
 function playScanBeep() {
@@ -293,13 +295,12 @@ function playScanBeep() {
 function cleanOcrMrzLine(line) {
     if (!line) return "";
     var cleaned = line.toUpperCase().replace(/\s+/g, '');
-    // OCR tarafından bazen '<' karakteri 'K', 'C', '(' veya '{' olarak okunabilir
-    cleaned = cleaned.replace(/^P[KC]/, 'P<');
-    cleaned = cleaned.replace(/^I[KC]/, 'I<');
+    // OCR veya bozuk karakter kodlaması (, «, », ‹, ›, parantez/köşeli parantezler)
+    cleaned = cleaned.replace(/[\uFFFD«»‹›\(\)\{\}\[\]]/g, '<');
+    cleaned = cleaned.replace(/^P[KC«‹]/, 'P<');
+    cleaned = cleaned.replace(/^I[KC«‹]/, 'I<');
     cleaned = cleaned.replace(/K{2,}/g, function (match) { return '<'.repeat(match.length); });
     cleaned = cleaned.replace(/C{2,}/g, function (match) { return '<'.repeat(match.length); });
-    cleaned = cleaned.replace(/[\(\{]/g, '<');
-    cleaned = cleaned.replace(/[\)\}]/g, '<');
     return cleaned;
 }
 
@@ -309,15 +310,15 @@ function parseAndApplyMrz(rawText, sourceName) {
     var cleanText = rawText.replace(/\r/g, '\n').replace(/\t/g, '\n');
     var rawLines = cleanText.split('\n')
         .map(function (s) { return cleanOcrMrzLine(s.trim()); })
-        .filter(function (s) { return s.length >= 20; });
+        .filter(function (s) { return s.length >= 10; });
 
     var line1 = "";
     var line2 = "";
 
-    // 1. Durum: Satırlar arasında P< ile başlayan satırı ve ardından gelen satırı bul
+    // 1. Durum: Satırlar arasında P< veya I< ile başlayan satırı ve ardından gelen satırı bul
     for (var idx = 0; idx < rawLines.length; idx++) {
         var cur = rawLines[idx];
-        if (cur.indexOf('P<') === 0 || cur.indexOf('I<') === 0) {
+        if (cur.indexOf('P<') === 0 || cur.indexOf('I<') === 0 || cur.indexOf('P') === 0 || cur.indexOf('I') === 0) {
             line1 = cur;
             if (idx + 1 < rawLines.length) {
                 line2 = rawLines[idx + 1];
@@ -326,11 +327,12 @@ function parseAndApplyMrz(rawText, sourceName) {
         }
     }
 
-    // 2. Durum: Eğer tek satırda peş peşe 88 karakter geldiyse
+    // 2. Durum: Eğer tek satırda peş peşe 88 karakter geldiyse (Donanımsal Okuyucu Tek Parça Gönderimi)
     if (!line1 && cleanText.length >= 80) {
-        var compact = cleanText.replace(/\s+/g, '');
+        var compact = cleanOcrMrzLine(cleanText);
         var pIdx = compact.indexOf('P<');
-        if (pIdx >= 0 && compact.length >= pIdx + 88) {
+        if (pIdx < 0) pIdx = compact.indexOf('I<');
+        if (pIdx >= 0 && compact.length >= pIdx + 80) {
             line1 = compact.substr(pIdx, 44);
             line2 = compact.substr(pIdx + 44, 44);
         }
@@ -340,9 +342,11 @@ function parseAndApplyMrz(rawText, sourceName) {
     if (!line1 && rawLines.length >= 2) {
         line1 = rawLines[rawLines.length - 2];
         line2 = rawLines[rawLines.length - 1];
+    } else if (!line1 && rawLines.length === 1) {
+        line1 = rawLines[0];
     }
 
-    if (!line1 || !line2) return false;
+    if (!line1 && !line2) return false;
 
     var surname = "";
     var givenNames = "";
@@ -351,30 +355,58 @@ function parseAndApplyMrz(rawText, sourceName) {
     var birthDateStr = "";
     var sex = "";
 
-    // TD3 Line 1: P<XXXSURNAME<<GIVEN<NAMES<<<<...
-    if (line1.indexOf('P<') === 0 || line1.indexOf('P') === 0) {
-        var offset = line1.indexOf('P<') === 0 ? 2 : 1;
-        var issuingState = line1.substr(offset, 3);
-        var namePart = line1.substr(offset + 3);
+    // TD3 / TD2 / TD1 Line 1 İsim Ayrıştırma
+    if (line1) {
+        var namePart = "";
+        var issuingState = "";
 
-        var nameParts = namePart.split('<<');
-        if (nameParts.length >= 1) {
-            surname = nameParts[0].replace(/</g, ' ').trim();
+        if (line1.indexOf('P<') === 0 || line1.indexOf('I<') === 0) {
+            issuingState = line1.substr(2, 3).replace(/[<]/g, '').trim();
+            namePart = line1.substr(5);
+        } else if (line1.indexOf('P') === 0 || line1.indexOf('I') === 0) {
+            issuingState = line1.substr(1, 3).replace(/[<]/g, '').trim();
+            namePart = line1.substr(4);
+        } else {
+            namePart = line1;
         }
-        if (nameParts.length >= 2) {
-            givenNames = nameParts[1].replace(/</g, ' ').trim();
+
+        var normalizedNamePart = namePart.replace(/[\uFFFD«»‹›\(\)\{\}\[\]]/g, '<');
+
+        // Soyad ve Adları çift veya daha fazla chevron (<<) ile ayır
+        var primaryParts = normalizedNamePart.split(/<{2,}/).filter(function (p) {
+            return p.replace(/</g, '').trim().length > 0;
+        });
+
+        if (primaryParts.length >= 1) {
+            surname = primaryParts[0].replace(/<+/g, ' ').replace(/[^A-ZÇĞİÖŞÜ\s]/g, ' ').replace(/\s+/g, ' ').trim();
+        }
+        if (primaryParts.length >= 2) {
+            givenNames = primaryParts[1].replace(/<+/g, ' ').replace(/[^A-ZÇĞİÖŞÜ\s]/g, ' ').replace(/\s+/g, ' ').trim();
+        }
+
+        // Çift chevron okunamadıysa tek chevron (<) ile bölmeyi dene
+        if (!givenNames && normalizedNamePart.indexOf('<') >= 0) {
+            var singleParts = normalizedNamePart.split(/<+/).map(function (s) {
+                return s.replace(/[^A-ZÇĞİÖŞÜ\s]/g, ' ').replace(/\s+/g, ' ').trim();
+            }).filter(function (s) { return s.length > 0; });
+
+            if (singleParts.length >= 1) surname = singleParts[0];
+            if (singleParts.length >= 2) givenNames = singleParts.slice(1).join(' ');
         }
     }
 
-    // TD3 Line 2: 9 chars doc no, 1 check, 3 chars nat, 6 chars dob, 1 check, 1 sex
-    if (line2.length >= 21) {
-        passportNo = line2.substr(0, 9).replace(/</g, '').trim();
-        nationalityCode = line2.substr(10, 3).replace(/</g, '').trim();
+    // TD3 Line 2 Ayrıştırma (Belge No, Uyruk, Doğum Tarihi, Cinsiyet)
+    if (line2 && line2.length >= 20) {
+        passportNo = line2.substr(0, 9).replace(/[<«»‹›\uFFFD]/g, '').trim();
+        nationalityCode = line2.substr(10, 3).replace(/[<«»‹›\uFFFD]/g, '').trim();
         var dobRaw = line2.substr(13, 6); // YYMMDD
         var sexRaw = line2.substr(20, 1).toUpperCase();
 
         if (sexRaw === 'M') sex = 'Erkek';
         else if (sexRaw === 'F') sex = 'Bayan';
+
+        // OCR kaynaklı rakam-harf karışıklıklarını düzelt (O->0, I->1, S->5, B->8, Z->2)
+        dobRaw = dobRaw.replace(/O/g, '0').replace(/I/g, '1').replace(/S/g, '5').replace(/B/g, '8').replace(/Z/g, '2');
 
         if (/^\d{6}$/.test(dobRaw)) {
             var yy = parseInt(dobRaw.substr(0, 2), 10);
@@ -394,22 +426,32 @@ function parseAndApplyMrz(rawText, sourceName) {
     if (sex) $('#Cinsiyet').val(sex);
     if (birthDateStr) $('#DogumT').val(birthDateStr);
 
-    var matchedCountry = _isoCountryMap[nationalityCode] || _isoCountryMap[line1.substr(2, 3)];
+    var matchedCountry = _isoCountryMap[nationalityCode] || 
+                         (line1 && line1.length >= 5 ? _isoCountryMap[line1.substr(2, 3)] : null) ||
+                         (line1 && line1.length >= 3 ? _isoCountryMap[line1.substr(0, 3)] : null);
+
     if (matchedCountry) {
+        var foundOpt = false;
         $('#Uyruk').find('option').each(function () {
-            if ($(this).val().toLowerCase() === matchedCountry.toLowerCase() ||
-                $(this).val().toLowerCase().indexOf(matchedCountry.toLowerCase()) >= 0) {
-                $('#Uyruk').val($(this).val()).trigger('change');
+            var optVal = $(this).val();
+            if (optVal && (optVal.toLowerCase() === matchedCountry.toLowerCase() ||
+                optVal.toLowerCase().indexOf(matchedCountry.toLowerCase()) >= 0 ||
+                matchedCountry.toLowerCase().indexOf(optVal.toLowerCase()) >= 0)) {
+                $('#Uyruk').val(optVal).trigger('change');
+                foundOpt = true;
                 return false;
             }
         });
+        if (!foundOpt) {
+            $('#Uyruk').append($('<option selected></option>').val(matchedCountry).text(matchedCountry)).trigger('change');
+        }
     }
 
     // Başarı Sesi ve Bildirimi
     playScanBeep();
 
     var sourceLabel = sourceName ? ' (' + sourceName + ')' : '';
-    var feedback = '✅ Pasaport Başarıyla Okundu' + sourceLabel + ': ' + fullName + ' | Pasaport: ' + (passportNo || '-') + ' | Uyruk: ' + (matchedCountry || nationalityCode);
+    var feedback = '✅ Pasaport Başarıyla Okundu' + sourceLabel + ': ' + fullName + ' | Pasaport: ' + (passportNo || '-') + ' | Uyruk: ' + (matchedCountry || nationalityCode || '-');
     $('#mrzFeedback').text(feedback).show();
 
     // Alanları yeşil parıltıyla vurgula
@@ -419,7 +461,7 @@ function parseAndApplyMrz(rawText, sourceName) {
     }, 1500);
 
     $('#accKimlik').collapse('show');
-    $('#mrzInputText').val(line1 + '\n' + line2);
+    $('#mrzInputText').val(cleanOcrMrzLine(line1) + (line2 ? '\n' + cleanOcrMrzLine(line2) : ''));
 
     return true;
 }
