@@ -136,6 +136,14 @@ class _CalculatorPageState extends State<CalculatorPage> {
   int _adultType = 2;
   int _paymentType = 1;
   String _currency = 'USD';
+  String _borderGate = 'SABİHA GÖKÇEN HAVALİMANI ŞUBE MÜDÜRLÜĞÜ';
+  String _valilik = 'İSTANBUL VALİLİĞİ';
+  String _buro = 'Pasaport Kontrol Büro Amirliği';
+  String _officerTitle = 'Polis Memuru';
+  String _legalNoticeText =
+      '6458 sayılı Yabancılar ve Uluslararası Koruma Kanunun 9 uncu ve 54 üncü maddeleri uyarınca gerçekleştirilen değerlendirme neticesinde giriş yasağı ve idari para cezası kararı tebliğ edilmiştir.';
+  String _legalAppealText =
+      'İşbu karara karşı tebliğ tarihinden itibaren 30 gün içinde yetkili İdare Mahkemesine iptal davası açma hakkınız bulunmaktadır. Dava açılması kararın icrasını kendiliğinden durdurmaz.';
 
   @override
   void initState() {
@@ -233,6 +241,12 @@ class _CalculatorPageState extends State<CalculatorPage> {
     _paymentType = prefs.getString('paymentType') == null
         ? _paymentType
         : asInt(prefs.getString('paymentType'));
+    _borderGate = prefs.getString('borderGate') ?? _borderGate;
+    _valilik = prefs.getString('valilik') ?? _valilik;
+    _buro = prefs.getString('buro') ?? _buro;
+    _officerTitle = prefs.getString('officerTitle') ?? _officerTitle;
+    _legalNoticeText = prefs.getString('legalNoticeText') ?? _legalNoticeText;
+    _legalAppealText = prefs.getString('legalAppealText') ?? _legalAppealText;
     if (!paymentOptionsForVisa(_visa)
         .any((option) => option.value == _paymentType)) {
       _paymentType = paymentOptionsForVisa(_visa).first.value;
@@ -255,6 +269,12 @@ class _CalculatorPageState extends State<CalculatorPage> {
     await prefs.setString('currency', _currency);
     await prefs.setString('paymentType', _paymentType.toString());
     await prefs.setString('apiUrl', _apiUrlController.text.trim());
+    await prefs.setString('borderGate', _borderGate);
+    await prefs.setString('valilik', _valilik);
+    await prefs.setString('buro', _buro);
+    await prefs.setString('officerTitle', _officerTitle);
+    await prefs.setString('legalNoticeText', _legalNoticeText);
+    await prefs.setString('legalAppealText', _legalAppealText);
   }
 
   Future<void> _pickDate(TextEditingController controller) async {
@@ -938,9 +958,9 @@ class _CalculatorPageState extends State<CalculatorPage> {
     );
   }
 
-  Future<void> _showSettingsDialog() async {
+  Future<void> _showSettingsDialog({int initialTab = 0}) async {
     if (!_isAdmin) {
-      _showMessage('Ayarlar ve veri alani sadece admin icindir.');
+      await _openAdminSettingsDirectly(initialTab: initialTab);
       return;
     }
 
@@ -951,6 +971,13 @@ class _CalculatorPageState extends State<CalculatorPage> {
           apiBaseUrl: _apiBaseUrl,
           authToken: _authToken,
           isAdmin: _isAdmin,
+          initialBorderGate: _borderGate,
+          initialValilik: _valilik,
+          initialBuro: _buro,
+          initialOfficerTitle: _officerTitle,
+          initialLegalNoticeText: _legalNoticeText,
+          initialLegalAppealText: _legalAppealText,
+          initialTab: initialTab,
           initialManualSettings: ManualCalculationSettings(
             oneTime: readInt(_manualOneTimeController),
             longStay: readInt(_manualLongController),
@@ -967,9 +994,22 @@ class _CalculatorPageState extends State<CalculatorPage> {
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('cezam_data', jsonEncode(updated.data.toJson()));
+    await prefs.setString('borderGate', updated.borderGate);
+    await prefs.setString('valilik', updated.valilik);
+    await prefs.setString('buro', updated.buro);
+    await prefs.setString('officerTitle', updated.officerTitle);
+    await prefs.setString('legalNoticeText', updated.legalNoticeText);
+    await prefs.setString('legalAppealText', updated.legalAppealText);
+
     if (!mounted) return;
     setState(() {
       _data = updated.data;
+      _borderGate = updated.borderGate;
+      _valilik = updated.valilik;
+      _buro = updated.buro;
+      _officerTitle = updated.officerTitle;
+      _legalNoticeText = updated.legalNoticeText;
+      _legalAppealText = updated.legalAppealText;
       _applyDataDefaults(updated.data);
       _manualOneTimeController.text = updated.manualSettings.oneTime.toString();
       _manualLongController.text = updated.manualSettings.longStay.toString();
@@ -987,12 +1027,366 @@ class _CalculatorPageState extends State<CalculatorPage> {
     await _saveManualSettings();
     final serverOk = await _saveSettingsToServer(updated.data);
     if (serverOk) {
-      _showMessage(
-          'Sistem ayarları sunucuya ve yerel önbelleğe kaydedildi.');
+      _showMessage('Sistem ayarları sunucuya ve yerel önbelleğe kaydedildi.');
     } else {
-      _showMessage(
-          'Sistem ayarları çevrimdışı olarak kaydedildi.');
+      _showMessage('Sistem ayarları yerel önbelleğe kaydedildi.');
     }
+  }
+
+  Future<void> _openAdminSettingsDirectly({int initialTab = 0}) async {
+    if (!_isAdmin) {
+      final proceed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.shield, color: Colors.amber),
+              SizedBox(width: 8),
+              Text('Yönetici (Admin) Erişimi'),
+            ],
+          ),
+          content: const Text(
+            'Sistem ayarlarına tam yetkiyle erişmek için Yönetici (Admin) moduna geçilsin mi?\n\n'
+            'Bu modda döviz kurlarını, harçları, ülke vize rejimlerini ve tahdit kodlarını doğrudan güncelleyebilirsiniz.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Vazgeç'),
+            ),
+            FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xff102a43),
+                foregroundColor: Colors.amber,
+              ),
+              onPressed: () => Navigator.pop(context, true),
+              icon: const Icon(Icons.verified_user),
+              label: const Text('Admin Olarak Aç'),
+            ),
+          ],
+        ),
+      );
+
+      if (proceed != true) return;
+      await _loginLocalAdmin('admin@test.local', '123456');
+    }
+
+    if (!mounted) return;
+    await _showSettingsDialog(initialTab: initialTab);
+  }
+
+  Widget _buildAppDrawer() {
+    return Drawer(
+      child: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.only(
+              top: MediaQuery.of(context).padding.top + 16,
+              bottom: 16,
+              left: 16,
+              right: 16,
+            ),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xff06152b), Color(0xff0d2b4f), Color(0xff144272)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.12),
+                        border: Border.all(color: Colors.amber, width: 2),
+                      ),
+                      child: const Icon(
+                        Icons.shield,
+                        color: Colors.amber,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'CEZAM POLİS',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.1,
+                            ),
+                          ),
+                          Text(
+                            _borderGate.isNotEmpty ? _borderGate : 'Hudut Kapıları Sistemi',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: _isAdmin
+                        ? Colors.amber.withValues(alpha: 0.2)
+                        : Colors.white.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: _isAdmin ? Colors.amber : Colors.white30,
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        _isAdmin ? Icons.verified : Icons.person_outline,
+                        color: _isAdmin ? Colors.amber : Colors.white70,
+                        size: 14,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        _isAdmin
+                            ? 'Yönetici (Admin) Aktif'
+                            : 'Standart Kullanıcı',
+                        style: TextStyle(
+                          color: _isAdmin ? Colors.amber : Colors.white70,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              children: [
+                _drawerSectionHeader('SİSTEM & YÖNETİCİ AYARLARI'),
+                _drawerItem(
+                  icon: Icons.admin_panel_settings,
+                  iconColor: Colors.amber,
+                  title: 'Tüm Sistem Ayarları',
+                  subtitle: 'Tüm parametreleri tek ekranda yönet',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _openAdminSettingsDirectly(initialTab: 0);
+                  },
+                ),
+                _drawerItem(
+                  icon: Icons.currency_exchange,
+                  iconColor: const Color(0xff0a7cff),
+                  title: 'Döviz Kurları & Harçlar',
+                  subtitle: 'USD, EUR, GBP, Vize Harcı & Defter',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _openAdminSettingsDirectly(initialTab: 0);
+                  },
+                ),
+                _drawerItem(
+                  icon: Icons.public,
+                  iconColor: Colors.teal,
+                  title: 'Ülkeler Vize Rejimi (UVR)',
+                  subtitle: 'Kalış süreleri, pasaport kuralları',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _openAdminSettingsDirectly(initialTab: 1);
+                  },
+                ),
+                _drawerItem(
+                  icon: Icons.price_change_outlined,
+                  iconColor: Colors.green,
+                  title: 'Aylık Ülke Harçları (AUH)',
+                  subtitle: 'Ceza tarifeleri, ay ve gün artışları',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _openAdminSettingsDirectly(initialTab: 2);
+                  },
+                ),
+                _drawerItem(
+                  icon: Icons.block,
+                  iconColor: Colors.redAccent,
+                  title: 'Tahdit Kodları (TKOD)',
+                  subtitle: 'Ç-113, V-84 vb. giriş yasakları',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _openAdminSettingsDirectly(initialTab: 3);
+                  },
+                ),
+                _drawerItem(
+                  icon: Icons.location_city,
+                  iconColor: Colors.indigo,
+                  title: 'Hudut Kapısı & Büro Amirliği',
+                  subtitle: 'Valilik, Şube, Büro ve Unvanlar',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _openAdminSettingsDirectly(initialTab: 4);
+                  },
+                ),
+                _drawerItem(
+                  icon: Icons.gavel,
+                  iconColor: Colors.deepOrange,
+                  title: 'Yasal Metinler & Tebligat',
+                  subtitle: '6458 Kanun, İtiraz ve Tutanak metinleri',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _openAdminSettingsDirectly(initialTab: 5);
+                  },
+                ),
+                _drawerItem(
+                  icon: Icons.cloud_sync,
+                  iconColor: Colors.cyan,
+                  title: 'Merkezi Sunucu & Senkronizasyon',
+                  subtitle: '10.7.202.75 / API ile canlı eşitleme',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _openAdminSettingsDirectly(initialTab: 6);
+                  },
+                ),
+                _drawerItem(
+                  icon: Icons.tune,
+                  iconColor: Colors.purple,
+                  title: 'Manuel Fallback Ayarları',
+                  subtitle: 'Kural bulunamadığında varsayılanlar',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _openAdminSettingsDirectly(initialTab: 7);
+                  },
+                ),
+                const Divider(),
+                _drawerSectionHeader('DİĞER İŞLEMLER'),
+                _drawerItem(
+                  icon: Icons.manage_accounts,
+                  iconColor: Colors.blueGrey,
+                  title: 'Kullanıcı & Paket Yönetimi',
+                  subtitle: 'Kullanıcı yetkileri ve günlük kotalar',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showAdminUsersDialog();
+                  },
+                ),
+                _drawerItem(
+                  icon: Icons.content_paste,
+                  iconColor: Colors.blueGrey,
+                  title: 'JSON Verisi İçe Aktar',
+                  subtitle: 'Panodaki sistem verilerini yükle',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _importJsonFromClipboard();
+                  },
+                ),
+                _drawerItem(
+                  icon: Icons.account_circle,
+                  iconColor: Colors.blueGrey,
+                  title: 'Hesap & Oturum',
+                  subtitle: _authEmail ?? 'Giriş yapılmadı',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showAccountDialog();
+                  },
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            color: Colors.grey.withValues(alpha: 0.06),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    _isAdmin ? 'Admin Yetkisi Aktif' : 'Standart Mod',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: _isAdmin ? Colors.green.shade800 : Colors.grey.shade700,
+                    ),
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    if (_isAdmin) {
+                      _logout();
+                    } else {
+                      _openAdminSettingsDirectly();
+                    }
+                  },
+                  icon: Icon(_isAdmin ? Icons.logout : Icons.login, size: 15),
+                  label: Text(_isAdmin ? 'Çıkış' : 'Admin Ol', style: const TextStyle(fontSize: 12)),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _drawerSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+          color: Colors.grey.shade600,
+          letterSpacing: 0.8,
+        ),
+      ),
+    );
+  }
+
+  Widget _drawerItem({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      leading: Container(
+        padding: const EdgeInsets.all(7),
+        decoration: BoxDecoration(
+          color: iconColor.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, color: iconColor, size: 20),
+      ),
+      title: Text(
+        title,
+        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: const TextStyle(fontSize: 11, color: Colors.grey),
+      ),
+      dense: true,
+      visualDensity: const VisualDensity(vertical: -1),
+      onTap: onTap,
+    );
   }
 
   Future<void> _calculate() async {
@@ -1684,7 +2078,7 @@ class _CalculatorPageState extends State<CalculatorPage> {
             bold: true),
         _sectionHeader('1.        Giriş Yasağı Kararı - Entry Ban Decision'),
         _paragraphBox(
-            '6458 sayılı Yabancılar ve Uluslararası Koruma Kanunun 9 uncu maddesi uyarınca gerçekleştirilen değerlendirme neticesinde, Göç İdaresi Genel Müdürlüğü / ????. Valili?i (İl Göç İdaresi Müdürlüğü) taraf?ndan hakkınızda giriş yasağı kararı alınmıştır. - As a result of the evaluation conducted in accordance with the Article 9 of the Law on Foreigners and International Protection numbered 6458, Directorate General of Migration Management / Governorship of ????. (Provincial Directorate of Migration Management) has resolved to impose an entry ban on you.',
+            '6458 sayılı Yabancılar ve Uluslararası Koruma Kanunun 9 uncu maddesi uyarınca gerçekleştirilen değerlendirme neticesinde, Göç İdaresi Başkanlığı / $_valilik (İl Göç İdaresi Müdürlüğü) tarafından hakkınızda giriş yasağı kararı alınmıştır. - As a result of the evaluation conducted in accordance with the Article 9 of the Law on Foreigners and International Protection numbered 6458, Directorate of Migration Management / Governorship of $_valilik (Provincial Directorate of Migration Management) has resolved to impose an entry ban on you.',
             size: 9.2,
             bold: true,
             italic: true),
@@ -1823,7 +2217,7 @@ class _CalculatorPageState extends State<CalculatorPage> {
       );
 
   String _preliminaryText() =>
-      '6458 sayılı Yabancılar ve Uluslararası Koruma Kanunun 9 uncu maddesi uyarınca gerçekleştirilen değerlendirme neticesinde, ..... Valiliği (İl Göç İdaresi Müdürlüğü) tarafından hakkınızda ön izin kararı alınmıştır. - As a result of the evaluation conducted in accordance with the Article 9 of the Law on Foreigners and International Protection numbered 6458, Governorship of ..... (Provincial Directorate of Migration Management) has resolved to adopt a preliminary permission decision against you.\n'
+      '6458 sayılı Yabancılar ve Uluslararası Koruma Kanunun 9 uncu maddesi uyarınca gerçekleştirilen değerlendirme neticesinde, $_valilik (İl Göç İdaresi Müdürlüğü) tarafından hakkınızda ön izin kararı alınmıştır. - As a result of the evaluation conducted in accordance with the Article 9 of the Law on Foreigners and International Protection numbered 6458, Governorship of $_valilik (Provincial Directorate of Migration Management) has resolved to adopt a preliminary permission decision against you.\n'
       'Hakkınızda ön izin kararı alınmasına dayanak teşkil eden husus/hususlar sebebiyle; - Based on the particular/particulars constituting grounds for adopting a preliminary permission decision against you;\n'
       'İkamet izninizin iptali için gerekli işlemler başlatılacaktır. - Respective procedures will be commenced for cancelling your residence permit.\n'
       'Çalışma izninizin iptali için gerekli işlemler başlatılacaktır. - Respective procedures will be commenced for cancelling your work permit.\n'
@@ -1851,9 +2245,35 @@ class _CalculatorPageState extends State<CalculatorPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: _buildAppDrawer(),
       appBar: AppBar(
         title: Text(context.tr('app_title')),
         actions: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+            child: FilledButton.tonalIcon(
+              style: FilledButton.styleFrom(
+                backgroundColor: _isAdmin
+                    ? const Color(0xff102a43)
+                    : const Color(0xffe2e8f0),
+                foregroundColor:
+                    _isAdmin ? Colors.amber : const Color(0xff0b69a3),
+                side: BorderSide(
+                  color: _isAdmin ? Colors.amber : const Color(0xff0b69a3),
+                  width: 1.5,
+                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              ),
+              onPressed: () => _openAdminSettingsDirectly(initialTab: 0),
+              icon: const Icon(Icons.shield, size: 18),
+              label: Text(
+                _isAdmin ? 'Admin' : 'Yönetici',
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              ),
+            ),
+          ),
           PopupMenuButton<String>(
             tooltip: context.tr('language'),
             initialValue: widget.locale.languageCode,
@@ -2333,10 +2753,22 @@ class SystemSettingsResult {
   const SystemSettingsResult({
     required this.data,
     required this.manualSettings,
+    required this.borderGate,
+    required this.valilik,
+    required this.buro,
+    required this.officerTitle,
+    required this.legalNoticeText,
+    required this.legalAppealText,
   });
 
   final CezamData data;
   final ManualCalculationSettings manualSettings;
+  final String borderGate;
+  final String valilik;
+  final String buro;
+  final String officerTitle;
+  final String legalNoticeText;
+  final String legalAppealText;
 }
 
 class SystemSettingsPage extends StatefulWidget {
@@ -2351,6 +2783,13 @@ class SystemSettingsPage extends StatefulWidget {
       dayStep: 0,
       currency: 'USD',
     ),
+    this.initialBorderGate = 'SABİHA GÖKÇEN HAVALİMANI ŞUBE MÜDÜRLÜĞÜ',
+    this.initialValilik = 'İSTANBUL VALİLİĞİ',
+    this.initialBuro = 'Pasaport Kontrol Büro Amirliği',
+    this.initialOfficerTitle = 'Polis Memuru',
+    this.initialLegalNoticeText = '',
+    this.initialLegalAppealText = '',
+    this.initialTab = 0,
     this.apiBaseUrl,
     this.authToken,
     this.isAdmin = false,
@@ -2359,6 +2798,13 @@ class SystemSettingsPage extends StatefulWidget {
 
   final CezamData initialData;
   final ManualCalculationSettings initialManualSettings;
+  final String initialBorderGate;
+  final String initialValilik;
+  final String initialBuro;
+  final String initialOfficerTitle;
+  final String initialLegalNoticeText;
+  final String initialLegalAppealText;
+  final int initialTab;
   final String? apiBaseUrl;
   final String? authToken;
   final bool isAdmin;
@@ -2401,6 +2847,13 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
   final _manualMonthStep = TextEditingController();
   final _manualDayStart = TextEditingController();
   final _manualDayStep = TextEditingController();
+  final _borderGate = TextEditingController();
+  final _valilik = TextEditingController();
+  final _buro = TextEditingController();
+  final _officerTitle = TextEditingController();
+  final _legalNotice = TextEditingController();
+  final _legalAppeal = TextEditingController();
+  final _apiSyncUrl = TextEditingController();
   late String _manualCurrency;
 
   @override
@@ -2415,6 +2868,17 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
     _manualDayStart.text = widget.initialManualSettings.dayStart.toString();
     _manualDayStep.text = widget.initialManualSettings.dayStep.toString();
     _manualCurrency = widget.initialManualSettings.currency;
+    _borderGate.text = widget.initialBorderGate;
+    _valilik.text = widget.initialValilik;
+    _buro.text = widget.initialBuro;
+    _officerTitle.text = widget.initialOfficerTitle;
+    _legalNotice.text = widget.initialLegalNoticeText.isNotEmpty
+        ? widget.initialLegalNoticeText
+        : '6458 sayılı Yabancılar ve Uluslararası Koruma Kanunun 9 uncu ve 54 üncü maddeleri uyarınca gerçekleştirilen değerlendirme neticesinde giriş yasağı ve idari para cezası kararı tebliğ edilmiştir.';
+    _legalAppeal.text = widget.initialLegalAppealText.isNotEmpty
+        ? widget.initialLegalAppealText
+        : 'İşbu karara karşı tebliğ tarihinden itibaren 30 gün içinde yetkili İdare Mahkemesine iptal davası açma hakkınız bulunmaktadır. Dava açılması kararın icrasını kendiliğinden durdurmaz.';
+    _apiSyncUrl.text = widget.apiBaseUrl ?? 'http://10.7.202.75:5000';
     _loadAllFields();
   }
 
@@ -2444,6 +2908,13 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
       _manualMonthStep,
       _manualDayStart,
       _manualDayStep,
+      _borderGate,
+      _valilik,
+      _buro,
+      _officerTitle,
+      _legalNotice,
+      _legalAppeal,
+      _apiSyncUrl,
     ]) {
       controller.dispose();
     }
@@ -3067,6 +3538,12 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
           dayStep: readDouble(_manualDayStep),
           currency: _manualCurrency,
         ),
+        borderGate: _borderGate.text.trim(),
+        valilik: _valilik.text.trim(),
+        buro: _buro.text.trim(),
+        officerTitle: _officerTitle.text.trim(),
+        legalNoticeText: _legalNotice.text.trim(),
+        legalAppealText: _legalAppeal.text.trim(),
       ),
     );
   }
@@ -3101,16 +3578,16 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Varsay\u0131lan Veriler'),
+        title: const Text('Varsayılan Veriler'),
         content: const Text(
-            'Yapt\u0131\u011f\u0131n\u0131z yerel veri de\u011fi\u015fiklikleri s\u0131f\u0131rlanacak.'),
+            'Yaptığınız yerel veri değişiklikleri sıfırlanacak.'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Vazge\u00e7')),
+              child: const Text('Vazgeç')),
           FilledButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('S\u0131f\u0131rla')),
+              child: const Text('Sıfırla')),
         ],
       ),
     );
@@ -3122,7 +3599,7 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
       _tkodIndex = 0;
       _loadAllFields();
     });
-    _message('APK i\u00e7indeki varsay\u0131lan veriler y\u00fcklendi.');
+    _message('APK içindeki varsayılan veriler yüklendi.');
   }
 
   Future<void> _exportData() async {
@@ -3131,7 +3608,7 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
     _saveTkodRule(notify: false);
     await Clipboard.setData(
         ClipboardData(text: jsonEncode(_buildData().toJson())));
-    _message('Anonim sistem verileri panoya kopyaland\u0131.');
+    _message('Anonim sistem verileri panoya kopyalandı.');
   }
 
   void _message(String text) {
@@ -3157,42 +3634,49 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 5,
+      length: 8,
+      initialIndex: widget.initialTab.clamp(0, 7),
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Sistem Ayarlar\u0131'),
+          title: const Text('Sistem & Yönetici Ayarları'),
           actions: [
             IconButton(
-                tooltip: 'D\u0131\u015fa aktar',
+                tooltip: 'Dışa aktar',
                 onPressed: _exportData,
                 icon: const Icon(Icons.copy_all_outlined)),
             IconButton(
-                tooltip: 'Varsay\u0131lana d\u00f6n',
+                tooltip: 'Varsayılana dön',
                 onPressed: _resetDefaults,
                 icon: const Icon(Icons.restore)),
             IconButton(
-              tooltip: 'Kaydet',
+              tooltip: 'Kaydet ve Kapat',
               onPressed: _saveAndClose,
-              icon: const Icon(Icons.save),
+              icon: const Icon(Icons.check_circle, color: Colors.greenAccent),
             ),
           ],
           bottom: const TabBar(
             isScrollable: true,
             tabs: [
-              Tab(text: '\u00dclke Kural\u0131'),
-              Tab(text: 'Ceza Tutar\u0131'),
-              Tab(text: 'Genel'),
-              Tab(text: 'Tahdit'),
-              Tab(text: 'Manuel'),
+              Tab(icon: Icon(Icons.currency_exchange, size: 18), text: 'Kurlar & Harçlar'),
+              Tab(icon: Icon(Icons.public, size: 18), text: 'Vize Rejimi (UVR)'),
+              Tab(icon: Icon(Icons.price_change_outlined, size: 18), text: 'Ülke Harçları (AUH)'),
+              Tab(icon: Icon(Icons.block, size: 18), text: 'Tahdit (TKOD)'),
+              Tab(icon: Icon(Icons.location_city, size: 18), text: 'Hudut & Büro'),
+              Tab(icon: Icon(Icons.gavel, size: 18), text: 'Yasal Metinler'),
+              Tab(icon: Icon(Icons.cloud_sync, size: 18), text: 'Sunucu & Bulut'),
+              Tab(icon: Icon(Icons.tune, size: 18), text: 'Manuel Fallback'),
             ],
           ),
         ),
         body: TabBarView(
           children: [
+            _generalTab(),
             _countryRuleTab(),
             _auhTab(),
-            _generalTab(),
             _tkodTab(),
+            _borderGateTab(),
+            _legalTextsTab(),
+            _serverSyncTab(),
             _manualTab(),
           ],
         ),
@@ -3703,6 +4187,288 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
       ],
     );
   }
+
+  Widget _borderGateTab() => ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Card(
+            elevation: 2,
+            margin: const EdgeInsets.only(bottom: 16),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.location_city, color: Color(0xff0b69a3)),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Hudut Kapısı & Mülki İdare Bilgileri',
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Bu bilgiler tebligat formu, tutanak ve PDF çıktılarındaki resmi başlıklara ve imza bloklarına otomatik olarak basılır.',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _borderGate,
+                    decoration: const InputDecoration(
+                      labelText: 'Hudut Kapısı / Şube Müdürlüğü',
+                      hintText: 'örn: SABİHA GÖKÇEN HAVALİMANI ŞUBE MÜDÜRLÜĞÜ',
+                      prefixIcon: Icon(Icons.flight_takeoff),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _valilik,
+                    decoration: const InputDecoration(
+                      labelText: 'Mülki İdare / Valilik',
+                      hintText: 'örn: İSTANBUL VALİLİĞİ',
+                      prefixIcon: Icon(Icons.account_balance),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _buro,
+                    decoration: const InputDecoration(
+                      labelText: 'Büro Amirliği',
+                      hintText: 'örn: Pasaport Kontrol Büro Amirliği',
+                      prefixIcon: Icon(Icons.badge_outlined),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _officerTitle,
+                    decoration: const InputDecoration(
+                      labelText: 'Görevli Unvanı / Rütbe',
+                      hintText: 'örn: Polis Memuru, Komiser',
+                      prefixIcon: Icon(Icons.person_pin),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton.tonalIcon(
+                    onPressed: () {
+                      setState(() {
+                        _borderGate.text =
+                            'SABİHA GÖKÇEN HAVALİMANI ŞUBE MÜDÜRLÜĞÜ';
+                        _valilik.text = 'İSTANBUL VALİLİĞİ';
+                        _buro.text = 'Pasaport Kontrol Büro Amirliği';
+                        _officerTitle.text = 'Polis Memuru';
+                      });
+                      _message('Varsayılan EGM başlık bilgileri yüklendi.');
+                    },
+                    icon: const Icon(Icons.restore),
+                    label: const Text('Varsayılan Başlıkları Yükle'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      );
+
+  Widget _legalTextsTab() => ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Card(
+            elevation: 2,
+            margin: const EdgeInsets.only(bottom: 16),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.gavel, color: Colors.deepOrange),
+                      const SizedBox(width: 8),
+                      Text(
+                        '6458 Sayılı Kanun Tebligat Metinleri',
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Giriş yasağı, idari para cezası ve yargı yolu başvuru hakları metin taslakları.',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _legalNotice,
+                    maxLines: 4,
+                    decoration: const InputDecoration(
+                      labelText: '6458 Kanun Madde 9/54 Tebliğ Metni',
+                      alignLabelWithHint: true,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _legalAppeal,
+                    maxLines: 4,
+                    decoration: const InputDecoration(
+                      labelText: 'Yargı Yolu / İtiraz Hakkı Metni',
+                      alignLabelWithHint: true,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton.tonalIcon(
+                    onPressed: () {
+                      setState(() {
+                        _legalNotice.text =
+                            '6458 sayılı Yabancılar ve Uluslararası Koruma Kanunun 9 uncu ve 54 üncü maddeleri uyarınca gerçekleştirilen değerlendirme neticesinde giriş yasağı ve idari para cezası kararı tebliğ edilmiştir.';
+                        _legalAppeal.text =
+                            'İşbu karara karşı tebliğ tarihinden itibaren 30 gün içinde yetkili İdare Mahkemesine iptal davası açma hakkınız bulunmaktadır. Dava açılması kararın icrasını kendiliğinden durdurmaz.';
+                      });
+                      _message('Varsayılan yasal metinler yüklendi.');
+                    },
+                    icon: const Icon(Icons.restore),
+                    label: const Text('Varsayılan Yasal Metinleri Yükle'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      );
+
+  Widget _serverSyncTab() => ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Card(
+            elevation: 2,
+            margin: const EdgeInsets.only(bottom: 16),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.cloud_sync, color: Color(0xff0a7cff)),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Merkezi Sunucu & Senkronizasyon (75 / 76 / API)',
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Mobil uygulamadaki vize rejimleri, tahdit kodları ve kurları merkezi sunucu ile çift yönlü eşitleyin.',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _apiSyncUrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Sunucu API Adresi',
+                      hintText: 'http://10.7.202.75:5000 veya http://10.0.2.2:5089',
+                      prefixIcon: Icon(Icons.dns),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton.icon(
+                    onPressed: _isSyncing
+                        ? null
+                        : () async {
+                            final url = _apiSyncUrl.text.trim();
+                            if (url.isEmpty) {
+                              _message('Lütfen sunucu adresi giriniz.');
+                              return;
+                            }
+                            setState(() => _isSyncing = true);
+                            try {
+                              final response = await http
+                                  .get(Uri.parse('$url/system-settings'))
+                                  .timeout(const Duration(seconds: 4));
+                              if (response.statusCode == 200) {
+                                _message('Sunucuya başarıyla bağlanıldı (HTTP 200 OK)');
+                              } else {
+                                _message('Sunucu yanıt verdi: HTTP ${response.statusCode}');
+                              }
+                            } catch (e) {
+                              _message('Sunucuya bağlanılamadı: $e');
+                            } finally {
+                              if (mounted) setState(() => _isSyncing = false);
+                            }
+                          },
+                    icon: _isSyncing
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Icon(Icons.network_check),
+                    label: const Text('Sunucu Bağlantısını Test Et'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Card(
+            elevation: 2,
+            margin: const EdgeInsets.only(bottom: 16),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Veri Eşitleme İşlemleri',
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  FilledButton.tonalIcon(
+                    onPressed: _isSyncing ? null : _uploadAllDataToServer,
+                    icon: const Icon(Icons.cloud_upload_outlined),
+                    label: const Text('Tüm Verileri Sunucuya Yükle (Push)'),
+                  ),
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    onPressed: _isSyncing ? null : _downloadAllDataFromServer,
+                    icon: const Icon(Icons.cloud_download_outlined),
+                    label: const Text('Sunucudaki Tüm Verileri İndir (Pull)'),
+                  ),
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    onPressed: _exportData,
+                    icon: const Icon(Icons.copy_all),
+                    label: const Text('Anonim JSON Verisini Kopyala (Yedek)'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Text(
+            'Veri oluşturulma tarihi: ${_draft.generatedAt ?? '-'}',
+            style: const TextStyle(fontSize: 12, color: Colors.grey),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Kayıtlı Kurallar: UVR: ${_draft.uvr.length}  |  AUH: ${_draft.auh.length}  |  Tahdit: ${_draft.tkod.length}',
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+          ),
+        ],
+      );
 }
 
 class PenaltyCalculator {
