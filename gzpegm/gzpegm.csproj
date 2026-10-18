@@ -7214,7 +7214,6 @@
     <Compile Include="Models\UlkeModel.cs" />
     <Compile Include="Models\Usermodel.cs" />
     <Compile Include="Models\ViewModels\BorderViewModel.cs" />
-    <Compile Include="Models\ViewModels\HavalimaniBrifingViewModel.cs" />
     <Compile Include="Models\ViewModels\DocumentTermsViewModel.cs" />
     <Compile Include="Models\ViewModels\EducationPackageViewModels.cs" />
     <Compile Include="Models\ViewModels\ExamResultListItemViewModel.cs" />
@@ -7244,7 +7243,6 @@
     <Compile Include="Helpers\FileStorageHelper.cs" />
     <Compile Include="Helpers\ServerFailoverHelper.cs" />
     <Compile Include="Services\CacheService.cs" />
-    <Compile Include="Services\HavalimaniBrifingService.cs" />
     <Compile Include="Services\EducationPackageService.cs" />
     <Compile Include="Services\PradoCourseImportService.cs" />
     <Compile Include="Services\EmailService.cs" />
@@ -7719,7 +7717,6 @@
     <Content Include="vendor\summernote\summernote-lite.js.map" />
     <Content Include="vendor\summernote\summernote.js.map" />
     <Content Include="Views\Istatistik\Index.cshtml" />
-    <Content Include="Views\Istatistik\Brifing.cshtml" />
     <Content Include="Views\Ulke\Index.cshtml" />
     <Content Include="Views\Country\Index.cshtml" />
     <Content Include="Views\Shared\_MinimalMaster.cshtml" />
