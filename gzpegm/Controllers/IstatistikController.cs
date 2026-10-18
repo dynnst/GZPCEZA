@@ -1,5 +1,6 @@
-﻿using gzpegm.Helpers;
+using gzpegm.Helpers;
 using gzpegm.Models;
+using gzpegm.Models.ViewModels;
 using gzpegm.Services;
 using System;
 using System.Collections.Generic;
@@ -658,6 +659,33 @@ ORDER BY SUM([Count]) DESC";
             }, 15);
 
             return Json(result, JsonRequestBehavior.AllowGet);
+        }
+
+        // GET: BRIFING veya Istatistik/Brifing
+        [HttpGet]
+        [Route("BRIFING")]
+        [Route("Istatistik/Brifing")]
+        public ActionResult Brifing()
+        {
+            var model = CacheService.GetOrCreate("Havalimani_Brifing_Model_v1", () =>
+            {
+                return HavalimaniBrifingService.GetModel();
+            }, 60);
+
+            return View(model);
+        }
+
+        // GET: Istatistik/GetBrifingJson (For mobile app and dynamic charts)
+        [HttpGet]
+        [Route("Istatistik/GetBrifingJson")]
+        public JsonResult GetBrifingJson()
+        {
+            var model = CacheService.GetOrCreate("Havalimani_Brifing_Model_v1", () =>
+            {
+                return HavalimaniBrifingService.GetModel();
+            }, 60);
+
+            return Json(new { success = true, data = model }, JsonRequestBehavior.AllowGet);
         }
 
         private static decimal ParaTopla(IEnumerable<string> tutarlar)

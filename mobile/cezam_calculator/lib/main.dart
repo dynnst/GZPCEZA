@@ -13,6 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'country_codes.dart';
 import 'app_localizations.dart';
+import 'airport_statistics_page.dart';
 
 void main() {
   runApp(const CezamApp());
@@ -1183,6 +1184,26 @@ class _CalculatorPageState extends State<CalculatorPage> {
             child: ListView(
               padding: const EdgeInsets.symmetric(vertical: 4),
               children: [
+                _drawerSectionHeader('HAVALİMANI BİLGİ VE ANALİZ'),
+                _drawerItem(
+                  icon: Icons.analytics_outlined,
+                  iconColor: Colors.amber,
+                  title: 'Havalimanı Brifing & İstatistik',
+                  subtitle: 'Yolcu/uçak, ilk 10 ülke, INAD icmali, YTS & suç analizi',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AirportStatisticsPage(
+                          apiBaseUrl: _apiBaseUrl,
+                          authToken: _authToken,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const Divider(),
                 _drawerSectionHeader('SİSTEM & YÖNETİCİ AYARLARI'),
                 _drawerItem(
                   icon: Icons.admin_panel_settings,
@@ -2249,6 +2270,21 @@ class _CalculatorPageState extends State<CalculatorPage> {
       appBar: AppBar(
         title: Text(context.tr('app_title')),
         actions: [
+          IconButton(
+            tooltip: 'Havalimanı Brifing & İstatistik',
+            icon: const Icon(Icons.bar_chart, color: Colors.amber),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AirportStatisticsPage(
+                    apiBaseUrl: _apiBaseUrl,
+                    authToken: _authToken,
+                  ),
+                ),
+              );
+            },
+          ),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
             child: FilledButton.tonalIcon(
