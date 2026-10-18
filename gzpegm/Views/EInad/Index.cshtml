@@ -364,28 +364,109 @@
                 <div class="modal-body p-4">
                     <input type="hidden" id="InadId" name="InadId" value="0" />
 
-                    <!-- MRZ / Fast Passport Parser Box -->
+                    <!-- MRZ / 3M Optik Okuyucu & Pasaport Fotoğrafı Yükleme Merkezi -->
                     <div class="card mb-3 einad-mrz-card border-info">
-                        <div class="card-header bg-info-light py-2 px-3 d-flex justify-content-between align-items-center" style="cursor: pointer;" data-toggle="collapse" data-target="#mrzCollapseArea">
-                            <span class="font-weight-bold text-info">
-                                <i class="fas fa-qrcode mr-1"></i> Hızlı Pasaport / MRZ Okuyucu (Optik Kod Ayrıştırıcı)
-                            </span>
-                            <span class="badge badge-info small">Tıkla & Aç</span>
+                        <div class="card-header bg-info-light py-2 px-3 d-flex flex-wrap justify-content-between align-items-center" style="cursor: pointer;" data-toggle="collapse" data-target="#mrzCollapseArea">
+                            <div class="d-flex align-items-center">
+                                <span class="font-weight-bold text-info mr-2">
+                                    <i class="fas fa-qrcode mr-1"></i> Hızlı Pasaport & Optik Okuyucu Merkezi
+                                </span>
+                                <span class="scanner-live-badge" title="3M PV40 / PV60 veya Barkod Okuyucu Dinleniyor">
+                                    <span class="scanner-dot"></span> 3M PV40 / PV60 Dinleyici Aktif
+                                </span>
+                            </div>
+                            <span class="badge badge-info small">Tıkla & Aç / Kapat</span>
                         </div>
-                        <div id="mrzCollapseArea" class="collapse">
-                            <div class="card-body py-2 px-3 bg-light">
-                                <p class="small text-muted mb-2">
-                                    Pasaportun altındaki 2 satırlı makine okunabilir bölgeyi (MRZ) buraya yapıştırın veya barkod okuyucuyla okutun:
-                                </p>
-                                <div class="input-group">
-                                    <textarea id="mrzInputText" class="form-control font-monospace text-uppercase" rows="2" placeholder="P<TURDEMIR<<MEHMET<<<<<<<<<<<<<<<<<<<<<<<<<<&#10;U123456780TUR8501015M3001015<<<<<<<<<<<<<<02"></textarea>
-                                    <div class="input-group-append">
-                                        <button class="btn btn-info font-weight-bold" type="button" id="btnParseMrz">
-                                            <i class="fas fa-magic mr-1"></i> Ayrıştır & Doldur
-                                        </button>
+                        <div id="mrzCollapseArea" class="collapse show">
+                            <div class="card-body py-3 px-3 bg-light">
+                                <!-- Nav Tabs: Görsel Yükle vs MRZ Kodu vs 3M Rehber -->
+                                <ul class="nav nav-pills nav-fill mb-3" id="mrzTabs" role="tablist">
+                                    <li class="nav-item">
+                                        <a class="nav-link active font-weight-bold py-1" id="tab-photo-link" data-toggle="pill" href="#tab-photo" role="tab">
+                                            <i class="fas fa-camera mr-1"></i> 1. Pasaport Görseli Yükle (Fotoğraftan Oku)
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link font-weight-bold py-1" id="tab-mrz-link" data-toggle="pill" href="#tab-mrz" role="tab">
+                                            <i class="fas fa-keyboard mr-1"></i> 2. MRZ Kodu Yapıştır
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link font-weight-bold py-1" id="tab-3m-link" data-toggle="pill" href="#tab-3m" role="tab">
+                                            <i class="fas fa-microchip mr-1"></i> 3. 3M PV40/PV60 Entegrasyonu
+                                        </a>
+                                    </li>
+                                </ul>
+
+                                <div class="tab-content" id="mrzTabsContent">
+                                    <!-- TAB 1: Görsel Yükle (Dropzone) -->
+                                    <div class="tab-pane fade show active" id="tab-photo" role="tabpanel">
+                                        <div class="einad-dropzone" id="passportDropzone">
+                                            <input type="file" id="passportPhotoInput" accept="image/*" class="d-none">
+                                            <div class="dropzone-icon">
+                                                <i class="fas fa-cloud-upload-alt"></i>
+                                            </div>
+                                            <div class="font-weight-bold text-dark mb-1">
+                                                Pasaport Fotoğrafını Buraya Sürükleyip Bırakın veya Tıklayın
+                                            </div>
+                                            <p class="small text-muted mb-0">
+                                                JPG, PNG veya WEBP formatında pasaport görüntüsü yükleyin. Sistem MRZ bölgesini otomatik algılar.
+                                            </p>
+                                        </div>
+
+                                        <!-- Önizleme ve Sonuç Kutusu -->
+                                        <div id="passportPreviewContainer" style="display:none;" class="passport-preview-box">
+                                            <img id="passportPreviewImg" src="" alt="Pasaport Önizleme" class="passport-thumbnail" />
+                                            <div class="flex-grow-1">
+                                                <div id="photoStatusText" class="small font-weight-bold text-dark">Görsel yüklendi, işleniyor...</div>
+                                                <div id="photoFileName" class="text-muted small"></div>
+                                            </div>
+                                            <div>
+                                                <button type="button" class="btn btn-sm btn-outline-danger" id="btnRemovePhoto">
+                                                    <i class="fas fa-trash-alt mr-1"></i> Kaldır
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- TAB 2: Manuel MRZ Kodu Yapıştır -->
+                                    <div class="tab-pane fade" id="tab-mrz" role="tabpanel">
+                                        <p class="small text-muted mb-2">
+                                            Pasaportun altındaki 2 satırlı makine okunabilir bölgeyi (MRZ) yapıştırın:
+                                        </p>
+                                        <div class="input-group">
+                                            <textarea id="mrzInputText" class="form-control font-monospace text-uppercase" rows="2" placeholder="P<TURDEMIR<<MEHMET<<<<<<<<<<<<<<<<<<<<<<<<<<&#10;U123456780TUR8501015M3001015<<<<<<<<<<<<<<02"></textarea>
+                                            <div class="input-group-append">
+                                                <button class="btn btn-info font-weight-bold" type="button" id="btnParseMrz">
+                                                    <i class="fas fa-magic mr-1"></i> Ayrıştır & Doldur
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- TAB 3: 3M PV40/PV60 Entegrasyon Kılavuzu -->
+                                    <div class="tab-pane fade" id="tab-3m" role="tabpanel">
+                                        <div class="alert alert-light border mb-0 small">
+                                            <h6 class="font-weight-bold text-primary mb-1">
+                                                <i class="fas fa-check-circle text-success mr-1"></i> 3M PV40 & PV60 (AT9000 MK2) Tam Uyumlu
+                                            </h6>
+                                            <p class="mb-2 text-dark">
+                                                Bu sayfa açıkken 3M PV40 veya PV60 cihazınız bilgisayara USB ile bağlıysa,
+                                                <strong>pasaportu okuyucu camının üzerine koymanız yeterlidir</strong>.
+                                            </p>
+                                            <ul class="mb-2 pl-3 text-muted">
+                                                <li>Cihazdan gelen yüksek hızlı donanımsal MRZ akışı arka plandaki akıllı dinleyici tarafından otomatik yakalanır.</li>
+                                                <li>Modal kapalı olsa dahi yeni kayıt penceresi kendiliğinden açılır ve tüm alanlar doldurulur.</li>
+                                                <li>Cihazınızın <strong>"3M Page Reader / Document Reader"</strong> yazılımında <em>"Keyboard Wedge / Output as Keystrokes"</em> seçeneğinin işaretli olduğundan emin olun.</li>
+                                            </ul>
+                                            <span class="badge badge-success px-2 py-1">
+                                                <i class="fas fa-signal mr-1"></i> Canlı Dinleme Modu Devrede
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
-                                <small id="mrzFeedback" class="text-success font-weight-bold mt-1 d-block" style="display:none;"></small>
+
+                                <small id="mrzFeedback" class="text-success font-weight-bold mt-2 d-block" style="display:none;"></small>
                             </div>
                         </div>
                     </div>

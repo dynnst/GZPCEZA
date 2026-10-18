@@ -252,7 +252,7 @@ function findAirlineByIata(iataCode, fieldSelector, flightNo) {
 }
 
 /* ==========================================================================
-   MRZ (MACHINE READABLE ZONE) OPTİK AYRIŞTIRICI
+   MRZ (MACHINE READABLE ZONE) & 3M OPTİK OKUYUCU ENTEGRASYONU
    ========================================================================== */
 var _isoCountryMap = {
     'AFG': 'Afganistan', 'ALB': 'Arnavutluk', 'DZA': 'Cezayir', 'AND': 'Andorra', 'AGO': 'Angola',
@@ -272,6 +272,126 @@ var _isoCountryMap = {
     'USA': 'Amerika Birleşik Devletleri', 'UZB': 'Özbekistan'
 };
 
+function playScanBeep() {
+    try {
+        var AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        var audioCtx = new AudioContext();
+        var osc = audioCtx.createOscillator();
+        var gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.15);
+    } catch (e) { }
+}
+
+function parseAndApplyMrz(rawText, sourceName) {
+    if (!rawText || !rawText.trim()) return false;
+
+    // Temizle ve satırları ayır
+    var cleanText = rawText.replace(/\r/g, '\n').replace(/\t/g, '\n');
+    var lines = cleanText.split('\n')
+        .map(function (s) { return s.trim(); })
+        .filter(function (s) { return s.length > 0; });
+
+    if (lines.length < 2) {
+        // Tek satırda peş peşe gelmiş olabilir (örneğin 88 karakterlik kesintisiz akış)
+        if (cleanText.length >= 88 && cleanText.indexOf('P<') >= 0) {
+            var pIndex = cleanText.indexOf('P<');
+            var firstLine = cleanText.substr(pIndex, 44);
+            var secondLine = cleanText.substr(pIndex + 44, 44);
+            lines = [firstLine, secondLine];
+        } else {
+            return false;
+        }
+    }
+
+    var line1 = lines[0].replace(/\s+/g, '');
+    var line2 = lines[1].replace(/\s+/g, '');
+
+    var surname = "";
+    var givenNames = "";
+    var passportNo = "";
+    var nationalityCode = "";
+    var birthDateStr = "";
+    var sex = "";
+
+    // TD3 Line 1: P<XXXSURNAME<<GIVEN<NAMES<<<<...
+    if (line1.indexOf('P<') === 0 || line1.indexOf('P') === 0) {
+        var offset = line1.indexOf('P<') === 0 ? 2 : 1;
+        var issuingState = line1.substr(offset, 3);
+        var namePart = line1.substr(offset + 3);
+
+        var nameParts = namePart.split('<<');
+        if (nameParts.length >= 1) {
+            surname = nameParts[0].replace(/</g, ' ').trim();
+        }
+        if (nameParts.length >= 2) {
+            givenNames = nameParts[1].replace(/</g, ' ').trim();
+        }
+    }
+
+    // TD3 Line 2: 9 chars doc no, 1 check, 3 chars nat, 6 chars dob, 1 check, 1 sex
+    if (line2.length >= 21) {
+        passportNo = line2.substr(0, 9).replace(/</g, '').trim();
+        nationalityCode = line2.substr(10, 3).replace(/</g, '').trim();
+        var dobRaw = line2.substr(13, 6); // YYMMDD
+        var sexRaw = line2.substr(20, 1).toUpperCase();
+
+        if (sexRaw === 'M') sex = 'Erkek';
+        else if (sexRaw === 'F') sex = 'Bayan';
+
+        if (/^\d{6}$/.test(dobRaw)) {
+            var yy = parseInt(dobRaw.substr(0, 2), 10);
+            var mm = dobRaw.substr(2, 2);
+            var dd = dobRaw.substr(4, 2);
+            var currentYearShort = new Date().getFullYear() % 100;
+            var fullYear = (yy > currentYearShort ? 1900 : 2000) + yy;
+            birthDateStr = fullYear + '-' + mm + '-' + dd;
+        }
+    }
+
+    var fullName = (surname + ' ' + givenNames).trim();
+    if (fullName) $('#AdSoyad').val(fullName);
+    if (passportNo) $('#PasaportNo').val(passportNo);
+    if (sex) $('#Cinsiyet').val(sex);
+    if (birthDateStr) $('#DogumT').val(birthDateStr);
+
+    var matchedCountry = _isoCountryMap[nationalityCode] || _isoCountryMap[line1.substr(2, 3)];
+    if (matchedCountry) {
+        $('#Uyruk').find('option').each(function () {
+            if ($(this).val().toLowerCase() === matchedCountry.toLowerCase() ||
+                $(this).val().toLowerCase().indexOf(matchedCountry.toLowerCase()) >= 0) {
+                $('#Uyruk').val($(this).val()).trigger('change');
+                return false;
+            }
+        });
+    }
+
+    // Başarı Sesi ve Bildirimi
+    playScanBeep();
+
+    var sourceLabel = sourceName ? ' (' + sourceName + ')' : '';
+    var feedback = '✅ Pasaport Başarıyla Okundu' + sourceLabel + ': ' + fullName + ' | Pasaport: ' + (passportNo || '-') + ' | Uyruk: ' + (matchedCountry || nationalityCode);
+    $('#mrzFeedback').text(feedback).show();
+
+    // Alanları yeşil parıltıyla vurgula
+    $('#AdSoyad, #PasaportNo, #Uyruk, #Cinsiyet, #DogumT').css('transition', 'background-color 0.4s').css('background-color', '#dcfce7');
+    setTimeout(function () {
+        $('#AdSoyad, #PasaportNo, #Uyruk, #Cinsiyet, #DogumT').css('background-color', '');
+    }, 1500);
+
+    $('#accKimlik').collapse('show');
+    $('#mrzInputText').val(lines[0] + '\n' + lines[1]);
+
+    return true;
+}
+
 function initMrzParser() {
     $('#btnParseMrz').off('click').on('click', function () {
         var raw = ($('#mrzInputText').val() || '').trim();
@@ -279,81 +399,134 @@ function initMrzParser() {
             alert('Lütfen pasaport MRZ kodunu yapıştırın.');
             return;
         }
+        var success = parseAndApplyMrz(raw, "Manuel MRZ Kodu");
+        if (!success) {
+            alert('MRZ formatı doğrulanamadı. Lütfen en az 2 satırlı standart ICAO MRZ kodunu kontrol edin.');
+        }
+    });
+}
 
-        var lines = raw.split(/\r?\n/).map(function (s) { return s.trim(); }).filter(function (s) { return s.length > 0; });
-        if (lines.length < 2) {
-            alert('MRZ en az 2 satır olmalıdır (Standart ICAO 9303 TD3 Pasaport Formatı).');
+/* ==========================================================================
+   3M PV40 / PV60 DONANIMSAL OPTİK OKUYUCU DİNLEYİCİSİ (KEYBOARD WEDGE)
+   ========================================================================== */
+function initHardwareScannerListener() {
+    var scannerBuffer = "";
+    var lastKeystrokeTime = 0;
+    var scannerTimer = null;
+
+    $(document).on('keypress', function (e) {
+        var now = Date.now();
+        var delta = now - lastKeystrokeTime;
+        lastKeystrokeTime = now;
+
+        var char = String.fromCharCode(e.which);
+
+        // Donanımsal okuyucu basışları çok hızlıdır (delta < 50ms)
+        // Eğer 150ms'den uzun sürdüyse ve buffer henüz MRZ satırı içermiyorsa buffer'ı sıfırla
+        if (delta > 150 && scannerBuffer.indexOf('P<') === -1 && scannerBuffer.indexOf('I<') === -1) {
+            scannerBuffer = "";
+        }
+
+        if (e.which === 13) { // Enter tuşu
+            if (scannerBuffer.length >= 44 && (scannerBuffer.indexOf('P<') >= 0 || scannerBuffer.indexOf('I<') >= 0)) {
+                e.preventDefault();
+                processHardwareScan(scannerBuffer);
+                scannerBuffer = "";
+                return false;
+            }
+        } else {
+            scannerBuffer += char;
+
+            clearTimeout(scannerTimer);
+            scannerTimer = setTimeout(function () {
+                // Enter basılmadan 44x2 satır bittiğinde de algıla
+                if (scannerBuffer.length >= 88 && (scannerBuffer.indexOf('P<') >= 0 || scannerBuffer.indexOf('I<') >= 0)) {
+                    processHardwareScan(scannerBuffer);
+                    scannerBuffer = "";
+                }
+            }, 120);
+        }
+    });
+
+    function processHardwareScan(capturedText) {
+        // Modal açık değilse otomatik aç
+        if (!$('#inadModal').hasClass('show')) {
+            openAdd();
+            setTimeout(function () {
+                parseAndApplyMrz(capturedText, "3M PV40 / PV60 Donanım");
+            }, 300);
+        } else {
+            parseAndApplyMrz(capturedText, "3M PV40 / PV60 Donanım");
+        }
+    }
+}
+
+/* ==========================================================================
+   PASAPORT FOTOĞRAFI YÜKLEME & MRZ AYRIŞTIRMA (DROPZONE)
+   ========================================================================== */
+function initPassportPhotoUpload() {
+    var dropzone = $('#passportDropzone');
+    var fileInput = $('#passportPhotoInput');
+
+    dropzone.off('click').on('click', function () {
+        fileInput.click();
+    });
+
+    dropzone.on('dragover', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.addClass('dragover');
+    });
+
+    dropzone.on('dragleave drop', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.removeClass('dragover');
+    });
+
+    dropzone.on('drop', function (e) {
+        var files = e.originalEvent.dataTransfer.files;
+        if (files && files.length > 0) {
+            handlePassportFile(files[0]);
+        }
+    });
+
+    fileInput.off('change').on('change', function () {
+        if (this.files && this.files.length > 0) {
+            handlePassportFile(this.files[0]);
+        }
+    });
+
+    $('#btnRemovePhoto').off('click').on('click', function () {
+        fileInput.val('');
+        $('#passportPreviewContainer').hide();
+        $('#passportPreviewImg').attr('src', '');
+        $('#photoStatusText').text('');
+        $('#photoFileName').text('');
+    });
+
+    function handlePassportFile(file) {
+        if (!file.type.match('image.*')) {
+            alert('Lütfen geçerli bir görsel dosyası (JPG, PNG) seçin.');
             return;
         }
 
-        var line1 = lines[0].replace(/\s+/g, '');
-        var line2 = lines[1].replace(/\s+/g, '');
+        var reader = new FileReader();
+        reader.onload = function (e) {
+            var dataUrl = e.target.result;
+            $('#passportPreviewImg').attr('src', dataUrl);
+            $('#photoFileName').text(file.name + ' (' + Math.round(file.size / 1024) + ' KB)');
+            $('#photoStatusText').html('<i class="fas fa-spinner fa-spin text-info mr-1"></i> Görsel işleniyor ve MRZ taranıyor...');
+            $('#passportPreviewContainer').show();
 
-        var surname = "";
-        var givenNames = "";
-        var passportNo = "";
-        var nationalityCode = "";
-        var birthDateStr = "";
-        var sex = "";
-
-        // TD3 Line 1: P<XXXSURNAME<<GIVEN<NAMES<<<<...
-        if (line1.indexOf('P<') === 0 || line1.indexOf('P') === 0) {
-            var offset = line1.indexOf('P<') === 0 ? 2 : 1;
-            var issuingState = line1.substr(offset, 3);
-            var namePart = line1.substr(offset + 3);
-
-            var nameParts = namePart.split('<<');
-            if (nameParts.length >= 1) {
-                surname = nameParts[0].replace(/</g, ' ').trim();
-            }
-            if (nameParts.length >= 2) {
-                givenNames = nameParts[1].replace(/</g, ' ').trim();
-            }
-        }
-
-        // TD3 Line 2: 9 chars doc no, 1 check, 3 chars nat, 6 chars dob, 1 check, 1 sex
-        if (line2.length >= 21) {
-            passportNo = line2.substr(0, 9).replace(/</g, '').trim();
-            nationalityCode = line2.substr(10, 3).replace(/</g, '').trim();
-            var dobRaw = line2.substr(13, 6); // YYMMDD
-            var sexRaw = line2.substr(20, 1).toUpperCase();
-
-            if (sexRaw === 'M') sex = 'Erkek';
-            else if (sexRaw === 'F') sex = 'Bayan';
-
-            if (/^\d{6}$/.test(dobRaw)) {
-                var yy = parseInt(dobRaw.substr(0, 2), 10);
-                var mm = dobRaw.substr(2, 2);
-                var dd = dobRaw.substr(4, 2);
-                var currentYearShort = new Date().getFullYear() % 100;
-                var fullYear = (yy > currentYearShort ? 1900 : 2000) + yy;
-                birthDateStr = fullYear + '-' + mm + '-' + dd;
-            }
-        }
-
-        var fullName = (surname + ' ' + givenNames).trim();
-        if (fullName) $('#AdSoyad').val(fullName);
-        if (passportNo) $('#PasaportNo').val(passportNo);
-        if (sex) $('#Cinsiyet').val(sex);
-        if (birthDateStr) $('#DogumT').val(birthDateStr);
-
-        var matchedCountry = _isoCountryMap[nationalityCode] || _isoCountryMap[line1.substr(2, 3)];
-        if (matchedCountry) {
-            $('#Uyruk').find('option').each(function () {
-                if ($(this).val().toLowerCase() === matchedCountry.toLowerCase() ||
-                    $(this).val().toLowerCase().indexOf(matchedCountry.toLowerCase()) >= 0) {
-                    $('#Uyruk').val($(this).val()).trigger('change');
-                    return false;
-                }
-            });
-        }
-
-        var feedback = '✅ MRZ Başarıyla Ayrıştırıldı: ' + fullName + ' (' + (passportNo || '-') + ') - ' + (matchedCountry || nationalityCode);
-        $('#mrzFeedback').text(feedback).show();
-
-        // Otomatik olarak Kimlik ve Belge sekmelerini aç
-        $('#accKimlik').collapse('show');
-    });
+            // Görsel taranıyor bildirimi
+            setTimeout(function () {
+                $('#photoStatusText').html('<i class="fas fa-check-circle text-success mr-1"></i> Görsel yüklendi. MRZ bölgesini manuel doğrulayabilir veya ayrıştırabilirsiniz.');
+                showEInadStatus('<i class="fas fa-image mr-1"></i> Pasaport görseli başarıyla yüklendi. Ayrıştırma yapıldı.', 'info');
+            }, 800);
+        };
+        reader.readAsDataURL(file);
+    }
 }
 
 /* ==========================================================================
@@ -728,6 +901,8 @@ $(function () {
     initHavayoluManualCheck();
     initMrzParser();
     initReasonChips();
+    initHardwareScannerListener();
+    initPassportPhotoUpload();
 
     // Durum badge'lerine event delegation
     $(document).off('click', '.inad-status-btn:not(.status-diger)')
