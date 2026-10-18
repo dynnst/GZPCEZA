@@ -152,14 +152,16 @@ namespace gzpegm.Controllers
 
         private void SetIndexFilterViewBag(IEnumerable<E_Inad> allData, string q, string border, string user, DateTime? from, DateTime? to, int resultCount, bool defaultLimited)
         {
-            ViewBag.BorderList = allData
+            var dataList = allData as IList<E_Inad> ?? allData.ToList();
+
+            ViewBag.BorderList = dataList
                 .Select(x => x.Kapi)
                 .Where(x => !string.IsNullOrWhiteSpace(x))
                 .Distinct()
                 .OrderBy(x => x)
                 .ToList();
 
-            ViewBag.UserList = allData
+            ViewBag.UserList = dataList
                 .Select(x => x.Sicil)
                 .Where(x => !string.IsNullOrWhiteSpace(x))
                 .Distinct()
@@ -174,6 +176,13 @@ namespace gzpegm.Controllers
             ViewBag.ResultInfo = defaultLimited
                 ? "Filtre uygulanmadigi icin son 100 kayit gosteriliyor."
                 : resultCount + " kayit listeleniyor.";
+
+            // KPI Metrikleri (Yönetici & Nöbetçi Amir Özeti)
+            var today = DateTime.Today;
+            ViewBag.TotalCount = dataList.Count;
+            ViewBag.InadOdadaCount = dataList.Count(x => !string.IsNullOrEmpty(x.Durum) && x.Durum.IndexOf("İnad Odasına Alındı", StringComparison.OrdinalIgnoreCase) >= 0);
+            ViewBag.InadEdildiCount = dataList.Count(x => !string.IsNullOrEmpty(x.Durum) && x.Durum.IndexOf("İnad Edildi", StringComparison.OrdinalIgnoreCase) >= 0);
+            ViewBag.TodayCount = dataList.Count(x => x.TarihSaat.HasValue && x.TarihSaat.Value.Date == today);
         }
 
         private static string BuildInadExcelHtml(List<E_Inad> list, string filterInfo)
@@ -765,7 +774,7 @@ namespace gzpegm.Controllers
         }
 
         [HttpGet]
-        public ActionResult PrintForm1(int id)
+        public ActionResult PrintForm1(int id, string lang = null)
         {
             var user = GetCurrentUser();
             if (user == null)
@@ -785,8 +794,11 @@ namespace gzpegm.Controllers
             // İşlem yapılan kişinin adı soyadı
             ViewBag.NotifiedName = (item.AdSoyad ?? "").Trim();
 
-            // Ülkeye göre dil belirle
-            var dil = InadHelpers.GetFormLanguageByCountry(item.Uyruk ?? "");
+            // Dil seçimi: Eğer parametre verildiyse onu kullan, yoksa ülkeye göre belirle
+            var dil = !string.IsNullOrWhiteSpace(lang)
+                ? lang.Trim()
+                : InadHelpers.GetFormLanguageByCountry(item.Uyruk ?? "");
+
             var viewPath = InadHelpers.GetFormViewPath(dil, 1);
 
             // View dosyasının varlığını kontrol et, yoksa varsayılan Form1'i kullan
@@ -802,7 +814,7 @@ namespace gzpegm.Controllers
         }
 
         [HttpGet]
-        public ActionResult PrintForm2(int id)
+        public ActionResult PrintForm2(int id, string lang = null)
         {
             var user = GetCurrentUser();
             if (user == null)
@@ -823,8 +835,21 @@ namespace gzpegm.Controllers
             // İşlem yapılan kişinin adı soyadı
             ViewBag.NotifiedName = (item.AdSoyad ?? "").Trim();
 
-            // Form2 tek nüsha: İngilizce view kullanılır
-            return View("PrintTemplates/Form2_Ingilizce", item);
+            // Dil seçimi: Eğer parametre verildiyse onu kullan, yoksa ülkeye göre belirle (varsayılan İngilizce)
+            var dil = !string.IsNullOrWhiteSpace(lang)
+                ? lang.Trim()
+                : InadHelpers.GetFormLanguageByCountry(item.Uyruk ?? "");
+
+            var viewPath = InadHelpers.GetFormViewPath(dil, 2);
+
+            try
+            {
+                return View(viewPath, item);
+            }
+            catch
+            {
+                return View("PrintTemplates/Form2_Ingilizce", item);
+            }
         }
 
         [HttpGet]
@@ -837,7 +862,7 @@ namespace gzpegm.Controllers
         public ActionResult PrintForm5(int id) => PrintFormBase(id, "PrintTemplates/Form5");
 
         [HttpGet]
-        public ActionResult PrintForm6(int id)
+        public ActionResult PrintForm6(int id, string lang = null)
         {
             var user = GetCurrentUser();
             if (user == null)
@@ -850,7 +875,10 @@ namespace gzpegm.Controllers
             if (!HasAccessToRecord(item, user))
                 return new HttpStatusCodeResult(403);
 
-            var dil = InadHelpers.GetFormLanguageByCountry(item.Uyruk ?? "");
+            var dil = !string.IsNullOrWhiteSpace(lang)
+                ? lang.Trim()
+                : InadHelpers.GetFormLanguageByCountry(item.Uyruk ?? "");
+
             var viewPath = InadHelpers.GetFormViewPath(dil, 6);
 
             try

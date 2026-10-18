@@ -196,25 +196,51 @@ namespace gzpegm.Models
         }
 
         /// <summary>
+        /// Yazdırma için desteklenen resmi diller sözlüğü
+        /// </summary>
+        public static readonly Dictionary<string, string> DesteklenenDiller = new Dictionary<string, string>
+        {
+            { "Turkce", "Türkçe (TR)" },
+            { "Ingilizce", "English (EN)" },
+            { "Arapca", "العربية (Arapça)" },
+            { "Farsa", "فارسی (Farsça)" },
+            { "Rusca", "Русский (Rusça)" },
+            { "Fransizca", "Français (Fransızca)" },
+            { "Almanca", "Deutsch (Almanca)" },
+            { "Pestuca", "پښتو (Peştuca)" },
+            { "Gurcuce", "ქართული (Gürcüce)" },
+            { "Bulgarca", "Български (Bulgarca)" },
+            { "Romence", "Română (Romence)" }
+        };
+
+        /// <summary>
         /// Dil koduna göre view dosya adı döndürür
         /// </summary>
         /// <param name="dil">Dil adı</param>
-        /// <param name="formNo">Form numarası (1, 2, 3, 4, 5)</param>
+        /// <param name="formNo">Form numarası (1, 2, 3, 4, 5, 6)</param>
         /// <returns>View dosya yolu</returns>
         public static string GetFormViewPath(string dil, int formNo = 1)
         {
-            var dilKodu = dil switch
+            var cleanDil = (dil ?? "").Trim();
+            if (string.Equals(cleanDil, "Türkçe", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(cleanDil, "Turkce", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(cleanDil, "TR", StringComparison.OrdinalIgnoreCase))
+            {
+                return $"PrintTemplates/Form{formNo}";
+            }
+
+            var dilKodu = cleanDil switch
             {
                 "Almanca" => "Almanca",
-                "Arapça" => "Arapca",
+                "Arapça" or "Arapca" => "Arapca",
                 "Bulgarca" => "Bulgarca",
-                "Farsça" => "Farsa",
-                "Fransızca" => "Fransizca",
-                "Gürcüce" => "Gurcuce",
-                "İngilizce" => "Ingilizce",
-                "Peştuca" => "Pestuca",
+                "Farsça" or "Farsa" or "Farsca" => "Farsa",
+                "Fransızca" or "Fransizca" => "Fransizca",
+                "Gürcüce" or "Gurcuce" => "Gurcuce",
+                "İngilizce" or "Ingilizce" => "Ingilizce",
+                "Peştuca" or "Pestuca" => "Pestuca",
                 "Romence" => "Romence",
-                "Rusça" => "Rusca",
+                "Rusça" or "Rusca" => "Rusca",
                 _ => "Ingilizce" // Varsayılan
             };
 

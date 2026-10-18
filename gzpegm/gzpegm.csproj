@@ -8176,7 +8176,6 @@
     <Content Include="Views\EInad\PrintTemplates\Form6.cshtml" />
     <Content Include="Views\_ViewStart.cshtml" />
     <Content Include="Views\Shared\_Layout.cshtml" />
-    <Content Include="Views\EInad\PrintTemplates\View.cshtml" />
     <Content Include="Views\EInad\PrintTemplates\Form6_Almanca.cshtml" />
     <Content Include="Views\EInad\PrintTemplates\Form6_Ingilizce.cshtml" />
     <Content Include="Views\EInad\PrintTemplates\Form6_Fransizca.cshtml" />

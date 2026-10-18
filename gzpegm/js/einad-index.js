@@ -1,11 +1,13 @@
-﻿/* ==========================================================================
-   E-INAD Yonetim JavaScript (einad-index.js)
+/* ==========================================================================
+   E-INAD Yonetim JavaScript (einad-index.js v2.0)
+   Modern EGM Hudut Polisi Komuta & Sevk Scriptleri
    ========================================================================== */
 
 var _cfg = document.getElementById('einad-config');
 function getEinadUrl(attr, fallback) {
     return (_cfg && _cfg.getAttribute(attr)) ? _cfg.getAttribute(attr) : fallback;
 }
+
 /* =========================
    TARİH YARDIMCILARI
 ========================= */
@@ -52,12 +54,53 @@ function hideEInadStatus() {
 }
 
 /* =========================
+   INTERAKTIF KPI FILTRELERI
+========================= */
+function filterByKpi(type) {
+    var table = $('#inad-table').DataTable ? $('#inad-table').DataTable() : null;
+
+    if (type === 'all') {
+        if (table) {
+            table.search('').draw();
+        }
+        $('#filterQ').val('');
+        $('#filterFrom').val('');
+        $('#filterTo').val('');
+        var form = document.getElementById('inadFilterForm');
+        if (form && window.location.search) {
+            window.location.href = form.action;
+        }
+    } else if (type === 'odada') {
+        if (table) {
+            table.search('İnad Odasına Alındı').draw();
+            $('html, body').animate({ scrollTop: $('#inad-table').offset().top - 80 }, 300);
+        } else {
+            $('#filterQ').val('İnad Odasına Alındı');
+            $('#inadFilterForm').submit();
+        }
+    } else if (type === 'edildi') {
+        if (table) {
+            table.search('İnad Edildi').draw();
+            $('html, body').animate({ scrollTop: $('#inad-table').offset().top - 80 }, 300);
+        } else {
+            $('#filterQ').val('İnad Edildi');
+            $('#inadFilterForm').submit();
+        }
+    } else if (type === 'bugun') {
+        var today = new Date().toISOString().slice(0, 10);
+        $('#filterFrom').val(today);
+        $('#filterTo').val(today);
+        $('#inadFilterForm').submit();
+    }
+}
+
+/* =========================
    UYRUK → DOĞUM YERİ
 ========================= */
 function initUyrukChange() {
     $('#Uyruk').off('change').on('change', function () {
         var val = $(this).val();
-        if (val) {
+        if (val && !$('#DogumY').val()) {
             $('#DogumY').val(val);
         }
     });
@@ -83,13 +126,8 @@ function loadAirlineList() {
    HAVAYOLU KONTROL VE EKLEME
 ========================= */
 function checkAndAddAirline(airlineName, flightNo) {
-    if (!airlineName || airlineName.trim().length === 0) {
-        return;
-    }
-
-    if (!flightNo || flightNo.length < 2) {
-        return;
-    }
+    if (!airlineName || airlineName.trim().length === 0) return;
+    if (!flightNo || flightNo.length < 2) return;
 
     airlineName = airlineName.trim();
     var iataCode = flightNo.substring(0, 2).toUpperCase();
@@ -130,15 +168,11 @@ function checkAndAddAirline(airlineName, flightNo) {
     }
 }
 
-/* =========================
-   HAVAYOLU MANUEL GİRİŞ KONTROLÜ
-========================= */
 function initHavayoluManualCheck() {
     $('#GelenHavayolu').on('blur', function () {
         var airlineName = $(this).val();
         var flightNo = $('#GelenUcusNo').val();
-
-        if (airlineName && airlineName.trim().length > 0 && flightNo && flightNo.length >= 2) {
+        if (airlineName && flightNo && flightNo.length >= 2) {
             checkAndAddAirline(airlineName, flightNo);
         }
     });
@@ -146,17 +180,17 @@ function initHavayoluManualCheck() {
     $('#GidenHavayolu').on('blur', function () {
         var airlineName = $(this).val();
         var flightNo = $('#GidisUcusNo').val();
-
-        if (airlineName && airlineName.trim().length > 0 && flightNo && flightNo.length >= 2) {
+        if (airlineName && flightNo && flightNo.length >= 2) {
             checkAndAddAirline(airlineName, flightNo);
         }
     });
 }
 
-/* =========================
-   UÇUŞ NO DEĞİŞİNCE HAVAYOLU BUL
-========================= */
 function initUcusNoToAirline() {
+    $('#GelenUcusNo, #GidisUcusNo').on('input', function () {
+        $(this).val($(this).val().toUpperCase());
+    });
+
     $('#GelenUcusNo').on('blur', function () {
         var flightNo = $(this).val();
         if (flightNo && flightNo.length >= 2) {
@@ -175,9 +209,7 @@ function initUcusNoToAirline() {
 }
 
 function findAirlineByIata(iataCode, fieldSelector, flightNo) {
-    if (!iataCode || iataCode.length !== 2) {
-        return;
-    }
+    if (!iataCode || iataCode.length !== 2) return;
 
     var options = $('#airlineList option');
     var foundOption = null;
@@ -219,17 +251,154 @@ function findAirlineByIata(iataCode, fieldSelector, flightNo) {
     }
 }
 
+/* ==========================================================================
+   MRZ (MACHINE READABLE ZONE) OPTİK AYRIŞTIRICI
+   ========================================================================== */
+var _isoCountryMap = {
+    'AFG': 'Afganistan', 'ALB': 'Arnavutluk', 'DZA': 'Cezayir', 'AND': 'Andorra', 'AGO': 'Angola',
+    'ARG': 'Arjantin', 'ARM': 'Ermenistan', 'AUS': 'Avustralya', 'AUT': 'Avusturya', 'AZE': 'Azerbaycan',
+    'BHR': 'Bahreyn', 'BGD': 'Bangladeş', 'BLR': 'Belarus', 'BEL': 'Belçika', 'BIH': 'Bosna-Hersek',
+    'BRA': 'Brezilya', 'BGR': 'Bulgaristan', 'CAN': 'Kanada', 'CHN': 'Çin', 'HRV': 'Hırvatistan',
+    'CZE': 'Çek Cumhuriyeti', 'DNK': 'Danimarka', 'EGY': 'Mısır', 'FIN': 'Finlandiya', 'FRA': 'Fransa',
+    'GEO': 'Gürcistan', 'DEU': 'Almanya', 'GRC': 'Yunanistan', 'HUN': 'Macaristan', 'IND': 'Hindistan',
+    'IDN': 'Endonezya', 'IRN': 'İran', 'IRQ': 'Irak', 'IRL': 'İrlanda', 'ISR': 'İsrail',
+    'ITA': 'İtalya', 'JPN': 'Japonya', 'JOR': 'Ürdün', 'KAZ': 'Kazakistan', 'KWT': 'Kuveyt',
+    'KGZ': 'Kırgızistan', 'LBN': 'Liban', 'LBY': 'Libya', 'MDA': 'Moldovya', 'MAR': 'Fas',
+    'NLD': 'Hollanda', 'MKD': 'Kuzey Makedonya', 'NOR': 'Norveç', 'PAK': 'Pakistan', 'POL': 'Polonya',
+    'PRT': 'Portekiz', 'QAT': 'Katar', 'ROU': 'Romanya', 'RUS': 'Rusya', 'SAU': 'Suudi Arabistan',
+    'SRB': 'Sırbistan', 'SVK': 'Slovakya', 'SVN': 'Slovenya', 'ESP': 'İspanya', 'SWE': 'İsveç',
+    'CHE': 'İsviçre', 'SYR': 'Suriye', 'TJK': 'Tacikistan', 'TUN': 'Tunus', 'TUR': 'Türkiye',
+    'TKM': 'Türkmenistan', 'UKR': 'Ukrayna', 'ARE': 'Birleşik Arap Emirlikleri', 'GBR': 'İngiltere',
+    'USA': 'Amerika Birleşik Devletleri', 'UZB': 'Özbekistan'
+};
+
+function initMrzParser() {
+    $('#btnParseMrz').off('click').on('click', function () {
+        var raw = ($('#mrzInputText').val() || '').trim();
+        if (!raw) {
+            alert('Lütfen pasaport MRZ kodunu yapıştırın.');
+            return;
+        }
+
+        var lines = raw.split(/\r?\n/).map(function (s) { return s.trim(); }).filter(function (s) { return s.length > 0; });
+        if (lines.length < 2) {
+            alert('MRZ en az 2 satır olmalıdır (Standart ICAO 9303 TD3 Pasaport Formatı).');
+            return;
+        }
+
+        var line1 = lines[0].replace(/\s+/g, '');
+        var line2 = lines[1].replace(/\s+/g, '');
+
+        var surname = "";
+        var givenNames = "";
+        var passportNo = "";
+        var nationalityCode = "";
+        var birthDateStr = "";
+        var sex = "";
+
+        // TD3 Line 1: P<XXXSURNAME<<GIVEN<NAMES<<<<...
+        if (line1.indexOf('P<') === 0 || line1.indexOf('P') === 0) {
+            var offset = line1.indexOf('P<') === 0 ? 2 : 1;
+            var issuingState = line1.substr(offset, 3);
+            var namePart = line1.substr(offset + 3);
+
+            var nameParts = namePart.split('<<');
+            if (nameParts.length >= 1) {
+                surname = nameParts[0].replace(/</g, ' ').trim();
+            }
+            if (nameParts.length >= 2) {
+                givenNames = nameParts[1].replace(/</g, ' ').trim();
+            }
+        }
+
+        // TD3 Line 2: 9 chars doc no, 1 check, 3 chars nat, 6 chars dob, 1 check, 1 sex
+        if (line2.length >= 21) {
+            passportNo = line2.substr(0, 9).replace(/</g, '').trim();
+            nationalityCode = line2.substr(10, 3).replace(/</g, '').trim();
+            var dobRaw = line2.substr(13, 6); // YYMMDD
+            var sexRaw = line2.substr(20, 1).toUpperCase();
+
+            if (sexRaw === 'M') sex = 'Erkek';
+            else if (sexRaw === 'F') sex = 'Bayan';
+
+            if (/^\d{6}$/.test(dobRaw)) {
+                var yy = parseInt(dobRaw.substr(0, 2), 10);
+                var mm = dobRaw.substr(2, 2);
+                var dd = dobRaw.substr(4, 2);
+                var currentYearShort = new Date().getFullYear() % 100;
+                var fullYear = (yy > currentYearShort ? 1900 : 2000) + yy;
+                birthDateStr = fullYear + '-' + mm + '-' + dd;
+            }
+        }
+
+        var fullName = (surname + ' ' + givenNames).trim();
+        if (fullName) $('#AdSoyad').val(fullName);
+        if (passportNo) $('#PasaportNo').val(passportNo);
+        if (sex) $('#Cinsiyet').val(sex);
+        if (birthDateStr) $('#DogumT').val(birthDateStr);
+
+        var matchedCountry = _isoCountryMap[nationalityCode] || _isoCountryMap[line1.substr(2, 3)];
+        if (matchedCountry) {
+            $('#Uyruk').find('option').each(function () {
+                if ($(this).val().toLowerCase() === matchedCountry.toLowerCase() ||
+                    $(this).val().toLowerCase().indexOf(matchedCountry.toLowerCase()) >= 0) {
+                    $('#Uyruk').val($(this).val()).trigger('change');
+                    return false;
+                }
+            });
+        }
+
+        var feedback = '✅ MRZ Başarıyla Ayrıştırıldı: ' + fullName + ' (' + (passportNo || '-') + ') - ' + (matchedCountry || nationalityCode);
+        $('#mrzFeedback').text(feedback).show();
+
+        // Otomatik olarak Kimlik ve Belge sekmelerini aç
+        $('#accKimlik').collapse('show');
+    });
+}
+
+/* ==========================================================================
+   HIZLI İNAD SEBEP ÇİPLERİ
+   ========================================================================== */
+function initReasonChips() {
+    $('.btn-chip').off('click').on('click', function (e) {
+        e.preventDefault();
+        var val = $(this).data('val');
+        var checkbox = $('input[name="InadSebep"][value="' + val + '"]');
+
+        if (checkbox.length) {
+            var isChecked = checkbox.prop('checked');
+            checkbox.prop('checked', !isChecked);
+            $(this).toggleClass('active', !isChecked);
+        }
+    });
+
+    $('input[name="InadSebep"]').on('change', function () {
+        syncChipsWithCheckboxes();
+    });
+}
+
+function syncChipsWithCheckboxes() {
+    $('.btn-chip').each(function () {
+        var val = $(this).data('val');
+        var checkbox = $('input[name="InadSebep"][value="' + val + '"]');
+        $(this).toggleClass('active', checkbox.is(':checked'));
+    });
+}
+
 /* =========================
    YENİ KAYIT
 ========================= */
 function openAdd() {
     $('#inadForm').attr('action', getEinadUrl('data-url-add-inad', '/EInad/AddInad'));
-    $('#inadModalTitle').text('Yeni Kayıt Ekle');
+    $('#inadModalTitle').text('Yeni İNAD Kaydı Ekle');
     $('#inadForm')[0].reset();
     $('#InadId').val(0);
+    $('#mrzInputText').val('');
+    $('#mrzFeedback').hide();
 
     $('input[name="UcagaNakil"]').prop('checked', false);
     $('input[name="InadSebep"]').prop('checked', false);
+    $('.btn-chip').removeClass('active');
 
     $('#TarihSaat').val(getLocalDateTimeForInput());
 
@@ -249,6 +418,7 @@ function openAdd() {
             })
             .always(function () {
                 loadAirlineList();
+                $('#accKimlik').collapse('show');
                 $('#inadModal').modal('show');
             });
     });
@@ -258,18 +428,20 @@ function openAdd() {
    DÜZENLE
 ========================= */
 function openEdit(id) {
+    $('#mrzInputText').val('');
+    $('#mrzFeedback').hide();
+
     refreshAllDropdowns().done(function () {
         $.get(getEinadUrl('data-url-get-inad', '/EInad/GetInad'), { id: id }, function (res) {
-
             if (!res || !res.success) {
-                alert("Veri alınamadı");
+                alert("Kayıt bilgileri alınamadı.");
                 return;
             }
 
             var d = res.data || {};
 
             $('#inadForm').attr('action', getEinadUrl('data-url-edit-inad', '/EInad/EditInad'));
-            $('#inadModalTitle').text('Kayıt Düzenle');
+            $('#inadModalTitle').text('İNAD Kaydını Düzenle (ID: #' + d.InadId + ')');
 
             $('#InadId').val(d.InadId || 0);
             $('#TarihSaat').val(parseMsDateToLocal(d.TarihSaat));
@@ -282,7 +454,7 @@ function openEdit(id) {
             $('#BelgeNo').val(d.BelgeNo || '');
             $('#KimlikNo').val(d.KimlikNo || '');
 
-            setTimeout(function() {
+            setTimeout(function () {
                 $('#Uyruk').val(d.Uyruk || '').trigger('change');
                 $('#PasaportTuru').val(d.PasaportTuru || '').trigger('change');
                 $('#Beyan').val(d.Beyan || '').trigger('change');
@@ -318,6 +490,7 @@ function openEdit(id) {
                     if (val.length) $('input[name="InadSebep"][value="' + val + '"]').prop('checked', true);
                 });
             }
+            syncChipsWithCheckboxes();
 
             $('input[name="UcagaNakil"]').prop('checked', false);
             if (d.UcagaNakil && typeof d.UcagaNakil === 'string') {
@@ -328,13 +501,14 @@ function openEdit(id) {
             }
 
             loadAirlineList();
+            $('#accKimlik').collapse('show');
             $('#inadModal').modal('show');
         });
     });
 }
 
 /* =========================
-   TÜM DROPDOWN'LARI YENİLE - PROMISE DÖNÜYOR
+   DROPDOWN YENİLEME
 ========================= */
 function refreshAllDropdowns() {
     var deferred = $.Deferred();
@@ -362,7 +536,7 @@ function refreshAllDropdowns() {
    SİLME İŞLEMİ
 ========================= */
 function deleteRecord(id) {
-    if (!confirm("Bu kayıt silinecek. Emin misiniz?"))
+    if (!confirm("⚠️ Bu İNAD kaydı kalıcı olarak silinecek.\n\nOnaylıyor musunuz?"))
         return;
 
     $.ajax({
@@ -386,7 +560,7 @@ function deleteRecord(id) {
 }
 
 /* =========================
-   ✅ DURUM DEĞİŞTİRME - RELOAD OLMADAN, TEK TIKLAMA
+   DURUM DEĞİŞTİRME - TEK TIKLAMA & ANINDA GÜNCELLEME
 ========================= */
 function toggleStatus(btn) {
     var $btn = $(btn);
@@ -395,17 +569,14 @@ function toggleStatus(btn) {
 
     if (!id || !newStatus) return;
 
-    // Yanıp sönen uyarıda ekstra onay
     var confirmMsg = newStatus === 'İnad Odasına Alındı'
         ? "⚠️ Yolcu 'İnad Odasına Alındı' olarak işaretlenecek.\n\nLütfen yolcunun takibini yapınız!\n\nOnaylıyor musunuz?"
         : "Yolcu 'İnad Edildi' olarak işaretlenecek.\n\nOnaylıyor musunuz?";
 
     if (!confirm(confirmMsg)) return;
 
-    // Çift tıklama koruması
     var originalHtml = $btn.html();
-    $btn.prop('disabled', true)
-        .html('<i class="fas fa-spinner fa-spin"></i> İşleniyor...');
+    $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> İşleniyor...');
 
     $.ajax({
         url: getEinadUrl('data-url-update-status', '/EInad/UpdateStatus'),
@@ -417,16 +588,14 @@ function toggleStatus(btn) {
         },
         success: function (res) {
             if (res.success) {
-                // Satırdaki badge'i yerinde güncelle
                 updateRowStatusBadge($btn, newStatus);
 
                 var message = newStatus === 'İnad Edildi'
                     ? '<i class="fas fa-check-circle"></i> <strong>Yolcu başarıyla "İnad Edildi" olarak işaretlendi.</strong>'
-                    : '<i class="fas fa-exclamation-circle"></i> <strong>Yolcu "İnad Odasına Alındı" olarak işaretlendi.</strong> Lütfen takip yapınız!';
+                    : '<i class="fas fa-exclamation-circle"></i> <strong>Yolcu "İnad Odasına Alındı" olarak işaretlendi.</strong> Lütfen sevk takibini yapınız!';
 
                 showEInadStatus(message, newStatus === 'İnad Edildi' ? 'success' : 'warning');
 
-                // 5 saniye sonra mesajı otomatik kapat (reload yok!)
                 setTimeout(function () {
                     hideEInadStatus();
                 }, 5000);
@@ -445,9 +614,6 @@ function toggleStatus(btn) {
     });
 }
 
-/* =========================
-   SATIRDAKİ BADGE'İ YERİNDE GÜNCELLE
-========================= */
 function updateRowStatusBadge($btn, newStatus) {
     if (newStatus === 'İnad Edildi') {
         $btn
@@ -495,12 +661,12 @@ function validateInadForm() {
     });
 
     if ($('input[name="InadSebep"]:checked').length === 0) {
-        missing.push('İNAD sebebi');
+        missing.push('En az bir İNAD sebebi');
         $('#accInad').collapse('show');
     }
 
     if (missing.length > 0) {
-        var warningMsg = '<i class="fas fa-exclamation-triangle"></i> <strong>Lütfen zorunlu alanları tamamlayın:</strong> ' + missing.join(', ') + '.';
+        var warningMsg = '<i class="fas fa-exclamation-triangle"></i> <strong>Lütfen zorunlu alanları doldurun:</strong> ' + missing.join(', ') + '.';
         showEInadStatus(warningMsg, 'warning');
         var firstInvalid = $('.is-invalid').first();
         if (firstInvalid.length) {
@@ -512,7 +678,7 @@ function validateInadForm() {
 
     var durum = $('#Durum').val();
     if (durum === 'İnad Odasına Alındı') {
-        var alertMsg = '<i class="fas fa-exclamation-circle"></i> <strong>⚠️ ÖNEMLİ UYARI:</strong> Yolcu "İnad Odasına Alındı" durumundadır. Lütfen yolcunun takibini yapınız! Listedeki sarı butona basarak durumu güncelleyebilirsiniz.';
+        var alertMsg = '<i class="fas fa-exclamation-circle"></i> <strong>⚠️ ÖNEMLİ UYARI:</strong> Yolcu "İnad Odasına Alındı" durumundadır. Lütfen sevk takibini yapınız!';
         showEInadStatus(alertMsg, 'warning');
     }
 
@@ -529,7 +695,7 @@ function getDataTableTurkishLanguage() {
         lengthMenu: 'Sayfada _MENU_ kayıt göster',
         loadingRecords: 'Yükleniyor...',
         processing: 'İşleniyor...',
-        search: 'Ara:',
+        search: 'Tabloda Filtrele:',
         zeroRecords: 'Eşleşen kayıt bulunamadı',
         paginate: {
             first: 'İlk',
@@ -545,7 +711,7 @@ function getDataTableTurkishLanguage() {
 }
 
 /* =========================
-   INIT
+   SAYFA YÜKLENDİĞİNDE
 ========================= */
 $(function () {
     if ($.fn.DataTable) {
@@ -560,8 +726,10 @@ $(function () {
     loadAirlineList();
     initUcusNoToAirline();
     initHavayoluManualCheck();
+    initMrzParser();
+    initReasonChips();
 
-    // Durum badge'lerine event delegation (DataTable sayfa değişimlerinde de çalışır)
+    // Durum badge'lerine event delegation
     $(document).off('click', '.inad-status-btn:not(.status-diger)')
                .on('click', '.inad-status-btn:not(.status-diger)', function (e) {
         e.preventDefault();
@@ -570,7 +738,7 @@ $(function () {
 
     $('#inadModal').on('show.bs.modal', function () {
         hideEInadStatus();
-        $('#saveButton').prop('disabled', false).html('Kaydet');
+        $('#saveButton').prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Kaydet');
         loadAirlineList();
     });
 

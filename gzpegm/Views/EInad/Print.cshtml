@@ -1,28 +1,345 @@
 @model gzpegm.Models.E_Inad
+@using gzpegm.Models
 @{
     Layout = "~/Views/Shared/_Master.cshtml";
+    ViewBag.Title = "İNAD Yazdırma & Sevk Konsolu";
+    var detectedLang = InadHelpers.GetFormLanguageByCountry(Model?.Uyruk ?? "");
+    var inadId = Model?.InadId ?? 0;
+    var reasons = (Model?.InadSebep ?? "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
 }
 
-<section class="card">
-    <header class="card-header">
-        <h2 class="card-title">Yazdirma Formu Secimi</h2>
-        <p class="card-subtitle">Lutfen yazdirmak istediginiz formu secin.</p>
-    </header>
-    <div class="card-body">
-        <div class="mb-3">
-            <strong>Kayit: </strong> @(Model?.AdSoyad ?? "-") &nbsp; <small>(ID: @Model?.InadId)</small>
-        </div>
+@section Styles {
+    <link href="@Url.Content("~/css/einad-index.css")?v=2.0" rel="stylesheet" />
+}
 
-        <div class="btn-group-vertical" role="group" aria-label="Yazdirma secenekleri">
-            <a class="btn btn-outline-primary" target="_blank" rel="noopener noreferrer" href="@Url.Action("PrintForm1", "EInad", new { id = Model?.InadId })">Form 1 - Kabul Edilemez Yolcu Bilgi Formu</a>
-            <a class="btn btn-outline-primary" target="_blank" rel="noopener noreferrer" href="@Url.Action("PrintForm2", "EInad", new { id = Model?.InadId })">Form 2 - Kabul Edilemez Yolcu Formu</a>
-            <a class="btn btn-outline-primary" target="_blank" rel="noopener noreferrer" href="@Url.Action("PrintForm3", "EInad", new { id = Model?.InadId })">Form 3 - Takip Formu</a>
-            <a class="btn btn-outline-primary" target="_blank" rel="noopener noreferrer" href="@Url.Action("PrintForm4", "EInad", new { id = Model?.InadId })">Form 4 - Tutanak</a>
-            <a class="btn btn-outline-primary" target="_blank" rel="noopener noreferrer" href="@Url.Action("PrintForm5", "EInad", new { id = Model?.InadId })">Form 5 - Teslim Tesellum</a>
-            <a class="btn btn-outline-primary" target="_blank" rel="noopener noreferrer" href="@Url.Action("PrintForm6", "EInad", new { id = Model?.InadId })">Form 6 - Ust Arama Tutanagi</a>
+<div class="einad-print-container">
+    <!-- Header Banner -->
+    <div class="einad-command-banner mb-4">
+        <div class="d-flex flex-wrap align-items-center justify-content-between">
+            <div class="d-flex align-items-center mb-2 mb-md-0">
+                <div class="einad-badge-icon">
+                    <i class="fas fa-print"></i>
+                </div>
+                <div class="ml-3">
+                    <h2 class="einad-command-title mb-0">İNAD Resmi Belge ve Tutanak Konsolu</h2>
+                    <p class="einad-command-subtitle mb-0">
+                        Emniyet Genel Müdürlüğü Hudut Kapıları İNAD Yönetim ve Sevk Modülü
+                    </p>
+                </div>
+            </div>
+            <div class="d-flex align-items-center">
+                <a href="@Url.Action("Index", "EInad")" class="btn btn-outline-light mr-2">
+                    <i class="fas fa-arrow-left mr-1"></i> Listeye Dön
+                </a>
+                <span class="badge badge-pill badge-primary px-3 py-2">
+                    <i class="fas fa-shield-alt mr-1"></i> @(Model?.Kapi ?? "Hudut Kapısı")
+                </span>
+            </div>
         </div>
-
-        <hr />
-        <a class="btn btn-secondary" href="@Url.Action("Index", "EInad")">Geri</a>
     </div>
-</section>
+
+    <!-- Passenger Identity Summary Card -->
+    <div class="card einad-passenger-summary mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-lg-8 col-md-12">
+                    <div class="d-flex align-items-start">
+                        <div class="einad-avatar mr-3">
+                            <i class="fas fa-user-shield"></i>
+                        </div>
+                        <div>
+                            <div class="d-flex flex-wrap align-items-center mb-1">
+                                <h3 class="passenger-name mr-3 mb-0">@(Model?.AdSoyad ?? "Bilinmiyor")</h3>
+                                <span class="badge @(Model?.Durum == "İnad Odasında Alındı" ? "badge-warning blink" : "badge-success") mr-2">
+                                    <i class="fas @(Model?.Durum == "İnad Odasında Alındı" ? "fa-user-clock" : "fa-check-circle") mr-1"></i>
+                                    @(Model?.Durum ?? "Belirtilmemiş")
+                                </span>
+                                <span class="badge badge-secondary">
+                                    Kayıt ID: #@inadId
+                                </span>
+                            </div>
+                            <div class="passenger-meta-grid">
+                                <div><i class="fas fa-globe mr-1 text-muted"></i> <strong>Uyruk:</strong> @(Model?.Uyruk ?? "-")</div>
+                                <div><i class="fas fa-passport mr-1 text-muted"></i> <strong>Pasaport No:</strong> @(Model?.PasaportNo ?? "-")</div>
+                                <div><i class="fas fa-calendar-alt mr-1 text-muted"></i> <strong>İşlem Tarihi:</strong> @(Model?.TarihSaat.HasValue == true ? Model.TarihSaat.Value.ToString("dd.MM.yyyy HH:mm") : "-")</div>
+                                <div><i class="fas fa-id-badge mr-1 text-muted"></i> <strong>Sicil:</strong> @(Model?.Sicil ?? "-")</div>
+                                <div><i class="fas fa-plane-arrival mr-1 text-muted"></i> <strong>Gelen:</strong> @(string.IsNullOrEmpty(Model?.GelenUcusNo) ? "-" : Model.GelenUcusNo + " (" + (Model.GelenHavayolu ?? "-") + ")")</div>
+                                <div><i class="fas fa-plane-departure mr-1 text-muted"></i> <strong>Giden:</strong> @(string.IsNullOrEmpty(Model?.GidisUcusNo) ? "-" : Model.GidisUcusNo + " (" + (Model.GidenHavayolu ?? "-") + ")")</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-12 mt-3 mt-lg-0 border-left-lg">
+                    <div class="pl-lg-3">
+                        <div class="small font-weight-bold text-muted mb-2">
+                            <i class="fas fa-exclamation-circle text-danger mr-1"></i> TESPİT EDİLEN İNAD SEBEPLERİ:
+                        </div>
+                        <div class="inad-reason-tags">
+                            @if (reasons.Length > 0)
+                            {
+                                foreach (var r in reasons)
+                                {
+                                    <span class="badge badge-light border text-dark mb-1 mr-1">
+                                        <i class="fas fa-tag text-primary mr-1"></i> @r.Trim()
+                                    </span>
+                                }
+                            }
+                            else
+                            {
+                                <span class="text-muted small">Sebep belirtilmemiş</span>
+                            }
+                        </div>
+                        <div class="mt-2 pt-2 border-top small text-muted">
+                            <i class="fas fa-language text-info mr-1"></i> <strong>Sistem Dil Eşleşmesi:</strong>
+                            <span class="badge badge-info ml-1">@detectedLang</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Cards Grid (6 Official Forms) -->
+    <div class="row">
+        <!-- Form 1 -->
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card h-100 einad-form-card border-top-primary">
+                <div class="card-body d-flex flex-column">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="form-icon-pill bg-primary-soft text-primary mr-3">
+                            <i class="fas fa-file-invoice"></i>
+                        </div>
+                        <div>
+                            <span class="badge badge-primary-light mb-1">Form 1</span>
+                            <h5 class="card-title font-weight-bold mb-0">Kabul Edilemez Yolcu Bilgi Formu</h5>
+                        </div>
+                    </div>
+                    <p class="card-text text-muted small mb-3 flex-grow-1">
+                        Yolcuya haklarını ve İNAD kararını bildiren çok dilli tebliğ formu. Şahsın uyruğuna göre otomatik dil atanır.
+                    </p>
+                    <div class="alert alert-light border py-1 px-2 mb-3 small d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-language mr-1 text-primary"></i> <strong>Uyruk Dili:</strong> @detectedLang</span>
+                        <span class="badge badge-success">11 Dil Hazır</span>
+                    </div>
+                    <div class="d-flex flex-column gap-2">
+                        <a href="@Url.Action("PrintForm1", "EInad", new { id = inadId })" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-block">
+                            <i class="fas fa-print mr-1"></i> Yazdır (@detectedLang)
+                        </a>
+                        <div class="dropdown mt-2">
+                            <button class="btn btn-outline-secondary btn-block dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fas fa-globe mr-1"></i> Farklı Dilde Yazdır...
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-right w-100">
+                                @foreach (var kv in InadHelpers.DesteklenenDiller)
+                                {
+                                    <a class="dropdown-item d-flex justify-content-between align-items-center" target="_blank" rel="noopener noreferrer" href="@Url.Action("PrintForm1", "EInad", new { id = inadId, lang = kv.Key })">
+                                        <span>@kv.Value</span>
+                                        @if (kv.Value.Contains(detectedLang) || (detectedLang == "İngilizce" && kv.Key == "Ingilizce"))
+                                        {
+                                            <span class="badge badge-primary ml-2">Önerilen</span>
+                                        }
+                                    </a>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form 2 -->
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card h-100 einad-form-card border-top-info">
+                <div class="card-body d-flex flex-column">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="form-icon-pill bg-info-soft text-info mr-3">
+                            <i class="fas fa-file-signature"></i>
+                        </div>
+                        <div>
+                            <span class="badge badge-info-light mb-1">Form 2</span>
+                            <h5 class="card-title font-weight-bold mb-0">Kabul Edilemez Yolcu Formu</h5>
+                        </div>
+                    </div>
+                    <p class="card-text text-muted small mb-3 flex-grow-1">
+                        Taşıyıcı havayolu işletmesine ve hudut makamlarına ibraz edilen uluslararası standart İNAD bildirim formu.
+                    </p>
+                    <div class="alert alert-light border py-1 px-2 mb-3 small d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-shield-alt mr-1 text-info"></i> <strong>Standart:</strong> ICAO Formatı</span>
+                        <span class="badge badge-info">11 Dil Hazır</span>
+                    </div>
+                    <div class="d-flex flex-column gap-2">
+                        <a href="@Url.Action("PrintForm2", "EInad", new { id = inadId })" target="_blank" rel="noopener noreferrer" class="btn btn-info btn-block text-white">
+                            <i class="fas fa-print mr-1"></i> Yazdır (Standart / İngilizce)
+                        </a>
+                        <div class="dropdown mt-2">
+                            <button class="btn btn-outline-secondary btn-block dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fas fa-globe mr-1"></i> Farklı Dilde Yazdır...
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-right w-100">
+                                @foreach (var kv in InadHelpers.DesteklenenDiller)
+                                {
+                                    <a class="dropdown-item d-flex justify-content-between align-items-center" target="_blank" rel="noopener noreferrer" href="@Url.Action("PrintForm2", "EInad", new { id = inadId, lang = kv.Key })">
+                                        <span>@kv.Value</span>
+                                    </a>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form 3 -->
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card h-100 einad-form-card border-top-warning">
+                <div class="card-body d-flex flex-column">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="form-icon-pill bg-warning-soft text-warning mr-3">
+                            <i class="fas fa-user-slash"></i>
+                        </div>
+                        <div>
+                            <span class="badge badge-warning-light mb-1">Form 3</span>
+                            <h5 class="card-title font-weight-bold mb-0">Takip & Tebellüğ Tutanağı</h5>
+                        </div>
+                    </div>
+                    <p class="card-text text-muted small mb-3 flex-grow-1">
+                        Yolcunun tebliğ edilen kararı kabul etmemesi veya imzadan imtina etmesi halinde düzenlenen resmi tutanak.
+                    </p>
+                    <div class="alert alert-light border py-1 px-2 mb-3 small d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-gavel mr-1 text-warning"></i> <strong>Mevzuat:</strong> Tebellüğden İmtina</span>
+                        <span class="badge badge-secondary">Resmi Nüsha</span>
+                    </div>
+                    <div class="d-flex flex-column gap-2">
+                        <a href="@Url.Action("PrintForm3", "EInad", new { id = inadId })" target="_blank" rel="noopener noreferrer" class="btn btn-warning btn-block text-dark font-weight-bold">
+                            <i class="fas fa-print mr-1"></i> Form 3 Yazdır (Türkçe)
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form 4 -->
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card h-100 einad-form-card border-top-success">
+                <div class="card-body d-flex flex-column">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="form-icon-pill bg-success-soft text-success mr-3">
+                            <i class="fas fa-plane-departure"></i>
+                        </div>
+                        <div>
+                            <span class="badge badge-success-light mb-1">Form 4</span>
+                            <h5 class="card-title font-weight-bold mb-0">Uçağa Kabul & Sevk Tutanağı</h5>
+                        </div>
+                    </div>
+                    <p class="card-text text-muted small mb-3 flex-grow-1">
+                        Yolcunun havayolu işleticisine veya yer hizmetleri kuruluşuna güvenli teslimi ve uçağa intikali tutanağı.
+                    </p>
+                    <div class="alert alert-light border py-1 px-2 mb-3 small d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-plane mr-1 text-success"></i> <strong>Sevk:</strong> Havayolu / Kaptan Pilot</span>
+                        <span class="badge badge-secondary">Resmi Nüsha</span>
+                    </div>
+                    <div class="d-flex flex-column gap-2">
+                        <a href="@Url.Action("PrintForm4", "EInad", new { id = inadId })" target="_blank" rel="noopener noreferrer" class="btn btn-success btn-block">
+                            <i class="fas fa-print mr-1"></i> Form 4 Yazdır (Türkçe)
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form 5 -->
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card h-100 einad-form-card border-top-dark">
+                <div class="card-body d-flex flex-column">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="form-icon-pill bg-dark-soft text-dark mr-3">
+                            <i class="fas fa-boxes"></i>
+                        </div>
+                        <div>
+                            <span class="badge badge-secondary mb-1">Form 5</span>
+                            <h5 class="card-title font-weight-bold mb-0">Teslim Tesellüm Tutanağı</h5>
+                        </div>
+                    </div>
+                    <p class="card-text text-muted small mb-3 flex-grow-1">
+                        Şahsın pasaportu, seyahat belgeleri, para ve özel eşyalarının gözetim altına alınması ve teslimi tutanağı.
+                    </p>
+                    <div class="alert alert-light border py-1 px-2 mb-3 small d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-handshake mr-1 text-dark"></i> <strong>Muhafaza:</strong> Eşya & Evrak Teslimi</span>
+                        <span class="badge badge-secondary">Resmi Nüsha</span>
+                    </div>
+                    <div class="d-flex flex-column gap-2">
+                        <a href="@Url.Action("PrintForm5", "EInad", new { id = inadId })" target="_blank" rel="noopener noreferrer" class="btn btn-dark btn-block">
+                            <i class="fas fa-print mr-1"></i> Form 5 Yazdır (Türkçe)
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form 6 -->
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card h-100 einad-form-card border-top-danger">
+                <div class="card-body d-flex flex-column">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="form-icon-pill bg-danger-soft text-danger mr-3">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <div>
+                            <span class="badge badge-danger-light mb-1">Form 6</span>
+                            <h5 class="card-title font-weight-bold mb-0">Üst Arama Tutanağı</h5>
+                        </div>
+                    </div>
+                    <p class="card-text text-muted small mb-3 flex-grow-1">
+                        Yolcunun kaba üst ve beraberindeki el bagajı aramasında çıkan materyallerin tespiti için düzenlenen tutanak.
+                    </p>
+                    <div class="alert alert-light border py-1 px-2 mb-3 small d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-language mr-1 text-danger"></i> <strong>Dil:</strong> @detectedLang</span>
+                        <span class="badge badge-danger">11 Dil Hazır</span>
+                    </div>
+                    <div class="d-flex flex-column gap-2">
+                        <a href="@Url.Action("PrintForm6", "EInad", new { id = inadId })" target="_blank" rel="noopener noreferrer" class="btn btn-danger btn-block">
+                            <i class="fas fa-print mr-1"></i> Yazdır (@detectedLang)
+                        </a>
+                        <div class="dropdown mt-2">
+                            <button class="btn btn-outline-secondary btn-block dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fas fa-globe mr-1"></i> Farklı Dilde Yazdır...
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-right w-100">
+                                @foreach (var kv in InadHelpers.DesteklenenDiller)
+                                {
+                                    <a class="dropdown-item d-flex justify-content-between align-items-center" target="_blank" rel="noopener noreferrer" href="@Url.Action("PrintForm6", "EInad", new { id = inadId, lang = kv.Key })">
+                                        <span>@kv.Value</span>
+                                        @if (kv.Value.Contains(detectedLang) || (detectedLang == "İngilizce" && kv.Key == "Ingilizce"))
+                                        {
+                                            <span class="badge badge-primary ml-2">Önerilen</span>
+                                        }
+                                    </a>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Batch Printing Instruction Bar -->
+    <div class="card bg-light border mt-2 mb-4">
+        <div class="card-body py-3 d-flex flex-wrap align-items-center justify-content-between">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-info-circle text-primary fa-2x mr-3"></i>
+                <div>
+                    <strong class="d-block text-dark">EGM Yazdırma Yönergesi</strong>
+                    <span class="small text-muted">
+                        Resmi belgeler yeni sekmede açılır. Tarayıcınızın yazdırma diyaloğundan (Ctrl+P) A4 dikey/yatay şablonunu seçerek doğrudan yazdırabilirsiniz.
+                    </span>
+                </div>
+            </div>
+            <div class="mt-2 mt-md-0">
+                <a href="@Url.Action("Index", "EInad")" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left mr-1"></i> Listeye Geri Dön
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
