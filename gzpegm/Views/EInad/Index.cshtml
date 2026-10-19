@@ -1,4 +1,4 @@
-@model IEnumerable<gzpegm.Models.E_Inad>
+﻿@model IEnumerable<gzpegm.Models.E_Inad>
 @using System.Web
 @using gzpegm.Models
 @{
@@ -56,6 +56,9 @@
                         <i class="fas fa-map-marker-alt mr-1"></i> @myBorder
                     </span>
                 }
+                <button type="button" class="btn btn-outline-info font-weight-bold shadow-sm mr-2" id="btnTopConnect3M" onclick="connect3MDevice()" title="3M ve Regula Optik Okuyucuya Bağlan">
+                    <i class="fas fa-plug mr-1"></i> <span id="btnTopConnect3MText">3M / Regula Bağlan</span>
+                </button>
                 <button type="button" class="btn btn-warning font-weight-bold shadow-sm" onclick="openAdd()">
                     <i class="fas fa-plus-circle mr-1"></i> Yeni İNAD Kaydı Ekle
                 </button>
@@ -371,8 +374,8 @@
                                 <span class="font-weight-bold text-info mr-2">
                                     <i class="fas fa-qrcode mr-1"></i> Hızlı Pasaport & Optik Okuyucu Merkezi
                                 </span>
-                                <span class="scanner-live-badge" title="3M PV40 / PV60 veya Barkod Okuyucu Dinleniyor">
-                                    <span class="scanner-dot"></span> 3M PV40 / PV60 Dinleyici Aktif
+                                <span class="scanner-live-badge" title="3M PV40 / PV60 veya Regula Optik Okuyucu Dinleniyor">
+                                    <span class="scanner-dot"></span> 3M & Regula Dinleyici Aktif
                                 </span>
                             </div>
                             <span class="badge badge-info small">Tıkla & Aç / Kapat</span>
@@ -393,7 +396,7 @@
                                     </li>
                                     <li class="nav-item">
                                         <a class="nav-link font-weight-bold py-1" id="tab-3m-link" data-toggle="pill" href="#tab-3m" role="tab">
-                                            <i class="fas fa-microchip mr-1"></i> 3. 3M PV40/PV60 Entegrasyonu
+                                            <i class="fas fa-microchip mr-1"></i> 3. 3M & Regula Okuyucu Entegrasyonu
                                         </a>
                                     </li>
                                 </ul>
@@ -449,24 +452,57 @@
                                         </div>
                                     </div>
 
-                                    <!-- TAB 3: 3M PV40/PV60 Entegrasyon Kılavuzu -->
+                                                                        <!-- TAB 3: 3M & Regula Entegrasyon KÄ±lavuzu & Test Konsolu -->
                                     <div class="tab-pane fade" id="tab-3m" role="tabpanel">
                                         <div class="alert alert-light border mb-0 small">
-                                            <h6 class="font-weight-bold text-primary mb-1">
-                                                <i class="fas fa-check-circle text-success mr-1"></i> 3M PV40 & PV60 (AT9000 MK2) Tam Uyumlu
-                                            </h6>
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <h6 class="font-weight-bold text-primary mb-0">
+                                                    <i class="fas fa-check-circle text-success mr-1"></i> 3M Cogent / Gemalto (PV40 & PV60) & Regula Document Reader
+                                                </h6>
+                                                <span class="badge badge-success px-2 py-1">
+                                                    <i class="fas fa-signal mr-1"></i> DonanÄ±m Dinleyici Aktif
+                                                </span>
+                                            </div>
+                                            <div class="p-3 my-2 bg-white rounded border shadow-sm text-center">
+                                                <button type="button" class="btn btn-primary font-weight-bold px-4 py-2" id="btnTabConnect3M" onclick="connect3MDevice();">
+                                                    <i class="fas fa-plug mr-2"></i> 3M & Regula CihazÄ±na BaÄŸlan
+                                                </button>
+                                                <div id="connect3MStatusMessage" class="small text-muted mt-2 font-weight-bold">
+                                                    Okuyucuya baÄŸlanmak ve veri akÄ±ÅŸÄ±nÄ± aktif etmek iÃ§in tÄ±klayÄ±n.
+                                                </div>
+                                            </div>
                                             <p class="mb-2 text-dark">
-                                                Bu sayfa açıkken 3M PV40 veya PV60 cihazınız bilgisayara USB ile bağlıysa,
-                                                <strong>pasaportu okuyucu camının üzerine koymanız yeterlidir</strong>.
+                                                Optik okuyucunuz (3M PV40/PV60 veya Regula 70X4/7024/7034 vb.) bilgisayara USB ile baÄŸlÄ±yken <strong>pasaportu veya kimlik kartÄ±nÄ± okuyucu camÄ±nÄ±n Ã¼zerine koymanÄ±z yeterlidir</strong>.
+                                                Sistem gelen veriyi milisaniyelik hÄ±zda yakalar ve formu otomatik doldurur.
                                             </p>
-                                            <ul class="mb-2 pl-3 text-muted">
-                                                <li>Cihazdan gelen yüksek hızlı donanımsal MRZ akışı arka plandaki akıllı dinleyici tarafından otomatik yakalanır.</li>
-                                                <li>Modal kapalı olsa dahi yeni kayıt penceresi kendiliğinden açılır ve tüm alanlar doldurulur.</li>
-                                                <li>Cihazınızın <strong>"3M Page Reader / Document Reader"</strong> yazılımında <em>"Keyboard Wedge / Output as Keystrokes"</em> seçeneğinin işaretli olduğundan emin olun.</li>
-                                            </ul>
-                                            <span class="badge badge-success px-2 py-1">
-                                                <i class="fas fa-signal mr-1"></i> Canlı Dinleme Modu Devrede
-                                            </span>
+                                            <div class="p-2 mb-2 bg-white rounded border">
+                                                <strong class="text-secondary d-block mb-1"><i class="fas fa-cogs mr-1"></i> Optik Okuyucu & SÃ¼rÃ¼cÃ¼ Durumu:</strong>
+                                                <ul class="mb-1 pl-3 text-muted">
+                                                    <li><strong>3M / Gemalto:</strong> OutputWedge servisi arka planda sistem tepsisinde dinlenir. Gerekirse proje ana dizinindeki <code class="text-primary font-weight-bold">3M_Okuyucu_Baslat.bat</code> ile baÅŸlatabilirsiniz.</li>
+                                                    <li><strong>Regula:</strong> Regula Document Reader SDK / Reader uygulamasÄ± veya arka plan servisi tam uyumludur.</li>
+                                                    <li>Hem <strong>Standart MRZ</strong> (TD3 Pasaport 2x44, TD1 Kimlik 3x30) hem de <strong>3M / Regula Wedge Key-Value</strong> (Personal Number / TC Kimlik No dahil) formatlarÄ± tam desteklenir.</li>
+                                                </ul>
+                                            </div>
+
+                                            <div class="d-flex flex-wrap align-items-center justify-content-between pt-1 border-top">
+                                                <span class="font-weight-bold text-dark mr-2 mb-1">
+                                                    <i class="fas fa-vial mr-1 text-info"></i> Okuyucu Test SimÃ¼lasyonu:
+                                                </span>
+                                                <div class="btn-group btn-group-sm mb-1">
+                                                    <button type="button" class="btn btn-outline-primary" onclick="simulate3mScan('passport')" title="TD3 Pasaport Okuma SimÃ¼lasyonu">
+                                                        <i class="fas fa-passport mr-1"></i> Pasaport Test Et
+                                                    </button>
+                                                    <button type="button" class="btn btn-outline-info" onclick="simulate3mScan('id')" title="TD1 Kimlik KartÄ± Okuma SimÃ¼lasyonu">
+                                                        <i class="fas fa-id-card mr-1"></i> Kimlik KartÄ± Test Et
+                                                    </button>
+                                                    <button type="button" class="btn btn-outline-success" onclick="simulate3mScan('wedge')" title="3M OutputWedge FormatÄ± SimÃ¼lasyonu">
+                                                        <i class="fas fa-terminal mr-1"></i> 3M Wedge Test Et
+                                                    </button>
+                                                    <button type="button" class="btn btn-outline-warning" onclick="simulate3mScan('regula')" title="Regula Okuyucu FormatÄ± SimÃ¼lasyonu">
+                                                        <i class="fas fa-barcode mr-1"></i> Regula Test Et
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -850,6 +886,8 @@
          data-url-delete-inad="@Url.Action("DeleteInad", "EInad")"
          data-url-update-status="@Url.Action("UpdateStatus", "EInad")"
          data-url-scan-image="@Url.Action("ScanPassportImage", "EInad")"
+         data-url-connect-3m="@Url.Action("Connect3MReader", "EInad")"
+         data-url-status-3m="@Url.Action("Get3MReaderStatus", "EInad")"
          style="display:none;"></div>
-    <script src="@Url.Content("~/js/einad-index.js")?v=2.0"></script>
+    <script src="@Url.Content("~/js/einad-index.js")?v=@DateTime.Now.Ticks"></script>
 }

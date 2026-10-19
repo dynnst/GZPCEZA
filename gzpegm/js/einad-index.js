@@ -1,4 +1,4 @@
-/* ==========================================================================
+﻿/* ==========================================================================
    E-INAD Yonetim JavaScript (einad-index.js v2.0)
    Modern EGM Hudut Polisi Komuta & Sevk Scriptleri
    ========================================================================== */
@@ -252,43 +252,47 @@ function findAirlineByIata(iataCode, fieldSelector, flightNo) {
 }
 
 /* ==========================================================================
-   MRZ (MACHINE READABLE ZONE) & 3M OPTİK OKUYUCU ENTEGRASYONU
+   MRZ (MACHINE READABLE ZONE) & 3M OPTİK OKUYUCU ENTEGRASYONU (PV40 / PV60)
    ========================================================================== */
 var _isoCountryMap = {
-    'AFG': 'Afganistan', 'ALB': 'Arnavutluk', 'DZA': 'Cezayir', 'AND': 'Andorra', 'AGO': 'Angola',
-    'ARG': 'Arjantin', 'ARM': 'Ermenistan', 'AUS': 'Avustralya', 'AUT': 'Avusturya', 'AZE': 'Azerbaycan',
-    'BHR': 'Bahreyn', 'BGD': 'Bangladeş', 'BLR': 'Belarus', 'BEL': 'Belçika', 'BIH': 'Bosna-Hersek',
-    'BRA': 'Brezilya', 'BGR': 'Bulgaristan', 'CAN': 'Kanada', 'CHN': 'Çin', 'HRV': 'Hırvatistan',
-    'CZE': 'Çek Cumhuriyeti', 'DNK': 'Danimarka', 'EGY': 'Mısır', 'FIN': 'Finlandiya', 'FRA': 'Fransa',
-    'GEO': 'Gürcistan', 'DEU': 'Almanya', 'GRC': 'Yunanistan', 'HUN': 'Macaristan', 'IND': 'Hindistan',
-    'IDN': 'Endonezya', 'IRN': 'İran', 'IRQ': 'Irak', 'IRL': 'İrlanda', 'ISR': 'İsrail',
-    'ITA': 'İtalya', 'JPN': 'Japonya', 'JOR': 'Ürdün', 'KAZ': 'Kazakistan', 'KWT': 'Kuveyt',
-    'KGZ': 'Kırgızistan', 'LBN': 'Liban', 'LBY': 'Libya', 'MDA': 'Moldovya', 'MAR': 'Fas',
-    'NLD': 'Hollanda', 'MKD': 'Kuzey Makedonya', 'NOR': 'Norveç', 'PAK': 'Pakistan', 'POL': 'Polonya',
-    'PRT': 'Portekiz', 'QAT': 'Katar', 'ROU': 'Romanya', 'RUS': 'Rusya', 'SAU': 'Suudi Arabistan',
-    'SRB': 'Sırbistan', 'SVK': 'Slovakya', 'SVN': 'Slovenya', 'ESP': 'İspanya', 'SWE': 'İsveç',
-    'CHE': 'İsviçre', 'SYR': 'Suriye', 'TJK': 'Tacikistan', 'TUN': 'Tunus', 'TUR': 'Türkiye',
-    'TKM': 'Türkmenistan', 'UKR': 'Ukrayna', 'ARE': 'Birleşik Arap Emirlikleri', 'GBR': 'İngiltere',
-    'USA': 'Amerika Birleşik Devletleri', 'UZB': 'Özbekistan', 'SOM': 'Somali', 'SDN': 'Sudan',
-    'YEM': 'Yemen', 'NGA': 'Nijerya', 'GHA': 'Gana', 'ETH': 'Etiyopya', 'KEN': 'Kenya',
-    'LBN': 'Lübnan', 'DZA': 'Cezayir', 'MAR': 'Fas', 'EGY': 'Mısır', 'IRQ': 'Irak', 'IRN': 'İran'
+    'TUR': 'Türkiye', 'DEU': 'Almanya', 'GBR': 'İngiltere', 'RUS': 'Rusya', 'UKR': 'Ukrayna',
+    'USA': 'Amerika Birleşik Devletleri', 'FRA': 'Fransa', 'NLD': 'Hollanda', 'BEL': 'Belçika',
+    'AUT': 'Avusturya', 'CHE': 'İsviçre', 'SWE': 'İsveç', 'NOR': 'Norveç', 'DNK': 'Danimarka',
+    'FIN': 'Finlandiya', 'POL': 'Polonya', 'CZE': 'Çek Cumhuriyeti', 'ROU': 'Romanya', 'BGR': 'Bulgaristan',
+    'GRC': 'Yunanistan', 'ITA': 'İtalya', 'ESP': 'İspanya', 'PRT': 'Portekiz', 'AZE': 'Azerbaycan',
+    'KAZ': 'Kazakistan', 'UZB': 'Özbekistan', 'KGZ': 'Kırgızistan', 'TKM': 'Türkmenistan', 'TJK': 'Tacikistan',
+    'GEO': 'Gürcistan', 'ARM': 'Ermenistan', 'MDA': 'Moldovya', 'BLR': 'Belarus', 'IRN': 'İran',
+    'IRQ': 'Irak', 'SYR': 'Suriye', 'LBN': 'Lübnan', 'JOR': 'Ürdün', 'ISR': 'İsrail',
+    'SAU': 'Suudi Arabistan', 'ARE': 'Birleşik Arap Emirlikleri', 'KWT': 'Kuveyt', 'QAT': 'Katar',
+    'BHR': 'Bahreyn', 'OMN': 'Umman', 'EGY': 'Mısır', 'LBY': 'Libya', 'TUN': 'Tunus',
+    'DZA': 'Cezayir', 'MAR': 'Fas', 'SDN': 'Sudan', 'SOM': 'Somali', 'ETH': 'Etiyopya',
+    'KEN': 'Kenya', 'NGA': 'Nijerya', 'GHA': 'Gana', 'ZAF': 'Güney Afrika', 'IND': 'Hindistan',
+    'PAK': 'Pakistan', 'BGD': 'Bangladeş', 'AFG': 'Afganistan', 'CHN': 'Çin', 'JPN': 'Japonya',
+    'KOR': 'Güney Kore', 'IDN': 'Endonezya', 'MYS': 'Malezya', 'PHL': 'Filipinler', 'THA': 'Tayland',
+    'VNM': 'Vietnam', 'AUS': 'Avustralya', 'CAN': 'Kanada', 'BRA': 'Brezilya', 'ARG': 'Arjantin',
+    'MEX': 'Meksika', 'COL': 'Kolombiya', 'SRB': 'Sırbistan', 'BIH': 'Bosna-Hersek', 'HRV': 'Hırvatistan',
+    'MKD': 'Kuzey Makedonya', 'ALB': 'Arnavutluk', 'MNE': 'Karadağ', 'KOS': 'Kosova', 'HUN': 'Macaristan',
+    'SVK': 'Slovakya', 'SVN': 'Slovenya', 'IRL': 'İrlanda', 'CYP': 'Kıbrıs', 'MLT': 'Malta'
 };
 
 function playScanBeep() {
     try {
-        var AudioContext = window.AudioContext || window.webkitAudioContext;
-        if (!AudioContext) return;
-        var audioCtx = new AudioContext();
+        var AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        var audioCtx = new AudioCtx();
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
         var osc = audioCtx.createOscillator();
         var gain = audioCtx.createGain();
         osc.type = 'sine';
         osc.frequency.setValueAtTime(880, audioCtx.currentTime);
         gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.16);
         osc.connect(gain);
         gain.connect(audioCtx.destination);
         osc.start();
-        osc.stop(audioCtx.currentTime + 0.15);
+        osc.stop(audioCtx.currentTime + 0.16);
     } catch (e) { }
 }
 
@@ -304,49 +308,104 @@ function cleanOcrMrzLine(line) {
     return cleaned;
 }
 
+function parseDateString(str) {
+    if (!str) return "";
+    str = str.trim();
+
+    // 1. Durum: Ham 6 hane (YYMMDD) - Ã–rn: 840408
+    if (/^\d{6}$/.test(str)) {
+        var yy = parseInt(str.substr(0, 2), 10);
+        var mm = str.substr(2, 2);
+        var dd = str.substr(4, 2);
+        var currentYearShort = new Date().getFullYear() % 100;
+        var fullYear = (yy > currentYearShort ? 1900 : 2000) + yy;
+        return fullYear + '-' + mm + '-' + dd;
+    }
+
+    // 2. Durum: Ham 8 hane (YYYYMMDD) - Ã–rn: 19840408
+    if (/^\d{8}$/.test(str)) {
+        return str.substr(0, 4) + '-' + str.substr(4, 2) + '-' + str.substr(6, 2);
+    }
+
+    // 3. Durum: DD-MM-YYYY veya DD/MM/YYYY veya DD.MM.YYYY (4 haneli yÄ±l)
+    var dmy4 = /^(\d{1,2})[\/\.\-](\d{1,2})[\/\.\-](\d{4})$/.exec(str);
+    if (dmy4) {
+        var d = dmy4[1].length === 1 ? '0' + dmy4[1] : dmy4[1];
+        var m = dmy4[2].length === 1 ? '0' + dmy4[2] : dmy4[2];
+        return dmy4[3] + '-' + m + '-' + d;
+    }
+
+    // 4. Durum: YYYY-MM-DD veya YYYY/MM/DD (4 haneli yÄ±l)
+    var ymd4 = /^(\d{4})[\/\.\-](\d{1,2})[\/\.\-](\d{1,2})$/.exec(str);
+    if (ymd4) {
+        var m2 = ymd4[2].length === 1 ? '0' + ymd4[2] : ymd4[2];
+        var d2 = ymd4[3].length === 1 ? '0' + ymd4[3] : ymd4[3];
+        return ymd4[1] + '-' + m2 + '-' + d2;
+    }
+
+    // 5. Durum: DD-MM-YY veya DD/MM/YY veya DD.MM.YY (3M Wedge FormatÄ±! Ã–rn: 08-04-84)
+    var dmy2 = /^(\d{1,2})[\/\.\-](\d{1,2})[\/\.\-](\d{2})$/.exec(str);
+    if (dmy2) {
+        var day2 = dmy2[1].length === 1 ? '0' + dmy2[1] : dmy2[1];
+        var month2 = dmy2[2].length === 1 ? '0' + dmy2[2] : dmy2[2];
+        var year2 = parseInt(dmy2[3], 10);
+        var currentYrShort = new Date().getFullYear() % 100;
+        var fullYr2 = (year2 > currentYrShort ? 1900 : 2000) + year2;
+        return fullYr2 + '-' + month2 + '-' + day2;
+    }
+
+    // 6. Durum: YY-MM-DD veya YY/MM/DD (2 haneli yÄ±l Ã¶nde)
+    var ymd2 = /^(\d{2})[\/\.\-](\d{1,2})[\/\.\-](\d{1,2})$/.exec(str);
+    if (ymd2) {
+        var year2b = parseInt(ymd2[1], 10);
+        var month2b = ymd2[2].length === 1 ? '0' + ymd2[2] : ymd2[2];
+        var day2b = ymd2[3].length === 1 ? '0' + ymd2[3] : ymd2[3];
+        var curYrB = new Date().getFullYear() % 100;
+        var fullYr2b = (year2b > curYrB ? 1900 : 2000) + year2b;
+        return fullYr2b + '-' + month2b + '-' + day2b;
+    }
+
+    return "";
+}
+
+function parseSexString(str) {
+    if (!str) return "";
+    var s = str.trim().toUpperCase();
+    if (s === 'M' || s.indexOf('MALE') === 0 || s.indexOf('ERKEK') === 0) return 'Erkek';
+    if (s === 'F' || s.indexOf('FEMALE') === 0 || s.indexOf('BAYAN') === 0 || s.indexOf('KADIN') === 0) return 'Bayan';
+    return "";
+}
+
+function applyCountryToSelect(countryCodeOrName) {
+    if (!countryCodeOrName) return "";
+    var target = countryCodeOrName.trim().toUpperCase();
+    var mappedName = _isoCountryMap[target] || countryCodeOrName.trim();
+    if (!mappedName) return "";
+
+    var foundVal = null;
+    var targetLower = mappedName.toLowerCase();
+
+    $('#Uyruk option').each(function () {
+        var optVal = $(this).val();
+        if (!optVal) return;
+        var optLower = optVal.toLowerCase();
+        if (optLower === targetLower || optLower.indexOf(targetLower) >= 0 || targetLower.indexOf(optLower) >= 0) {
+            foundVal = optVal;
+            return false;
+        }
+    });
+
+    if (foundVal) {
+        $('#Uyruk').val(foundVal).trigger('change');
+        return foundVal;
+    } else {
+        $('#Uyruk').append($('<option selected></option>').val(mappedName).text(mappedName)).trigger('change');
+        return mappedName;
+    }
+}
+
 function parseAndApplyMrz(rawText, sourceName) {
     if (!rawText || !rawText.trim()) return false;
-
-    var cleanText = rawText.replace(/\r/g, '\n').replace(/\t/g, '\n');
-    var rawLines = cleanText.split('\n')
-        .map(function (s) { return cleanOcrMrzLine(s.trim()); })
-        .filter(function (s) { return s.length >= 10; });
-
-    var line1 = "";
-    var line2 = "";
-
-    // 1. Durum: Satırlar arasında P< veya I< ile başlayan satırı ve ardından gelen satırı bul
-    for (var idx = 0; idx < rawLines.length; idx++) {
-        var cur = rawLines[idx];
-        if (cur.indexOf('P<') === 0 || cur.indexOf('I<') === 0 || cur.indexOf('P') === 0 || cur.indexOf('I') === 0) {
-            line1 = cur;
-            if (idx + 1 < rawLines.length) {
-                line2 = rawLines[idx + 1];
-            }
-            break;
-        }
-    }
-
-    // 2. Durum: Eğer tek satırda peş peşe 88 karakter geldiyse (Donanımsal Okuyucu Tek Parça Gönderimi)
-    if (!line1 && cleanText.length >= 80) {
-        var compact = cleanOcrMrzLine(cleanText);
-        var pIdx = compact.indexOf('P<');
-        if (pIdx < 0) pIdx = compact.indexOf('I<');
-        if (pIdx >= 0 && compact.length >= pIdx + 80) {
-            line1 = compact.substr(pIdx, 44);
-            line2 = compact.substr(pIdx + 44, 44);
-        }
-    }
-
-    // 3. Durum: Ham satırlardan son iki satırı dene
-    if (!line1 && rawLines.length >= 2) {
-        line1 = rawLines[rawLines.length - 2];
-        line2 = rawLines[rawLines.length - 1];
-    } else if (!line1 && rawLines.length === 1) {
-        line1 = rawLines[0];
-    }
-
-    if (!line1 && !line2) return false;
 
     var surname = "";
     var givenNames = "";
@@ -354,114 +413,233 @@ function parseAndApplyMrz(rawText, sourceName) {
     var nationalityCode = "";
     var birthDateStr = "";
     var sex = "";
+    var kimlikNo = "";
+    var parsedSuccessfully = false;
 
-    // TD3 / TD2 / TD1 Line 1 İsim Ayrıştırma
-    if (line1) {
-        var namePart = "";
-        var issuingState = "";
+        // =========================================================================
+    // 1. FORMAT: 3M & REGULA KEY-VALUE WEDGE FORMATI
+    // =========================================================================
+    var hasWedgeKeys = /(?:Surname|Last\s*Name|Family\s*Name|Forenames?|Given\s*Names?|First\s*Names?|Name|Doc\.?\s*(?:Number|No)|Document\s*(?:Number|No)?|Passport\s*(?:Number|No)?|Date\s*of\s*Birth|Birth\s*Date|DOB|Nationality|Country|Personal\s*No|START|REGULA)/i.test(rawText);
+    if (hasWedgeKeys) {
+        var lines = rawText.split(/[\r\n]+/);
+        for (var i = 0; i < lines.length; i++) {
+            var l = lines[i].trim();
+            if (!l) continue;
 
-        if (line1.indexOf('P<') === 0 || line1.indexOf('I<') === 0) {
-            issuingState = line1.substr(2, 3).replace(/[<]/g, '').trim();
-            namePart = line1.substr(5);
-        } else if (line1.indexOf('P') === 0 || line1.indexOf('I') === 0) {
-            issuingState = line1.substr(1, 3).replace(/[<]/g, '').trim();
-            namePart = line1.substr(4);
-        } else {
-            namePart = line1;
+            // Soyad (Surname, Last Name, Family Name)
+            var mSurname = /^(?:Surname|Last\s*Name|Family\s*Name)\s*:\s*(.+)$/i.exec(l);
+            if (mSurname) surname = mSurname[1].trim();
+
+            // Ad (Forenames, Given Name, First Name, Given Names, Name)
+            var mForenames = /^(?:Forenames?|Given\s*Names?|First\s*Names?|Name)\s*:\s*(.+)$/i.exec(l);
+            if (mForenames) givenNames = mForenames[1].trim();
+
+            // Belge TÃ¼rÃ¼
+            var mDocType = /^(?:Document|Doc\.?\s*Type|Document\s*Type)\s*:\s*(.+)$/i.exec(l);
+            if (mDocType && !nationalityCode) {
+                var dt = mDocType[1].trim();
+                if (/IDENTITY\s*CARD/i.test(dt)) {
+                    nationalityCode = 'TUR';
+                }
+            }
+
+            // Pasaport / Belge No (Doc Number, Document Number, Passport Number, DocNo)
+            var mDocNo = /^(?:Doc\.?\s*(?:Number|No)?|Document\s*(?:Number|No)?|Passport\s*(?:Number|No)?|DocNo)\s*:\s*(.+)$/i.exec(l);
+            if (mDocNo) passportNo = mDocNo[1].trim();
+
+            // T.C. Kimlik No / KiÅŸisel No (Regula Personal Number, National ID, Personal No, Identity No)
+            var mPersonal = /^(?:Personal\s*(?:Number|No)|National\s*ID|Identity\s*(?:Number|No)|TC\s*(?:Kimlik\s*No)?)\s*:\s*(.+)$/i.exec(l);
+            if (mPersonal) kimlikNo = mPersonal[1].trim();
+
+            // DoÄŸum Tarihi (Date of Birth, Birth Date, DOB)
+            var mDob = /^(?:Date\s*of\s*Birth|Birth\s*Date|DOB)\s*:\s*(.+)$/i.exec(l);
+            if (mDob) birthDateStr = parseDateString(mDob[1]);
+
+            // Cinsiyet (Sex, Gender)
+            var mSex = /^(?:Sex|Gender)\s*:\s*(.+)$/i.exec(l);
+            if (mSex) sex = parseSexString(mSex[1]);
+
+            // Uyruk (Nationality, Issuing State, Country, Citizenship)
+            var mNat = /^(?:Nationality|Issuing\s*State|Country|Citizenship)\s*:\s*(.+)$/i.exec(l);
+            if (mNat && !nationalityCode) nationalityCode = mNat[1].trim();
         }
 
-        var normalizedNamePart = namePart.replace(/[\uFFFD«»‹›\(\)\{\}\[\]]/g, '<');
-
-        // Soyad ve Adları çift veya daha fazla chevron (<<) ile ayır
-        var primaryParts = normalizedNamePart.split(/<{2,}/).filter(function (p) {
-            return p.replace(/</g, '').trim().length > 0;
-        });
-
-        if (primaryParts.length >= 1) {
-            surname = primaryParts[0].replace(/<+/g, ' ').replace(/[^A-ZÇĞİÖŞÜ\s]/g, ' ').replace(/\s+/g, ' ').trim();
-        }
-        if (primaryParts.length >= 2) {
-            givenNames = primaryParts[1].replace(/<+/g, ' ').replace(/[^A-ZÇĞİÖŞÜ\s]/g, ' ').replace(/\s+/g, ' ').trim();
-        }
-
-        // Çift chevron okunamadıysa tek chevron (<) ile bölmeyi dene
-        if (!givenNames && normalizedNamePart.indexOf('<') >= 0) {
-            var singleParts = normalizedNamePart.split(/<+/).map(function (s) {
-                return s.replace(/[^A-ZÇĞİÖŞÜ\s]/g, ' ').replace(/\s+/g, ' ').trim();
-            }).filter(function (s) { return s.length > 0; });
-
-            if (singleParts.length >= 1) surname = singleParts[0];
-            if (singleParts.length >= 2) givenNames = singleParts.slice(1).join(' ');
-        }
-    }
-
-    // TD3 Line 2 Ayrıştırma (Belge No, Uyruk, Doğum Tarihi, Cinsiyet)
-    if (line2 && line2.length >= 20) {
-        passportNo = line2.substr(0, 9).replace(/[<«»‹›\uFFFD]/g, '').trim();
-        nationalityCode = line2.substr(10, 3).replace(/[<«»‹›\uFFFD]/g, '').trim();
-        var dobRaw = line2.substr(13, 6); // YYMMDD
-        var sexRaw = line2.substr(20, 1).toUpperCase();
-
-        if (sexRaw === 'M') sex = 'Erkek';
-        else if (sexRaw === 'F') sex = 'Bayan';
-
-        // OCR kaynaklı rakam-harf karışıklıklarını düzelt (O->0, I->1, S->5, B->8, Z->2)
-        dobRaw = dobRaw.replace(/O/g, '0').replace(/I/g, '1').replace(/S/g, '5').replace(/B/g, '8').replace(/Z/g, '2');
-
-        if (/^\d{6}$/.test(dobRaw)) {
-            var yy = parseInt(dobRaw.substr(0, 2), 10);
-            var mm = dobRaw.substr(2, 2);
-            var dd = dobRaw.substr(4, 2);
-            var currentYearShort = new Date().getFullYear() % 100;
-            var fullYear = (yy > currentYearShort ? 1900 : 2000) + yy;
-            birthDateStr = fullYear + '-' + mm + '-' + dd;
+        if (surname || givenNames || passportNo) {
+            parsedSuccessfully = true;
         }
     }
 
+    // =========================================================================
+    // 2. FORMAT: STANDART ICAO MRZ (TD3 Pasaport 2x44, TD1 Kimlik 3x30, TD2 2x36)
+    // =========================================================================
+    if (!parsedSuccessfully) {
+        var cleanText = rawText.replace(/\r/g, '\n').replace(/\t/g, '\n');
+        var rawLines = cleanText.split('\n')
+            .map(function (s) { return cleanOcrMrzLine(s.trim()); })
+            .filter(function (s) { return s.length >= 10; });
+
+        var line1 = "", line2 = "", line3 = "";
+
+        // Sürekli tek parça metin geldiyse (satır başı olmadan 88 veya 90 karakter)
+        if (rawLines.length === 1 && rawLines[0].length >= 80) {
+            var single = rawLines[0];
+            if (single.indexOf('P<') >= 0 || single.indexOf('P') === 0) {
+                var pIdx = Math.max(0, single.indexOf('P<'));
+                line1 = single.substr(pIdx, 44);
+                line2 = single.substr(pIdx + 44, 44);
+            } else if (single.indexOf('I<') >= 0 || single.indexOf('I') === 0) {
+                var iIdx = Math.max(0, single.indexOf('I<'));
+                line1 = single.substr(iIdx, 30);
+                line2 = single.substr(iIdx + 30, 30);
+                line3 = single.substr(iIdx + 60, 30);
+            }
+        }
+
+        // Satırlar arasında TD3 (2x44) Pasaport Bulma
+        if (!line1) {
+            for (var idx = 0; idx < rawLines.length; idx++) {
+                var cur = rawLines[idx];
+                if ((cur.indexOf('P<') === 0 || cur.indexOf('P') === 0) && cur.length >= 35) {
+                    line1 = cur;
+                    if (idx + 1 < rawLines.length) {
+                        line2 = rawLines[idx + 1];
+                    }
+                    break;
+                }
+            }
+        }
+
+        // Satırlar arasında TD1 (3x30) Kimlik Kartı Bulma
+        if (!line1) {
+            for (var idx2 = 0; idx2 < rawLines.length; idx2++) {
+                var cur2 = rawLines[idx2];
+                if ((cur2.indexOf('I<') === 0 || cur2.indexOf('I') === 0 || cur2.indexOf('A<') === 0) && cur2.length >= 28) {
+                    line1 = cur2;
+                    if (idx2 + 1 < rawLines.length) line2 = rawLines[idx2 + 1];
+                    if (idx2 + 2 < rawLines.length) line3 = rawLines[idx2 + 2];
+                    break;
+                }
+            }
+        }
+
+        // Son çare: Satır sayısına göre eşleştir
+        if (!line1 && rawLines.length >= 2) {
+            line1 = rawLines[rawLines.length - 2];
+            line2 = rawLines[rawLines.length - 1];
+        }
+
+        // --- TD1 KİMLİK KARTI AYRIŞTIRMA (3 Satır x 30 Karakter) ---
+        if (line3 && line1.length >= 28 && line2.length >= 28) {
+            // Line 1: I<TUR + Belge No (5-13) + TC Kimlik / Opsiyonel (15-29)
+            if (line1.length >= 5) nationalityCode = line1.substr(2, 3).replace(/</g, '').trim();
+            if (line1.length >= 14) passportNo = line1.substr(5, 9).replace(/</g, '').trim();
+            if (line1.length >= 26) {
+                var optRaw = line1.substr(15, 11).replace(/</g, '').trim();
+                if (/^\d{11}$/.test(optRaw)) kimlikNo = optRaw;
+            }
+
+            // Line 2: Doğum Tarihi (0-5) + Cinsiyet (7)
+            if (line2.length >= 8) {
+                birthDateStr = parseDateString(line2.substr(0, 6));
+                sex = parseSexString(line2.substr(7, 1));
+            }
+
+            // Line 3: Soyad << Adlar
+            var nameLine = line3.replace(/[\uFFFD«»‹›\(\)\{\}\[\]]/g, '<');
+            var parts = nameLine.split(/<{2,}/).filter(function (p) { return p.replace(/</g, '').trim().length > 0; });
+            if (parts.length >= 1) surname = parts[0].replace(/<+/g, ' ').replace(/[^A-ZÇĞİÖŞÜ\s]/g, ' ').trim();
+            if (parts.length >= 2) givenNames = parts[1].replace(/<+/g, ' ').replace(/[^A-ZÇĞİÖŞÜ\s]/g, ' ').trim();
+            parsedSuccessfully = true;
+        }
+        // --- TD3 PASAPORT AYRIŞTIRMA (2 Satır x 44 Karakter) ---
+        else if (line1) {
+            // Line 1 İsim Ayrıştırma
+            var namePart = "";
+            if (line1.indexOf('P<') === 0 || line1.indexOf('I<') === 0) {
+                if (!nationalityCode) nationalityCode = line1.substr(2, 3).replace(/[<]/g, '').trim();
+                namePart = line1.substr(5);
+            } else if (line1.indexOf('P') === 0 || line1.indexOf('I') === 0) {
+                if (!nationalityCode) nationalityCode = line1.substr(1, 3).replace(/[<]/g, '').trim();
+                namePart = line1.substr(4);
+            } else {
+                namePart = line1;
+            }
+
+            var normalizedNamePart = namePart.replace(/[\uFFFD«»‹›\(\)\{\}\[\]]/g, '<');
+            var primaryParts = normalizedNamePart.split(/<{2,}/).filter(function (p) {
+                return p.replace(/</g, '').trim().length > 0;
+            });
+
+            if (primaryParts.length >= 1) {
+                surname = primaryParts[0].replace(/<+/g, ' ').replace(/[^A-ZÇĞİÖŞÜ\s]/g, ' ').replace(/\s+/g, ' ').trim();
+            }
+            if (primaryParts.length >= 2) {
+                givenNames = primaryParts[1].replace(/<+/g, ' ').replace(/[^A-ZÇĞİÖŞÜ\s]/g, ' ').replace(/\s+/g, ' ').trim();
+            }
+            if (!givenNames && normalizedNamePart.indexOf('<') >= 0) {
+                var singleParts = normalizedNamePart.split(/<+/).map(function (s) {
+                    return s.replace(/[^A-ZÇĞİÖŞÜ\s]/g, ' ').replace(/\s+/g, ' ').trim();
+                }).filter(function (s) { return s.length > 0; });
+                if (singleParts.length >= 1) surname = singleParts[0];
+                if (singleParts.length >= 2) givenNames = singleParts.slice(1).join(' ');
+            }
+
+            // Line 2 Ayrıştırma (Belge No, Uyruk, Doğum Tarihi, Cinsiyet)
+            if (line2 && line2.length >= 20) {
+                passportNo = line2.substr(0, 9).replace(/[<«»‹›\uFFFD]/g, '').trim();
+                if (!nationalityCode || nationalityCode.length < 3) {
+                    nationalityCode = line2.substr(10, 3).replace(/[<«»‹›\uFFFD]/g, '').trim();
+                }
+                var dobRaw = line2.substr(13, 6);
+                birthDateStr = parseDateString(dobRaw);
+                sex = parseSexString(line2.substr(20, 1));
+            }
+
+            if (surname || givenNames || passportNo) {
+                parsedSuccessfully = true;
+            }
+        }
+    }
+
+    if (!parsedSuccessfully) return false;
+
+    // =========================================================================
+    // 3. FORM ALANLARINA OTOMATİK AKTARIM & UI PARILTI VURGULARI
+    // =========================================================================
     var fullName = (surname + ' ' + givenNames).trim();
-    if (!fullName && !passportNo) return false;
-
     if (fullName) $('#AdSoyad').val(fullName);
-    if (passportNo) $('#PasaportNo').val(passportNo);
+    if (passportNo) { $('#PasaportNo').val(passportNo); if (!$('#BelgeNo').val()) $('#BelgeNo').val(passportNo); }
     if (sex) $('#Cinsiyet').val(sex);
     if (birthDateStr) $('#DogumT').val(birthDateStr);
+    if (kimlikNo) $('#KimlikNo').val(kimlikNo);
 
-    var matchedCountry = _isoCountryMap[nationalityCode] || 
-                         (line1 && line1.length >= 5 ? _isoCountryMap[line1.substr(2, 3)] : null) ||
-                         (line1 && line1.length >= 3 ? _isoCountryMap[line1.substr(0, 3)] : null);
+    var matchedCountry = applyCountryToSelect(nationalityCode);
 
-    if (matchedCountry) {
-        var foundOpt = false;
-        $('#Uyruk').find('option').each(function () {
-            var optVal = $(this).val();
-            if (optVal && (optVal.toLowerCase() === matchedCountry.toLowerCase() ||
-                optVal.toLowerCase().indexOf(matchedCountry.toLowerCase()) >= 0 ||
-                matchedCountry.toLowerCase().indexOf(optVal.toLowerCase()) >= 0)) {
-                $('#Uyruk').val(optVal).trigger('change');
-                foundOpt = true;
-                return false;
-            }
-        });
-        if (!foundOpt) {
-            $('#Uyruk').append($('<option selected></option>').val(matchedCountry).text(matchedCountry)).trigger('change');
-        }
-    }
-
-    // Başarı Sesi ve Bildirimi
+    // Sesli onay
     playScanBeep();
 
+    // Bilgi etiketi & Geri bildirim
     var sourceLabel = sourceName ? ' (' + sourceName + ')' : '';
-    var feedback = '✅ Pasaport Başarıyla Okundu' + sourceLabel + ': ' + fullName + ' | Pasaport: ' + (passportNo || '-') + ' | Uyruk: ' + (matchedCountry || nationalityCode || '-');
+    var feedback = '✅ Okuyucudan Aktarıldı' + sourceLabel + ': ' + (fullName || 'Yolcu') + ' | Belge No: ' + (passportNo || '-') + ' | Uyruk: ' + (matchedCountry || nationalityCode || '-');
     $('#mrzFeedback').text(feedback).show();
 
     // Alanları yeşil parıltıyla vurgula
-    $('#AdSoyad, #PasaportNo, #Uyruk, #Cinsiyet, #DogumT').css('transition', 'background-color 0.4s').css('background-color', '#dcfce7');
+    var targetFields = $('#AdSoyad, #PasaportNo, #Uyruk, #Cinsiyet, #DogumT, #KimlikNo');
+    targetFields.css('transition', 'background-color 0.4s').css('background-color', '#dcfce7');
     setTimeout(function () {
-        $('#AdSoyad, #PasaportNo, #Uyruk, #Cinsiyet, #DogumT').css('background-color', '');
-    }, 1500);
+        targetFields.css('background-color', '');
+    }, 1800);
 
+    // İlgili akordeonları otomatik aç
     $('#accKimlik').collapse('show');
-    $('#mrzInputText').val(cleanOcrMrzLine(line1) + (line2 ? '\n' + cleanOcrMrzLine(line2) : ''));
+    $('#accBelge').collapse('show');
+
+    // MRZ metin kutusuna da ham veriyi yaz
+    $('#mrzInputText').val(rawText.trim());
+
+    if (typeof showEInadStatus === 'function') {
+        showEInadStatus('<i class="fas fa-check-circle mr-1"></i> ' + feedback, 'success');
+    }
 
     return true;
 }
@@ -470,12 +648,12 @@ function initMrzParser() {
     $('#btnParseMrz').off('click').on('click', function () {
         var raw = ($('#mrzInputText').val() || '').trim();
         if (!raw) {
-            alert('Lütfen pasaport MRZ kodunu yapıştırın.');
+            alert('Lütfen pasaport MRZ kodunu veya 3M çıktı metnini yapıştırın.');
             return;
         }
-        var success = parseAndApplyMrz(raw, "Manuel MRZ Kodu");
+        var success = parseAndApplyMrz(raw, "Manuel MRZ / Wedge Kodu");
         if (!success) {
-            alert('MRZ formatı doğrulanamadı. Lütfen en az 2 satırlı standart ICAO MRZ kodunu kontrol edin.');
+            alert('Belge formatı doğrulanamadı. Lütfen standart ICAO MRZ veya 3M çıktı verisini kontrol edin.');
         }
     });
 }
@@ -487,52 +665,273 @@ function initHardwareScannerListener() {
     var scannerBuffer = "";
     var lastKeystrokeTime = 0;
     var scannerTimer = null;
+    var burstCount = 0;
 
-    $(document).on('keypress', function (e) {
+    $(document).on('keydown', function (e) {
+        // Kontrol tuşlarını yoksay
+        if (e.key === 'Shift' || e.key === 'Control' || e.key === 'Alt' || e.key === 'Meta' || e.key === 'CapsLock') {
+            return;
+        }
+
         var now = Date.now();
         var delta = now - lastKeystrokeTime;
         lastKeystrokeTime = now;
 
-        var char = String.fromCharCode(e.which);
+        // Donanımsal okuyucular harfleri 5ms - 45ms aralığında yüksek hızda gönderir
+        var isFastBurst = (delta <= 50);
 
-        if (delta > 150 && scannerBuffer.indexOf('P<') === -1 && scannerBuffer.indexOf('I<') === -1) {
-            scannerBuffer = "";
-        }
-
-        if (e.which === 13) {
-            if (scannerBuffer.length >= 44 && (scannerBuffer.indexOf('P<') >= 0 || scannerBuffer.indexOf('I<') >= 0)) {
-                e.preventDefault();
-                processHardwareScan(scannerBuffer);
-                scannerBuffer = "";
-                return false;
-            }
+        if (isFastBurst) {
+            burstCount++;
         } else {
-            scannerBuffer += char;
-
-            clearTimeout(scannerTimer);
-            scannerTimer = setTimeout(function () {
-                if (scannerBuffer.length >= 88 && (scannerBuffer.indexOf('P<') >= 0 || scannerBuffer.indexOf('I<') >= 0)) {
-                    processHardwareScan(scannerBuffer);
-                    scannerBuffer = "";
-                }
-            }, 120);
+            // Normal insan yazımı araya girdiyse (300ms'den uzun sessizlik) buffer'ı temizle
+            if (delta > 300) {
+                scannerBuffer = "";
+                burstCount = 0;
+            }
         }
+
+        var key = e.key;
+        if (key === 'Enter') {
+            scannerBuffer += '\n';
+        } else if (key && key.length === 1) {
+            scannerBuffer += key;
+        }
+
+        // Donanım tarama imzası veya burst akışı algılandıysa:
+        // Odaktaki input alanını scanner verisiyle kirletmemek için varsayılan yazmayı engelle
+        var hasScannerSignature = (
+            scannerBuffer.indexOf('START') >= 0 ||
+            scannerBuffer.indexOf('Surname:') >= 0 || scannerBuffer.indexOf('Given Name:') >= 0 || scannerBuffer.indexOf('REGULA') >= 0 ||
+            scannerBuffer.indexOf('Doc. Number:') >= 0 ||
+            scannerBuffer.indexOf('P<') >= 0 ||
+            scannerBuffer.indexOf('I<') >= 0
+        );
+
+        if ((burstCount >= 3 || hasScannerSignature) && e.target) {
+            var tag = (e.target.tagName || '').toUpperCase();
+            if ((tag === 'INPUT' || tag === 'TEXTAREA') && e.target.id !== 'mrzInputText') {
+                e.preventDefault();
+            }
+        }
+
+        // 1) OutputWedge END etiketini gönderdiğinde anında işlet
+        if (/END[\r\n]*$/i.test(scannerBuffer) && scannerBuffer.length >= 25) {
+            e.preventDefault();
+            clearTimeout(scannerTimer);
+            var scanOutput = scannerBuffer;
+            scannerBuffer = "";
+            burstCount = 0;
+            processHardwareScan(scanOutput);
+            return false;
+        }
+
+        // 2) TD3 2 Satırlı Pasaport tamamlandığında (88+ karakter ve 2 satır)
+        var td3Lines = scannerBuffer.split(/[\r\n]+/).filter(function (l) { return l.trim().length >= 40; });
+        if (td3Lines.length >= 2 && (td3Lines[0].indexOf('P<') >= 0 || td3Lines[0].indexOf('P') === 0)) {
+            if (td3Lines[1].length >= 44) {
+                clearTimeout(scannerTimer);
+                var td3Data = scannerBuffer;
+                scannerBuffer = "";
+                burstCount = 0;
+                processHardwareScan(td3Data);
+                return;
+            }
+        }
+
+        // 3) TD1 3 Satırlı Kimlik tamamlandığında (3 satır x 30 karakter)
+        var td1Lines = scannerBuffer.split(/[\r\n]+/).filter(function (l) { return l.trim().length >= 28; });
+        if (td1Lines.length >= 3 && (td1Lines[0].indexOf('I<') >= 0 || td1Lines[0].indexOf('I') === 0)) {
+            clearTimeout(scannerTimer);
+            var td1Data = scannerBuffer;
+            scannerBuffer = "";
+            burstCount = 0;
+            processHardwareScan(td1Data);
+            return;
+        }
+
+        // Sondaki dinamik debounce zamanlayıcısı (donanım akışı durduktan 130ms sonra tetiklenir)
+        clearTimeout(scannerTimer);
+        scannerTimer = setTimeout(function () {
+            if (scannerBuffer.trim().length >= 20) {
+                var captured = scannerBuffer;
+                scannerBuffer = "";
+                burstCount = 0;
+                processHardwareScan(captured);
+            } else {
+                scannerBuffer = "";
+                burstCount = 0;
+            }
+        }, 130);
     });
 
     function processHardwareScan(capturedText) {
+        if (!capturedText || !capturedText.trim()) return;
+
+        var isRecognizable = (
+            capturedText.indexOf('START') >= 0 ||
+            capturedText.indexOf('Surname:') >= 0 ||
+            capturedText.indexOf('Last Name:') >= 0 ||
+            capturedText.indexOf('Given Name:') >= 0 ||
+            capturedText.indexOf('First Name:') >= 0 ||
+            capturedText.indexOf('Doc. Number:') >= 0 ||
+            capturedText.indexOf('Document Number:') >= 0 ||
+            capturedText.indexOf('Passport Number:') >= 0 ||
+            capturedText.indexOf('Personal Number:') >= 0 ||
+            capturedText.indexOf('P<') >= 0 ||
+            capturedText.indexOf('I<') >= 0 ||
+            capturedText.length >= 44
+        );
+
+        if (!isRecognizable) return;
+
+        // Modal kapalÄ±ysa yeni kayÄ±t penceresini aÃ§ ve modal hazÄ±r olunca veriyi doldur
         if (!$('#inadModal').hasClass('show')) {
+            window._pendingHardwareScan = capturedText;
             openAdd();
             setTimeout(function () {
-                parseAndApplyMrz(capturedText, "3M PV40 / PV60 Donanım");
-            }, 300);
+                if (window._pendingHardwareScan) {
+                    var pending = window._pendingHardwareScan;
+                    window._pendingHardwareScan = null;
+                    parseAndApplyMrz(pending, "3M / Regula DonanÄ±m");
+                }
+            }, 600);
         } else {
-            parseAndApplyMrz(capturedText, "3M PV40 / PV60 Donanım");
+            parseAndApplyMrz(capturedText, "3M / Regula DonanÄ±m");
         }
     }
 }
 
+// 3M & Regula Okuma SimÃ¼latÃ¶rÃ¼ (Test ve DoÄŸrulama YardÄ±mcÄ±sÄ±)
+window.simulate3mScan = function (type) {
+    if (type === 'regula') {
+        var sampleRegula = "Surname: DEMIR\r\nGiven Name: MEHMET\r\nDocument Number: U98765432\r\nDate of Birth: 12.06.1990\r\nExpiry Date: 12.06.2030\r\nNationality: TUR\r\nSex: M\r\nPersonal Number: 28471928374\r\n";
+        parseAndApplyMrz(sampleRegula, "Regula Okuyucu Test SimÃ¼lasyonu");
+    } else if (type === 'wedge') {
+        var sampleWedge = "START\r\nSurname: DAYAN\r\nForenames: NASIT\r\nDate of Birth: 08-04-84\r\nExpiry Date: 23-02-29\r\nDocument: IDENTITY CARD\r\nDoc. Number: A17V79281\r\nEND\r\n";
+        parseAndApplyMrz(sampleWedge, "3M Wedge Test SimÃ¼lasyonu");
+    } else if (type === 'id') {
+        var sampleId = "I<TUR123456789712345678901234<\r\n8505205M3005204TUR<<<<<<<<<<<4\r\nOZTURK<<FATMA<<<<<<<<<<<<<<<<<";
+        parseAndApplyMrz(sampleId, "Kimlik (TD1) Test SimÃ¼lasyonu");
+    } else {
+        var samplePassport = "P<TURKOC<<MEHMET<<<<<<<<<<<<<<<<<<<<<<<<<<<<\r\nU987654321TUR9203102M3203105<<<<<<<<<<<<<<02";
+        parseAndApplyMrz(samplePassport, "Pasaport (TD3) Test SimÃ¼lasyonu");
+    }
+};
+
 /* ==========================================================================
-   PASAPORT FOTOĞRAFI YÜKLEME & MRZ AYRIŞTIRMA (DROPZONE & AJAX OCR)
+   3M & REGULA OPTÄ°K OKUYUCU BAÄLAN & CANLI DURUM YÃ–NETÄ°MÄ°
+   ========================================================================= */
+function update3MStatusUI(isActive, message) {
+    var btnModal = $('#btnModalConnect3M');
+    var btnTab = $('#btnTabConnect3M');
+    var btnTop = $('#btnTopConnect3M');
+    var badge = $('.scanner-live-badge');
+    var statusMsg = $('#connect3MStatusMessage');
+
+    if (isActive) {
+        btnModal.removeClass('btn-primary btn-outline-danger').addClass('btn-success')
+                .html('<i class="fas fa-check-circle mr-1"></i> <span id="btnModalConnect3MText">Cihaz BaÄŸlÄ±</span>');
+        btnTab.removeClass('btn-primary btn-outline-danger').addClass('btn-success')
+              .html('<i class="fas fa-check-circle mr-2"></i> 3M & Regula BaÄŸlandÄ± ve HazÄ±r');
+        btnTop.removeClass('btn-outline-info btn-outline-danger').addClass('btn-outline-success')
+              .html('<i class="fas fa-check-circle mr-1"></i> <span id="btnTopConnect3MText">3M / Regula BaÄŸlÄ±</span>');
+        
+        badge.html('<span class="scanner-dot" style="background:#22c55e;"></span> 3M & Regula Aktif');
+        if (statusMsg.length) {
+            statusMsg.html('<span class="text-success"><i class="fas fa-check-circle mr-1"></i> ' + (message || 'Cihaza baÅŸarÄ±yla baÄŸlanÄ±ldÄ±. Pasaport veya kimliÄŸi okuyucu camÄ±na koyabilirsiniz.') + '</span>');
+        }
+    } else {
+        btnModal.removeClass('btn-success').addClass('btn-primary')
+                .html('<i class="fas fa-plug mr-1"></i> <span id="btnModalConnect3MText">Cihaza BaÄŸlan</span>');
+        btnTab.removeClass('btn-success').addClass('btn-primary')
+              .html('<i class="fas fa-plug mr-2"></i> 3M / Regula CihazÄ±na BaÄŸlan');
+        btnTop.removeClass('btn-outline-success').addClass('btn-outline-info')
+              .html('<i class="fas fa-plug mr-1"></i> <span id="btnTopConnect3MText">3M / Regula BaÄŸlan</span>');
+        
+        badge.html('<span class="scanner-dot" style="background:#eab308;"></span> 3M / Regula BaÄŸlantÄ± Bekleniyor');
+        if (statusMsg.length) {
+            statusMsg.html('<span class="text-muted"><i class="fas fa-info-circle mr-1"></i> Okuyucuya baÄŸlanmak veya servisi baÅŸlatmak iÃ§in butona tÄ±klayÄ±n.</span>');
+        }
+    }
+}
+
+window.connect3MDevice = function () {
+    var btnModal = $('#btnModalConnect3M');
+    var btnTab = $('#btnTabConnect3M');
+    var btnTop = $('#btnTopConnect3M');
+    var statusMsg = $('#connect3MStatusMessage');
+
+    btnModal.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> BaÄŸlanÄ±yor...');
+    btnTab.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i> Okuyucuya BaÄŸlanÄ±lÄ±yor...');
+    btnTop.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> BaÄŸlanÄ±yor...');
+    if (statusMsg.length) {
+        statusMsg.html('<span class="text-primary font-weight-bold"><i class="fas fa-spinner fa-spin mr-1"></i> 3M / Regula cihazÄ±na baÄŸlanÄ±lÄ±yor, okuyucu servisi baÅŸlatÄ±lÄ±yor...</span>');
+    }
+
+    // 1) Windows Custom URI protocol Ã§aÄŸrÄ±sÄ± (Uzak istemci bilgisayarlar iÃ§in yerel baÅŸlatÄ±cÄ±)
+    try {
+        var protoFrame = document.getElementById('egm3mProtocolFrame');
+        if (!protoFrame) {
+            protoFrame = document.createElement('iframe');
+            protoFrame.id = 'egm3mProtocolFrame';
+            protoFrame.style.display = 'none';
+            document.body.appendChild(protoFrame);
+        }
+        protoFrame.src = 'egm-3m://connect';
+    } catch (e) { }
+
+    // 2) Sunucu tarafÄ± C# ConnectOpticalReader / Connect3MReader API Ã§aÄŸrÄ±sÄ±
+    var token = getAntiForgeryToken();
+    $.ajax({
+        url: getEinadUrl('data-url-connect-3m', '/EInad/ConnectOpticalReader'),
+        type: 'POST',
+        data: { __RequestVerificationToken: token },
+        timeout: 8000
+    }).done(function (res) {
+        if (res && res.success && res.isRunning) {
+            playScanBeep();
+            update3MStatusUI(true, res.message);
+            if (typeof showEInadStatus === 'function') {
+                showEInadStatus('<i class="fas fa-check-circle mr-1"></i> ' + (res.deviceName || '3M / Regula') + ' okuyucu baÄŸlandÄ± ve aktif!', 'success');
+            }
+        } else {
+            setTimeout(function () {
+                window.check3MStatus(true);
+            }, 1200);
+        }
+    }).fail(function () {
+        setTimeout(function () {
+            window.check3MStatus(true);
+        }, 1200);
+    }).always(function () {
+        btnModal.prop('disabled', false);
+        btnTab.prop('disabled', false);
+        btnTop.prop('disabled', false);
+    });
+};
+
+window.check3MStatus = function (notifyIfFailed) {
+    $.ajax({
+        url: getEinadUrl('data-url-status-3m', '/EInad/GetOpticalReaderStatus'),
+        type: 'GET',
+        timeout: 4000
+    }).done(function (res) {
+        if (res && res.success && res.isRunning) {
+            update3MStatusUI(true, (res.deviceName || "Optik Okuyucu") + " aktif ve dinleniyor.");
+        } else {
+            update3MStatusUI(false);
+            if (notifyIfFailed) {
+                var msg = "Okuyucu servisi henÃ¼z yanÄ±t vermedi. LÃ¼tfen 3M veya Regula cihazÄ±nÄ±n USB kablosunun takÄ±lÄ± olduÄŸundan emin olun.";
+                $('#connect3MStatusMessage').html('<span class="text-danger"><i class="fas fa-exclamation-triangle mr-1"></i> ' + msg + '</span>');
+            }
+        }
+    }).fail(function () {
+        update3MStatusUI(false);
+    });
+};
+
+/* ==========================================================================
+   PASAPORT FOTOÄRAFI YÃœKLEME & MRZ AYRIÅTIRMA (DROPZONE & AJAX OCR)
    ========================================================================== */
 function initPassportPhotoUpload() {
     var dropzone = $('#passportDropzone');
@@ -1038,6 +1437,7 @@ $(function () {
     initMrzParser();
     initReasonChips();
     initHardwareScannerListener();
+    window.check3MStatus();
     initPassportPhotoUpload();
 
     // Durum badge'lerine event delegation
@@ -1051,6 +1451,14 @@ $(function () {
         hideEInadStatus();
         $('#saveButton').prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Kaydet');
         loadAirlineList();
+    });
+
+    $('#inadModal').on('shown.bs.modal', function () {
+        if (window._pendingHardwareScan) {
+            var pending = window._pendingHardwareScan;
+            window._pendingHardwareScan = null;
+            parseAndApplyMrz(pending, "3M PV40 / PV60 Donanım");
+        }
     });
 
     $('#inadForm').off('submit').on('submit', validateInadForm);

@@ -1051,6 +1051,158 @@ namespace gzpegm.Controllers
             }
         }
 
+        [HttpPost]
+        [AllowAnonymous]
+        public JsonResult Connect3MReader()
+        {
+            return ConnectOpticalReader();
+        }
+
+        [HttpPost]
+        [AllowAnonymous]
+        public JsonResult ConnectOpticalReader()
+        {
+            try
+            {
+                // 1. 3M Cogent / Gemalto SDK Yolları
+                string[] mmmPaths = new string[]
+                {
+                    @"C:\Program Files (x86)\Thales\Gemalto Document Reader SDK\3.7.1.18\Bin\OutputWedgeSysTray.exe",
+                    @"C:\Program Files\Thales\Gemalto Document Reader SDK\3.7.1.18\Bin\OutputWedgeSysTray.exe",
+                    @"C:\Program Files (x86)\3M\3M Page Reader\OutputWedgeSysTray.exe"
+                };
+
+                // 2. Regula Document Reader Yolları
+                string[] regulaPaths = new string[]
+                {
+                    @"C:\Program Files\Regula\Document Reader SDK\Bin\DocReader.exe",
+                    @"C:\Program Files (x86)\Regula\Document Reader SDK\Bin\DocReader.exe",
+                    @"C:\Program Files\Regula\Reader\DocReader.exe",
+                    @"C:\Program Files (x86)\Regula\Reader\DocReader.exe",
+                    @"C:\Program Files\Regula\Document Reader SDK\Bin\Regula Reader.exe",
+                    @"C:\Program Files (x86)\Regula\Document Reader SDK\Bin\Regula Reader.exe"
+                };
+
+                bool is3MRunning = System.Diagnostics.Process.GetProcessesByName("OutputWedgeSysTray").Length > 0;
+                bool isRegulaRunning = System.Diagnostics.Process.GetProcessesByName("DocReader").Length > 0
+                                    || System.Diagnostics.Process.GetProcessesByName("Regula Reader").Length > 0
+                                    || System.Diagnostics.Process.GetProcessesByName("RegulaReaderService").Length > 0;
+
+                string deviceName = "";
+                bool started = false;
+
+                if (is3MRunning)
+                {
+                    deviceName = "3M Cogent / Gemalto (PV40/PV60)";
+                }
+                else if (isRegulaRunning)
+                {
+                    deviceName = "Regula Document Reader";
+                }
+                else
+                {
+                    // 3M Başlatmayı Dene
+                    foreach (var p in mmmPaths)
+                    {
+                        if (System.IO.File.Exists(p))
+                        {
+                            var psi = new System.Diagnostics.ProcessStartInfo
+                            {
+                                FileName = p,
+                                WorkingDirectory = System.IO.Path.GetDirectoryName(p),
+                                UseShellExecute = true
+                            };
+                            System.Diagnostics.Process.Start(psi);
+                            deviceName = "3M Cogent / Gemalto (PV40/PV60)";
+                            started = true;
+                            break;
+                        }
+                    }
+
+                    // Regula Başlatmayı Dene
+                    if (!started)
+                    {
+                        foreach (var rp in regulaPaths)
+                        {
+                            if (System.IO.File.Exists(rp))
+                            {
+                                var psi = new System.Diagnostics.ProcessStartInfo
+                                {
+                                    FileName = rp,
+                                    WorkingDirectory = System.IO.Path.GetDirectoryName(rp),
+                                    UseShellExecute = true
+                                };
+                                System.Diagnostics.Process.Start(psi);
+                                deviceName = "Regula Document Reader";
+                                started = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (started)
+                    {
+                        System.Threading.Thread.Sleep(900);
+                    }
+                }
+
+                bool isAnyRunning = System.Diagnostics.Process.GetProcessesByName("OutputWedgeSysTray").Length > 0
+                                 || System.Diagnostics.Process.GetProcessesByName("DocReader").Length > 0
+                                 || System.Diagnostics.Process.GetProcessesByName("Regula Reader").Length > 0;
+
+                string activeName = !string.IsNullOrEmpty(deviceName) ? deviceName : (isAnyRunning ? "Optik Okuyucu" : "3M / Regula");
+
+                return JsonUtf8(new
+                {
+                    success = true,
+                    isRunning = isAnyRunning,
+                    deviceName = activeName,
+                    message = isAnyRunning
+                        ? activeName + " servisine başarıyla bağlanıldı ve aktif. Pasaport veya kimliği okuyucuya koyabilirsiniz."
+                        : "Okuyucu servisi başlatılamadı. Cihazın USB bağlantısını ve sürücüsünü kontrol ediniz."
+                });
+            }
+            catch (Exception ex)
+            {
+                return JsonUtf8(new { success = false, message = "Cihaza bağlanırken hata: " + ex.Message });
+            }
+        }
+
+        [HttpGet]
+        [AllowAnonymous]
+        public JsonResult Get3MReaderStatus()
+        {
+            return GetOpticalReaderStatus();
+        }
+
+        [HttpGet]
+        [AllowAnonymous]
+        public JsonResult GetOpticalReaderStatus()
+        {
+            try
+            {
+                bool is3MRunning = System.Diagnostics.Process.GetProcessesByName("OutputWedgeSysTray").Length > 0;
+                bool isRegulaRunning = System.Diagnostics.Process.GetProcessesByName("DocReader").Length > 0
+                                    || System.Diagnostics.Process.GetProcessesByName("Regula Reader").Length > 0
+                                    || System.Diagnostics.Process.GetProcessesByName("RegulaReaderService").Length > 0;
+
+                bool isRunning = is3MRunning || isRegulaRunning;
+                string deviceName = is3MRunning ? "3M PV40/PV60" : (isRegulaRunning ? "Regula" : "Optik Okuyucu");
+
+                return JsonUtf8(new
+                {
+                    success = true,
+                    isRunning = isRunning,
+                    deviceName = deviceName,
+                    statusText = isRunning ? (deviceName + " Bağlı & Aktif") : "Bağlantı Bekleniyor"
+                }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                return JsonUtf8(new { success = false, message = ex.Message }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
         protected override void Dispose(bool disposing)
         {
             if (disposing)
