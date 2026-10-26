@@ -522,7 +522,27 @@ function updateConditionalEntryDateRows() {
             .attr('title', isConditional ? 'İkamet Şartlı Giriş (V-84) için sadece tek giriş-çıkış tarihi hesaplanır.' : '');
     }
 }
+// Rusya Federasyonu için Hesaplama Modeli senkronizasyonu
+// Çoklu giriş-çıkışta otomatik '180 Gün Kuralı' (2), tek giriş-çıkışta 'Normal Hesaplama' (1)
+function syncRussiaCalculationModel() {
+    var country = ($('#CountryCalculate').val() || '').trim();
+    if (country === 'Rusya Federasyonu') {
+        var rowCount = $('.endt').length;
+        var targetType = (rowCount > 1) ? '2' : '1';
+        var $ctype = $('#CTypeCalculate');
+        if ($ctype.length && $ctype.val() !== targetType) {
+            $ctype.val(targetType);
+            if ($.fn.select2) {
+                try { $ctype.trigger('change.select2'); } catch (e) { }
+            }
+            $ctype.trigger('change');
+        }
+    }
+}
+window.syncRussiaCalculationModel = syncRussiaCalculationModel;
+
 function hesapla1() {
+    syncRussiaCalculationModel();
     var form = $('#calculate-form');
     $('#veri, #hes2, #hes3, #hes4, #form, #hes5').addClass('hidden');
     $('#PayCalculate').val('').change();
@@ -760,6 +780,7 @@ function gcremoveSpecificRow(btn) {
             computeDiffForRow($(this));
         });
         try { computeReEntryFromForm(); } catch (e) { }
+        syncRussiaCalculationModel();
         if (typeof window.hesapla1 === 'function') {
             try { window.hesapla1(); } catch (e) { }
         }
@@ -777,7 +798,17 @@ function gcadd() {
     // Birden fazla giriş-çıkış ekleniyorsa hesaplama tipini kontrol et
     var $ctype = $('#CTypeCalculate');
     var $country = $('#CountryCalculate');
-    if ($ctype.val() === '1' && $country.val() !== '') {
+    var countryVal = ($country.val() || '').trim();
+    if (countryVal === 'Rusya Federasyonu') {
+        // Rusya Federasyonu için çoklu giriş-çıkışta otomatik 180 Gün Kuralı (2) seçilir
+        if ($ctype.val() !== '2') {
+            $ctype.val('2');
+            if ($.fn.select2) {
+                try { $ctype.trigger('change.select2'); } catch (e) { }
+            }
+            $ctype.trigger('change');
+        }
+    } else if ($ctype.val() === '1' && countryVal !== '') {
         alert('Birden fazla giriş-çıkış girişi yapıyorsunuz. Lütfen hesaplama tipinin doğru seçili olduğunu kontrol ediniz.');
     }
 
@@ -850,6 +881,7 @@ function gcadd() {
     });
 
     // hemen hesapla/ göster
+    syncRussiaCalculationModel();
     computeDiffForRow($row);
 }
 
@@ -867,6 +899,7 @@ function gcremove(elem) {
         computeDiffForRow($(this));
     });
     try { computeReEntryFromForm(); } catch (e) { }
+    syncRussiaCalculationModel();
     if (typeof window.hesapla1 === 'function') {
         try { window.hesapla1(); } catch (e) { }
     }
@@ -1065,6 +1098,10 @@ function deleteborder(Id) {
     });
 }
 $(function () {
+    // Rusya Federasyonu için ülke değiştiğinde hesaplama modelini senkronize et
+    $(document).on('change', '#CountryCalculate', function () {
+        syncRussiaCalculationModel();
+    });
     // Delegated handler: form içindeki tüm .endt / .exdt değişikliklerinde diff hesapla
     $('#calculate-form').on('change', '.endt, .exdt', function () {
         var $row = $(this).closest('.form-group.row');
@@ -1076,4 +1113,5 @@ $(function () {
     var $firstRow = $('#EnterDateCalculate').closest('.form-group.row');
     if ($firstRow.length) computeDiffForRow($firstRow);
     try { computeReEntryFromForm(); } catch (e) { }
+    syncRussiaCalculationModel();
 });

@@ -710,3 +710,115 @@ var _homeCfg = document.getElementById('home-config');
     }
 
 })();
+// --- Inad Odasi Hatirlatma Kontrolleri (Kapi Bazli) ---
+(function () {
+    function initInadReminder() {
+        var modalEl = document.getElementById('inadReminderModal');
+        if (!modalEl) return;
+
+        // Oturum suresince kapatilmis mi kontrol et
+        var isDismissed = false;
+        try {
+            isDismissed = sessionStorage.getItem('inadReminderDismissed') === '1';
+        } catch (e) { }
+
+        // Kapatilmamissa sayfaya girildikten kisa sure sonra otomatik ac
+        if (!isDismissed) {
+            setTimeout(function () {
+                if (typeof $ !== 'undefined' && $.fn && $.fn.modal) {
+                    $('#inadReminderModal').modal('show');
+                } else if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                    new bootstrap.Modal(modalEl).show();
+                } else {
+                    modalEl.style.display = 'block';
+                }
+            }, 600);
+        }
+    }
+
+    // Tek tikla Inad Edildi yapma
+    window.quickMarkInadDone = function (inadId, btnElement) {
+        if (!confirm('Bu yolcunun durumunu "İnad Edildi" olarak güncellemek ve odadan düşürmek istediğinize emin misiniz?')) {
+            return;
+        }
+
+        var $btn = $(btnElement);
+        var originalHtml = $btn.html();
+        var $row = $('#inadRow-' + inadId);
+
+        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Güncelleniyor...');
+
+        $.ajax({
+            url: '/Home/QuickUpdateInadStatus',
+            type: 'POST',
+            data: { id: inadId, status: 'İnad Edildi' },
+            success: function (res) {
+                if (res && res.success) {
+                    $row.css({
+                        'background-color': '#d4edda',
+                        'transition': 'all 0.4s ease'
+                    });
+                    $row.find('td:last').html('<span class="badge badge-success font-weight-bold p-2"><i class="fas fa-check-circle mr-1"></i> İnad Edildi</span>');
+
+                    setTimeout(function () {
+                        $row.fadeOut(500, function () {
+                            $(this).remove();
+                            window.updateInadCounters();
+                        });
+                    }, 500);
+                } else {
+                    alert(res.message || 'Güncelleme yapılamadı.');
+                    $btn.prop('disabled', false).html(originalHtml);
+                }
+            },
+            error: function (xhr) {
+                alert('Sunucu ile bağlantı hatası oluştu (' + xhr.status + '). Lütfen tekrar deneyin.');
+                $btn.prop('disabled', false).html(originalHtml);
+            }
+        });
+    };
+
+    // Bu seferlik atla / odada beklemeye devam ediyor
+    window.skipInadReminderRow = function (inadId, btnElement) {
+        var $row = $('#inadRow-' + inadId);
+        $row.css({
+            'opacity': '0.4',
+            'transition': 'all 0.3s ease'
+        });
+        $row.find('td:last').html('<span class="badge badge-secondary p-2"><i class="fas fa-clock mr-1"></i> Takip Devam Ediyor</span>');
+    };
+
+    // Sayaclari guncelleme ve bosalma kontrolu
+    window.updateInadCounters = function () {
+        var remaining = $('#inadReminderTable tbody tr:visible').length;
+        $('#modalInadRemainingCount').text(remaining);
+        $('.inad-count-badge').text(remaining);
+
+        if (remaining <= 0) {
+            $('#inadTableContainer').slideUp(300);
+            $('#inadEmptyState').slideDown(300);
+            setTimeout(function () {
+                if (typeof $ !== 'undefined' && $.fn && $.fn.modal) {
+                    $('#inadReminderModal').modal('hide');
+                }
+                $('#inadAlertBanner').slideUp(400);
+            }, 1800);
+        }
+    };
+
+    // Modali kapatip oturum boyunca bir daha otomatik acmama
+    window.dismissInadReminderModal = function () {
+        try {
+            sessionStorage.setItem('inadReminderDismissed', '1');
+        } catch (e) { }
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initInadReminder);
+    } else {
+        initInadReminder();
+    }
+    if (typeof $ !== 'undefined') {
+        $(document).ready(initInadReminder);
+    }
+})();

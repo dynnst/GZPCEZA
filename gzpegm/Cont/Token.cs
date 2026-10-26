@@ -77,6 +77,24 @@ namespace gzpegm.Cont
             using (GZPEGM1 _db = new GZPEGM1())
             {
                 var token = _db.E_Token.FirstOrDefault(c => c.fldToken == tokenValue);
+                if (token == null && tokenValue.Contains(" "))
+                {
+                    var plusVal = tokenValue.Replace(" ", "+");
+                    token = _db.E_Token.FirstOrDefault(c => c.fldToken == plusVal);
+                }
+                if (token == null && (tokenValue.Contains("%") || tokenValue.Contains("+")))
+                {
+                    try
+                    {
+                        var decoded = HttpUtility.UrlDecode(tokenValue);
+                        if (decoded != tokenValue)
+                        {
+                            token = _db.E_Token.FirstOrDefault(c => c.fldToken == decoded);
+                        }
+                    }
+                    catch { }
+                }
+
                 if (items != null)
                     items[cacheKey] = token;
 

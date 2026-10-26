@@ -97,6 +97,9 @@ namespace gzpegm.Controllers
 
                 LoadNewCourseNotification();
 
+                // İnad odasında bekleyen yolcu hatırlatması (Kapı bazlı)
+                LoadInadRoomNotifications(user);
+
                 // Cache ayarlarını yap
                 SetCachePolicy();
 
@@ -246,6 +249,114 @@ namespace gzpegm.Controllers
             {
                 System.Diagnostics.Debug.WriteLine("ValidateV84Age ERROR: " + ex.Message);
                 return Json(new { success = false, message = ex.Message }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// Inad odasinda bekleyen yolculari kullanicinin sinir kapisina gore filtreleyip ViewBag'e yukler
+        /// </summary>
+        private void LoadInadRoomNotifications(E_User user)
+        {
+            try
+            {
+                if (user == null) return;
+
+                bool hasInadAuth = string.Equals(user.Role, "Admin", StringComparison.OrdinalIgnoreCase)
+                    || UserHasAuth(user, "2")
+                    || UserHasAuth(user, "3");
+
+                if (!hasInadAuth) return;
+
+                using (var db = new GZPEGM1())
+                {
+                    var userBorder = (user.fldBorder ?? "").Trim();
+                    bool isAdmin = string.Equals(user.Role, "Admin", StringComparison.OrdinalIgnoreCase);
+
+                    var query = db.E_Inad.AsQueryable();
+
+                    if (!isAdmin && !string.IsNullOrEmpty(userBorder))
+                    {
+                        query = query.Where(x => x.Kapi == userBorder);
+                    }
+
+                    // Durum: 'Oda' iceren ve 'Inad Edildi' olmayanlar
+                    query = query.Where(x => x.Durum != null 
+                        && x.Durum.Contains("Oda") 
+                        && !x.Durum.Contains("Inad Edildi")
+                        && !x.Durum.Contains("nad Edildi"));
+
+                    var list = query
+                        .OrderByDescending(x => x.GidisTarihSaat.HasValue)
+                        .ThenBy(x => x.GidisTarihSaat)
+                        .ThenByDescending(x => x.TarihSaat)
+                        .Take(30)
+                        .ToList();
+
+                    ViewBag.PendingInadList = list;
+                    ViewBag.PendingInadCount = list.Count;
+                    ViewBag.InadUserBorder = string.IsNullOrEmpty(userBorder) ? (isAdmin ? "Tm Kaplar (Admin)" : "Hudut Kaps") : userBorder;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"LoadInadRoomNotifications hatasi: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Login pop-up veya dashboard uzerinden yolcu durumunu tek tikla 'Inad Edildi' yapmak icin Ajax metodu
+        /// </summary>
+        [HttpPost]
+        public JsonResult QuickUpdateInadStatus(int id, string status)
+        {
+            try
+            {
+                var user = getuserby();
+                if (user == null)
+                {
+                    return Json(new { success = false, message = "Oturum sresi dolmus. Ltfen tekrar giris yapin." });
+                }
+
+                bool hasInadAuth = string.Equals(user.Role, "Admin", StringComparison.OrdinalIgnoreCase)
+                    || UserHasAuth(user, "2")
+                    || UserHasAuth(user, "3");
+
+                if (!hasInadAuth)
+                {
+                    return Json(new { success = false, message = "Bu islem icin yetkiniz bulunmamaktadir." });
+                }
+
+                using (var db = new GZPEGM1())
+                {
+                    var item = db.E_Inad.Find(id);
+                    if (item == null)
+                    {
+                        return Json(new { success = false, message = "Ilgili Inad kaydi bulunamadi." });
+                    }
+
+                    var userBorder = (user.fldBorder ?? "").Trim();
+                    bool isAdmin = string.Equals(user.Role, "Admin", StringComparison.OrdinalIgnoreCase);
+                    if (!isAdmin && !string.IsNullOrEmpty(userBorder) && !string.Equals(item.Kapi?.Trim(), userBorder, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return Json(new { success = false, message = "Yalnizca kendi sinir kapiniza ait kayitlari gncelleyebilirsiniz." });
+                    }
+
+                    var newStatus = string.IsNullOrWhiteSpace(status) ? "nad Edildi" : status.Trim();
+                    item.Durum = newStatus;
+                    db.SaveChanges();
+
+                    return Json(new
+                    {
+                        success = true,
+                        message = $"Yolcu ({item.AdSoyad}) durumu basariyla '{item.Durum}' olarak gncellendi.",
+                        id = item.InadId,
+                        status = item.Durum
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Hata olustu: " + ex.Message });
             }
         }
     }

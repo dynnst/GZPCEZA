@@ -285,7 +285,7 @@
                                             <i class="fas fa-check-circle"></i> @r.Durum
                                         </button>
                                     }
-                                    else if (r.Durum == "İnad Odasına Alındı")
+                                    else if (!string.IsNullOrEmpty(r.Durum) && (r.Durum.Contains("Oda") || r.Durum.Contains("oda")))
                                     {
                                         <button type="button"
                                                 class="inad-status-btn status-odada blink"

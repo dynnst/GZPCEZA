@@ -1,4 +1,4 @@
-// (Dosyanın tamamı, sadece PrintForm1 metodu içinde ViewBag atamaları eklendi)
+﻿// (Dosyanın tamamı, sadece PrintForm1 metodu içinde ViewBag atamaları eklendi)
 using gzpegm.Cont;
 using gzpegm.Models;
 using System;
@@ -998,19 +998,24 @@ namespace gzpegm.Controllers
                     return JsonUtf8(new { success = false, message = "Yetkisiz işlem." });
 
                 // Durumu güncelle
-                if (status == "İnad Edildi" || status == "İnad Odasına Alındı")
+                if (!string.IsNullOrWhiteSpace(status))
                 {
-                    item.Durum = status;
-                    db.SaveChanges();
-
-                    // Eğer "İnad Odasına Alındı" ise, kullanıcıyı kayıt et (takip için)
-                    if (status == "İnad Odasına Alındı")
+                    var cleanStatus = status.Trim();
+                    if (cleanStatus.IndexOf("Edildi", StringComparison.OrdinalIgnoreCase) >= 0)
                     {
-                        // Opsiyonel: TakipLog tablosu varsa buraya ekle
-                        // Bu sayede kullanıcı "kimler neleri unuttuğunun" takibini yapabilir
+                        item.Durum = "İnad Edildi";
+                    }
+                    else if (cleanStatus.IndexOf("Oda", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        item.Durum = "İnad Odasına Alındı";
+                    }
+                    else
+                    {
+                        item.Durum = cleanStatus;
                     }
 
-                    return JsonUtf8(new { success = true, message = "Durum güncellendi.", data = new { status = item.Durum } });
+                    db.SaveChanges();
+                    return JsonUtf8(new { success = true, message = "Durum başarıyla güncellendi.", data = new { status = item.Durum } });
                 }
                 else
                 {
@@ -1022,8 +1027,6 @@ namespace gzpegm.Controllers
                 return JsonUtf8(new { success = false, message = "Hata: " + ex.Message });
             }
         }
-
-        [HttpPost]
         [ValidateAntiForgeryToken]
         public JsonResult DeleteInad(int id)
         {

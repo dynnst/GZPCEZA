@@ -1,5 +1,6 @@
 /* ==========================================================================
-   Ceza Hesaplama JavaScript (calculate-index.js)
+   Ceza Hesaplama JavaScript (calculate-index.js) - Profesyonel Kabin Sürümü
+   Sade, Hızlı ve Akıcı Tek Ekran Deneyimi (v3.0)
    ========================================================================== */
 
 (function ($) {
@@ -22,18 +23,17 @@
     }
 
     /**
-     * Tek bir satır veya eleman için gün farkını hesaplayıp .pair-diff alanına yazar
+     * Tek bir satır için gün farkını hesaplayıp .pair-diff alanına yazar
      */
     function computePairDiff(context) {
         var $ctx = $(context);
-        var $row = $ctx.is('.form-group, .form-row, .extra, .date-pair-row') ? $ctx : $ctx.closest('.form-group.row, .form-row, .extra, .date-pair-row, .mb-3');
-        if (!$row.length) $row = $ctx.closest('#step1-card');
+        var $row = $ctx.is('.form-group, .form-row, .extra, .date-pair-row') ? $ctx : $ctx.closest('.form-group.row, .form-row, .extra, .date-pair-row, .mb-1');
+        if (!$row.length) $row = $ctx.closest('#calculate-form');
 
         var $enter = $row.find('.endt').first();
         var $exit = $row.find('.exdt').first();
         var $diff = $row.find('.pair-diff').first();
 
-        // Eğer row içinde bulunamadıysa statik ilk satır kontrolü
         if (!$diff.length && $enter.attr('id') === 'EnterDateCalculate') {
             $diff = $('#PairDiff_0');
         }
@@ -44,7 +44,7 @@
         var xv = ($exit.val() || '').trim();
 
         if (!ev || !xv) {
-            $diff.val('').attr('placeholder', 'Gün Farkı');
+            $diff.val('').attr('placeholder', 'Gün');
             return;
         }
 
@@ -52,12 +52,12 @@
         var end = parseDate(xv);
 
         if (!start || !end) {
-            $diff.val('Geçersiz Tarih');
+            $diff.val('Hatalı');
             return;
         }
 
         if (start > end) {
-            $diff.val('Giriş > Çıkış');
+            $diff.val('G > Ç');
             return;
         }
 
@@ -81,7 +81,6 @@
 
     window.computeAllDiffs = computeAllDiffs;
 
-    // custom.js içindeki computeDiffForRow'u genişletip güçlü hale getir
     var originalComputeDiffForRow = window.computeDiffForRow;
     window.computeDiffForRow = function ($row) {
         if ($row && $row.length) {
@@ -95,7 +94,7 @@
     };
 
     /**
-     * Sınır kapısı ve kullanıcı bazlı toplam işlem sayısını sunucudan çeker
+     * Sınır kapısı toplam işlem sayısını sunucudan çeker
      */
     function refreshHistoryCount() {
         if (!$) return;
@@ -128,6 +127,30 @@
     }
 
     /**
+     * Sağ paneldeki boş yer tutucu (placeholder) ile sonuç bölümlerini senkronize eder
+     */
+    function syncSummaryPlaceholder() {
+        var isVeriVisible = !$('#veri').hasClass('hidden');
+        var isHes3Visible = !$('#hes3').hasClass('hidden');
+        var $placeholder = $('#calc-empty-placeholder');
+
+        if (isVeriVisible || isHes3Visible) {
+            $placeholder.hide();
+        } else {
+            $placeholder.show();
+        }
+
+        // İhlal süresine göre banner rengini ayarla (İhlal var: kırmızı, İhlal yok: yeşil)
+        var sonuc = ($('#SonucCalculate').val() || '').trim();
+        var $banner = $('.violation-banner');
+        if (sonuc && (sonuc === '0 Gün' || sonuc.indexOf('0 ') === 0)) {
+            $banner.removeClass('has-fine').addClass('no-fine');
+        } else if (sonuc) {
+            $banner.removeClass('no-fine').addClass('has-fine');
+        }
+    }
+
+    /**
      * Tüm hesaplama formunu temizler ve yeni yolcu için hazırlar
      */
     function resetCalculateForm() {
@@ -148,7 +171,7 @@
         var mm = ('0' + (today.getMonth() + 1)).slice(-2);
         var yyyy = today.getFullYear();
         $('#ExitDateCalculate').val(dd + '.' + mm + '.' + yyyy);
-        $('#PairDiff_0').val('').attr('placeholder', 'Gün Farkı');
+        $('#PairDiff_0').val('').attr('placeholder', 'Gün');
 
         // Select2 alanlarını sıfırla
         if ($.fn.select2) {
@@ -156,17 +179,16 @@
             $('#PassportCalculate').val('1').trigger('change.select2');
             $('#CountryCalculate').val('').trigger('change.select2');
             $('#VisaCalculate').val('2').trigger('change.select2');
-            $('#AdultCalculate').val('').trigger('change.select2');
             $('#PayCalculate').val('').trigger('change.select2');
         } else {
             $('#CTypeCalculate').val('1');
             $('#PassportCalculate').val('1');
             $('#CountryCalculate').val('');
             $('#VisaCalculate').val('2');
-            $('#AdultCalculate').val('');
             $('#PayCalculate').val('');
         }
 
+        $('#AdultCalculate').val('2'); // Varsayılan Yetişkin
         $('#Visaday, #testarihi, #BirthDateCalculate').val('');
         $('#V137ExpiredCalculate').val('0');
 
@@ -178,8 +200,10 @@
         $('#KurCalculate').text('');
         $('#lastalert').html('');
 
-        // PDF form alanlarını temizle (Memur adı hariç)
+        // PDF form alanlarını temizle (Memur sicili hariç)
         $('#form').find('input:not(#PoliceCFORM)').val('');
+
+        syncSummaryPlaceholder();
 
         // İlk girişe odaklan
         $('#EnterDateCalculate').focus();
@@ -189,34 +213,11 @@
 
     window.resetCalculateForm = resetCalculateForm;
 
-    /**
-     * Yeni bir bölüm görünür olduğunda yumuşak kaydırma
-     */
-    function observeVisibilityAndScroll() {
-        var targets = ['#veri', '#hes2', '#hes5', '#form'];
-        targets.forEach(function (sel) {
-            var el = document.querySelector(sel);
-            if (!el) return;
-
-            var prevHidden = el.classList.contains('hidden');
-            var observer = new MutationObserver(function () {
-                var isHidden = el.classList.contains('hidden');
-                if (prevHidden && !isHidden) {
-                    try {
-                        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                    } catch (e) { }
-                }
-                prevHidden = isHidden;
-            });
-            observer.observe(el, { attributes: true, attributeFilter: ['class'] });
-        });
-    }
-
     $(document).ready(function () {
         // İlk yüklemede toplam işlem sayısını al
         refreshHistoryCount();
 
-        // Tarih değişikliklerinde hem gün farkını hem re-entry'yi anında hesapla
+        // Tarih değişikliklerinde gün farkını hesapla
         $(document).on('change changeDate input keyup blur', '.endt, .exdt', function () {
             computePairDiff(this);
             refreshReEntry();
@@ -230,31 +231,34 @@
             }
         });
 
-        // Tarih ekleme/silme veya işlem kaydında sayacı ve gün farklarını yenile
-        $(document).on('historyCountChanged', function () {
-            refreshHistoryCount();
-            computeAllDiffs();
+        // Ödeme tercihi seçildiğinde tahdit kodunu getir ve tutanak formunu otomatik doldur
+        $(document).on('change', '#PayCalculate', function () {
+            var val = $(this).val();
+            if (val !== '' && typeof window.hesapla3 === 'function') {
+                setTimeout(function () {
+                    window.hesapla3();
+                }, 400);
+            }
         });
 
-        // Adım geçişlerinde yumuşak kaydırma
-        observeVisibilityAndScroll();
-
-        // Adım 3 kartının görünürlüğünü senkronize et
-        function syncStep3Card() {
-            var $step3 = $('#step3-card');
-            if (!$step3.length) return;
-            var isAnyVisible = !$('#hes2').hasClass('hidden') || !$('#hes3').hasClass('hidden') || !$('#hes4').hasClass('hidden');
-            $step3.toggleClass('is-visible', isAnyVisible);
-        }
-
-        var observerStep3 = new MutationObserver(syncStep3Card);
-        ['#hes2', '#hes3', '#hes4'].forEach(function (id) {
-            var el = document.querySelector(id);
-            if (el) observerStep3.observe(el, { attributes: true, attributeFilter: ['class'] });
+        // Doğum tarihi veya yaş grubu girildiğinde ihlal varsa otomatik hesapla2 tetikle
+        $(document).on('change changeDate', '#BirthDateCalculate', function () {
+            var sonuc = ($('#SonucCalculate').val() || '').trim();
+            if (sonuc && typeof window.hesapla2 === 'function') {
+                setTimeout(function () {
+                    window.hesapla2();
+                }, 200);
+            }
         });
-        syncStep3Card();
 
-        // Sayfa açıldığında tüm diff'leri ve re-entry'yi hesapla
+        // Sağ panel yer tutucusunu izle ve güncelle
+        var observer = new MutationObserver(syncSummaryPlaceholder);
+        ['veri', 'hes2', 'hes3', 'hes4', 'hes5'].forEach(function (id) {
+            var el = document.getElementById(id);
+            if (el) observer.observe(el, { attributes: true, attributeFilter: ['class'] });
+        });
+        syncSummaryPlaceholder();
+
         computeAllDiffs();
         refreshReEntry();
     });

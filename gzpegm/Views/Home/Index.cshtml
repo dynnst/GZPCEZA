@@ -1,4 +1,4 @@
-@{
+﻿@{
     Layout = "~/Views/Shared/_Master.cshtml";
 }
 
@@ -65,10 +65,13 @@
         .Select(c => getAuthDescription(c))
         .Where(d => !string.IsNullOrWhiteSpace(d))
         .ToList();
+    var pendingInadList = ViewBag.PendingInadList as List<gzpegm.Models.E_Inad> ?? new List<gzpegm.Models.E_Inad>();
+    var pendingInadCount = ViewBag.PendingInadCount != null ? (int)ViewBag.PendingInadCount : pendingInadList.Count;
+    var inadUserBorder = ViewBag.InadUserBorder as string ?? "";
 }
 
 @section Styles {
-    <link href="@Url.Content("~/css/home-index.css")?v=1.0" rel="stylesheet" />
+    <link href="@Url.Content("~/css/home-index.css")?v=@DateTime.Now.Ticks" rel="stylesheet" />
 }
 
 
@@ -131,6 +134,35 @@
         </aside>
     </section>
 
+
+        @if (pendingInadCount > 0)
+    {
+        <section class="inad-alert-wrapper mb-4" id="inadAlertBanner">
+            <div class="inad-pulse-card">
+                <div class="inad-pulse-left">
+                    <div class="inad-bell-badge">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <div>
+                        <div class="inad-pulse-badge">
+                            <i class="fas fa-door-open mr-1"></i> İNAD ODASI HATIRLATMASI &bull; @inadUserBorder
+                        </div>
+                        <h4 class="inad-pulse-title">
+                            Kapınızda İnad Odasında Bekleyen <span class="badge badge-danger inad-count-badge">@pendingInadCount</span> Yolcu Bulunmaktadır
+                        </h4>
+                        <p class="inad-pulse-desc">
+                            Yolcu uçağa verilip sınır dışı edildiyse, lütfen durumunu <strong>"İnad Edildi"</strong> olarak güncelleyiniz.
+                        </p>
+                    </div>
+                </div>
+                <div class="inad-pulse-actions">
+                    <button type="button" class="btn-inad-review" data-toggle="modal" data-target="#inadReminderModal">
+                        <i class="fas fa-user-check mr-1"></i> Yolcuları İncele & Onayla (@pendingInadCount)
+                    </button>
+                </div>
+            </div>
+        </section>
+    }
 
     <section class="home-section" aria-labelledby="quickActionsTitle">
         <div class="home-section-title">
@@ -466,6 +498,163 @@
         </div>
     </div>
 }
+@if (pendingInadCount > 0)
+{
+    <div class="modal fade" id="inadReminderModal" tabindex="-1" role="dialog" aria-labelledby="inadReminderModalLabel" aria-hidden="true" data-backdrop="static" style="z-index: 1065;">
+        <div class="modal-dialog modal-dialog-centered inad-reminder-dialog" role="document" style="max-width: 1400px; width: 95%; margin: 25px auto;">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
+                <div class="modal-header text-white" style="background: linear-gradient(135deg, #1a2a3a 0%, #0d1b2a 100%); border-bottom: 3px solid #e74c3c;">
+                    <div class="d-flex align-items-center">
+                        <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(231, 76, 60, 0.2); display: flex; align-items: center; justify-content: center; margin-right: 12px; border: 2px solid #e74c3c;">
+                            <i class="fas fa-user-clock text-danger fa-lg"></i>
+                        </div>
+                        <div>
+                            <h5 class="modal-title font-weight-bold text-white mb-0" id="inadReminderModalLabel">
+                                İnad Odası Durum Kontrolü &bull; @inadUserBorder
+                            </h5>
+                            <small class="text-light opacity-75">
+                                Uçağı kalkmış veya sınır dışı işlemi tamamlanmış yolcuların durumunu onaylayınız.
+                            </small>
+                        </div>
+                    </div>
+                    <button type="button" class="close text-white opacity-75" data-dismiss="modal" aria-label="Kapat" onclick="dismissInadReminderModal()">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+
+                <div class="modal-body p-3 p-md-4" style="background-color: #f8f9fa;">
+                    <div class="alert alert-light border shadow-sm mb-3 d-flex align-items-center justify-content-between p-2 px-3">
+                        <div class="small text-muted">
+                            <i class="fas fa-info-circle text-info mr-1"></i>
+                            Aşağıdaki yolcular durum bilgisi <strong>"İnad Odasında"</strong> olarak kayıtlıdır. Uçağa binen yolcular için <strong>"Evet, İnad Edildi"</strong> butonuna basmanız yeterlidir; sistem anında güncellenecektir.
+                        </div>
+                        <span class="badge badge-warning font-weight-bold px-2 py-1">
+                            Kalan: <span id="modalInadRemainingCount">@pendingInadCount</span> Yolcu
+                        </span>
+                    </div>
+
+                    <div id="inadEmptyState" class="text-center py-5" style="display: none;">
+                        <div class="text-success mb-3">
+                            <i class="fas fa-check-circle fa-4x"></i>
+                        </div>
+                        <h4 class="font-weight-bold text-dark mb-1">Tebrikler! Bekleyen Yolcu Kalmadı</h4>
+                        <p class="text-muted">Kapınızdaki tüm İnad yolcularının durumu başarıyla güncellendi.</p>
+                    </div>
+
+                    <div class="table-responsive bg-white rounded border shadow-sm" id="inadTableContainer" style="max-height: 480px; overflow-y: auto;">
+                        <table class="table table-hover table-striped align-middle mb-0" id="inadReminderTable">
+                            <thead class="thead-dark small text-uppercase" style="position: sticky; top: 0; z-index: 2;">
+                                <tr>
+                                    <th style="width: 25%;">Yolcu Bilgileri</th>
+                                    <th style="width: 22%;">Geliş Bilgisi</th>
+                                    <th style="width: 25%;">Geri Gönderme / Sefer Durumu</th>
+                                    <th style="width: 28%; text-align: center;">Durum Onayı / Aksiyon</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in pendingInadList)
+                                {
+                                    var isFlightPast = item.GidisTarihSaat.HasValue && item.GidisTarihSaat.Value <= DateTime.Now;
+                                    var waitHours = item.TarihSaat.HasValue ? Math.Round((DateTime.Now - item.TarihSaat.Value).TotalHours, 1) : 0;
+                                    <tr id="inadRow-@item.InadId" class="inad-modal-row @(isFlightPast ? "table-warning-custom" : "")">
+                                        <td>
+                                            <div class="font-weight-bold text-dark" style="font-size: 0.95rem;">
+                                                <i class="fas fa-passport mr-1 text-secondary"></i> @item.AdSoyad
+                                            </div>
+                                            <div class="small text-muted">
+                                                <span class="badge badge-light border">@item.Uyruk</span>
+                                                <code class="ml-1 font-weight-bold">@(item.PasaportNo ?? "-")</code>
+                                            </div>
+                                            <div class="text-muted" style="font-size: 0.75rem; margin-top: 2px;">
+                                                <i class="fas fa-map-marker-alt text-primary"></i> Kapı: <strong>@(item.Kapi ?? "-")</strong>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="small font-weight-bold text-dark">
+                                                @(item.GelenHavayolu ?? "-") @(item.GelenUcusNo ?? "")
+                                            </div>
+                                            <div class="small text-muted">
+                                                Geldiği Yer: @(item.GeldigiYer ?? "-")
+                                            </div>
+                                            <div class="small text-muted" style="font-size: 0.75rem;">
+                                                Kayıt: @(item.TarihSaat.HasValue ? item.TarihSaat.Value.ToString("dd.MM.yyyy HH:mm") : "-")
+                                                @if (waitHours > 0)
+                                                {
+                                                    <span class="badge badge-secondary ml-1">@waitHours saattir odada</span>
+                                                }
+                                            </div>
+                                        </td>
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(item.GidenHavayolu) || !string.IsNullOrEmpty(item.GidisUcusNo) || item.GidisTarihSaat.HasValue)
+                                            {
+                                                <div class="small font-weight-bold text-dark">
+                                                    <i class="fas fa-plane-departure text-info mr-1"></i>
+                                                    @(item.GidenHavayolu ?? "") @(item.GidisUcusNo ?? "")
+                                                </div>
+                                                if (item.GidisTarihSaat.HasValue)
+                                                {
+                                                    if (isFlightPast)
+                                                    {
+                                                        <span class="badge badge-danger font-weight-bold p-1 px-2 mt-1">
+                                                            <i class="fas fa-clock mr-1"></i> UÇUŞ SAATİ GEÇTİ: @item.GidisTarihSaat.Value.ToString("dd.MM.yyyy HH:mm")
+                                                        </span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge badge-info p-1 px-2 mt-1">
+                                                            <i class="fas fa-calendar-alt mr-1"></i> Planlanan: @item.GidisTarihSaat.Value.ToString("dd.MM.yyyy HH:mm")
+                                                        </span>
+                                                    }
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <span class="badge badge-secondary p-1">Geri Gönderme Uçuşu Belirtilmemiş</span>
+                                            }
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="btn-group btn-group-sm mb-1" role="group">
+                                                <button type="button"
+                                                        class="btn btn-success font-weight-bold px-2 py-1 shadow-sm btn-action-inad-done"
+                                                        onclick="quickMarkInadDone(@item.InadId, this)"
+                                                        title="Yolcu uçağa verildi / sınır dışı edildi, kaydı kapat">
+                                                    <i class="fas fa-check-circle mr-1"></i> Evet, İnad Edildi
+                                                </button>
+                                                <button type="button"
+                                                        class="btn btn-outline-secondary font-weight-bold px-2 py-1 btn-action-inad-wait"
+                                                        onclick="skipInadReminderRow(@item.InadId, this)"
+                                                        title="Yolcu halen odada beklemeye devam ediyor">
+                                                    <i class="fas fa-clock mr-1"></i> Halen Odada
+                                                </button>
+                                            </div>
+                                            <div>
+                                                <a href="@Url.Action("Index", "EInad", new { q = item.PasaportNo })"
+                                                   target="_blank"
+                                                   class="small text-info text-decoration-none">
+                                                    <i class="fas fa-external-link-alt"></i> İnad Kartını Gör
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-light d-flex justify-content-between">
+                    <span class="small text-muted">
+                        <i class="fas fa-shield-alt text-primary"></i> 6458 YUKK Md. 7 Kabul Edilemez Yolcu Yönetimi
+                    </span>
+                    <button type="button" class="btn btn-secondary px-4 font-weight-bold" data-dismiss="modal" onclick="dismissInadReminderModal()">
+                        <i class="fas fa-times mr-1"></i> Şimdilik Kapat / Nöbete Devam Et
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @section Scripts {
     <div id="home-config"
          data-chart-url="@Url.Action("ChartData", "Grafik")"
