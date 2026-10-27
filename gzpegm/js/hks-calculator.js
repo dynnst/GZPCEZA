@@ -60,13 +60,25 @@
             // Global Ctrl+V (Modal açıkken)
             $(document).on('paste', function (e) {
                 if ($('#hksModal').hasClass('show')) {
-                    var items = (e.clipboardData || e.originalEvent.clipboardData).items;
+                    var clipboard = e.clipboardData || e.originalEvent.clipboardData;
+                    if (!clipboard) return;
+                    var items = clipboard.items;
+                    var hasImage = false;
                     for (var i = 0; i < items.length; i++) {
                         if (items[i].type.indexOf('image') !== -1) {
                             var blob = items[i].getAsFile();
                             self.processImageBlob(blob);
                             e.preventDefault();
+                            hasImage = true;
                             break;
+                        }
+                    }
+                    if (!hasImage) {
+                        var text = clipboard.getData('text');
+                        if (text && text.trim().length > 10 && (text.indexOf('Giriş') !== -1 || text.indexOf('Çıkış') !== -1 || text.indexOf('Giris') !== -1 || text.indexOf('Cikis') !== -1 || text.indexOf(',') !== -1 || text.indexOf('\t') !== -1)) {
+                            $('#hksTextInput').val(text);
+                            self.parseRawText(text);
+                            e.preventDefault();
                         }
                     }
                 }
@@ -123,7 +135,7 @@
         captureFromScreen: function () {
             var self = this;
             if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
-                alert('Tarayıcınız ekran yakalama özelliğini desteklemiyor. Lütfen "Panodan Yapıştır" veya "Dosya Seç" seçeneğini kullanınız.');
+                self.showScreenCaptureHelpModal();
                 return;
             }
 
@@ -171,7 +183,7 @@
                     var found = false;
                     for (var i = 0; i < items.length; i++) {
                         var item = items[i];
-                        if (item.types.some(function (t) { return t.startsWith('image/'); })) {
+                        if (item.types && item.types.some(function (t) { return t.startsWith('image/'); })) {
                             var imgType = item.types.find(function (t) { return t.startsWith('image/'); });
                             item.getType(imgType).then(function (blob) {
                                 self.processImageBlob(blob);
@@ -182,15 +194,19 @@
                     }
                     if (!found) {
                         self.hideSpinner();
-                        alert('Panoda herhangi bir ekran görüntüsü bulunamadı. Lütfen önce ekran görüntüsü alınız.');
+                        self.showScreenCaptureHelpModal();
                     }
                 }).catch(function (err) {
                     self.hideSpinner();
-                    alert('Panoya erişim izni verilmedi. Bunun yerine doğrudan klavyeden Ctrl+V yapabilirsiniz.');
+                    self.showScreenCaptureHelpModal();
                 });
             } else {
-                alert('Tarayıcınız panodan otomatik okumayı desteklemiyor. Lütfen pencere açıkken klavyeden Ctrl+V tuşlarına basınız.');
+                self.showScreenCaptureHelpModal();
             }
+        },
+
+        showScreenCaptureHelpModal: function () {
+            $('#hksScreenCaptureHelpModal').modal('show');
         },
 
         /**

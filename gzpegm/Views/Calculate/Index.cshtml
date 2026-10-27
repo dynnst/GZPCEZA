@@ -743,9 +743,15 @@
                     <!-- SEKME 1: EKRAN & PANO -->
                     <div class="tab-pane fade show active" id="tab-screen" role="tabpanel">
                         <div class="bg-white p-3 rounded border text-center shadow-sm">
-                            <p class="text-muted mb-3" style="font-size:0.9rem;">
-                                Klavyeden herhangi bir tuşa basmanıza gerek yoktur. Aşağıdaki butonlarla tek tıkla HKS ekranını çekebilir veya kopyalanan görseli okuyabilirsiniz:
-                            </p>
+                            <div class="alert alert-info py-2 px-3 mb-3 text-left d-flex align-items-center justify-content-between flex-wrap" style="font-size:0.85rem; border-left: 4px solid #0284c7; background-color: #f0f9ff; color: #0369a1;">
+                                <div>
+                                    <i class="fas fa-lightbulb text-warning mr-1"></i>
+                                    <strong>En Pratik Yol:</strong> HKS ekranında <kbd class="bg-dark text-white px-1">Win</kbd> + <kbd class="bg-dark text-white px-1">Shift</kbd> + <kbd class="bg-dark text-white px-1">S</kbd> ile alanı seçip bu pencerede doğrudan <kbd class="bg-primary text-white px-1">Ctrl</kbd> + <kbd class="bg-primary text-white px-1">V</kbd> yapın!
+                                </div>
+                                <a href="javascript:void(0)" onclick="if(window.HksCalculator) window.HksCalculator.showScreenCaptureHelpModal();" class="text-primary font-weight-bold ml-2">
+                                    <i class="fas fa-question-circle mr-1"></i> "Ekranı Yakala" butonunu nasıl açarım?
+                                </a>
+                            </div>
                             <div class="d-flex flex-wrap justify-content-center gap-3">
                                 <button type="button" id="btnCaptureScreen" class="btn btn-primary font-weight-bold px-3 py-2 mr-2 mb-2 shadow-sm">
                                     <i class="fas fa-camera mr-2"></i> 1. HKS Ekranını Yakala (Tek Tık)
@@ -878,6 +884,58 @@ Y,,….,….,GULISTAN,BESHLIYEVA,14.03.1988,Kadın,26.06.2026 11:00:22,Giriş,Ge
                 <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Kapat</button>
             </div>
 
+        </div>
+    </div>
+</div>
+
+<!-- Ekran Yakalama Yardım Modalı -->
+<div class="modal fade" id="hksScreenCaptureHelpModal" tabindex="-1" role="dialog" aria-hidden="true" style="z-index: 1060;">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 580px;">
+        <div class="modal-content shadow-lg border-0" style="border-radius: 12px; overflow: hidden;">
+            <div class="modal-header bg-warning text-dark py-2 px-3 d-flex align-items-center justify-content-between">
+                <h5 class="modal-title font-weight-bold mb-0">
+                    <i class="fas fa-video-slash mr-2"></i> Ekran Yakalama İzni (Tarayıcı Güvenliği)
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Kapat">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body p-3" style="font-size: 0.92rem; color: #1e293b;">
+                <div class="alert alert-warning py-2 px-3 mb-3 small">
+                    <i class="fas fa-exclamation-triangle mr-1"></i>
+                    Google Chrome ve Microsoft Edge, <strong>HTTP</strong> bağlantılarda (örn. <code>http://10.7.202.75</code>) doğrudan ekran yakalamayı güvenlik gereği kısıtlamaktadır.
+                </div>
+
+                <div class="card mb-3 border-success">
+                    <div class="card-header bg-success text-white py-1 px-3 font-weight-bold" style="font-size: 0.9rem;">
+                        <i class="fas fa-bolt mr-1"></i> 1. En Pratik Yol (Ayar Yapmadan Hemen Kullanın)
+                    </div>
+                    <div class="card-body p-2 px-3">
+                        <ol class="mb-1 pl-3">
+                            <li class="mb-1">Klavyeden <kbd class="bg-dark text-white px-1">Win</kbd> + <kbd class="bg-dark text-white px-1">Shift</kbd> + <kbd class="bg-dark text-white px-1">S</kbd> tuşlarına basarak HKS ekranındaki tablonun görüntüsünü kırpın.</li>
+                            <li>HKS Asistanı penceresine dönüp doğrudan <kbd class="bg-primary text-white px-1">Ctrl</kbd> + <kbd class="bg-primary text-white px-1">V</kbd> tuşlarına basın. Sistem görüntüyü anında okuyacaktır!</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="card border-info">
+                    <div class="card-header bg-info text-white py-1 px-3 font-weight-bold" style="font-size: 0.9rem;">
+                        <i class="fas fa-cog mr-1"></i> 2. "Ekranı Yakala" Butonunu Kalıcı Olarak Açma (1 Dakika)
+                    </div>
+                    <div class="card-body p-2 px-3 small">
+                        <ol class="mb-0 pl-3">
+                            <li class="mb-1">Yeni bir tarayıcı sekmesi açıp adres çubuğuna şunu yapıştırın:
+                                <div class="mt-1"><code class="bg-light p-1 rounded font-weight-bold text-dark">chrome://flags/#unsafely-treat-insecure-origin-as-secure</code> <small class="text-muted">(Edge için edge://flags/...)</small></div>
+                            </li>
+                            <li class="mb-1">Açılan ayarı <strong>Enabled</strong> yapın ve altındaki kutucuğa <code>http://10.7.202.75</code> yazın.</li>
+                            <li>Sağ alttaki mavi <strong>Relaunch (Yeniden Başlat)</strong> butonuna tıklayın. Artık "Ekranı Yakala" butonu doğrudan tek tıkla çalışacaktır.</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer py-2 px-3 bg-light">
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Anladım, Kapat</button>
+            </div>
         </div>
     </div>
 </div>
