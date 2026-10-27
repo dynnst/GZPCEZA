@@ -180,6 +180,7 @@
                 <a href="@Url.Action("HIST", "OSISK")" class="btn btn-outline-dark">Tüm Kayıtlar</a>
                 <a href="@exportPdfUrl" class="btn btn-outline-secondary">PDF</a>
                 <a href="@exportXlsUrl" class="btn btn-outline-secondary">Excel</a>
+                <button type="button" onclick="cleanDuplicateRecords()" class="btn btn-outline-warning" title="Veritabanındaki mükerrer kopya kayıtları kalıcı olarak temizler"><i class="fas fa-broom mr-1"></i> Mükerrerleri Temizle</button>
             </form>
         </div>
         <div class="card-body p-0">
@@ -226,5 +227,31 @@
 @section Scripts {
     <script src="@Url.Content("~/vendor/datatables/media/js/jquery.dataTables.min.js")"></script>
     <script src="@Url.Content("~/vendor/datatables/media/js/dataTables.bootstrap4.min.js")"></script>
-    <script src="@Url.Content("~/js/hist-admin.js")?v=1.0"></script>
+<script src="@Url.Content("~/js/hist-admin.js")?v=1.0"></script>
+    <script>
+        function cleanDuplicateRecords() {
+            if (!confirm('Veritabanındaki mükerrer kopya hesaplama kayıtları temizlenecektir. Devam etmek istiyor musunuz?')) {
+                return;
+            }
+            var $btn = $(event.target).closest('button');
+            $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Temizleniyor...');
+            $.ajax({
+                url: '@Url.Action("CleanDuplicateHist", "OSISK")',
+                type: 'POST',
+                success: function (res) {
+                    if (res.Success) {
+                        alert(res.Message);
+                        location.reload();
+                    } else {
+                        alert('Hata: ' + res.Message);
+                        $btn.prop('disabled', false).html('<i class="fas fa-broom mr-1"></i> Mükerrerleri Temizle');
+                    }
+                },
+                error: function () {
+                    alert('İşlem sırasında sunucu hatası oluştu.');
+                    $btn.prop('disabled', false).html('<i class="fas fa-broom mr-1"></i> Mükerrerleri Temizle');
+                }
+            });
+        }
+    </script>
 }

@@ -1,4 +1,4 @@
-using gzpegm.Cont;
+﻿using gzpegm.Cont;
 using gzpegm.Models;
 using System;
 using System.Collections.Generic;
@@ -67,6 +67,49 @@ namespace gzpegm.Controllers
 
             result = 0;
             return false;
+        }
+
+        private static List<E_History> DeduplicateHistoryList(List<E_History> list)
+        {
+            if (list == null || list.Count <= 1) return list;
+
+            var result = new List<E_History>(list.Count);
+            foreach (var item in list)
+            {
+                var itemTime = item.fldDatetime ?? DateTime.MinValue;
+                var itemUserKey = gzpegm.Helpers.HistoryUserHelper.GetGroupingKey(item.fldUser);
+                bool isDup = false;
+
+                for (int i = result.Count - 1; i >= 0; i--)
+                {
+                    var prev = result[i];
+                    var prevTime = prev.fldDatetime ?? DateTime.MinValue;
+                    var diffSeconds = Math.Abs((itemTime - prevTime).TotalSeconds);
+
+                    if (diffSeconds > 120) break;
+
+                    if (diffSeconds <= 90 &&
+                        prev.fldCountry == item.fldCountry &&
+                        prev.fldPenalty == item.fldPenalty &&
+                        prev.fldPMoney == item.fldPMoney &&
+                        prev.fldStart == item.fldStart &&
+                        prev.fldShouldExit == item.fldShouldExit &&
+                        prev.fldBirthDate == item.fldBirthDate &&
+                        prev.fldBorder == item.fldBorder &&
+                        gzpegm.Helpers.HistoryUserHelper.GetGroupingKey(prev.fldUser) == itemUserKey)
+                    {
+                        isDup = true;
+                        break;
+                    }
+                }
+
+                if (!isDup)
+                {
+                    result.Add(item);
+                }
+            }
+
+            return result;
         }
 
         private static void SetHistoryStats(dynamic viewBag, List<E_History> data)
@@ -871,6 +914,7 @@ namespace gzpegm.Controllers
                 }
                 filtered = ApplyHistorySearch(filtered, q);
                 var filteredList = filtered.OrderByDescending(x => x.fldDatetime).ToList();
+                filteredList = DeduplicateHistoryList(filteredList);
                 bool hasFilter = from.HasValue || to.HasValue || hours.HasValue || !string.IsNullOrWhiteSpace(q);
                 var data = hasFilter ? filteredList : filteredList.Take(100).ToList();
 
@@ -932,6 +976,7 @@ namespace gzpegm.Controllers
                 }
                 filtered = ApplyHistoryFilters(filtered, q, border, user);
                 var filteredList = filtered.OrderByDescending(x => x.fldDatetime).ToList();
+                filteredList = DeduplicateHistoryList(filteredList);
                 bool hasFilter = from.HasValue || to.HasValue || hours.HasValue || !string.IsNullOrWhiteSpace(q) || !string.IsNullOrWhiteSpace(border) || !string.IsNullOrWhiteSpace(user);
                 var data = hasFilter ? filteredList : filteredList.Take(100).ToList();
 
@@ -994,6 +1039,51 @@ namespace gzpegm.Controllers
             Isk hist = new Isk();
             hist.DeleteHist(Id);
             return Json(new { Message = "Başarılı bir şekilde silinmiştir.", Url = "/HIST" });
+        }
+    
+        [HttpPost]
+        [Route("CleanDuplicateHist")]
+        [UserAuthorize(Users = "2,4")]
+        public JsonResult CleanDuplicateHist()
+        {
+            try
+            {
+                int deletedHistory = 0;
+                using (GZPEGM1 db = new GZPEGM1())
+                {
+                    db.Database.CommandTimeout = 300;
+                    deletedHistory = db.Database.ExecuteSqlCommand(@"
+                        ;WITH CTE_History AS
+                        (
+                            SELECT 
+                                fldId,
+                                ROW_NUMBER() OVER 
+                                (
+                                    PARTITION BY 
+                                        CAST(fldDatetime AS DATE),
+                                        DATEPART(hour, fldDatetime),
+                                        DATEPART(minute, fldDatetime),
+                                        ISNULL(CAST(fldUser AS NVARCHAR(250)), N''),
+                                        ISNULL(fldStart, '1900-01-01'),
+                                        ISNULL(fldShouldExit, '1900-01-01'),
+                                        ISNULL(fldBirthDate, '1900-01-01'),
+                                        ISNULL(CAST(fldCountry AS NVARCHAR(250)), N''),
+                                        ISNULL(CAST(fldPenalty AS NVARCHAR(500)), N''),
+                                        ISNULL(CAST(fldPMoney AS NVARCHAR(100)), N''),
+                                        ISNULL(CAST(fldBorder AS NVARCHAR(250)), N'')
+                                    ORDER BY fldId ASC
+                                ) AS RowNum
+                            FROM dbo.E_History
+                        )
+                        DELETE FROM CTE_History
+                        WHERE RowNum > 1;");
+                }
+                return Json(new { Success = true, Message = string.Format("{0} adet mÃ¼kerrer kayÄ±t baÅŸarÄ±yla temizlendi.", deletedHistory) });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { Success = false, Message = "Temizleme hatasÄ±: " + ex.Message });
+            }
         }
     }
 }

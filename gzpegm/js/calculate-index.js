@@ -255,16 +255,6 @@
             }
         });
 
-        // Doğum tarihi veya yaş grubu girildiğinde ihlal varsa otomatik hesapla2 tetikle
-        $(document).on('change changeDate', '#BirthDateCalculate', function () {
-            var sonuc = ($('#SonucCalculate').val() || '').trim();
-            if (sonuc && typeof window.hesapla2 === 'function') {
-                setTimeout(function () {
-                    window.hesapla2();
-                }, 200);
-            }
-        });
-
         // Sağ panel yer tutucusunu izle ve güncelle
         var observer = new MutationObserver(syncSummaryPlaceholder);
         ['veri', 'hes2', 'hes3', 'hes4', 'hes5'].forEach(function (id) {

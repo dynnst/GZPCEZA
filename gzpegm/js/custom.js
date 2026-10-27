@@ -667,15 +667,22 @@ function adultchild(elem) {
     if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
         age--;
     }
-    if (parseInt(age) < 18) {
-        $('#AdultCalculate').val('1').change();
-    }
-    else {
-        $('#AdultCalculate').val('2').change();
+    var targetAdult = (parseInt(age) < 18) ? '1' : '2';
+    if ($('#AdultCalculate').val() !== targetAdult) {
+        $('#AdultCalculate').val(targetAdult).change();
+    } else {
+        hesapla2();
     }
     $('#BirthdateCFORM').val(strbirthDate);
 }
+
+var _hesapla2DebounceTimer = null;
 function hesapla2() {
+    clearTimeout(_hesapla2DebounceTimer);
+    _hesapla2DebounceTimer = setTimeout(_executeHesapla2, 80);
+}
+
+function _executeHesapla2() {
     var $Tckt = $('#SonucCalculate').val(),
         $Type = $('#AdultCalculate').val(),
         $Passport = $('#PassportCalculate').val(),
@@ -712,6 +719,23 @@ function hesapla2() {
             $('#DefterCalculate').val(result.DFTR);
             $('#IdariCalculate').val(result.ID);
             $('#ToplamCalculate').val(result.toplam);
+
+            // Mükerrer Kayıt Önleme: Aynı hesaplama imzası son 15 saniyede kaydedildiyse tekrar /addhistory gönderme
+            var histSignature = [
+                $('#BasCalculate').val(),
+                $('#BitCalculate').val(),
+                $('#BirthDateCalculate').val(),
+                $('#SonucCalculate').val(),
+                $('#ToplamCalculate').val(),
+                $('#CountryCalculate').val()
+            ].join('|');
+
+            if (window._lastAddedHistSig === histSignature && (Date.now() - (window._lastAddedHistTime || 0)) < 15000) {
+                return;
+            }
+            window._lastAddedHistSig = histSignature;
+            window._lastAddedHistTime = Date.now();
+
             $.ajax({
                 url: "/addhistory",
                 type: "POST",

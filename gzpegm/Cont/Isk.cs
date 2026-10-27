@@ -1,4 +1,4 @@
-﻿using gzpegm.Models;
+using gzpegm.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -36,6 +36,29 @@ namespace gzpegm.Cont
             {
                 using (GZPEGM1 _db = new GZPEGM1())
                 {
+                    // Mükerrer Kayıt Önleme: Son 30 saniye içinde aynı parametrelerle eklenmiş kayıt varsa tekrar ekleme
+                    var cutoff = DateTime.Now.AddSeconds(-30);
+                    var userValue = (User ?? string.Empty).Trim();
+                    var userGroupKey = gzpegm.Helpers.HistoryUserHelper.GetGroupingKey(userValue);
+
+                    var recentRecords = _db.E_History
+                        .Where(h => h.fldDatetime >= cutoff &&
+                                    h.fldCountry == Country &&
+                                    h.fldPenalty == csure &&
+                                    h.fldPMoney == ttutar &&
+                                    h.fldStart == bas &&
+                                    h.fldShouldExit == sexit &&
+                                    h.fldBirthDate == bdate &&
+                                    h.fldBorder == Border)
+                        .Select(h => new { h.fldId, h.fldUser })
+                        .ToList();
+
+                    if (recentRecords.Any(h => h.fldUser == userValue ||
+                                               gzpegm.Helpers.HistoryUserHelper.GetGroupingKey(h.fldUser) == userGroupKey))
+                    {
+                        return; // Mükerrer istek engellendi
+                    }
+
                     E_History data = new E_History();
                     data.fldStart = bas;
                     data.fldShouldExit = sexit;
@@ -46,7 +69,6 @@ namespace gzpegm.Cont
                     // store stable identifier with display name to avoid name-change issues
                     // prefer format: "{fldSicil}|{DisplayName}". If caller passed only display name,
                     // try to resolve sicil from E_User table (by name + border) and store combined key.
-                    var userValue = (User ?? string.Empty).Trim();
                     if (!userValue.Contains("|"))
                     {
                         // try to find matching user by name and border
