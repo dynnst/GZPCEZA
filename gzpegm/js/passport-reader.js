@@ -714,7 +714,7 @@
         statusEl.html(
             '<div class="text-center py-2 text-primary font-weight-bold">' +
             '<div class="spinner-border spinner-border-sm text-primary mr-2" role="status"></div>' +
-            'Pasaport görseli taranıyor ve MRZ çözümleniyor, lütfen bekleyin...' +
+            'Görsel taranıyor ve kimlik/pasaport verileri yüksek doğrulukla çözümleniyor, lütfen bekleyin...' +
             '</div>'
         );
 
@@ -729,31 +729,92 @@
             contentType: false,
             success: function (res) {
                 if (res && res.success) {
-                    var parsed = false;
-
-                    if (res.mrz1 && res.mrz2) {
-                        parsed = parseAndApplyPassportMrz(res.mrz1 + '\n' + res.mrz2, 'Pasaport Fotoğrafı (OCR)');
+                    // 1. Yolcu Adı Soyadı
+                    if (res.fullName) {
+                        $('#NameCFORM').val(res.fullName);
+                        highlightInput('#NameCFORM');
                     }
 
-                    if (!parsed && res.rawText) {
-                        parsed = parseAndApplyPassportMrz(res.rawText, 'Pasaport Fotoğrafı (OCR)');
+                    // 2. Belge / Pasaport Numarası
+                    if (res.documentNumber) {
+                        $('#PassportCFORM').val(res.documentNumber);
+                        highlightInput('#PassportCFORM');
                     }
 
-                    if (parsed) {
-                        statusEl.html('<div class="alert alert-success py-2 px-3 mb-0"><i class="fas fa-check-circle mr-1"></i> Pasaport fotoğrafından kimlik bilgileri başarıyla aktarıldı!</div>');
-                    } else {
-                        statusEl.html('<div class="alert alert-warning py-2 px-3 mb-0"><i class="fas fa-exclamation-triangle mr-1"></i> Görsel yüklendi ancak MRZ satırları net okunamadı. Lütfen ışık ve netliği kontrol ediniz.</div>');
-                        if (res.rawText) {
-                            $('#manualMrzInput').val(res.rawText);
-                            $('#tab-manual-link').tab('show');
+                    // 3. TCKN / YKN / Kişisel No
+                    if (res.personalNumber) {
+                        $('#IDNCFORM').val(res.personalNumber);
+                        highlightInput('#IDNCFORM');
+                    }
+
+                    // 4. Pasaport / Belge Türü
+                    if (res.docTypeCode && $('#PassportCalculate').length) {
+                        $('#PassportCalculate').val(res.docTypeCode).trigger('change');
+                        highlightInput('#PassportCalculate');
+                    }
+
+                    // 5. Uyruk / Ülke Seçimi (Otomatik vize ve harç hesaplatır)
+                    var matchedCountry = "";
+                    if (res.country) {
+                        matchedCountry = setPassportCountry(res.country);
+                    }
+
+                    // 6. Doğum Tarihi & Yaş Grubu
+                    if (res.birthDate) {
+                        $('#BirthDateCalculate').val(res.birthDate).trigger('change');
+                        $('#BirthdateCFORM').val(res.birthDate);
+                        highlightInput('#BirthDateCalculate');
+
+                        if (typeof window.adultchild === 'function') {
+                            window.adultchild($('#BirthDateCalculate')[0]);
                         }
                     }
+
+                    if (res.adultCode && $('#AdultCalculate').length) {
+                        $('#AdultCalculate').val(res.adultCode).trigger('change');
+                        highlightInput('#AdultCalculate');
+                    }
+
+                    // Sesli ve görsel bildirim
+                    playScanBeep();
+
+                    var detailSummary = (res.fullName || 'Yolcu') +
+                        (res.documentNumber ? ' (' + res.documentNumber + ')' : '') +
+                        (matchedCountry ? ' - ' + matchedCountry : (res.country ? ' - ' + res.country : ''));
+
+                    showPassportToast(
+                        '<strong>✓ Belge Görselinden Doğrulandı:</strong><br>' + detailSummary +
+                        (res.birthDate ? '<div class="small mt-1 opacity-90"><i class="fas fa-birthday-cake mr-1"></i> Doğum: ' + res.birthDate + '</div>' : ''),
+                        'success'
+                    );
+
+                    statusEl.html(
+                        '<div class="alert alert-success py-2 px-3 mb-0">' +
+                        '<i class="fas fa-check-circle mr-2"></i> <strong>Görsel başarıyla çözümlendi:</strong><br>' + detailSummary +
+                        '</div>'
+                    );
+
+                    setTimeout(function () {
+                        $('#passportReaderModal').modal('hide');
+                    }, 1400);
+
                 } else {
-                    statusEl.html('<div class="alert alert-danger py-2 px-3 mb-0"><i class="fas fa-times-circle mr-1"></i> ' + (res.message || 'Görsel taranamadı.') + '</div>');
+                    var errMsg = (res && res.message) ? res.message : 'Görselden kimlik veya pasaport verisi okunamadı.';
+                    statusEl.html(
+                        '<div class="alert alert-warning py-2 px-3 mb-0">' +
+                        '<i class="fas fa-exclamation-triangle mr-2"></i> ' + errMsg +
+                        '</div>'
+                    );
+                    showPassportToast(errMsg, 'danger');
+                    if (res && res.rawText) {
+                        $('#manualMrzInput').val(res.rawText);
+                        $('#tab-manual-link').tab('show');
+                    }
                 }
             },
             error: function () {
                 statusEl.html('<div class="alert alert-danger py-2 px-3 mb-0"><i class="fas fa-times-circle mr-1"></i> Sunucu hatası oluştu.</div>');
+                showPassportToast('Sunucu hatası oluştu.', 'danger');
             }
         });
     }

@@ -389,43 +389,8 @@ namespace gzpegm.Controllers
 
             try
             {
-                var scriptPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "App_Data", "PassportOcr.ps1");
-                if (!System.IO.File.Exists(scriptPath))
-                {
-                    return Json(new { success = false, message = "OCR betiği bulunamadı." });
-                }
-
-                var psi = new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName = "powershell.exe",
-                    Arguments = string.Format("-NoProfile -ExecutionPolicy Bypass -File \"{0}\" -imagePath \"{1}\"", scriptPath, tempFile),
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    StandardOutputEncoding = System.Text.Encoding.UTF8
-                };
-
-                using (var proc = System.Diagnostics.Process.Start(psi))
-                {
-                    var output = proc.StandardOutput.ReadToEnd();
-                    proc.WaitForExit(15000);
-
-                    if (string.IsNullOrWhiteSpace(output))
-                    {
-                        return Json(new { success = false, message = "OCR çıktısı alınamadı." });
-                    }
-
-                    var jsonStartIndex = output.IndexOf('{');
-                    var jsonEndIndex = output.LastIndexOf('}');
-                    if (jsonStartIndex >= 0 && jsonEndIndex > jsonStartIndex)
-                    {
-                        var cleanJson = output.Substring(jsonStartIndex, jsonEndIndex - jsonStartIndex + 1);
-                        return Content(cleanJson, "application/json", System.Text.Encoding.UTF8);
-                    }
-
-                    return Json(new { success = false, message = "OCR çıktısı ayrıştırılamadı." });
-                }
+                var result = gzpegm.Services.OpticalReaderService.ProcessPassportImage(tempFile);
+                return Json(result);
             }
             catch (Exception ex)
             {
