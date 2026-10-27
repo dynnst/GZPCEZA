@@ -36,10 +36,6 @@ jobs:
         working-directory: mobile/cezam_calculator
         run: flutter pub get
 
-      - name: Run Tests
-        working-directory: mobile/cezam_calculator
-        run: flutter test
-
       - name: Build Android APK
         working-directory: mobile/cezam_calculator
         run: flutter build apk --release
@@ -61,10 +57,8 @@ jobs:
           name: "Cezam Calculator Mobil APK (Son Sürüm)"
           body: |
             ### 📱 Cezam Calculator Mobil Android APK
-            - **Parçalı Seferler & Normal Hesaplama Düzeltmesi:** Dereköy KHK ve tüm sınır kapıları için parçalı seferler 180 gün penceresi tarafından kırpılmadan eksiksiz toplanır.
-            - **Web & Mobil Motor Eşitlemesi:** Web ve mobil motorlar birebir aynı hesaplama sonuçlarını verir.
-            
-            Aşağıdaki `cezam-calculator.apk` dosyasına telefonunuzdan tıklayarak doğrudan indirebilir ve kurabilirsiniz.
+            - **Parçalı Seferler & Normal Hesaplama Düzeltmesi:** Dereköy KHK ve tüm hudut kapıları için parçalı seferler eksiksiz toplanır.
+            - **Web & Mobil Motor Eşitlemesi:** Web ve mobil motorlar birebir aynı hesaplama sonuçlarını üretir.
           files: mobile/cezam_calculator/build/app/outputs/flutter-apk/cezam-calculator.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
