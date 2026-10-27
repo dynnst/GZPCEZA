@@ -86,8 +86,8 @@
 
     <h1>Ceza Projesi – Eğitim ve Tanıtım Brifingi</h1>
     <p class="muted">
-        Bu brifing dokümanı, Ceza Projesi kapsamındaki modülleri (Ceza Hesaplama, Kurs/Eğitim Platformu,
-        İNAD Projesi ve Terimler Sözlüğü) eğitim amaçlı olarak tanıtmak için hazırlanmıştır.
+        Bu brifing dokümanı, Ceza Projesi kapsamındaki modülleri (Ceza Hesaplama, Kurs/Eğitim Platformu
+        ve İNAD Projesi) eğitim amaçlı olarak tanıtmak için hazırlanmıştır.
         Her bölüm, hem iş tarafını (kullanım senaryoları) hem de teknik yapıyı özetler.
     </p>
 
@@ -539,64 +539,6 @@
 
     <hr />
 
-    <!-- 4. TERİMLER SÖZLÜĞÜ -->
-
-    <h2>4. Terimler Sözlüğü</h2>
-
-    <div class="section">
-        <h3>4.1. Terimler Sözlüğü (DocumentTerms) – Amaç ve Yapı</h3>
-        <ul>
-            <li>
-                Kurumsal belgelerde ve uygulamalarda geçen tüm kavram, kısaltma ve terimleri
-                <strong>standart tanımlarla</strong> toplamak.
-            </li>
-            <li>
-                <strong>Controller:</strong> <code>DocumentTermsController</code>
-                <ul>
-                    <li><code>Index</code> – Yönetim listesi ve arama.</li>
-                    <li><code>Create</code>, <code>Edit</code>, <code>Delete</code> – Terim yönetimi.</li>
-                    <li><code>AddCategory</code>, <code>GetCategories</code> – Kategori yönetimi.</li>
-                    <li><code>UploadImage</code> – Sözlük terimlerine görsel yükleme.</li>
-                </ul>
-            </li>
-            <li>
-                <strong>Model:</strong> <code>DocumentTerms</code>
-                <ul>
-                    <li>Term (terim), Slug, Category.</li>
-                    <li>Definition (kısa tanım), DetailedDescription (detaylı açıklama).</li>
-                    <li>RelatedTerms, ImageUrl, IsActive, CreatedAt/UpdatedAt.</li>
-                    <li>AdSoyad, Sicil – terimi ekleyen kişi bilgisi.</li>
-                </ul>
-            </li>
-            <li>
-                <strong>Kullanıcı yetkisi:</strong>
-                <ul>
-                    <li>Admin → tüm terimleri görür.</li>
-                    <li>Diğer kullanıcılar → sadece kendi siciline ait terimleri görür.</li>
-                </ul>
-            </li>
-        </ul>
-    </div>
-
-    <div class="section">
-        <h3>4.2. Terimler Sözlüğü Kullanımı ve Entegrasyon</h3>
-        <ul>
-            <li>
-                Yönetim tarafında:
-                <ul>
-                    <li>Yeni terim eklenirken kategori seçilir veya yeni kategori oluşturulur.</li>
-                    <li>Gerekirse eğitim amaçlı resimler (şema, ekran görüntüsü) yüklenir.</li>
-                </ul>
-            </li>
-            <li>
-                Kullanıcı/yayın tarafında:
-                <ul>
-                    <li>Terimler liste halinde veya kategori/slug üzerinden sunulur.</li>
-                    <li>Her terim detay sayfasında tanım, açıklama, ilgili terimler ve görsel gösterilir.</li>
-                </ul>
-            </li>
-        </ul>
-    </div>
 
     <hr />
 

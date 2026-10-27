@@ -1,4 +1,4 @@
-﻿@{
+@{
     Layout = "~/Views/Shared/_Master.cshtml";
 }
 
@@ -80,7 +80,7 @@
         <div>
             <div class="home-eyebrow"><i class="fas fa-shield-alt"></i>İŞLEM EKRANLARI</div>
             <h1 id="homeTitle" class="home-title">Ceza, vize ve tahdit işlemleri için hızlı çalışma alanı</h1>
-            <p class="home-summary">Sık kullanılan hesaplama, belge, sözlük ve kontrol ekranları tek yerde toplandı. Tüm bağlantılar yerel proje dosyaları ve mevcut modüller üzerinden çalışır.</p>
+            <p class="home-summary">Sık kullanılan hesaplama, belge ve kontrol ekranları tek yerde toplandı. Tüm bağlantılar yerel proje dosyaları ve mevcut modüller üzerinden çalışır.</p>
             <div class="home-primary-actions">
                 <a href="@Url.Action("Index", "Calculate")" class="home-primary-btn">
                     <i class="fas fa-calculator"></i> Hesaplama
@@ -185,10 +185,6 @@
             <a href="@Url.Action("Index", "EInad")" target="_blank" rel="noopener noreferrer" class="quick-action">
                 <span class="quick-action-icon"><i class="fas fa-clipboard-check"></i></span>
                 <span class="quick-action-text"><strong>İnad İşlemleri</strong><span>İnad kayıtları</span></span>
-            </a>
-            <a href="@Url.Action("Index", "PublicGlossary")" target="_blank" rel="noopener noreferrer" class="quick-action">
-                <span class="quick-action-icon"><i class="fas fa-book"></i></span>
-                <span class="quick-action-text"><strong>Terimler</strong><span>Sözlük ekranı</span></span>
             </a>
             <a href="@Url.Content("~/files/Genelge/TahditGenelgeler/Giris_Yasaklari.pdf")" target="_blank" rel="noopener noreferrer" class="quick-action is-reference">
                 <span class="quick-action-icon"><i class="fas fa-file-pdf"></i></span>

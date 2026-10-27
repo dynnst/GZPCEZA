@@ -1,4 +1,4 @@
-﻿@model gzpegm.Models.E_User
+@model gzpegm.Models.E_User
 @using System
 @using System.Linq
 @using System.Collections.Generic
@@ -106,8 +106,6 @@
                                                 <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="/VIZEV">V-84 Şartlı Vize İşlemleri</a></li>
                                                 <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="@Url.Action("Index", "EInad")">İnad Kayıtları</a></li>
                                                 <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="/GRAFIK">İşlem Grafikleri</a></li>
-                                                <li class="divider"></li>
-                                                <li><a class="dropdown-item" href="@Url.Action("Index", "PublicGlossary")"><i class="fas fa-book"></i> Terimler Sözlüğü</a></li>
                                             </ul>
                                         </li>
                                         <li><a class="dropdown-item" href="@Url.Action("Index", "Tahdit")"><i class="fas fa-list"></i> Tahditler &amp; Yapılacaklar</a></li>
@@ -207,17 +205,7 @@
                                                 <li><a class="dropdown-item" href="@Url.Action("Index", "EducationPackage")"><i class="fas fa-box-open"></i> Eğitim Paketleri</a></li>
                                                 <li><a class="dropdown-item" href="@Url.Action("Index", "EducationQuality")"><i class="fas fa-clipboard-check"></i> Eğitim Kalite Raporu</a></li>
                                             }
-                                            <li class="dropdown-submenu">
-                                                <a class="dropdown-item dropdown-toggle" href="#" data-toggle="dropdown">
-                                                    <i class="fas fa-book-open"></i>
-                                                    Document Terimler
-                                                </a>
-                                                <ul class="dropdown-menu">
-                                                    <li><a class="dropdown-item" href="@Url.Action("Index", "DocumentTerms")"><i class="fas fa-list"></i> Terimler Listesi</a></li>
-                                                    <li><a class="dropdown-item" href="@Url.Action("Create", "DocumentTerms")"><i class="fas fa-plus"></i> Yeni Terim Ekle</a></li>
-                                                </ul>
-                                            </li>
-                                            <li class="divider"></li>
+
                                         }
                                         <li><a class="dropdown-item" href="@Url.Action("StudentIndex", "Course")"><i class="fas fa-book-open"></i> Kurslarım</a></li>
                                         <li><a class="dropdown-item" href="@Url.Action("AvailableExams", "StudentExam")"><i class="fas fa-clipboard-list"></i> Sınavlarım</a></li>

@@ -7000,7 +7000,6 @@
     <Compile Include="Controllers\ContentController.cs" />
     <Compile Include="Controllers\CourseController.cs" />
     <Compile Include="Controllers\DashboardController.cs" />
-    <Compile Include="Controllers\DocumentTermsController.cs" />
     <Compile Include="Controllers\EInadController.cs" />
     <Compile Include="Controllers\EducationQualityController.cs" />
     <Compile Include="Controllers\ErrorController.cs" />
@@ -7011,7 +7010,6 @@
     <Compile Include="Controllers\HealthController.cs" />
     <Compile Include="Controllers\InternalSyncController.cs" />
     <Compile Include="Controllers\LandingController.cs" />
-    <Compile Include="Controllers\PublicGlossaryController.cs" />
     <Compile Include="Controllers\QuestionController.cs" />
     <Compile Include="Controllers\RolePermissionController.cs" />
     <Compile Include="Controllers\SectionController.cs" />
@@ -7105,7 +7103,6 @@
     <Compile Include="Models\C__MigrationHistory.cs">
       <DependentUpon>Model1.tt</DependentUpon>
     </Compile>
-    <Compile Include="Models\DocumentTerm.cs" />
     <Compile Include="Models\DocumentTerms.cs">
       <DependentUpon>Model1.tt</DependentUpon>
     </Compile>
@@ -7214,7 +7211,6 @@
     <Compile Include="Models\UlkeModel.cs" />
     <Compile Include="Models\Usermodel.cs" />
     <Compile Include="Models\ViewModels\BorderViewModel.cs" />
-    <Compile Include="Models\ViewModels\DocumentTermsViewModel.cs" />
     <Compile Include="Models\ViewModels\EducationPackageViewModels.cs" />
     <Compile Include="Models\ViewModels\ExamResultListItemViewModel.cs" />
     <Compile Include="Models\ViewModels\MessageViewModel.cs" />
@@ -8112,14 +8108,6 @@
     <Content Include="Views\Tahdit\Index.cshtml" />
     <Content Include="Views\Course\Enrollments.cshtml" />
     <Content Include="Views\Exam\Results.cshtml" />
-    <Content Include="Views\DocumentTerms\Index.cshtml" />
-    <Content Include="Views\DocumentTerms\Details.cshtml" />
-    <Content Include="Views\DocumentTerms\Create.cshtml" />
-    <Content Include="Views\DocumentTerms\Edit.cshtml" />
-    <Content Include="Views\DocumentTerms\Delete.cshtml" />
-    <Content Include="Views\PublicGlossary\Index.cshtml" />
-    <Content Include="Views\PublicGlossary\Details.cshtml" />
-    <Content Include="Views\PublicGlossary\_TermItem.cshtml" />
     <Content Include="Views\Landing\FAQ.cshtml" />
     <Content Include="Views\Landing\Help.cshtml" />
     <Content Include="Views\Landing\Terms.cshtml" />
