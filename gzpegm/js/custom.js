@@ -809,12 +809,11 @@ function gcadd() {
         return false;
     }
 
-    // Birden fazla giriş-çıkış ekleniyorsa hesaplama tipini kontrol et
+    // Rusya Federasyonu için çoklu giriş-çıkışta otomatik 180 Gün Kuralı (2) seçilir
     var $ctype = $('#CTypeCalculate');
     var $country = $('#CountryCalculate');
     var countryVal = ($country.val() || '').trim();
     if (countryVal === 'Rusya Federasyonu') {
-        // Rusya Federasyonu için çoklu giriş-çıkışta otomatik 180 Gün Kuralı (2) seçilir
         if ($ctype.val() !== '2') {
             $ctype.val('2');
             if ($.fn.select2) {
@@ -822,8 +821,6 @@ function gcadd() {
             }
             $ctype.trigger('change');
         }
-    } else if ($ctype.val() === '1' && countryVal !== '') {
-        alert('Birden fazla giriş-çıkış girişi yapıyorsunuz. Lütfen hesaplama tipinin doğru seçili olduğunu kontrol ediniz.');
     }
 
     var $form = $('#calculate-form');

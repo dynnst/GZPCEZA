@@ -140,9 +140,10 @@ namespace gzpegm.Controllers
                 DateTime countedEntry = trip.Item1;
                 DateTime countedExit = trip.Item2;
 
-                if (isMultipleEntryExit)
+                // 180 Gun Kurali (Ctype == 2): En son cikis gunu dahil geriye donuk 180 takvim gunu penceresi uygulanir.
+                // Normal Hesaplama (Ctype == 1) ve diger modellerde ise girilen tum seferlerin kalis sureleri eksiksiz toplanir.
+                if (Ctype == 2)
                 {
-                    // Schengen penceresi, en son çıkış günü dahil 180 takvim günüdür.
                     if (countedEntry < windowStart) countedEntry = windowStart;
                     if (countedExit > referenceExit) countedExit = referenceExit;
                 }
