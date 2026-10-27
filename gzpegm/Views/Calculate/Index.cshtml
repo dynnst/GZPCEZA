@@ -20,8 +20,8 @@
                 </div>
             </div>
             <div class="d-flex align-items-center mt-2 mt-md-0">
-                <button type="button" id="btnOpenHksModal" class="btn btn-hks-launch mr-2" title="HKS İkamet Hesabından Ekran, Excel veya Pano ile Otomatik Çek">
-                    <i class="fas fa-camera mr-1"></i> HKS'den Oku / 90-180 Kontrol Et
+                <button type="button" id="btnOpenPassportModal" data-toggle="modal" data-target="#passportReaderModal" class="btn btn-passport-reader mr-2" title="3M, Regula, Desko optik okuyucu veya pasaport fotoğrafından kimlik bilgilerini otomatik aktar">
+                    <span class="passport-pulse-dot"></span> <i class="fas fa-passport mr-1"></i> Pasaport / Belge Oku
                 </button>
                 <div class="stat-pill mr-2" title="Sınır kapınızdaki toplam işlem sayısı">
                     <span class="stat-label">Toplam İşlem:</span>
@@ -49,9 +49,6 @@
                                 <i class="fas fa-calendar-alt"></i> Giriş - Çıkış Sefer Tarihleri
                             </h5>
                             <div class="panel-actions">
-                                <button type="button" onclick="$('#btnOpenHksModal').click()" class="btn btn-warning btn-sm font-weight-bold mr-1" title="HKS İkamet Hesabından Ekran, Excel veya Pano ile Oku">
-                                    <i class="fas fa-camera mr-1"></i> HKS'den Oku
-                                </button>
                                 <button id="GcAddButton" onclick="gcadd()" type="button" class="btn btn-primary" title="Önceki giriş-çıkışları ekle">
                                     <i class="fas fa-plus mr-1"></i> Sefer Ekle
                                 </button>
@@ -103,10 +100,13 @@
                         </div>
 
                         <!-- 2. Yolcu ve Vize Parametreleri -->
-                        <div class="calc-panel-header mt-2">
-                            <h5 class="panel-title">
+                        <div class="calc-panel-header mt-2 d-flex align-items-center justify-content-between">
+                            <h5 class="panel-title mb-0">
                                 <i class="fas fa-id-card"></i> Yolcu ve Vize Parametreleri
                             </h5>
+                            <button type="button" data-toggle="modal" data-target="#passportReaderModal" class="btn btn-sm btn-outline-success font-weight-bold py-1 px-2" style="font-size:0.8rem;" title="3M / Regula / Desko veya Fotoğraf ile Doldur">
+                                <i class="fas fa-qrcode mr-1"></i> Pasaport Oku
+                            </button>
                         </div>
 
                         <div class="form-row">
@@ -683,23 +683,23 @@
 </div>
 
 <!-- ==========================================================================
-     HKS İKAMET HESAPLA & 90/180 GÜN KURALI MODALI
+     PASAPORT & OPTİK OKUYUCU (3M / REGULA / DESKO / FOTOĞRAF) MODALI
      ========================================================================== -->
-<div class="modal fade" id="hksModal" tabindex="-1" role="dialog" aria-labelledby="hksModalLabel" aria-hidden="true">
-    <div class="modal-dialog hks-modal-dialog" role="document">
+<div class="modal fade" id="passportReaderModal" tabindex="-1" role="dialog" aria-labelledby="passportReaderModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 620px;" role="document">
         <div class="modal-content shadow-lg border-0" style="border-radius:12px; overflow:hidden;">
             
             <!-- Modal Başlık -->
-            <div class="modal-header bg-dark text-white d-flex align-items-center justify-content-between py-2 px-3" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-bottom: 2px solid #f59e0b;">
+            <div class="modal-header bg-dark text-white d-flex align-items-center justify-content-between py-2 px-3" style="background: linear-gradient(135deg, #064e3b 0%, #065f46 100%); border-bottom: 2px solid #10b981;">
                 <div class="d-flex align-items-center">
-                    <div style="width:36px; height:36px; border-radius:8px; background:rgba(245,158,11,0.2); color:#f59e0b; display:flex; align-items:center; justify-content:center; margin-right:12px; font-size:1.2rem;">
-                        <i class="fas fa-camera"></i>
+                    <div style="width:36px; height:36px; border-radius:8px; background:rgba(16,185,129,0.2); color:#34d399; display:flex; align-items:center; justify-content:center; margin-right:12px; font-size:1.2rem;">
+                        <i class="fas fa-passport"></i>
                     </div>
                     <div>
-                        <h5 class="modal-title font-weight-bold mb-0 text-white" id="hksModalLabel">
-                            HKS İkamet Hesabı & 90/180 Gün Kuralı Asistanı
+                        <h5 class="modal-title font-weight-bold mb-0 text-white" id="passportReaderModalLabel">
+                            Pasaport & Belge Okuyucu
                         </h5>
-                        <small class="text-warning">Ekran görüntüsü, Excel/CSV dökümü veya pano ile anında giriş-çıkış analizi</small>
+                        <small class="text-white-50">3M Cogent, Regula, Desko Optik Okuyucu & Fotoğraf Taraması</small>
                     </div>
                 </div>
                 <button type="button" class="close text-white" data-dismiss="modal" aria-label="Kapat" style="font-size:1.6rem; opacity:0.8;">
@@ -710,176 +710,72 @@
             <!-- Modal Gövdesi -->
             <div class="modal-body p-3 position-relative" style="background:#f8fafc;">
                 
-                <!-- Yükleniyor / OCR Spinner -->
-                <div id="hksSpinner" class="hks-spinner-overlay hidden">
-                    <div class="spinner-border text-warning" role="status" style="width: 3rem; height: 3rem;">
-                        <span class="sr-only">İşleniyor...</span>
+                <!-- Cihaz Durum Banner'ı -->
+                <div class="alert alert-success py-2 px-3 mb-3 d-flex align-items-center justify-content-between" style="border-left: 4px solid #059669; font-size:0.88rem; background-color:#ecfdf5; color:#065f46;">
+                    <div class="d-flex align-items-center">
+                        <span class="passport-pulse-dot"></span>
+                        <div>
+                            <strong>Optik Okuyucu Aktif:</strong> 3M, Regula veya Desko cihazına pasaportu yerleştirin veya kaydırın.
+                        </div>
                     </div>
-                    <h6 class="mt-3 font-weight-bold text-dark" id="hksSpinnerText">HKS Verileri Çözümleniyor...</h6>
-                    <small class="text-muted">Lütfen bekleyiniz, veriler yerel olarak işleniyor.</small>
+                    <span class="badge badge-success px-2 py-1">Hazır</span>
                 </div>
 
-                <!-- 1. Giriş Yöntemi Sekmeleri -->
-                <ul class="nav nav-pills nav-fill mb-3 bg-white p-1 rounded shadow-sm border" id="hksTabs" role="tablist">
+                <!-- Sekmeler -->
+                <ul class="nav nav-pills nav-fill mb-3 bg-white p-1 rounded shadow-sm border" id="passportTabs" role="tablist">
                     <li class="nav-item">
-                        <a class="nav-link active font-weight-bold py-2" id="tab-screen-link" data-toggle="pill" href="#tab-screen" role="tab">
-                            <i class="fas fa-desktop mr-1 text-primary"></i> Ekran & Pano (Tek Tık)
+                        <a class="nav-link active font-weight-bold py-2" id="tab-photo-link" data-toggle="pill" href="#tab-photo" role="tab">
+                            <i class="fas fa-camera mr-1 text-success"></i> Pasaport Görseli Yükle / Yapıştır
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link font-weight-bold py-2" id="tab-excel-link" data-toggle="pill" href="#tab-excel" role="tab">
-                            <i class="fas fa-file-excel mr-1 text-success"></i> Excel / CSV Yükle
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link font-weight-bold py-2" id="tab-text-link" data-toggle="pill" href="#tab-text" role="tab">
-                            <i class="fas fa-paste mr-1 text-info"></i> Metin Yapıştır
+                        <a class="nav-link font-weight-bold py-2" id="tab-manual-link" data-toggle="pill" href="#tab-manual" role="tab">
+                            <i class="fas fa-keyboard mr-1 text-primary"></i> MRZ Satırları / Test
                         </a>
                     </li>
                 </ul>
 
-                <div class="tab-content" id="hksTabContent">
-                    
-                    <!-- SEKME 1: EKRAN & PANO -->
-                    <div class="tab-pane fade show active" id="tab-screen" role="tabpanel">
-                        <div class="bg-white p-3 rounded border text-center shadow-sm">
-                            <div class="alert alert-info py-2 px-3 mb-3 text-left d-flex align-items-center justify-content-between flex-wrap" style="font-size:0.85rem; border-left: 4px solid #0284c7; background-color: #f0f9ff; color: #0369a1;">
-                                <div>
-                                    <i class="fas fa-lightbulb text-warning mr-1"></i>
-                                    <strong>En Pratik Yol:</strong> HKS ekranında <kbd class="bg-dark text-white px-1">Win</kbd> + <kbd class="bg-dark text-white px-1">Shift</kbd> + <kbd class="bg-dark text-white px-1">S</kbd> ile alanı seçip bu pencerede doğrudan <kbd class="bg-primary text-white px-1">Ctrl</kbd> + <kbd class="bg-primary text-white px-1">V</kbd> yapın!
-                                </div>
-                                <a href="javascript:void(0)" onclick="if(window.HksCalculator) window.HksCalculator.showScreenCaptureHelpModal();" class="text-primary font-weight-bold ml-2">
-                                    <i class="fas fa-question-circle mr-1"></i> "Ekranı Yakala" butonunu nasıl açarım?
-                                </a>
-                            </div>
-                            <div class="d-flex flex-wrap justify-content-center gap-3">
-                                <button type="button" id="btnCaptureScreen" class="btn btn-primary font-weight-bold px-3 py-2 mr-2 mb-2 shadow-sm">
-                                    <i class="fas fa-camera mr-2"></i> 1. HKS Ekranını Yakala (Tek Tık)
-                                </button>
-                                <button type="button" id="btnPasteClipboard" class="btn btn-secondary font-weight-bold px-3 py-2 mr-2 mb-2 shadow-sm">
-                                    <i class="fas fa-clipboard mr-2"></i> 2. Panodan Yapıştır (Görsel)
-                                </button>
-                                <label class="btn btn-outline-info font-weight-bold px-3 py-2 mb-2 shadow-sm cursor-pointer mb-0">
-                                    <i class="fas fa-image mr-2"></i> 3. Resim Dosyası Seç
-                                    <input type="file" id="hksFileInput" accept="image/*,.xlsx,.xls,.csv,.txt" class="hidden">
-                                </label>
-                            </div>
-                            <img id="hksImagePreview" src="" alt="Önizleme" class="img-fluid rounded border mt-2 hidden" style="max-height: 180px;" />
+                <div class="tab-content" id="passportTabContent">
+                    <!-- SEKME 1: GÖRSEL / FOTOĞRAF / PANO -->
+                    <div class="tab-pane fade show active" id="tab-photo" role="tabpanel">
+                        <div id="passportDropzone" class="passport-dropzone" onclick="$('#passportFileInput').click();">
+                            <i class="fas fa-id-card-alt passport-dropzone-icon"></i>
+                            <h5 class="font-weight-bold text-dark mb-1">Pasaport Fotoğrafını Buraya Bırakın</h5>
+                            <p class="text-muted small mb-2">veya bilgisayarınızdan dosya seçmek için tıklayın (.jpg, .png, .bmp)</p>
+                            <span class="badge badge-light border text-dark font-weight-normal py-1 px-2">
+                                <i class="fas fa-paste text-primary mr-1"></i> Panodaki resmi doğrudan <strong>Ctrl + V</strong> ile de yapıştırabilirsiniz!
+                            </span>
+                            <input type="file" id="passportFileInput" accept="image/*" class="hidden" style="display:none;">
                         </div>
                     </div>
 
-                    <!-- SEKME 2: EXCEL / CSV YÜKLE -->
-                    <div class="tab-pane fade" id="tab-excel" role="tabpanel">
-                        <div id="hksDropzone" class="hks-dropzone" onclick="$('#hksFileInput').click();">
-                            <i class="fas fa-cloud-upload-alt hks-dropzone-icon text-success"></i>
-                            <h5 class="font-weight-bold text-dark mb-1">HKS'den İndirilen Excel veya CSV Dosyasını Buraya Bırakın</h5>
-                            <p class="text-muted mb-0 small">veya dosya seçmek için bu alana tıklayın (.xlsx, .xls, .csv desteklenir)</p>
-                        </div>
-                    </div>
-
-                    <!-- SEKME 3: METİN YAPIŞTIR -->
-                    <div class="tab-pane fade" id="tab-text" role="tabpanel">
+                    <!-- SEKME 2: MANUEL MRZ METNİ -->
+                    <div class="tab-pane fade" id="tab-manual" role="tabpanel">
                         <div class="bg-white p-3 rounded border shadow-sm">
                             <label class="font-weight-bold text-dark small mb-1">
-                                HKS Döküm Satırları veya CSV Metni:
+                                Pasaport MRZ Satırları veya 3M / Regula Metin Çıktısı:
                             </label>
-                            <textarea id="hksTextInput" class="form-control" rows="4" placeholder="Örnek:
-BelgeTuru,HarfSeriNo,BelgeSeriNo,KimlikNo,Ad,Soyad,DogumTarihi,Cinsiyet,Tarih,GirisCikisTipi,IptalDurumu,UlkeKodu
-Y,,….,…..,GULISTAN,BESHLIYEVA,14.03.1988,Kadın,26.10.2026 11:28:04,Çıkış,Geçerli,KAZAKISTAN
-Y,,….,….,GULISTAN,BESHLIYEVA,14.03.1988,Kadın,26.06.2026 11:00:22,Giriş,Geçerli,KAZAKISTAN"></textarea>
+                            <textarea id="manualMrzInput" class="form-control font-monospace" rows="4" style="font-family: monospace; font-size:0.85rem;" placeholder="Örnek (TD3 Pasaport):
+P<UTOERIKSSON<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<
+L898902C36UTO7408122F1204159ZE184226B<<<<<10"></textarea>
                             <div class="text-right mt-2">
-                                <button type="button" id="btnParseText" class="btn btn-info font-weight-bold btn-sm">
-                                    <i class="fas fa-play mr-1"></i> Metni Çözümle ve Hesapla
+                                <button type="button" id="btnParseManualMrz" class="btn btn-success font-weight-bold btn-sm">
+                                    <i class="fas fa-check mr-1"></i> MRZ Satırlarını Çözümle ve Forma Aktar
                                 </button>
                             </div>
                         </div>
                     </div>
-
                 </div>
 
-                <!-- 2. Yolcu Kimlik Kartı (Otomatik Algılandığında Görünür) -->
-                <div id="hksPassengerCard" class="hks-passenger-card mt-3 hidden">
-                    <div class="row align-items-center">
-                        <div class="col-md-3 col-sm-6 mb-2">
-                            <small class="text-muted d-block font-weight-bold">YOLCU ADI SOYADI</small>
-                            <span id="hksPassName" class="font-weight-bold text-dark" style="font-size:1.05rem;">—</span>
-                        </div>
-                        <div class="col-md-2 col-sm-6 mb-2">
-                            <small class="text-muted d-block font-weight-bold">UYRUK / ÜLKE</small>
-                            <span id="hksPassCountry" class="badge badge-primary px-2 py-1 font-weight-bold" style="font-size:0.9rem;">—</span>
-                        </div>
-                        <div class="col-md-2 col-sm-6 mb-2">
-                            <small class="text-muted d-block font-weight-bold">PASAPORT NO</small>
-                            <span id="hksPassPassport" class="font-weight-bold text-dark font-mono">—</span>
-                        </div>
-                        <div class="col-md-2 col-sm-6 mb-2">
-                            <small class="text-muted d-block font-weight-bold">YKN / KİMLİK NO</small>
-                            <span id="hksPassIdNo" class="font-weight-bold text-dark font-mono">—</span>
-                        </div>
-                        <div class="col-md-3 col-sm-6 mb-2">
-                            <small class="text-muted d-block font-weight-bold">DOĞUM TARİHİ & YAŞ</small>
-                            <span id="hksPassBirth" class="text-dark font-weight-bold">—</span>
-                            <span id="hksPassAgeBadge" class="badge badge-info ml-1"></span>
-                        </div>
-                        <div class="col-md-3 col-sm-6 mb-1" id="hksPassFatherCol">
-                            <small class="text-muted d-block font-weight-bold">BABA ADI</small>
-                            <span id="hksPassFather" class="text-dark font-weight-bold">—</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 3. HKS Seferleri Tablosu -->
-                <div class="card mt-3 border shadow-sm">
-                    <div class="card-header bg-light d-flex align-items-center justify-content-between py-2 px-3">
-                        <span class="font-weight-bold text-dark small">
-                            <i class="fas fa-list-ol mr-1"></i> Ayıklanan Giriş - Çıkış Seferleri <span class="text-muted">(Saat bilgileri mevzuat gereği otomatik atılmıştır)</span>
-                        </span>
-                        <button type="button" id="btnAddManualRow" class="btn btn-xs btn-outline-primary font-weight-bold">
-                            <i class="fas fa-plus mr-1"></i> Manuel Satır Ekle
-                        </button>
-                    </div>
-                    <div class="table-responsive" style="max-height: 180px; overflow-y: auto;">
-                        <table class="table table-sm table-hover table-striped mb-0 text-center" style="font-size:0.88rem;">
-                            <thead class="bg-white">
-                                <tr>
-                                    <th style="width: 50px;">#</th>
-                                    <th>Hareket Tipi</th>
-                                    <th>İşlem Tarihi</th>
-                                    <th style="width: 70px;">İşlem</th>
-                                </tr>
-                            </thead>
-                            <tbody id="hksMovementsTbody">
-                                <tr>
-                                    <td colspan="4" class="text-muted py-3">Henüz veri yüklenmedi. Yukarıdaki seçeneklerden birini kullanarak HKS dökümünü ekleyin.</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div id="hksTripsValidationBox" class="p-2 bg-white border-top small hidden"></div>
-                </div>
-
-                <!-- 4. 90/180 Gün Kuralı Sonuç ve Karar Destek Kartı -->
-                <div id="hksResultCard" class="hks-result-card hidden">
-                    <div class="d-flex flex-wrap align-items-center justify-content-between">
-                        <div class="d-flex align-items-center mb-2 mb-md-0">
-                            <span id="hksResStatusBadge" class="badge px-3 py-2 font-weight-bold mr-3" style="font-size:1rem;"></span>
-                            <div>
-                                <div class="font-weight-bold" style="font-size:1.1rem;" id="hksResDetailText"></div>
-                                <small class="text-muted">Son 180 Gün Penceresindeki Toplam Kalış: <strong id="hksResTotalStay" class="text-dark">0 Gün</strong> (Yasal Sınır: 90 Gün)</small>
-                            </div>
-                        </div>
-                        <button type="button" id="btnTransferToCezam" class="btn btn-success btn-lg font-weight-bold shadow px-4 py-2">
-                            <i class="fas fa-rocket mr-2"></i> Seferleri ve İhlali Ceza Ekranına Aktar
-                        </button>
-                    </div>
-                </div>
+                <!-- Durum / Yükleme Bildirimi -->
+                <div id="passportReaderStatus" class="mt-3"></div>
 
             </div>
 
             <!-- Modal Alt Bilgi -->
             <div class="modal-footer bg-light py-2 px-3 d-flex justify-content-between">
                 <small class="text-muted">
-                    <i class="fas fa-shield-alt text-success mr-1"></i> 6458 Sayılı YUKK Md. 18 Kayan Pencere (Rolling Window) motoru ile hesaplanır.
+                    <i class="fas fa-check-double text-success mr-1"></i> ICAO 9303 standardındaki tüm yabancı ve Türk pasaportları desteklenir.
                 </small>
                 <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Kapat</button>
             </div>
@@ -888,61 +784,7 @@ Y,,….,….,GULISTAN,BESHLIYEVA,14.03.1988,Kadın,26.06.2026 11:00:22,Giriş,Ge
     </div>
 </div>
 
-<!-- Ekran Yakalama Yardım Modalı -->
-<div class="modal fade" id="hksScreenCaptureHelpModal" tabindex="-1" role="dialog" aria-hidden="true" style="z-index: 1060;">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 580px;">
-        <div class="modal-content shadow-lg border-0" style="border-radius: 12px; overflow: hidden;">
-            <div class="modal-header bg-warning text-dark py-2 px-3 d-flex align-items-center justify-content-between">
-                <h5 class="modal-title font-weight-bold mb-0">
-                    <i class="fas fa-video-slash mr-2"></i> Ekran Yakalama İzni (Tarayıcı Güvenliği)
-                </h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Kapat">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body p-3" style="font-size: 0.92rem; color: #1e293b;">
-                <div class="alert alert-warning py-2 px-3 mb-3 small">
-                    <i class="fas fa-exclamation-triangle mr-1"></i>
-                    Google Chrome ve Microsoft Edge, <strong>HTTP</strong> bağlantılarda (örn. <code>http://10.7.202.75</code>) doğrudan ekran yakalamayı güvenlik gereği kısıtlamaktadır.
-                </div>
-
-                <div class="card mb-3 border-success">
-                    <div class="card-header bg-success text-white py-1 px-3 font-weight-bold" style="font-size: 0.9rem;">
-                        <i class="fas fa-bolt mr-1"></i> 1. En Pratik Yol (Ayar Yapmadan Hemen Kullanın)
-                    </div>
-                    <div class="card-body p-2 px-3">
-                        <ol class="mb-1 pl-3">
-                            <li class="mb-1">Klavyeden <kbd class="bg-dark text-white px-1">Win</kbd> + <kbd class="bg-dark text-white px-1">Shift</kbd> + <kbd class="bg-dark text-white px-1">S</kbd> tuşlarına basarak HKS ekranındaki tablonun görüntüsünü kırpın.</li>
-                            <li>HKS Asistanı penceresine dönüp doğrudan <kbd class="bg-primary text-white px-1">Ctrl</kbd> + <kbd class="bg-primary text-white px-1">V</kbd> tuşlarına basın. Sistem görüntüyü anında okuyacaktır!</li>
-                        </ol>
-                    </div>
-                </div>
-
-                <div class="card border-info">
-                    <div class="card-header bg-info text-white py-1 px-3 font-weight-bold" style="font-size: 0.9rem;">
-                        <i class="fas fa-cog mr-1"></i> 2. "Ekranı Yakala" Butonunu Kalıcı Olarak Açma (1 Dakika)
-                    </div>
-                    <div class="card-body p-2 px-3 small">
-                        <ol class="mb-0 pl-3">
-                            <li class="mb-1">Yeni bir tarayıcı sekmesi açıp adres çubuğuna şunu yapıştırın:
-                                <div class="mt-1"><code class="bg-light p-1 rounded font-weight-bold text-dark">chrome://flags/#unsafely-treat-insecure-origin-as-secure</code> <small class="text-muted">(Edge için edge://flags/...)</small></div>
-                            </li>
-                            <li class="mb-1">Açılan ayarı <strong>Enabled</strong> yapın ve altındaki kutucuğa <code>http://10.7.202.75</code> yazın.</li>
-                            <li>Sağ alttaki mavi <strong>Relaunch (Yeniden Başlat)</strong> butonuna tıklayın. Artık "Ekranı Yakala" butonu doğrudan tek tıkla çalışacaktır.</li>
-                        </ol>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer py-2 px-3 bg-light">
-                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Anladım, Kapat</button>
-            </div>
-        </div>
-    </div>
-</div>
-
 @section Scripts {
-    <script src="@Url.Content("~/js/xlsx.full.min.js")" defer></script>
-    <script src="@Url.Content("~/js/ocr/tesseract.min.js")" defer></script>
-    <script src="@Url.Content("~/js/calculate-index.js")?v=3.2"></script>
-    <script src="@Url.Content("~/js/hks-calculator.js")?v=1.1"></script>
+    <script src="@Url.Content("~/js/calculate-index.js")?v=3.3"></script>
+    <script src="@Url.Content("~/js/passport-reader.js")?v=1.0"></script>
 }

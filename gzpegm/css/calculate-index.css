@@ -547,3 +547,80 @@
     z-index: 1050;
     border-radius: 8px;
 }
+
+/* ==========================================================================
+   PASAPORT & OPTİK OKUYUCU (3M / REGULA / DESKO) STİLLERİ
+   ========================================================================== */
+.btn-passport-reader {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    color: #ffffff !important;
+    border: none;
+    font-weight: 700;
+    font-size: 0.86rem;
+    padding: 6px 14px;
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(5, 150, 105, 0.35);
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+}
+
+.btn-passport-reader:hover {
+    background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+    box-shadow: 0 4px 10px rgba(5, 150, 105, 0.45);
+    transform: translateY(-1px);
+}
+
+.passport-pulse-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background-color: #22c55e;
+    border-radius: 50%;
+    margin-right: 6px;
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+    animation: scannerPulse 1.8s infinite;
+}
+
+@keyframes scannerPulse {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+    70% { transform: scale(1.1); box-shadow: 0 0 0 7px rgba(34, 197, 94, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+
+.passport-field-highlight {
+    animation: fieldFlash 2.2s ease-out;
+}
+
+@keyframes fieldFlash {
+    0% { background-color: rgba(34, 197, 94, 0.35) !important; box-shadow: 0 0 8px rgba(34, 197, 94, 0.6) !important; border-color: #10b981 !important; }
+    50% { background-color: rgba(34, 197, 94, 0.2) !important; }
+    100% { background-color: inherit; }
+}
+
+@keyframes toastSlideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+.passport-dropzone {
+    border: 2px dashed #059669;
+    border-radius: 10px;
+    padding: 30px 20px;
+    text-align: center;
+    background: #f0fdf4;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.passport-dropzone:hover, .passport-dropzone.dragover {
+    background: #dcfce7;
+    border-color: #047857;
+    transform: scale(1.01);
+}
+
+.passport-dropzone-icon {
+    font-size: 2.8rem;
+    color: #059669;
+    margin-bottom: 10px;
+}
