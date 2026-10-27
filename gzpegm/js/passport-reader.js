@@ -74,7 +74,7 @@
         var icon = isSuccess ? 'fa-check-circle' : 'fa-exclamation-triangle';
 
         var toast = $(
-            '<div class="passport-toast shadow-lg text-white d-flex align-items-center" style="position:fixed; bottom:25px; right:25px; z-index:9999; background:' + bg + '; padding:14px 20px; border-radius:10px; font-size:0.95rem; font-weight:600; box-shadow:0 10px 25px rgba(0,0,0,0.25); animation:toastSlideIn 0.3s ease; max-width:450px;">' +
+            '<div class="passport-toast shadow-lg text-white d-flex align-items-center" style="position:fixed; bottom:25px; right:25px; z-index:99999; background:' + bg + '; padding:14px 20px; border-radius:10px; font-size:0.95rem; font-weight:600; box-shadow:0 10px 25px rgba(0,0,0,0.25); animation:toastSlideIn 0.3s ease; max-width:480px;">' +
             '<i class="fas ' + icon + ' mr-2" style="font-size:1.3rem;"></i>' +
             '<div>' + message + '</div>' +
             '</div>'
@@ -83,7 +83,27 @@
         $('body').append(toast);
         setTimeout(function () {
             toast.fadeOut(400, function () { $(this).remove(); });
-        }, 5000);
+        }, 5500);
+    }
+
+    function showPassportAlert(message, type) {
+        showPassportToast(message, type);
+
+        var alertEl = $('#opticalScanAlert');
+        if (alertEl.length) {
+            var alertClass = (type === 'danger' || type === 'error') ? 'alert-danger' : ((type === 'warning') ? 'alert-warning' : 'alert-success');
+            var icon = (type === 'danger' || type === 'error') ? 'fa-exclamation-triangle' : ((type === 'warning') ? 'fa-info-circle' : 'fa-check-circle');
+            alertEl.html(
+                '<div class="alert ' + alertClass + ' py-2 px-3 mb-2 font-weight-bold d-flex align-items-center justify-content-between shadow-sm" style="border-radius:8px; font-size:0.92rem;">' +
+                '<div><i class="fas ' + icon + ' mr-2"></i>' + message + '</div>' +
+                '<button type="button" class="close text-dark ml-2" onclick="$(\'#opticalScanAlert\').slideUp();" style="font-size:1.2rem; line-height:1;">&times;</button>' +
+                '</div>'
+            ).slideDown(200);
+
+            setTimeout(function () {
+                alertEl.slideUp(400);
+            }, 8000);
+        }
     }
 
     function highlightInput(selector) {
@@ -185,6 +205,89 @@
        ========================================================================== */
     var isDirectScanActive = false;
 
+    function applyScanResult(res) {
+        if (!res) {
+            showPassportAlert('Optik okuyucudan yanıt alınamadı.', 'danger');
+            return;
+        }
+
+        if (res.success) {
+            // 1. Türk Vatandaşı Kontrolü (Türklere ceza uygulanmaz!)
+            if (res.isTurkishCitizen || (res.countryCode && (res.countryCode === 'TUR' || res.countryCode === 'TR'))) {
+                showPassportAlert(
+                    '<strong>TÜRK VATANDAŞI (TUR):</strong> Bu sistemde yalnızca yabancı yolculara ihlal cezası uygulanmaktadır. Türk vatandaşlarına ceza işlemi uygulanamaz.',
+                    'danger'
+                );
+                return;
+            }
+
+            // 2. Yabancı Yolcu Adı Soyadı
+            if (res.fullName) {
+                $('#NameCFORM').val(res.fullName);
+                highlightInput('#NameCFORM');
+            }
+
+            // 3. Belge / Pasaport Numarası
+            if (res.documentNumber) {
+                $('#PassportCFORM').val(res.documentNumber);
+                highlightInput('#PassportCFORM');
+            }
+
+            // 4. Kimlik / Kişisel No
+            if (res.personalNumber) {
+                $('#IDNCFORM').val(res.personalNumber);
+                highlightInput('#IDNCFORM');
+            }
+
+            // 5. Pasaport Türü (1: Umuma Mahsus, 2: Diplomatik, 3: Servis, vb.)
+            var docTypeCode = res.docTypeCode || "1";
+            if ($('#PassportCalculate').length) {
+                $('#PassportCalculate').val(docTypeCode).trigger('change');
+                highlightInput('#PassportCalculate');
+            }
+
+            // 6. Uyruk / Ülke Seçimi (Otomatik vize ve harç hesaplatır)
+            var matchedCountry = "";
+            if (res.country || res.countryCode) {
+                matchedCountry = setPassportCountry(res.country || res.countryCode);
+            }
+
+            // 7. Doğum Tarihi & Yaş Grubu
+            if (res.birthDate) {
+                $('#BirthDateCalculate').val(res.birthDate).trigger('change');
+                $('#BirthdateCFORM').val(res.birthDate);
+                highlightInput('#BirthDateCalculate');
+
+                if (typeof window.adultchild === 'function') {
+                    window.adultchild($('#BirthDateCalculate')[0]);
+                }
+            }
+
+            // 8. Yetişkin / Çocuk Durumu
+            if (res.adultCode && $('#AdultCalculate').length) {
+                $('#AdultCalculate').val(res.adultCode).trigger('change');
+                highlightInput('#AdultCalculate');
+            }
+
+            // Sesli ve görsel bildirim
+            playScanBeep();
+
+            var detailSummary = (res.fullName || 'Yabancı Yolcu') +
+                (res.documentNumber ? ' (' + res.documentNumber + ')' : '') +
+                (matchedCountry && matchedCountry !== 'TUR' ? ' - ' + matchedCountry : (res.country ? ' - ' + res.country : ''));
+
+            showPassportAlert(
+                '<strong>Pasaport Okundu (' + (res.deviceName || 'Optik Okuyucu') + '):</strong> ' + detailSummary +
+                (res.birthDate ? ' | Doğum: ' + res.birthDate : ''),
+                'success'
+            );
+
+        } else {
+            var errMsg = res.message ? res.message : 'Optik okuyucudan pasaport okunamadı. Lütfen pasaportu cihaz camına yerleştiriniz.';
+            showPassportAlert(errMsg, 'warning');
+        }
+    }
+
     function triggerDirectOpticalScan(deviceType) {
         if (isDirectScanActive) return;
         isDirectScanActive = true;
@@ -201,96 +304,19 @@
             url: '/Calculate/ScanOpticalReader',
             type: 'POST',
             data: { deviceType: deviceType || 'auto' },
-            timeout: 20000,
+            timeout: 25000,
             success: function (res) {
-                isDirectScanActive = false;
-                btns.each(function (idx) {
-                    $(this).prop('disabled', false).html(originalHtmls[idx]);
-                });
-
-                if (res && res.success) {
-                    // 1. Türk Vatandaşı Kontrolü (Türklere ceza uygulanmaz!)
-                    if (res.isTurkishCitizen || (res.countryCode && (res.countryCode === 'TUR' || res.countryCode === 'TR'))) {
-                        showPassportToast(
-                            '⚠️ <strong>TÜRK VATANDAŞI (TUR):</strong><br>Bu sistemde yalnızca yabancı yolculara vize/ihlal cezası uygulanmaktadır. Türk vatandaşlarına ceza işlemi uygulanamaz.',
-                            'danger'
-                        );
-                        return;
-                    }
-
-                    // 2. Yabancı Yolcu Adı Soyadı
-                    if (res.fullName) {
-                        $('#NameCFORM').val(res.fullName);
-                        highlightInput('#NameCFORM');
-                    }
-
-                    // 3. Belge / Pasaport Numarası
-                    if (res.documentNumber) {
-                        $('#PassportCFORM').val(res.documentNumber);
-                        highlightInput('#PassportCFORM');
-                    }
-
-                    // 4. Kimlik / Kişisel No
-                    if (res.personalNumber) {
-                        $('#IDNCFORM').val(res.personalNumber);
-                        highlightInput('#IDNCFORM');
-                    }
-
-                    // 5. Pasaport Türü (1: Umuma Mahsus, 2: Diplomatik, 3: Servis, vb.)
-                    var docTypeCode = res.docTypeCode || "1";
-                    if ($('#PassportCalculate').length) {
-                        $('#PassportCalculate').val(docTypeCode).trigger('change');
-                        highlightInput('#PassportCalculate');
-                    }
-
-                    // 6. Uyruk / Ülke Seçimi (Otomatik vize ve harç hesaplatır)
-                    var matchedCountry = "";
-                    if (res.country || res.countryCode) {
-                        matchedCountry = setPassportCountry(res.country || res.countryCode);
-                    }
-
-                    // 7. Doğum Tarihi & Yaş Grubu
-                    if (res.birthDate) {
-                        $('#BirthDateCalculate').val(res.birthDate).trigger('change');
-                        $('#BirthdateCFORM').val(res.birthDate);
-                        highlightInput('#BirthDateCalculate');
-
-                        if (typeof window.adultchild === 'function') {
-                            window.adultchild($('#BirthDateCalculate')[0]);
-                        }
-                    }
-
-                    // 8. Yetişkin / Çocuk Durumu
-                    if (res.adultCode && $('#AdultCalculate').length) {
-                        $('#AdultCalculate').val(res.adultCode).trigger('change');
-                        highlightInput('#AdultCalculate');
-                    }
-
-                    // Sesli ve görsel bildirim
-                    playScanBeep();
-
-                    var detailSummary = (res.fullName || 'Yabancı Yolcu') +
-                        (res.documentNumber ? ' (' + res.documentNumber + ')' : '') +
-                        (matchedCountry && matchedCountry !== 'TUR' ? ' - ' + matchedCountry : (res.country ? ' - ' + res.country : ''));
-
-                    showPassportToast(
-                        '<strong>✓ Pasaport Okundu (' + (res.deviceName || 'Optik Okuyucu') + '):</strong><br>' + detailSummary +
-                        (res.birthDate ? '<div class="small mt-1 opacity-90"><i class="fas fa-birthday-cake mr-1"></i> Doğum: ' + res.birthDate + '</div>' : ''),
-                        'success'
-                    );
-
-                } else {
-                    var errMsg = (res && res.message) ? res.message : 'Optik okuyucudan pasaport okunamadı. Lütfen pasaportu cihaz camına yerleştiriniz.';
-                    showPassportToast(errMsg, 'danger');
-                }
+                applyScanResult(res);
             },
             error: function (xhr, status, err) {
+                var errMsg = 'Optik okuyucu servisiyle iletişim kurulamadı. (' + (err || status) + ')';
+                showPassportAlert(errMsg, 'danger');
+            },
+            complete: function () {
                 isDirectScanActive = false;
                 btns.each(function (idx) {
-                    $(this).prop('disabled', false).html(originalHtmls[idx]);
+                    $(this).prop('disabled', false).html(originalHtmls[idx] || '<span class="passport-pulse-dot mr-1"></span> <i class="fas fa-camera mr-1"></i> Cihazdan Pasaport Oku');
                 });
-                var errMsg = 'Optik okuyucu servisiyle iletişim kurulamadı. (' + (err || status) + ')';
-                showPassportToast(errMsg, 'danger');
             }
         });
     }
@@ -302,7 +328,7 @@
             cache: false,
             success: function (res) {
                 if (res && res.success && res.isRunning) {
-                    $('#btnDirectOpticalScan').attr('title', (res.deviceName || 'Optik Okuyucu') + ' Bağlı ve Hazır');
+                    $('#btnDirectOpticalScan, #btnPanelDirectScan').attr('title', (res.deviceName || 'Optik Okuyucu') + ' Bağlı ve Hazır');
                 }
             }
         });
@@ -315,10 +341,10 @@
             data: { deviceType: deviceType || 'auto' },
             success: function (res) {
                 if (res && res.success) {
-                    showPassportToast(res.message || 'Optik okuyucu hazır.', 'success');
+                    showPassportAlert(res.message || 'Optik okuyucu hazır.', 'success');
                     checkOpticalReaderStatus();
                 } else {
-                    showPassportToast(res.message || 'Cihaza bağlanılamadı.', 'danger');
+                    showPassportAlert(res.message || 'Cihaza bağlanılamadı.', 'danger');
                 }
             }
         });
@@ -452,8 +478,8 @@
                         birthDateStr = parseMrzDate(dobRaw1);
 
                         var nameParts = t3.split('<<');
-                        surname = cleanMrzStr(nameParts[0] || "");
-                        givenNames = cleanMrzStr(nameParts[1] || "");
+                        surname = cleanMrzWord(nameParts[0] || "");
+                        givenNames = cleanMrzWord(nameParts[1] || "");
 
                         parsedSuccessfully = true;
                         break;
@@ -469,8 +495,8 @@
         // TÜRK VATANDAŞI KONTROLÜ (Bu sistemde Türklere ceza işlemi uygulanmaz!)
         var natUpper = (nationalityCode || '').trim().toUpperCase();
         if (natUpper === 'TUR' || natUpper === 'TR') {
-            showPassportToast(
-                '⚠️ <strong>TÜRK VATANDAŞI (TUR):</strong><br>Bu sistemde yalnızca yabancı yolculara vize/ihlal cezası uygulanmaktadır. Türk vatandaşlarına ceza işlemi uygulanamaz.',
+            showPassportAlert(
+                '<strong>TÜRK VATANDAŞI (TUR):</strong> Bu sistemde yalnızca yabancı yolculara vize/ihlal cezası uygulanmaktadır. Türk vatandaşlarına ceza işlemi uygulanamaz.',
                 'danger'
             );
             return false;
@@ -519,13 +545,18 @@
             (passportNo ? ' (' + passportNo + ')' : '') +
             (matchedCountry ? ' - ' + matchedCountry : (nationalityCode ? ' - ' + nationalityCode : ''));
 
-        showPassportToast(
-            '<strong>✓ Pasaport Okundu (' + (sourceName || 'Okuyucu') + '):</strong><br>' + detailSummary +
-            (birthDateStr ? '<div class="small mt-1 opacity-90"><i class="fas fa-birthday-cake mr-1"></i> Doğum: ' + birthDateStr + '</div>' : ''),
+        showPassportAlert(
+            '<strong>Pasaport Okundu (' + (sourceName || 'Okuyucu') + '):</strong> ' + detailSummary +
+            (birthDateStr ? ' | Doğum: ' + birthDateStr : ''),
             'success'
         );
 
         return true;
+    }
+
+    function cleanMrzWord(raw) {
+        if (!raw) return "";
+        return raw.replace(/</g, " ").replace(/\s+/g, " ").trim();
     }
 
     /* ==========================================================================
@@ -568,7 +599,7 @@
 
                         var applied = parseAndApplyPassportMrz(scannedData, '3M / Regula / Desko (Wedge)');
                         if (!applied) {
-                            showPassportToast('Optik okuyucu verisi çözümlenemedi.', 'danger');
+                            showPassportAlert('Optik okuyucu verisi çözümlenemedi.', 'danger');
                         }
                         return false;
                     }
@@ -590,27 +621,33 @@
     }
 
     /* ==========================================================================
-       7. SAYFA BAŞLATMA
+       7. GLOBAL EXPORT (ANINDA KULLANIMA HAZIR)
+       ========================================================================== */
+    window.scanPassportDirect = triggerDirectOpticalScan;
+
+    window.PassportReader = {
+        scanDevice: triggerDirectOpticalScan,
+        applyResult: applyScanResult,
+        connectDevice: connectDevice,
+        checkStatus: checkOpticalReaderStatus,
+        parseAndApply: parseAndApplyPassportMrz,
+        setCountry: setPassportCountry,
+        showToast: showPassportToast,
+        showAlert: showPassportAlert
+    };
+
+    /* ==========================================================================
+       8. SAYFA BAŞLATMA
        ========================================================================== */
     $(document).ready(function () {
         initHardwareScannerListener();
         checkOpticalReaderStatus();
 
-        // Buton tıklamaları
+        // Buton tıklamaları delegasyonu
         $(document).on('click', '#btnDirectOpticalScan, #btnPanelDirectScan', function (e) {
             e.preventDefault();
             triggerDirectOpticalScan('auto');
         });
-
-        // Global export
-        window.PassportReader = {
-            scanDevice: triggerDirectOpticalScan,
-            connectDevice: connectDevice,
-            checkStatus: checkOpticalReaderStatus,
-            parseAndApply: parseAndApplyPassportMrz,
-            setCountry: setPassportCountry,
-            showToast: showPassportToast
-        };
     });
 
 })(jQuery);

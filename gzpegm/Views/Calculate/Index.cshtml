@@ -20,7 +20,7 @@
                 </div>
             </div>
             <div class="d-flex align-items-center mt-2 mt-md-0">
-                <button type="button" id="btnDirectOpticalScan" class="btn btn-success font-weight-bold mr-2 shadow-sm" style="border-radius:6px; font-size:0.86rem; padding:6px 14px; background:linear-gradient(135deg, #059669 0%, #047857 100%); border:none;" title="3M, Regula veya Desko okuyucudan pasaportu doğrudan tara ve forma aktar">
+                <button type="button" id="btnDirectOpticalScan" onclick="scanPassportDirect();" class="btn btn-success font-weight-bold mr-2 shadow-sm" style="border-radius:6px; font-size:0.86rem; padding:6px 14px; background:linear-gradient(135deg, #059669 0%, #047857 100%); border:none;" title="3M, Regula veya Desko okuyucudan pasaportu doğrudan tara ve forma aktar">
                     <span class="passport-pulse-dot"></span> <i class="fas fa-camera mr-1"></i> Cihazdan Pasaport Oku
                 </button>
                 <div class="stat-pill mr-2" title="Sınır kapınızdaki toplam işlem sayısı">
@@ -104,10 +104,11 @@
                             <h5 class="panel-title mb-0">
                                 <i class="fas fa-id-card"></i> Yolcu ve Vize Parametreleri
                             </h5>
-                            <button type="button" id="btnPanelDirectScan" class="btn btn-sm btn-outline-success font-weight-bold py-1 px-2" style="font-size:0.8rem;" title="3M / Regula / Desko Optik Okuyucudan Pasaport Oku">
-                                <i class="fas fa-camera mr-1"></i> Cihazdan Pasaport Oku
+                            <button type="button" id="btnPanelDirectScan" onclick="scanPassportDirect();" class="btn btn-sm btn-success font-weight-bold py-1 px-3 shadow-sm" style="font-size:0.84rem; background:linear-gradient(135deg, #059669 0%, #047857 100%); border:none; border-radius:6px;" title="3M / Regula / Desko Optik Okuyucudan Pasaport Oku">
+                                <span class="passport-pulse-dot mr-1"></span> <i class="fas fa-camera mr-1"></i> Cihazdan Pasaport Oku
                             </button>
                         </div>
+                        <div id="opticalScanAlert" class="mt-2" style="display:none;"></div>
 
                         <div class="form-row">
                             <div class="form-group col-xl-6 col-lg-6 col-md-6 mb-2">
@@ -683,6 +684,38 @@
 </div>
 
 @section Scripts {
-    <script src="@Url.Content("~/js/calculate-index.js")?v=3.3"></script>
-    <script src="@Url.Content("~/js/passport-reader.js")?v=1.0"></script>
+    <script>
+        function scanPassportDirect(deviceType) {
+            if (window.PassportReader && typeof window.PassportReader.scanDevice === 'function') {
+                window.PassportReader.scanDevice(deviceType || 'auto');
+            } else {
+                var btns = $('#btnDirectOpticalScan, #btnPanelDirectScan');
+                var orig = btns.first().html();
+                btns.prop('disabled', true).html('<span class="spinner-border spinner-border-sm mr-1"></span> Okunuyor...');
+                $.post('/Calculate/ScanOpticalReader', { deviceType: deviceType || 'auto' }, function (res) {
+                    btns.prop('disabled', false).html(orig);
+                    if (window.PassportReader && window.PassportReader.applyResult) {
+                        window.PassportReader.applyResult(res);
+                    } else if (res && res.success) {
+                        if (res.isTurkishCitizen) {
+                            alert('⚠️ TÜRK VATANDAŞI (TUR): Bu sistemde yalnızca yabancı yolculara ceza işlemi uygulanır.');
+                        } else {
+                            if (res.fullName) $('#NameCFORM').val(res.fullName);
+                            if (res.documentNumber) $('#PassportCFORM').val(res.documentNumber);
+                            if (res.country) $('#CountryCalculate').val(res.country).trigger('change');
+                            if (res.birthDate) $('#BirthDateCalculate').val(res.birthDate).trigger('change');
+                            alert('✓ Pasaport okundu: ' + (res.fullName || '') + ' (' + (res.documentNumber || '') + ')');
+                        }
+                    } else {
+                        alert((res && res.message) ? res.message : 'Optik okuyucudan pasaport okunamadı.');
+                    }
+                }).fail(function () {
+                    btns.prop('disabled', false).html(orig);
+                    alert('Optik okuyucu servisiyle iletişim kurulamadı.');
+                });
+            }
+        }
+    </script>
+    <script src="@Url.Content("~/js/calculate-index.js")?v=3.5"></script>
+    <script src="@Url.Content("~/js/passport-reader.js")?v=2.5"></script>
 }
