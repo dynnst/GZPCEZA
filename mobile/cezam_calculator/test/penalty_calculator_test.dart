@@ -16,6 +16,19 @@ void main() {
       expect(result.ticketText, '10 Gun');
     });
 
+    test('normal hesaplamada (calculateType: 1) parcali seferleri kirpmadan eksiksiz toplar', () {
+      final result = PenaltyCalculator().calculate(
+        _settings([
+          DateRange(DateTime(2026, 9, 13), DateTime(2026, 10, 27)), // 44 gun
+          DateRange(DateTime(2026, 4, 30), DateTime(2026, 6, 16)), // 47 gun
+        ], calculateType: 1),
+        _data(),
+      );
+
+      expect(result.stayDays, 91);
+      expect(result.ticketText, '1 Gun');
+    });
+
     test('tek kayitta eski gun farki mantigini korur', () {
       final result = PenaltyCalculator().calculate(
         _settings([
@@ -47,17 +60,17 @@ void main() {
   });
 }
 
-PenaltySettings _settings(List<DateRange> ranges) => PenaltySettings(
+PenaltySettings _settings(List<DateRange> ranges, {int calculateType = 2}) => PenaltySettings(
       country: 'Test',
       passport: 1,
       visa: 2,
       consularVisaDays: 0,
-      calculateType: 2,
+      calculateType: calculateType,
       adultType: 2,
       entryExitPairs: ranges,
-      manualRule: const UvrRule(
+      manualRule: UvrRule(
         country: 'Test',
-        calculateType: 2,
+        calculateType: calculateType,
         passportType: 1,
         visaStatus: 2,
         day: 180,

@@ -4595,20 +4595,29 @@ class PenaltyCalculator {
       return [max(1, range.exit.difference(range.entry).inDays)];
     }
 
-    // Schengen penceresi referans gun dahil 180 takvim gunudur.
-    final referenceExit = _referenceExit(ranges);
-    final windowStart = referenceExit.subtract(const Duration(days: 179));
+    // 180 Gun Kurali (calculateType == 2): En son cikis dahil geriye donuk 180 takvim gunu penceresi uygulanir.
+    if (calculateType == 2) {
+      final referenceExit = _referenceExit(ranges);
+      final windowStart = referenceExit.subtract(const Duration(days: 179));
 
+      return ranges.map((range) {
+        final clippedEntry =
+            range.entry.isBefore(windowStart) ? windowStart : range.entry;
+        final clippedExit =
+            range.exit.isAfter(referenceExit) ? referenceExit : range.exit;
+        if (clippedEntry.isAfter(clippedExit)) return 0;
+        if (calculateType == 4) return 1;
+
+        // Schengen hesabinda hem giris hem cikis gunu kalis gunudur.
+        return clippedExit.difference(clippedEntry).inDays + 1;
+      }).toList();
+    }
+
+    // Normal Hesaplama (calculateType == 1) ve diger modellerde:
+    // Her bir seferin kalis suresi eksiksiz toplanir.
     return ranges.map((range) {
-      final clippedEntry =
-          range.entry.isBefore(windowStart) ? windowStart : range.entry;
-      final clippedExit =
-          range.exit.isAfter(referenceExit) ? referenceExit : range.exit;
-      if (clippedEntry.isAfter(clippedExit)) return 0;
       if (calculateType == 4) return 1;
-
-      // Schengen hesabinda hem giris hem cikis gunu kalis gunudur.
-      return clippedExit.difference(clippedEntry).inDays + 1;
+      return max(1, range.exit.difference(range.entry).inDays);
     }).toList();
   }
 
