@@ -436,5 +436,30 @@ namespace gzpegm.Controllers
                 try { if (System.IO.File.Exists(tempFile)) System.IO.File.Delete(tempFile); } catch { }
             }
         }
+
+        [HttpPost]
+        public JsonResult ScanOpticalReader(string deviceType = "auto")
+        {
+            var user = GetUser();
+            if (user == null)
+                return Json(new { success = false, message = "Lütfen sisteme giriş yapın." });
+
+            var result = gzpegm.Services.OpticalReaderService.ScanDevice(deviceType);
+            return Json(result);
+        }
+
+        [HttpGet]
+        public JsonResult GetOpticalReaderStatus()
+        {
+            var result = gzpegm.Services.OpticalReaderService.GetStatus();
+            return Json(result, JsonRequestBehavior.AllowGet);
+        }
+
+        [HttpPost]
+        public JsonResult ConnectOpticalReader(string deviceType = "auto")
+        {
+            var result = gzpegm.Services.OpticalReaderService.ConnectDevice(deviceType);
+            return Json(result);
+        }
     }
 }
