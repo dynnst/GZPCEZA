@@ -26,16 +26,27 @@
      * Tek bir satır için gün farkını hesaplayıp .pair-diff alanına yazar
      */
     function computePairDiff(context) {
-        var $ctx = $(context);
-        var $row = $ctx.is('.form-group, .form-row, .extra, .date-pair-row') ? $ctx : $ctx.closest('.form-group.row, .form-row, .extra, .date-pair-row, .mb-1');
-        if (!$row.length) $row = $ctx.closest('#calculate-form');
+        var $ctx = $(context || '#EnterDateCalculate');
+        var $row;
 
-        var $enter = $row.find('.endt').first();
-        var $exit = $row.find('.exdt').first();
-        var $diff = $row.find('.pair-diff').first();
+        if ($ctx.is('.date-pair-row')) {
+            $row = $ctx;
+        } else {
+            $row = $ctx.closest('.date-pair-row');
+            if (!$row.length) {
+                $row = $ctx.closest('.form-group.row');
+            }
+        }
 
-        if (!$diff.length && $enter.attr('id') === 'EnterDateCalculate') {
-            $diff = $('#PairDiff_0');
+        var $enter = ($row.length) ? $row.find('.endt').first() : $();
+        var $exit  = ($row.length) ? $row.find('.exdt').first() : $();
+        var $diff  = ($row.length) ? $row.find('.pair-diff').first() : $();
+
+        // İlk (statik) satır için mutlak fallback
+        if (!$enter.length || $enter.attr('id') === 'EnterDateCalculate' || $ctx.attr('id') === 'EnterDateCalculate' || $ctx.attr('id') === 'ExitDateCalculate' || $ctx.attr('id') === 'PairDiff_0') {
+            if (!$enter.length) $enter = $('#EnterDateCalculate');
+            if (!$exit.length)  $exit  = $('#ExitDateCalculate');
+            if (!$diff.length)  $diff  = $('#PairDiff_0');
         }
 
         if (!$enter.length || !$exit.length || !$diff.length) return;
@@ -62,7 +73,9 @@
         }
 
         var msPerDay = 1000 * 60 * 60 * 24;
-        var days = Math.floor((end - start) / msPerDay);
+        var uStart = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate());
+        var uEnd = Date.UTC(end.getFullYear(), end.getMonth(), end.getDate());
+        var days = Math.round((uEnd - uStart) / msPerDay);
         if (days === 0) days = 1;
 
         $diff.val(days + ' Gün');
@@ -74,7 +87,8 @@
      * Formdaki tüm giriş-çıkış çiftlerinin gün farkını hesaplar
      */
     function computeAllDiffs() {
-        $('.endt').each(function () {
+        computePairDiff($('#EnterDateCalculate'));
+        $('.date-pair-row.extra, .extra').each(function () {
             computePairDiff(this);
         });
     }

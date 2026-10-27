@@ -1,4 +1,4 @@
-﻿var z = 0;
+var z = 0;
 // 180/90 hesaplama: formdaki tüm giriş/çıkış kayıtlarına göre en son çıkış tarihini referans alır.
 // Hesaplama motorundaki kuralla uyumlu olması için referans tarih her zaman en son çıkış tarihidir.
 function computeReEntryFromForm() {
@@ -543,6 +543,13 @@ window.syncRussiaCalculationModel = syncRussiaCalculationModel;
 
 function hesapla1() {
     syncRussiaCalculationModel();
+    try {
+        if (typeof window.computeAllDiffs === 'function') {
+            window.computeAllDiffs();
+        } else if (typeof computeDiffForRow === 'function') {
+            computeDiffForRow($('#EnterDateCalculate').closest('.date-pair-row, .form-group.row'));
+        }
+    } catch (e) { }
     var form = $('#calculate-form');
     $('#veri, #hes2, #hes3, #hes4, #form, #hes5').addClass('hidden');
     $('#PayCalculate').val('').change();
@@ -746,16 +753,23 @@ function parseDMY(dateStr) {
 
 // Bir satır için gün farkını hesaplayıp .pair-diff alanına yaz
 function computeDiffForRow($row) {
+    if (!$row || !$row.length) $row = $('#EnterDateCalculate').closest('.date-pair-row, .form-group.row');
     var $enter = $row.find('.endt').first();
     var $exit = $row.find('.exdt').first();
     var $diff = $row.find('.pair-diff').first();
+    if (!$enter.length && $('#EnterDateCalculate').length) $enter = $('#EnterDateCalculate');
+    if (!$exit.length && $('#ExitDateCalculate').length) $exit = $('#ExitDateCalculate');
+    if (!$diff.length && $('#PairDiff_0').length) $diff = $('#PairDiff_0');
     if ($enter.length === 0 || $exit.length === 0 || $diff.length === 0) return;
-    var ev = $enter.val(), xv = $exit.val();
-    if (!ev || !xv) { $diff.val(''); return; }
-    var start = parseDMY(ev), end = parseDMY(xv);
-    if (!start || !end || start > end) { $diff.val('Hatalı Tarih'); return; }
+    var ev = ($enter.val() || '').trim(), xv = ($exit.val() || '').trim();
+    if (!ev || !xv) { $diff.val('').attr('placeholder', 'Gün'); return; }
+    var start = (typeof parseDMY === 'function') ? parseDMY(ev) : null;
+    var end = (typeof parseDMY === 'function') ? parseDMY(xv) : null;
+    if (!start || !end || start > end) { $diff.val(start > end ? 'G > Ç' : 'Hatalı Tarih'); return; }
     var msPerDay = 1000 * 60 * 60 * 24;
-    var days = Math.floor((end - start) / msPerDay);
+    var uStart = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate());
+    var uEnd = Date.UTC(end.getFullYear(), end.getMonth(), end.getDate());
+    var days = Math.round((uEnd - uStart) / msPerDay);
     if (days === 0) days = 1;
     $diff.val(days + ' Gün');
 }
@@ -1103,8 +1117,8 @@ $(function () {
         syncRussiaCalculationModel();
     });
     // Delegated handler: form içindeki tüm .endt / .exdt değişikliklerinde diff hesapla
-    $('#calculate-form').on('change', '.endt, .exdt', function () {
-        var $row = $(this).closest('.form-group.row');
+    $(document).on('change changeDate input keyup blur', '.endt, .exdt', function () {
+        var $row = $(this).closest('.date-pair-row, .form-group.row');
         computeDiffForRow($row);
         try { computeReEntryFromForm(); } catch (e) { }
     });

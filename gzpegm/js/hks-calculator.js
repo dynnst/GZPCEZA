@@ -722,9 +722,18 @@
             }
 
             // 3. Giriş - Çıkış Tarihlerini Aktar
+            var msPerDay = 1000 * 60 * 60 * 24;
             var lastTrip = trips[trips.length - 1];
             $('#EnterDateCalculate').val(lastTrip.enterStr);
             $('#ExitDateCalculate').val(lastTrip.exitStr);
+
+            if (lastTrip.enter && lastTrip.exit) {
+                var u1 = Date.UTC(lastTrip.enter.getFullYear(), lastTrip.enter.getMonth(), lastTrip.enter.getDate());
+                var u2 = Date.UTC(lastTrip.exit.getFullYear(), lastTrip.exit.getMonth(), lastTrip.exit.getDate());
+                var d1 = Math.round((u2 - u1) / msPerDay);
+                if (d1 === 0) d1 = 1;
+                $('#PairDiff_0').val(d1 + ' Gün');
+            }
 
             if (trips.length > 1) {
                 $('.extra').remove();
@@ -734,6 +743,13 @@
                         var $lastRow = $('#date-rows-container .date-pair-row').last();
                         $lastRow.find('.endt').val(trips[i].enterStr);
                         $lastRow.find('.exdt').val(trips[i].exitStr);
+                        if (trips[i].enter && trips[i].exit) {
+                            var ut1 = Date.UTC(trips[i].enter.getFullYear(), trips[i].enter.getMonth(), trips[i].enter.getDate());
+                            var ut2 = Date.UTC(trips[i].exit.getFullYear(), trips[i].exit.getMonth(), trips[i].exit.getDate());
+                            var dd = Math.round((ut2 - ut1) / msPerDay);
+                            if (dd === 0) dd = 1;
+                            $lastRow.find('.pair-diff').val(dd + ' Gün');
+                        }
                     }
                 }
             }
@@ -749,6 +765,8 @@
             // 5. Gün Farklarını Hesapla
             if (typeof window.computeAllDiffs === 'function') {
                 window.computeAllDiffs();
+            } else if (typeof window.computePairDiff === 'function') {
+                window.computePairDiff($('#EnterDateCalculate'));
             }
 
             // 6. Otomatik Zincirleme Hesaplama: hesapla1 -> Doğum Tarihi/Yaş -> hesapla2 -> Tutanak Formu
