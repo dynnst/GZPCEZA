@@ -16,21 +16,48 @@ namespace gzpegm.Helpers
         public static string GetConfiguredRoot()
         {
             var v = ConfigurationManager.AppSettings[AppSettingKey];
-            if (string.IsNullOrWhiteSpace(v)) return null;
+            if (!string.IsNullOrWhiteSpace(v))
+            {
+                try
+                {
+                    var full = Path.GetFullPath(v.Trim());
+                    if (Directory.Exists(full))
+                    {
+                        return full;
+                    }
+                }
+                catch
+                {
+                }
+            }
+
+            // Fallback: Belirtilen dış depolama klasörü bu bilgisayarda mevcut değilse veya boşsa
+            // bilinen sunucu ve masaüstü veri klasörlerini otomatik kontrol et
             try
             {
-                var full = Path.GetFullPath(v.Trim());
-                if (!Directory.Exists(full))
+                string[] candidates = new[]
                 {
-                    // Belirtilen dış depolama klasörü bu bilgisayarda mevcut değilse varsayılan yerel yola dön
-                    return null;
+                    @"C:\Users\313258\Desktop\veri",
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "veri"),
+                    @"C:\Users\Naşit\Desktop\veri",
+                    @"C:\Users\fb\Desktop\veri",
+                    @"D:\veri",
+                    @"C:\veri"
+                };
+
+                foreach (var candidate in candidates)
+                {
+                    if (!string.IsNullOrWhiteSpace(candidate) && Directory.Exists(candidate))
+                    {
+                        return Path.GetFullPath(candidate);
+                    }
                 }
-                return full;
             }
             catch
             {
-                return null;
             }
+
+            return null;
         }
 
         /// <param name="appRelativePath">Örn. ~/Uploads/DocumentTerms/ veya ~/files/Egitim/</param>
