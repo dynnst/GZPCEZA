@@ -1,4 +1,4 @@
-using gzpegm.Cont;
+﻿using gzpegm.Cont;
 using gzpegm.Models;
 using System;
 using System.Collections.Generic;
@@ -71,14 +71,16 @@ namespace gzpegm.Controllers
         {
             ViewBag.BorderList = allData
                 .Select(x => x.fldBorder)
-                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Where(x => !string.IsNullOrEmpty(x) && x.Trim() != "")
+                .Select(x => x.Trim())
                 .Distinct()
                 .OrderBy(x => x)
                 .ToList();
 
             ViewBag.UserList = allData
                 .Select(x => x.fldBy)
-                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Where(x => !string.IsNullOrEmpty(x) && x.Trim() != "")
+                .Select(x => x.Trim())
                 .Distinct()
                 .OrderBy(x => x)
                 .ToList();
@@ -315,15 +317,23 @@ namespace gzpegm.Controllers
                 }
 
                 ViewBag.BorderList = db.E_Sartli.AsNoTracking()
-                    .Where(x => !string.IsNullOrWhiteSpace(x.fldBorder))
+                    .Where(x => x.fldBorder != null && x.fldBorder.Trim() != "")
                     .Select(x => x.fldBorder)
+                    .Distinct()
+                    .OrderBy(x => x)
+                    .ToList()
+                    .Select(x => x.Trim())
                     .Distinct()
                     .OrderBy(x => x)
                     .ToList();
 
                 ViewBag.UserList = db.E_Sartli.AsNoTracking()
-                    .Where(x => !string.IsNullOrWhiteSpace(x.fldBy))
+                    .Where(x => x.fldBy != null && x.fldBy.Trim() != "")
                     .Select(x => x.fldBy)
+                    .Distinct()
+                    .OrderBy(x => x)
+                    .ToList()
+                    .Select(x => x.Trim())
                     .Distinct()
                     .OrderBy(x => x)
                     .ToList();
@@ -438,8 +448,12 @@ namespace gzpegm.Controllers
                 if (isAdmin)
                 {
                     ViewBag.BorderList = db.E_Sartli.AsNoTracking()
-                        .Where(x => !string.IsNullOrWhiteSpace(x.fldBorder))
+                        .Where(x => x.fldBorder != null && x.fldBorder.Trim() != "")
                         .Select(x => x.fldBorder)
+                        .Distinct()
+                        .OrderBy(x => x)
+                        .ToList()
+                        .Select(x => x.Trim())
                         .Distinct()
                         .OrderBy(x => x)
                         .ToList();
@@ -452,8 +466,12 @@ namespace gzpegm.Controllers
                 }
 
                 ViewBag.UserList = db.E_Sartli.AsNoTracking()
-                    .Where(x => x.fldBorder == effectiveBorder && !string.IsNullOrWhiteSpace(x.fldBy))
+                    .Where(x => x.fldBorder == effectiveBorder && x.fldBy != null && x.fldBy.Trim() != "")
                     .Select(x => x.fldBy)
+                    .Distinct()
+                    .OrderBy(x => x)
+                    .ToList()
+                    .Select(x => x.Trim())
                     .Distinct()
                     .OrderBy(x => x)
                     .ToList();
