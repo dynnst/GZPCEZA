@@ -57,31 +57,44 @@ namespace gzpegm.Helpers
             return IsBackupServer ? PrimaryServerUrl : BackupServerUrl;
         }
 
+        private static string _cachedServerRole = null;
+        private static readonly object _roleLock = new object();
+
         /// <summary>
         /// Sunucunun aktif çalışma rolünü belirler: "Primary", "Backup" veya "Disabled"
+        /// İlk tespitte önbelleğe alınır, her istekte ağ arayüzlerini tekrar taramaz.
         /// </summary>
         public static string GetCurrentServerRole()
         {
-            var role = RoleSetting.Trim();
-            if (string.Equals(role, "Primary", StringComparison.OrdinalIgnoreCase)) return "Primary";
-            if (string.Equals(role, "Backup", StringComparison.OrdinalIgnoreCase)) return "Backup";
-            if (string.Equals(role, "Disabled", StringComparison.OrdinalIgnoreCase)) return "Disabled";
+            if (_cachedServerRole != null)
+                return _cachedServerRole;
 
-            // "Auto" modunda makinenin kendi yerel IPv4 adreslerine bakılır
-            try
+            lock (_roleLock)
             {
-                var localIps = GetLocalIPv4Addresses();
-                if (localIps.Contains("10.7.202.76"))
-                    return "Backup";
-                if (localIps.Contains("10.7.202.75"))
-                    return "Primary";
-            }
-            catch
-            {
-                // IP tespiti başarısız olursa güvenli varsayılan olarak Primary kabul edilir
-            }
+                if (_cachedServerRole != null)
+                    return _cachedServerRole;
 
-            return "Primary";
+                var role = RoleSetting.Trim();
+                if (string.Equals(role, "Primary", StringComparison.OrdinalIgnoreCase)) return _cachedServerRole = "Primary";
+                if (string.Equals(role, "Backup", StringComparison.OrdinalIgnoreCase)) return _cachedServerRole = "Backup";
+                if (string.Equals(role, "Disabled", StringComparison.OrdinalIgnoreCase)) return _cachedServerRole = "Disabled";
+
+                // "Auto" modunda makinenin kendi yerel IPv4 adreslerine bakılır
+                try
+                {
+                    var localIps = GetLocalIPv4Addresses();
+                    if (localIps.Contains("10.7.202.76"))
+                        return _cachedServerRole = "Backup";
+                    if (localIps.Contains("10.7.202.75"))
+                        return _cachedServerRole = "Primary";
+                }
+                catch
+                {
+                    // IP tespiti başarısız olursa güvenli varsayılan olarak Primary kabul edilir
+                }
+
+                return _cachedServerRole = "Primary";
+            }
         }
 
         public static bool IsBackupServer => string.Equals(GetCurrentServerRole(), "Backup", StringComparison.OrdinalIgnoreCase);
@@ -143,13 +156,13 @@ namespace gzpegm.Helpers
             targetUrl = null;
             if (context == null || context.Request == null) return false;
 
-            // Sadece Yedek Sunucu (10.7.202.76) yönlendirme yapar
-            if (!IsBackupServer) return false;
-
             var path = context.Request.Path?.ToLowerInvariant() ?? "";
 
-            // İstisnalar: Sağlık, log, senkronizasyon ve statik kaynaklar asla yönlendirilmez
+            // İstisnalar: Statik dosyalar, log, sağlık kontrolü vb. ASLA yönlendirme sorgusuna sokulmaz
             if (IsExemptPath(path)) return false;
+
+            // Sadece Yedek Sunucu (10.7.202.76) yönlendirme yapar
+            if (!IsBackupServer) return false;
 
             // Yönetici bypass kontrolü (forceLocal=1 veya bypassFailover=1 veya cookie)
             if (string.Equals(context.Request.QueryString["forceLocal"], "1", StringComparison.OrdinalIgnoreCase) ||
@@ -175,6 +188,8 @@ namespace gzpegm.Helpers
 
         private static bool IsExemptPath(string path)
         {
+            if (string.IsNullOrEmpty(path)) return false;
+
             // Sağlık, hata ve senkronizasyon kontrol uç noktaları
             if (path.StartsWith("/health") ||
                 path.StartsWith("/sistemsaglik") ||
@@ -189,7 +204,8 @@ namespace gzpegm.Helpers
                 path.EndsWith(".jpg") || path.EndsWith(".jpeg") || path.EndsWith(".gif") ||
                 path.EndsWith(".ico") || path.EndsWith(".svg") || path.EndsWith(".woff") ||
                 path.EndsWith(".woff2") || path.EndsWith(".ttf") || path.EndsWith(".eot") ||
-                path.EndsWith(".map"))
+                path.EndsWith(".map") || path.EndsWith(".wasm") || path.EndsWith(".gz") ||
+                path.EndsWith(".json") || path.EndsWith(".pdf") || path.EndsWith(".xlsx"))
                 return true;
 
             return false;

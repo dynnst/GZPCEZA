@@ -31,6 +31,24 @@ namespace gzpegm
             FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
             GlobalConfiguration.Configure(WebApiConfig.Register);
             RouteConfig.RegisterRoutes(RouteTable.Routes);
+
+            // Arka planda sık kullanılan ana tabloları ve EF sorgu planlarını ısıt (Non-blocking Warm-up)
+            System.Web.Hosting.HostingEnvironment.QueueBackgroundWorkItem(ct =>
+            {
+                try
+                {
+                    using (var db = new Models.GZPEGM1())
+                    {
+                        var _1 = db.E_Token.AsNoTracking().Take(1).ToList();
+                        var _2 = db.E_History.AsNoTracking().Take(1).ToList();
+                        var _3 = db.E_Forms.AsNoTracking().Take(1).ToList();
+                        var _4 = db.TahditKod.AsNoTracking().Take(1).ToList();
+                        var _5 = db.E_Inad.AsNoTracking().Take(1).ToList();
+                        var _6 = db.E_UVR.AsNoTracking().Take(1).ToList();
+                    }
+                }
+                catch { }
+            });
         }
 
         protected void Application_BeginRequest(object sender, EventArgs e)

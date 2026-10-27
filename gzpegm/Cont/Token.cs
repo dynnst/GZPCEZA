@@ -1,4 +1,4 @@
-﻿using gzpegm.Models;
+using gzpegm.Models;
 using System;
 using System.Linq;
 using System.Web;
@@ -16,6 +16,13 @@ namespace gzpegm.Cont
                     var token = context.E_Token.Where(sc => sc.fldUserId == fldUserId).ToList();
                     if (token != null)
                     {
+                        foreach (var t in token)
+                        {
+                            if (!string.IsNullOrEmpty(t.fldToken) && HttpRuntime.Cache != null)
+                            {
+                                HttpRuntime.Cache.Remove("CurrentToken:" + t.fldToken.Trim());
+                            }
+                        }
                         context.E_Token.RemoveRange(token);
                         context.SaveChanges();
                     }
@@ -70,9 +77,19 @@ namespace gzpegm.Cont
 
             var tokenValue = Token.Trim();
             var cacheKey = "CurrentToken:" + tokenValue;
+
+            // 1. Aynı istek içi önbellek
             var items = HttpContext.Current?.Items;
             if (items != null && items.Contains(cacheKey))
                 return items[cacheKey] as E_Token;
+
+            // 2. Sayfalar arası bellek önbelleği (5 dakika - SQL sorgusu yapmaz)
+            var cached = HttpRuntime.Cache?[cacheKey] as E_Token;
+            if (cached != null)
+            {
+                if (items != null) items[cacheKey] = cached;
+                return cached;
+            }
 
             using (GZPEGM1 _db = new GZPEGM1())
             {
@@ -93,6 +110,16 @@ namespace gzpegm.Cont
                         }
                     }
                     catch { }
+                }
+
+                if (token != null && HttpRuntime.Cache != null)
+                {
+                    HttpRuntime.Cache.Insert(
+                        cacheKey,
+                        token,
+                        null,
+                        DateTime.UtcNow.AddMinutes(5),
+                        System.Web.Caching.Cache.NoSlidingExpiration);
                 }
 
                 if (items != null)

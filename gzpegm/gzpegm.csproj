@@ -7237,6 +7237,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Helpers\ErrorLogHelper.cs" />
     <Compile Include="Helpers\FileStorageHelper.cs" />
+    <Compile Include="Helpers\AssetVersionHelper.cs" />
     <Compile Include="Helpers\ServerFailoverHelper.cs" />
     <Compile Include="Services\CacheService.cs" />
     <Compile Include="Services\EducationPackageService.cs" />

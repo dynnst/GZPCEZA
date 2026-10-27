@@ -1,4 +1,4 @@
-﻿using gzpegm.Models;
+using gzpegm.Models;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity.Validation;
@@ -69,13 +69,34 @@ namespace gzpegm.Cont
                 return null;
 
             var cacheKey = "CurrentUser:" + fldId;
+
+            // 1. Aynı istek içi önbellek
             var items = HttpContext.Current?.Items;
             if (items != null && items.Contains(cacheKey))
                 return items[cacheKey] as E_User;
 
+            // 2. Sayfalar arası bellek önbelleği (5 dakika - SQL sorgusu yapmaz)
+            var cached = HttpRuntime.Cache?[cacheKey] as E_User;
+            if (cached != null)
+            {
+                if (items != null) items[cacheKey] = cached;
+                return cached;
+            }
+
             using (GZPEGM1 _db = new GZPEGM1())
             {
                 var user = _db.E_User.SingleOrDefault(c => c.fldId == fldId);
+
+                if (user != null && HttpRuntime.Cache != null)
+                {
+                    HttpRuntime.Cache.Insert(
+                        cacheKey,
+                        user,
+                        null,
+                        DateTime.UtcNow.AddMinutes(5),
+                        System.Web.Caching.Cache.NoSlidingExpiration);
+                }
+
                 if (items != null)
                     items[cacheKey] = user;
 

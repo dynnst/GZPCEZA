@@ -224,7 +224,7 @@
         <script src="@Url.Content("~/js/theme.js")"></script>
 
         <!-- Theme Custom -->
-        <script src="@Url.Content("~/js/custom.js")?v=@System.IO.File.GetLastWriteTime(Server.MapPath("~/js/custom.js")).Ticks"></script>
+        <script src="@Url.Content("~/js/custom.js")?v=@gzpegm.Helpers.AssetVersionHelper.CustomJsVersion"></script>
 
         @{
             var generalDynamicScripts = (ViewBag.GeneralDynamicScripts as string ?? "").Trim();
