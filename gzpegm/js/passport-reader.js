@@ -1,7 +1,7 @@
 /**
  * CEZAM - Pasaport & Optik Okuyucu Entegrasyon Modülü
  * Desteklenen Donanımlar: 3M Cogent / Gemalto (PV40, PV60, AT9000), Regula (70X4, 7024), Desko (Penta, BRS)
- * Desteklenen Formatlar: ICAO 9303 MRZ (TD1, TD2, TD3), 3M & Regula Key-Value Wedge, Fotoğraf / Belge OCR
+ * Not: Bu sistemde yalnızca yabancı yolculara ihlal cezası uygulanır. Türk vatandaşlarına ceza işlemi uygulanmaz.
  */
 
 (function ($) {
@@ -11,27 +11,37 @@
        1. ISO 3166-1 ÜLKE KODU EŞLEŞTİRME TABLOSU (TÜRKÇE SEÇENEK UYUMLU)
        ========================================================================== */
     var _isoCountryMap = {
-        'TUR': 'Türkiye', 'DEU': 'Almanya', 'GBR': 'Birleşik Krallık', 'RUS': 'Rusya Federasyonu',
-        'UKR': 'Ukrayna', 'USA': 'Amerika Birleşik Devletleri', 'FRA': 'Fransa', 'NLD': 'Hollanda',
-        'BEL': 'Belçika', 'AUT': 'Avusturya', 'CHE': 'İsviçre', 'SWE': 'İsveç', 'NOR': 'Norveç',
-        'DNK': 'Danimarka', 'FIN': 'Finlandiya', 'POL': 'Polonya', 'CZE': 'Çek Cumhuriyeti',
-        'ROU': 'Romanya', 'BGR': 'Bulgaristan', 'GRC': 'Yunanistan', 'ITA': 'İtalya', 'ESP': 'İspanya',
-        'PRT': 'Portekiz', 'AZE': 'Azerbaycan', 'KAZ': 'Kazakistan', 'UZB': 'Özbekistan',
-        'KGZ': 'Kırgızistan', 'TKM': 'Türkmenistan', 'TJK': 'Tacikistan', 'GEO': 'Gürcistan',
-        'ARM': 'Ermenistan', 'MDA': 'Moldovya Cumhuriyeti', 'BLR': 'Beyaz Rusya', 'IRN': 'İran',
-        'IRQ': 'Irak', 'SYR': 'Suriye', 'LBN': 'Lübnan', 'JOR': 'Ürdün', 'ISR': 'İsrail',
-        'SAU': 'Suudi Arabistan', 'ARE': 'Birleşik Arap Emirlikleri', 'KWT': 'Kuveyt', 'QAT': 'Katar',
-        'BHR': 'Bahreyn', 'OMN': 'Umman', 'EGY': 'Mısır', 'LBY': 'Libya', 'TUN': 'Tunus',
-        'DZA': 'Cezayir', 'MAR': 'Fas', 'SDN': 'Sudan', 'SOM': 'Somali', 'ETH': 'Etiyopya',
-        'KEN': 'Kenya', 'NGA': 'Nijerya', 'GHA': 'Gana', 'ZAF': 'Güney Afrika', 'IND': 'Hindistan',
-        'PAK': 'Pakistan', 'BGD': 'Bangladeş', 'AFG': 'Afganistan', 'CHN': 'Çin', 'JPN': 'Japonya',
-        'KOR': 'Güney Kore', 'IDN': 'Endonezya', 'MYS': 'Malezya', 'PHL': 'Filipinler', 'THA': 'Tayland',
-        'VNM': 'Vietnam', 'AUS': 'Avustralya', 'CAN': 'Kanada', 'BRA': 'Brezilya', 'ARG': 'Arjantin',
-        'MEX': 'Meksika', 'COL': 'Kolombiya', 'SRB': 'Sırbistan', 'BIH': 'Bosna Hersek', 'HRV': 'Hırvatistan',
-        'MKD': 'Makedonya', 'ALB': 'Arnavutluk', 'MNE': 'Karadağ', 'KOS': 'Kosova', 'HUN': 'Macaristan',
-        'SVK': 'Slovakya', 'SVN': 'Slovenya', 'IRL': 'İrlanda', 'CYP': 'Kıbrıs', 'MLT': 'Malta',
-        'LTU': 'Litvanya', 'LVA': 'Letonya', 'EST': 'Estonya', 'ISL': 'İzlanda', 'MNG': 'Moğolistan',
-        'YEM': 'Yemen', 'SGP': 'Singapur', 'NZL': 'Yeni Zelanda'
+        'DEU': 'Almanya', 'D': 'Almanya',
+        'GBR': 'Birleşik Krallık', 'UK': 'Birleşik Krallık',
+        'RUS': 'Rusya Federasyonu', 'RU': 'Rusya Federasyonu',
+        'UKR': 'Ukrayna', 'UA': 'Ukrayna',
+        'USA': 'Amerika Birleşik Devletleri', 'US': 'Amerika Birleşik Devletleri',
+        'FRA': 'Fransa', 'NLD': 'Hollanda', 'BEL': 'Belçika',
+        'AUT': 'Avusturya', 'CHE': 'İsviçre', 'SWE': 'İsveç',
+        'NOR': 'Norveç', 'DNK': 'Danimarka', 'FIN': 'Finlandiya',
+        'POL': 'Polonya', 'CZE': 'Çek Cumhuriyeti', 'ROU': 'Romanya',
+        'BGR': 'Bulgaristan', 'GRC': 'Yunanistan', 'ITA': 'İtalya',
+        'ESP': 'İspanya', 'PRT': 'Portekiz', 'AZE': 'Azerbaycan',
+        'KAZ': 'Kazakistan', 'UZB': 'Özbekistan', 'KGZ': 'Kırgızistan',
+        'TKM': 'Türkmenistan', 'TJK': 'Tacikistan', 'GEO': 'Gürcistan',
+        'ARM': 'Ermenistan', 'MDA': 'Moldovya Cumhuriyeti', 'BLR': 'Beyaz Rusya',
+        'IRN': 'İran', 'IRQ': 'Irak', 'SYR': 'Suriye', 'LBN': 'Lübnan',
+        'JOR': 'Ürdün', 'ISR': 'İsrail', 'SAU': 'Suudi Arabistan',
+        'ARE': 'Birleşik Arap Emirlikleri', 'KWT': 'Kuveyt', 'QAT': 'Katar',
+        'BHR': 'Bahreyn', 'OMN': 'Umman', 'EGY': 'Mısır', 'LBY': 'Libya',
+        'TUN': 'Tunus', 'DZA': 'Cezayir', 'MAR': 'Fas', 'SDN': 'Sudan',
+        'SOM': 'Somali', 'ETH': 'Etiyopya', 'KEN': 'Kenya', 'NGA': 'Nijerya',
+        'GHA': 'Gana', 'ZAF': 'Güney Afrika', 'IND': 'Hindistan', 'PAK': 'Pakistan',
+        'BGD': 'Bangladeş', 'AFG': 'Afganistan', 'CHN': 'Çin', 'JPN': 'Japonya',
+        'KOR': 'Güney Kore', 'IDN': 'Endonezya', 'MYS': 'Malezya', 'PHL': 'Filipinler',
+        'THA': 'Tayland', 'VNM': 'Vietnam', 'AUS': 'Avustralya', 'CAN': 'Kanada',
+        'BRA': 'Brezilya', 'ARG': 'Arjantin', 'MEX': 'Meksika', 'COL': 'Kolombiya',
+        'SRB': 'Sırbistan', 'BIH': 'Bosna Hersek', 'HRV': 'Hırvatistan',
+        'MKD': 'Makedonya', 'ALB': 'Arnavutluk', 'MNE': 'Karadağ', 'KOS': 'Kosova',
+        'HUN': 'Macaristan', 'SVK': 'Slovakya', 'SVN': 'Slovenya', 'IRL': 'İrlanda',
+        'CYP': 'Kıbrıs', 'MLT': 'Malta', 'LTU': 'Litvanya', 'LVA': 'Letonya',
+        'EST': 'Estonya', 'ISL': 'İzlanda', 'MNG': 'Moğolistan', 'YEM': 'Yemen',
+        'SGP': 'Singapur', 'NZL': 'Yeni Zelanda'
     };
 
     /* ==========================================================================
@@ -48,7 +58,7 @@
             var osc = ctx.createOscillator();
             var gain = ctx.createGain();
             osc.type = 'sine';
-            osc.frequency.setValueAtTime(880, ctx.currentTime); // A5 nota
+            osc.frequency.setValueAtTime(880, ctx.currentTime);
             gain.gain.setValueAtTime(0.15, ctx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
             osc.connect(gain);
@@ -64,7 +74,7 @@
         var icon = isSuccess ? 'fa-check-circle' : 'fa-exclamation-triangle';
 
         var toast = $(
-            '<div class="passport-toast shadow-lg text-white d-flex align-items-center" style="position:fixed; bottom:25px; right:25px; z-index:9999; background:' + bg + '; padding:14px 20px; border-radius:10px; font-size:0.95rem; font-weight:600; box-shadow:0 10px 25px rgba(0,0,0,0.25); animation:toastSlideIn 0.3s ease;">' +
+            '<div class="passport-toast shadow-lg text-white d-flex align-items-center" style="position:fixed; bottom:25px; right:25px; z-index:9999; background:' + bg + '; padding:14px 20px; border-radius:10px; font-size:0.95rem; font-weight:600; box-shadow:0 10px 25px rgba(0,0,0,0.25); animation:toastSlideIn 0.3s ease; max-width:450px;">' +
             '<i class="fas ' + icon + ' mr-2" style="font-size:1.3rem;"></i>' +
             '<div>' + message + '</div>' +
             '</div>'
@@ -73,7 +83,7 @@
         $('body').append(toast);
         setTimeout(function () {
             toast.fadeOut(400, function () { $(this).remove(); });
-        }, 4500);
+        }, 5000);
     }
 
     function highlightInput(selector) {
@@ -88,13 +98,6 @@
     /* ==========================================================================
        3. METİN FORMATLAMA VE TARİH DÖNÜŞÜMÜ
        ========================================================================== */
-    function toTitleCase(str) {
-        if (!str) return "";
-        return str.replace(/\w\S*/g, function (txt) {
-            return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
-        });
-    }
-
     function cleanMrzStr(str) {
         if (!str) return "";
         return str.replace(/</g, " ").replace(/\s+/g, " ").trim();
@@ -120,6 +123,12 @@
     function setPassportCountry(countryCodeOrName) {
         if (!countryCodeOrName) return "";
         var target = countryCodeOrName.trim().toUpperCase();
+
+        // Türk vatandaşı kontrolü
+        if (target === 'TUR' || target === 'TR' || target === 'TÜRKİYE' || target === 'TURKEY') {
+            return "TUR";
+        }
+
         var mappedName = _isoCountryMap[target] || countryCodeOrName.trim();
         if (!mappedName) return "";
 
@@ -180,18 +189,13 @@
         if (isDirectScanActive) return;
         isDirectScanActive = true;
 
-        var btns = $('#btnDirectOpticalScan, #btnModalDirectScan');
-        var originalHtml = btns.first().html();
+        var btns = $('#btnDirectOpticalScan, #btnPanelDirectScan');
+        var originalHtmls = [];
+        btns.each(function () {
+            originalHtmls.push($(this).html());
+        });
 
         btns.prop('disabled', true).html('<span class="spinner-border spinner-border-sm mr-1" role="status"></span> Okunuyor...');
-
-        var statusEl = $('#passportReaderStatus');
-        statusEl.html(
-            '<div class="alert alert-info py-2 px-3 mb-0 d-flex align-items-center">' +
-            '<div class="spinner-border spinner-border-sm text-primary mr-2" role="status"></div>' +
-            '<div><strong>3M / Regula / Desko taranıyor:</strong> Pasaport veya kimlik verileri okunuyor, lütfen bekleyin...</div>' +
-            '</div>'
-        );
 
         $.ajax({
             url: '/Calculate/ScanOpticalReader',
@@ -200,47 +204,52 @@
             timeout: 20000,
             success: function (res) {
                 isDirectScanActive = false;
-                btns.prop('disabled', false).html(originalHtml);
+                btns.each(function (idx) {
+                    $(this).prop('disabled', false).html(originalHtmls[idx]);
+                });
 
                 if (res && res.success) {
-                    // Yolcu Adı Soyadı
+                    // 1. Türk Vatandaşı Kontrolü (Türklere ceza uygulanmaz!)
+                    if (res.isTurkishCitizen || (res.countryCode && (res.countryCode === 'TUR' || res.countryCode === 'TR'))) {
+                        showPassportToast(
+                            '⚠️ <strong>TÜRK VATANDAŞI (TUR):</strong><br>Bu sistemde yalnızca yabancı yolculara vize/ihlal cezası uygulanmaktadır. Türk vatandaşlarına ceza işlemi uygulanamaz.',
+                            'danger'
+                        );
+                        return;
+                    }
+
+                    // 2. Yabancı Yolcu Adı Soyadı
                     if (res.fullName) {
                         $('#NameCFORM').val(res.fullName);
                         highlightInput('#NameCFORM');
                     }
 
-                    // Belge / Pasaport Numarası
+                    // 3. Belge / Pasaport Numarası
                     if (res.documentNumber) {
                         $('#PassportCFORM').val(res.documentNumber);
                         highlightInput('#PassportCFORM');
                     }
 
-                    // YKN / Kimlik Numarası
+                    // 4. Kimlik / Kişisel No
                     if (res.personalNumber) {
                         $('#IDNCFORM').val(res.personalNumber);
                         highlightInput('#IDNCFORM');
                     }
 
-                    // Pasaport Türü (1: Umuma Mahsus, 2: Diplomatik, 3: Servis, vb.)
-                    var docTypeVal = "1";
-                    if (res.documentType) {
-                        var dtLower = res.documentType.toLowerCase();
-                        if (dtLower.indexOf('diplomatik') >= 0) docTypeVal = "2";
-                        else if (dtLower.indexOf('servis') >= 0) docTypeVal = "3";
-                        else if (dtLower.indexOf('hizmet') >= 0) docTypeVal = "4";
-                    }
+                    // 5. Pasaport Türü (1: Umuma Mahsus, 2: Diplomatik, 3: Servis, vb.)
+                    var docTypeCode = res.docTypeCode || "1";
                     if ($('#PassportCalculate').length) {
-                        $('#PassportCalculate').val(docTypeVal).trigger('change');
+                        $('#PassportCalculate').val(docTypeCode).trigger('change');
                         highlightInput('#PassportCalculate');
                     }
 
-                    // Uyruk / Ülke Seçimi (Otomatik vize ve harç hesaplatır)
+                    // 6. Uyruk / Ülke Seçimi (Otomatik vize ve harç hesaplatır)
                     var matchedCountry = "";
-                    if (res.country) {
-                        matchedCountry = setPassportCountry(res.country);
+                    if (res.country || res.countryCode) {
+                        matchedCountry = setPassportCountry(res.country || res.countryCode);
                     }
 
-                    // Doğum Tarihi & Yaş Grubu
+                    // 7. Doğum Tarihi & Yaş Grubu
                     if (res.birthDate) {
                         $('#BirthDateCalculate').val(res.birthDate).trigger('change');
                         $('#BirthdateCFORM').val(res.birthDate);
@@ -251,53 +260,36 @@
                         }
                     }
 
-                    // Görsel Önizleme
-                    if (res.visBase64) {
-                        $('#passportDocPreview').attr('src', 'data:image/jpeg;base64,' + res.visBase64).removeClass('hidden').show();
+                    // 8. Yetişkin / Çocuk Durumu
+                    if (res.adultCode && $('#AdultCalculate').length) {
+                        $('#AdultCalculate').val(res.adultCode).trigger('change');
+                        highlightInput('#AdultCalculate');
                     }
 
                     // Sesli ve görsel bildirim
                     playScanBeep();
 
-                    var detailSummary = (res.fullName || 'Yolcu') +
+                    var detailSummary = (res.fullName || 'Yabancı Yolcu') +
                         (res.documentNumber ? ' (' + res.documentNumber + ')' : '') +
-                        (matchedCountry ? ' - ' + matchedCountry : (res.country ? ' - ' + res.country : ''));
+                        (matchedCountry && matchedCountry !== 'TUR' ? ' - ' + matchedCountry : (res.country ? ' - ' + res.country : ''));
 
                     showPassportToast(
-                        '<strong>✓ ' + (res.deviceName || 'Optik Okuyucu') + ' ile Okundu:</strong><br>' + detailSummary +
+                        '<strong>✓ Pasaport Okundu (' + (res.deviceName || 'Optik Okuyucu') + '):</strong><br>' + detailSummary +
                         (res.birthDate ? '<div class="small mt-1 opacity-90"><i class="fas fa-birthday-cake mr-1"></i> Doğum: ' + res.birthDate + '</div>' : ''),
                         'success'
                     );
 
-                    statusEl.html(
-                        '<div class="alert alert-success py-2 px-3 mb-0">' +
-                        '<i class="fas fa-check-circle mr-2"></i> <strong>Cihazdan başarıyla okundu:</strong><br>' + detailSummary +
-                        '</div>'
-                    );
-
-                    setTimeout(function () {
-                        $('#passportReaderModal').modal('hide');
-                    }, 1400);
-
                 } else {
-                    var errMsg = (res && res.message) ? res.message : 'Optik okuyucudan belge okunamadı. Lütfen belgeyi camın üzerine yerleştiriniz.';
-                    statusEl.html(
-                        '<div class="alert alert-warning py-2 px-3 mb-0">' +
-                        '<i class="fas fa-exclamation-triangle mr-2"></i> ' + errMsg +
-                        '</div>'
-                    );
+                    var errMsg = (res && res.message) ? res.message : 'Optik okuyucudan pasaport okunamadı. Lütfen pasaportu cihaz camına yerleştiriniz.';
                     showPassportToast(errMsg, 'danger');
                 }
             },
             error: function (xhr, status, err) {
                 isDirectScanActive = false;
-                btns.prop('disabled', false).html(originalHtml);
+                btns.each(function (idx) {
+                    $(this).prop('disabled', false).html(originalHtmls[idx]);
+                });
                 var errMsg = 'Optik okuyucu servisiyle iletişim kurulamadı. (' + (err || status) + ')';
-                statusEl.html(
-                    '<div class="alert alert-danger py-2 px-3 mb-0">' +
-                    '<i class="fas fa-times-circle mr-2"></i> ' + errMsg +
-                    '</div>'
-                );
                 showPassportToast(errMsg, 'danger');
             }
         });
@@ -310,56 +302,20 @@
             cache: false,
             success: function (res) {
                 if (res && res.success && res.isRunning) {
-                    $('#opticalHardwareBadge')
-                        .removeClass('badge-warning badge-secondary')
-                        .addClass('badge-success')
-                        .html('<span class="passport-pulse-dot"></span> ' + (res.deviceName || 'Optik Okuyucu') + ' Hazır');
-
-                    $('#opticalStatusBanner')
-                        .removeClass('alert-warning alert-secondary')
-                        .addClass('alert-success')
-                        .html(
-                            '<div class="d-flex align-items-center justify-content-between">' +
-                            '<div><span class="passport-pulse-dot"></span> <strong>' + (res.deviceName || '3M / Regula') + ' Bağlı ve Hazır:</strong> Pasaportu camın üzerine koyup <strong>"Cihazdan Oku"</strong> butonuna basınız.</div>' +
-                            '<span class="badge badge-success px-2 py-1">Aktif</span>' +
-                            '</div>'
-                        );
-                } else {
-                    $('#opticalHardwareBadge')
-                        .removeClass('badge-success')
-                        .addClass('badge-warning')
-                        .html('<i class="fas fa-plug mr-1"></i> Okuyucu Bağlantısı Bekleniyor');
-
-                    $('#opticalStatusBanner')
-                        .removeClass('alert-success')
-                        .addClass('alert-warning')
-                        .html(
-                            '<div class="d-flex align-items-center justify-content-between">' +
-                            '<div><i class="fas fa-info-circle mr-1"></i> Optik okuyucu hazır değilse <strong>"Cihaza Bağlan"</strong> butonuna basabilir veya pasaport fotoğrafını yükleyebilirsiniz.</div>' +
-                            '<button type="button" class="btn btn-xs btn-outline-dark" onclick="window.PassportReader.connectDevice();">Bağlan</button>' +
-                            '</div>'
-                        );
+                    $('#btnDirectOpticalScan').attr('title', (res.deviceName || 'Optik Okuyucu') + ' Bağlı ve Hazır');
                 }
             }
         });
     }
 
     function connectDevice(deviceType) {
-        var statusEl = $('#passportReaderStatus');
-        statusEl.html(
-            '<div class="text-center py-2 text-primary font-weight-bold">' +
-            '<div class="spinner-border spinner-border-sm text-primary mr-2" role="status"></div>' +
-            'Optik okuyucu başlatılıyor, lütfen bekleyin...' +
-            '</div>'
-        );
-
         $.ajax({
             url: '/Calculate/ConnectOpticalReader',
             type: 'POST',
             data: { deviceType: deviceType || 'auto' },
             success: function (res) {
                 if (res && res.success) {
-                    showPassportToast(res.message || 'Okuyucu hazır.', 'success');
+                    showPassportToast(res.message || 'Optik okuyucu hazır.', 'success');
                     checkOpticalReaderStatus();
                 } else {
                     showPassportToast(res.message || 'Cihaza bağlanılamadı.', 'danger');
@@ -369,7 +325,7 @@
     }
 
     /* ==========================================================================
-       5. ICAO MRZ & WEDGE AYRIŞTIRMA VE CEZA FORMUNA AKTARMA (FALLBACK / WEDGE)
+       5. ICAO MRZ & WEDGE AYRIŞTIRMA VE CEZA FORMUNA AKTARMA (KEYBOARD WEDGE FALLBACK)
        ========================================================================== */
     function parseAndApplyPassportMrz(rawText, sourceName) {
         if (!rawText || !rawText.trim()) return false;
@@ -440,7 +396,7 @@
                 }
             }
 
-            // B.1. TD3 Formatı: 2 Satır x 44 Karakter (Pasaportlar)
+            // B.1. TD3 Formatı: 2 Satır x 44 Karakter (Yabancı Pasaportlar)
             if (mrzLines.length >= 2) {
                 for (var k = 0; k < mrzLines.length - 1; k++) {
                     var l1 = mrzLines[k];
@@ -468,7 +424,7 @@
                         birthDateStr = parseMrzDate(dobRaw);
 
                         var optData = l2.substring(28, 42).replace(/</g, '').trim();
-                        if (optData.length >= 5 && /^\d+$/.test(optData)) {
+                        if (optData.length >= 5) {
                             kimlikNo = optData;
                         }
 
@@ -478,7 +434,7 @@
                 }
             }
 
-            // B.2. TD1 Formatı: 3 Satır x 30 Karakter (Kimlik Kartları)
+            // B.2. TD1 Formatı: 3 Satır x 30 Karakter (Yabancı Kimlik & İkamet Kartları)
             if (!parsedSuccessfully && mrzLines.length >= 3) {
                 for (var m = 0; m < mrzLines.length - 2; m++) {
                     var t1 = mrzLines[m];
@@ -507,6 +463,16 @@
         }
 
         if (!parsedSuccessfully) {
+            return false;
+        }
+
+        // TÜRK VATANDAŞI KONTROLÜ (Bu sistemde Türklere ceza işlemi uygulanmaz!)
+        var natUpper = (nationalityCode || '').trim().toUpperCase();
+        if (natUpper === 'TUR' || natUpper === 'TR') {
+            showPassportToast(
+                '⚠️ <strong>TÜRK VATANDAŞI (TUR):</strong><br>Bu sistemde yalnızca yabancı yolculara vize/ihlal cezası uygulanmaktadır. Türk vatandaşlarına ceza işlemi uygulanamaz.',
+                'danger'
+            );
             return false;
         }
 
@@ -549,28 +515,15 @@
 
         playScanBeep();
 
-        var detailSummary = (fullName ? fullName : 'Yolcu') +
+        var detailSummary = (fullName ? fullName : 'Yabancı Yolcu') +
             (passportNo ? ' (' + passportNo + ')' : '') +
             (matchedCountry ? ' - ' + matchedCountry : (nationalityCode ? ' - ' + nationalityCode : ''));
 
         showPassportToast(
-            '<strong>✓ Belge Okundu:</strong> ' + detailSummary +
+            '<strong>✓ Pasaport Okundu (' + (sourceName || 'Okuyucu') + '):</strong><br>' + detailSummary +
             (birthDateStr ? '<div class="small mt-1 opacity-90"><i class="fas fa-birthday-cake mr-1"></i> Doğum: ' + birthDateStr + '</div>' : ''),
             'success'
         );
-
-        var modalStatus = $('#passportReaderStatus');
-        if (modalStatus.length) {
-            modalStatus.html(
-                '<div class="alert alert-success py-2 px-3 mb-0">' +
-                '<i class="fas fa-check-circle mr-2"></i> <strong>' + (sourceName || 'Okuyucu') + ' ile başarıyla okundu:</strong><br>' +
-                detailSummary +
-                '</div>'
-            );
-            setTimeout(function () {
-                $('#passportReaderModal').modal('hide');
-            }, 1200);
-        }
 
         return true;
     }
@@ -585,10 +538,6 @@
 
         $(window).on('keydown', function (e) {
             var activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
-            if (activeTag === 'textarea' && document.activeElement.id === 'manualMrzInput') {
-                return;
-            }
-
             var now = Date.now();
             var charCode = e.which || e.keyCode;
             var charStr = e.key;
@@ -619,7 +568,7 @@
 
                         var applied = parseAndApplyPassportMrz(scannedData, '3M / Regula / Desko (Wedge)');
                         if (!applied) {
-                            showPassportToast('Optik okuyucu verisi alındı fakat format çözülemedi.', 'danger');
+                            showPassportToast('Optik okuyucu verisi çözümlenemedi.', 'danger');
                         }
                         return false;
                     }
@@ -632,7 +581,7 @@
                 buffer += charStr;
 
                 if (buffer.length >= 15 && (buffer.indexOf('P<') === 0 || buffer.indexOf('I<') === 0 || buffer.indexOf('Surname') === 0)) {
-                    if (activeTag === 'input' && document.activeElement.id !== 'manualMrzInput') {
+                    if (activeTag === 'input') {
                         e.preventDefault();
                     }
                 }
@@ -641,200 +590,16 @@
     }
 
     /* ==========================================================================
-       7. PASAPORT FOTOĞRAFI YÜKLEME VE OCR
-       ========================================================================== */
-    function initPassportPhotoUpload() {
-        $(document).on('change', '#passportFileInput', function () {
-            if (this.files && this.files[0]) {
-                uploadAndProcessPassportImage(this.files[0]);
-                $(this).val('');
-            }
-        });
-
-        var dropzone = $('#passportDropzone');
-        if (dropzone.length) {
-            dropzone.on('dragover dragenter', function (e) {
-                e.preventDefault();
-                e.stopPropagation();
-                $(this).addClass('dragover');
-            });
-
-            dropzone.on('dragleave dragend drop', function (e) {
-                e.preventDefault();
-                e.stopPropagation();
-                $(this).removeClass('dragover');
-            });
-
-            dropzone.on('drop', function (e) {
-                var dt = e.originalEvent.dataTransfer;
-                if (dt && dt.files && dt.files.length) {
-                    uploadAndProcessPassportImage(dt.files[0]);
-                }
-            });
-        }
-
-        $(window).on('paste', function (e) {
-            if (document.activeElement && document.activeElement.id === 'manualMrzInput') {
-                return;
-            }
-
-            var clipboardData = e.originalEvent.clipboardData || window.clipboardData;
-            if (!clipboardData || !clipboardData.items) return;
-
-            var items = clipboardData.items;
-            for (var i = 0; i < items.length; i++) {
-                if (items[i].type.indexOf('image') !== -1) {
-                    var blob = items[i].getAsFile();
-                    if (blob) {
-                        e.preventDefault();
-                        uploadAndProcessPassportImage(blob);
-                        break;
-                    }
-                }
-            }
-        });
-
-        $(document).on('click', '#btnParseManualMrz', function () {
-            var txt = $('#manualMrzInput').val();
-            if (!txt || !txt.trim()) {
-                showPassportToast('Lütfen çözümlenecek MRZ veya okuyucu metnini yapıştırın.', 'danger');
-                return;
-            }
-            var ok = parseAndApplyPassportMrz(txt, 'Manuel MRZ');
-            if (!ok) {
-                showPassportToast('MRZ metni çözümlenemedi. Lütfen satırları kontrol edin.', 'danger');
-            }
-        });
-    }
-
-    function uploadAndProcessPassportImage(file) {
-        if (!file) return;
-
-        var statusEl = $('#passportReaderStatus');
-        statusEl.html(
-            '<div class="text-center py-2 text-primary font-weight-bold">' +
-            '<div class="spinner-border spinner-border-sm text-primary mr-2" role="status"></div>' +
-            'Görsel taranıyor ve kimlik/pasaport verileri yüksek doğrulukla çözümleniyor, lütfen bekleyin...' +
-            '</div>'
-        );
-
-        var formData = new FormData();
-        formData.append('file', file);
-
-        $.ajax({
-            url: '/Calculate/ScanPassportImage',
-            type: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            success: function (res) {
-                if (res && res.success) {
-                    // 1. Yolcu Adı Soyadı
-                    if (res.fullName) {
-                        $('#NameCFORM').val(res.fullName);
-                        highlightInput('#NameCFORM');
-                    }
-
-                    // 2. Belge / Pasaport Numarası
-                    if (res.documentNumber) {
-                        $('#PassportCFORM').val(res.documentNumber);
-                        highlightInput('#PassportCFORM');
-                    }
-
-                    // 3. TCKN / YKN / Kişisel No
-                    if (res.personalNumber) {
-                        $('#IDNCFORM').val(res.personalNumber);
-                        highlightInput('#IDNCFORM');
-                    }
-
-                    // 4. Pasaport / Belge Türü
-                    if (res.docTypeCode && $('#PassportCalculate').length) {
-                        $('#PassportCalculate').val(res.docTypeCode).trigger('change');
-                        highlightInput('#PassportCalculate');
-                    }
-
-                    // 5. Uyruk / Ülke Seçimi (Otomatik vize ve harç hesaplatır)
-                    var matchedCountry = "";
-                    if (res.country) {
-                        matchedCountry = setPassportCountry(res.country);
-                    }
-
-                    // 6. Doğum Tarihi & Yaş Grubu
-                    if (res.birthDate) {
-                        $('#BirthDateCalculate').val(res.birthDate).trigger('change');
-                        $('#BirthdateCFORM').val(res.birthDate);
-                        highlightInput('#BirthDateCalculate');
-
-                        if (typeof window.adultchild === 'function') {
-                            window.adultchild($('#BirthDateCalculate')[0]);
-                        }
-                    }
-
-                    if (res.adultCode && $('#AdultCalculate').length) {
-                        $('#AdultCalculate').val(res.adultCode).trigger('change');
-                        highlightInput('#AdultCalculate');
-                    }
-
-                    // Sesli ve görsel bildirim
-                    playScanBeep();
-
-                    var detailSummary = (res.fullName || 'Yolcu') +
-                        (res.documentNumber ? ' (' + res.documentNumber + ')' : '') +
-                        (matchedCountry ? ' - ' + matchedCountry : (res.country ? ' - ' + res.country : ''));
-
-                    showPassportToast(
-                        '<strong>✓ Belge Görselinden Doğrulandı:</strong><br>' + detailSummary +
-                        (res.birthDate ? '<div class="small mt-1 opacity-90"><i class="fas fa-birthday-cake mr-1"></i> Doğum: ' + res.birthDate + '</div>' : ''),
-                        'success'
-                    );
-
-                    statusEl.html(
-                        '<div class="alert alert-success py-2 px-3 mb-0">' +
-                        '<i class="fas fa-check-circle mr-2"></i> <strong>Görsel başarıyla çözümlendi:</strong><br>' + detailSummary +
-                        '</div>'
-                    );
-
-                    setTimeout(function () {
-                        $('#passportReaderModal').modal('hide');
-                    }, 1400);
-
-                } else {
-                    var errMsg = (res && res.message) ? res.message : 'Görselden kimlik veya pasaport verisi okunamadı.';
-                    statusEl.html(
-                        '<div class="alert alert-warning py-2 px-3 mb-0">' +
-                        '<i class="fas fa-exclamation-triangle mr-2"></i> ' + errMsg +
-                        '</div>'
-                    );
-                    showPassportToast(errMsg, 'danger');
-                    if (res && res.rawText) {
-                        $('#manualMrzInput').val(res.rawText);
-                        $('#tab-manual-link').tab('show');
-                    }
-                }
-            },
-            error: function () {
-                statusEl.html('<div class="alert alert-danger py-2 px-3 mb-0"><i class="fas fa-times-circle mr-1"></i> Sunucu hatası oluştu.</div>');
-                showPassportToast('Sunucu hatası oluştu.', 'danger');
-            }
-        });
-    }
-
-    /* ==========================================================================
-       8. SAYFA BAŞLATMA
+       7. SAYFA BAŞLATMA
        ========================================================================== */
     $(document).ready(function () {
         initHardwareScannerListener();
-        initPassportPhotoUpload();
         checkOpticalReaderStatus();
 
         // Buton tıklamaları
-        $(document).on('click', '#btnDirectOpticalScan, #btnModalDirectScan', function (e) {
+        $(document).on('click', '#btnDirectOpticalScan, #btnPanelDirectScan', function (e) {
             e.preventDefault();
             triggerDirectOpticalScan('auto');
-        });
-
-        $('#passportReaderModal').on('shown.bs.modal', function () {
-            checkOpticalReaderStatus();
         });
 
         // Global export

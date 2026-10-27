@@ -377,20 +377,29 @@ namespace gzpegm.Services
                                 success = true,
                                 deviceName = "3M Cogent / Gemalto (PV40/PV60/AT9000)",
                                 visBase64 = visBase64,
+                                isTurkishCitizen = parsed.IsTurkishCitizen,
+                                message = parsed.Message,
                                 documentType = parsed.DocumentType,
+                                docTypeCode = parsed.DocTypeCode,
                                 country = parsed.Country,
+                                countryCode = parsed.CountryCode,
                                 documentNumber = parsed.DocumentNumber,
                                 fullName = parsed.FullName,
                                 surname = parsed.Surname,
                                 givenNames = parsed.GivenNames,
                                 birthDate = parsed.BirthDate,
+                                age = parsed.Age,
+                                isAdult = parsed.IsAdult,
+                                adultCode = parsed.AdultCode,
                                 personalNumber = parsed.PersonalNumber,
                                 sex = parsed.Sex,
                                 rawText = parsed.RawText,
                                 line1 = line1,
                                 line2 = line2,
                                 line3 = line3,
-                                summary = parsed.FullName + " (" + parsed.DocumentNumber + ") - " + parsed.Country
+                                summary = parsed.IsTurkishCitizen
+                                    ? "TÜRK VATANDAŞI (Ceza Uygulanmaz)"
+                                    : (parsed.FullName + " (" + parsed.DocumentNumber + ") - " + parsed.Country)
                             };
                         }
                     }
@@ -473,17 +482,29 @@ namespace gzpegm.Services
                                 success = true,
                                 deviceName = "Regula Document Reader (Web API)",
                                 visBase64 = visBase64,
+                                isTurkishCitizen = parsed.IsTurkishCitizen,
+                                message = parsed.Message,
                                 documentType = parsed.DocumentType,
+                                docTypeCode = parsed.DocTypeCode,
                                 country = parsed.Country,
+                                countryCode = parsed.CountryCode,
                                 documentNumber = parsed.DocumentNumber,
                                 fullName = parsed.FullName,
                                 surname = parsed.Surname,
                                 givenNames = parsed.GivenNames,
                                 birthDate = parsed.BirthDate,
+                                age = parsed.Age,
+                                isAdult = parsed.IsAdult,
+                                adultCode = parsed.AdultCode,
                                 personalNumber = parsed.PersonalNumber,
                                 sex = parsed.Sex,
                                 rawText = parsed.RawText,
-                                summary = parsed.FullName + " (" + parsed.DocumentNumber + ") - " + parsed.Country
+                                line1 = l1,
+                                line2 = l2,
+                                line3 = l3,
+                                summary = parsed.IsTurkishCitizen
+                                    ? "TÜRK VATANDAŞI (Ceza Uygulanmaz)"
+                                    : (parsed.FullName + " (" + parsed.DocumentNumber + ") - " + parsed.Country)
                             };
                         }
                     }
@@ -515,8 +536,11 @@ namespace gzpegm.Services
                                     success = true,
                                     deviceName = "Regula Document Reader (Folder)",
                                     visBase64 = visBase64,
-                                    documentType = "Pasaport / Kimlik",
-                                    country = "Türkiye",
+                                    isTurkishCitizen = false,
+                                    documentType = "Umuma Mahsus Pasaport",
+                                    docTypeCode = "1",
+                                    country = "",
+                                    countryCode = "",
                                     documentNumber = "",
                                     fullName = "",
                                     birthDate = "",
@@ -999,15 +1023,22 @@ namespace gzpegm.Services
         private class ParsedMrz
         {
             public string DocumentType { get; set; } = "Umuma Mahsus Pasaport";
+            public string DocTypeCode { get; set; } = "1";
             public string Country { get; set; } = "";
+            public string CountryCode { get; set; } = "";
+            public bool IsTurkishCitizen { get; set; } = false;
             public string DocumentNumber { get; set; } = "";
             public string FullName { get; set; } = "";
             public string Surname { get; set; } = "";
             public string GivenNames { get; set; } = "";
             public string BirthDate { get; set; } = "";
+            public int? Age { get; set; }
+            public bool IsAdult { get; set; } = true;
+            public string AdultCode { get; set; } = "1";
             public string PersonalNumber { get; set; } = "";
             public string Sex { get; set; } = "";
             public string RawText { get; set; } = "";
+            public string Message { get; set; } = "";
         }
 
         private static ParsedMrz ParseMrzCodelines(string l1, string l2, string l3, string docTypeHint)
@@ -1019,19 +1050,104 @@ namespace gzpegm.Services
 
             p.RawText = (l1 + "\n" + l2 + "\n" + l3).Trim();
 
-            // 1. TD1 FORMATI (3 satır x 30 karakter - Yeni Kimlik Kartları & İkamet İzinleri)
+            // 1. TD3 FORMATI (Standart Pasaportlar - 2 Satır x 44 Karakter - Yabancı Yolcuların Temel Belgesi)
+            if (l1.Length >= 36 && (l1.StartsWith("P<") || l1.StartsWith("P") || l1.StartsWith("V<")))
+            {
+                p.DocumentType = l1.StartsWith("PD") || l1.StartsWith("D<") ? "Diplomatik Pasaport" : (l1.StartsWith("PS") || l1.StartsWith("S<") ? "Servis Pasaportu" : "Umuma Mahsus Pasaport");
+                p.DocTypeCode = p.DocumentType.Contains("Diplomatik") ? "2" : (p.DocumentType.Contains("Servis") ? "3" : "1");
+
+                // Line 1: Ülke Kodu & İsimler
+                string cCode = "";
+                if (l1.Length >= 5)
+                {
+                    cCode = l1.Substring(2, 3).Replace("<", "").Trim().ToUpperInvariant();
+                    p.CountryCode = cCode;
+                }
+
+                // Türk Vatandaşı Kontrolü: Bu projede Türklere ceza işlemi uygulanmaz
+                if (cCode == "TUR" || cCode == "TR")
+                {
+                    p.IsTurkishCitizen = true;
+                    p.Country = "Türkiye";
+                    p.Message = "Okunan belge Türk vatandaşına aittir (TUR). Türk vatandaşlarına vize/ceza işlemi uygulanamaz.";
+                }
+                else if (!string.IsNullOrEmpty(cCode))
+                {
+                    if (CountryMap.TryGetValue(cCode, out var mName)) p.Country = mName;
+                    else p.Country = cCode;
+                }
+
+                string namePart = l1.Length > 5 ? l1.Substring(5) : "";
+                var parts = namePart.Split(new[] { "<<" }, StringSplitOptions.RemoveEmptyEntries);
+                p.Surname = CleanMrzWord(parts.Length > 0 ? parts[0] : "");
+                p.GivenNames = CleanMrzWord(parts.Length > 1 ? parts[1] : "");
+                p.FullName = (p.Surname + " " + p.GivenNames).Trim();
+
+                // Line 2: Belge No (0-9), Uyruk (10-12), Doğum Tarihi (13-18), Cinsiyet (20)
+                if (l2.Length >= 9) p.DocumentNumber = l2.Substring(0, 9).Replace("<", "").Trim();
+                if (l2.Length >= 13)
+                {
+                    string natCode = l2.Substring(10, 3).Replace("<", "").Trim().ToUpperInvariant();
+                    if (natCode == "TUR" || natCode == "TR")
+                    {
+                        p.IsTurkishCitizen = true;
+                        p.Country = "Türkiye";
+                        p.CountryCode = natCode;
+                        p.Message = "Okunan belge Türk vatandaşına aittir (TUR). Türk vatandaşlarına vize/ceza işlemi uygulanamaz.";
+                    }
+                    else if (string.IsNullOrEmpty(p.Country))
+                    {
+                        p.CountryCode = natCode;
+                        if (CountryMap.TryGetValue(natCode, out var mNat)) p.Country = mNat;
+                        else p.Country = natCode;
+                    }
+                }
+
+                if (l2.Length >= 19) p.BirthDate = FormatMrzDate(l2.Substring(13, 6));
+                if (l2.Length >= 21) p.Sex = l2.Substring(20, 1) == "M" ? "Erkek" : (l2.Substring(20, 1) == "F" ? "Kadın" : "");
+
+                if (l2.Length >= 42)
+                {
+                    string opt = l2.Substring(28, 14).Replace("<", "").Trim();
+                    if (!string.IsNullOrEmpty(opt)) p.PersonalNumber = opt;
+                }
+
+                p.Age = CalculateAge(p.BirthDate);
+                if (p.Age.HasValue)
+                {
+                    p.IsAdult = p.Age.Value >= 18;
+                    p.AdultCode = p.IsAdult ? "1" : "2";
+                }
+
+                return p;
+            }
+
+            // 2. TD1 / TD2 FORMATI (3 satır x 30 karakter veya 2 satır x 36 karakter - Yabancı Kimlik & İkamet Kartları)
             if (l1.Length >= 26 && (l1.StartsWith("I<") || l1.StartsWith("I") || l1.StartsWith("A<") || l1.StartsWith("C<")))
             {
                 p.DocumentType = "Kimlik Kartı";
+                p.DocTypeCode = "1";
+
                 var mC = Regex.Match(l1, @"^[IAC][<]*([A-Z]{3})");
-                string cCode = mC.Success ? mC.Groups[1].Value : (l1.Length >= 5 ? l1.Substring(2, 3) : "TUR");
-                if (CountryMap.TryGetValue(cCode, out var mName)) p.Country = mName;
-                else p.Country = cCode;
+                string cCode = mC.Success ? mC.Groups[1].Value : (l1.Length >= 5 ? l1.Substring(2, 3) : "");
+                p.CountryCode = cCode;
+
+                if (cCode == "TUR" || cCode == "TR")
+                {
+                    p.IsTurkishCitizen = true;
+                    p.Country = "Türkiye";
+                    p.Message = "Okunan belge Türk vatandaşına aittir (TUR). Türk vatandaşlarına vize/ceza işlemi uygulanamaz.";
+                }
+                else if (!string.IsNullOrEmpty(cCode))
+                {
+                    if (CountryMap.TryGetValue(cCode, out var mName)) p.Country = mName;
+                    else p.Country = cCode;
+                }
 
                 int sStart = l1.IndexOf(cCode);
                 if (sStart >= 0) sStart += cCode.Length; else sStart = 5;
                 string rem = l1.Substring(Math.Min(sStart, l1.Length));
-                if (rem.Length >= 9) p.DocumentNumber = rem.Substring(0, 9).Replace("<", "");
+                if (rem.Length >= 9) p.DocumentNumber = rem.Substring(0, 9).Replace("<", "").Trim();
 
                 // Line 2: Doğum Tarihi (0-5), Cinsiyet (7)
                 if (l2.Length >= 6) p.BirthDate = FormatMrzDate(l2.Substring(0, 6));
@@ -1042,20 +1158,11 @@ namespace gzpegm.Services
                     else if (sx.StartsWith("F")) p.Sex = "Kadın";
                 }
 
-                // TCKN / YKN
+                // Yabancı Kimlik / Kişisel No
                 var tcknMatch = Regex.Match((l1 + " " + l2).Replace("<", " "), @"\b([1-9]\d{10})\b");
-                if (tcknMatch.Success && ValidateTckn(tcknMatch.Groups[1].Value))
+                if (tcknMatch.Success)
                 {
                     p.PersonalNumber = tcknMatch.Groups[1].Value;
-                }
-                else
-                {
-                    var m10 = Regex.Match(l1, @"[A-Z<]([0-9]{10})[<]*$");
-                    if (m10.Success)
-                    {
-                        string rec = RecoverTckn(m10.Groups[1].Value);
-                        if (!string.IsNullOrEmpty(rec)) p.PersonalNumber = rec;
-                    }
                 }
 
                 // Line 3: Soyad<<Ad
@@ -1068,42 +1175,11 @@ namespace gzpegm.Services
                     p.FullName = (p.Surname + " " + p.GivenNames).Trim();
                 }
 
-                return p;
-            }
-
-            // 2. TD3 FORMATI (2 satır x 44 karakter - Standart Pasaportlar)
-            if (l1.Length >= 36 && (l1.StartsWith("P<") || l1.StartsWith("P") || l1.StartsWith("V<")))
-            {
-                p.DocumentType = l1.StartsWith("PD") || l1.StartsWith("D<") ? "Diplomatik Pasaport" : (l1.StartsWith("PS") || l1.StartsWith("S<") ? "Servis Pasaportu" : "Umuma Mahsus Pasaport");
-                if (l1.Length >= 5)
+                p.Age = CalculateAge(p.BirthDate);
+                if (p.Age.HasValue)
                 {
-                    string cCode = l1.Substring(2, 3).Replace("<", "");
-                    if (CountryMap.TryGetValue(cCode, out var mName)) p.Country = mName;
-                    else p.Country = cCode;
-                }
-
-                // Line 1: İsimler (5. karakterden itibaren)
-                string namePart = l1.Length > 5 ? l1.Substring(5) : "";
-                var parts = namePart.Split(new[] { "<<" }, StringSplitOptions.RemoveEmptyEntries);
-                p.Surname = CleanMrzWord(parts.Length > 0 ? parts[0] : "");
-                p.GivenNames = CleanMrzWord(parts.Length > 1 ? parts[1] : "");
-                p.FullName = (p.Surname + " " + p.GivenNames).Trim();
-
-                // Line 2: Belge No (0-9), Uyruk (10-12), Doğum Tarihi (13-18), Cinsiyet (20)
-                if (l2.Length >= 9) p.DocumentNumber = l2.Substring(0, 9).Replace("<", "");
-                if (string.IsNullOrEmpty(p.Country) && l2.Length >= 13)
-                {
-                    string natCode = l2.Substring(10, 3).Replace("<", "");
-                    if (CountryMap.TryGetValue(natCode, out var mNat)) p.Country = mNat;
-                    else p.Country = natCode;
-                }
-                if (l2.Length >= 19) p.BirthDate = FormatMrzDate(l2.Substring(13, 6));
-                if (l2.Length >= 21) p.Sex = l2.Substring(20, 1) == "M" ? "Erkek" : (l2.Substring(20, 1) == "F" ? "Kadın" : "");
-
-                if (l2.Length >= 42)
-                {
-                    string opt = l2.Substring(28, 14).Replace("<", "").Trim();
-                    if (Regex.IsMatch(opt, @"^\d{11}$")) p.PersonalNumber = opt;
+                    p.IsAdult = p.Age.Value >= 18;
+                    p.AdultCode = p.IsAdult ? "1" : "2";
                 }
 
                 return p;

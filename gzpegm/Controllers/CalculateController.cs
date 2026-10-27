@@ -365,44 +365,6 @@ namespace gzpegm.Controllers
         }
 
         [HttpPost]
-        public ActionResult ScanPassportImage()
-        {
-            var user = GetUser();
-            if (user == null)
-                return Json(new { success = false, message = "Lütfen sisteme giriş yapın." });
-
-            if (Request.Files.Count == 0 || Request.Files[0] == null || Request.Files[0].ContentLength == 0)
-                return Json(new { success = false, message = "Lütfen bir pasaport görseli seçin." });
-
-            var file = Request.Files[0];
-            var ext = System.IO.Path.GetExtension(file.FileName ?? "").ToLowerInvariant();
-            var allowedExts = new[] { ".jpg", ".jpeg", ".png", ".bmp", ".webp", ".jfif" };
-            if (!allowedExts.Contains(ext))
-                return Json(new { success = false, message = "Desteklenmeyen dosya formatı. Lütfen JPG veya PNG yükleyin." });
-
-            var tempDir = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "App_Data", "TempUploads");
-            if (!System.IO.Directory.Exists(tempDir))
-                System.IO.Directory.CreateDirectory(tempDir);
-
-            var tempFile = System.IO.Path.Combine(tempDir, Guid.NewGuid().ToString("N") + ext);
-            file.SaveAs(tempFile);
-
-            try
-            {
-                var result = gzpegm.Services.OpticalReaderService.ProcessPassportImage(tempFile);
-                return Json(result);
-            }
-            catch (Exception ex)
-            {
-                return Json(new { success = false, message = "Hata: " + ex.Message });
-            }
-            finally
-            {
-                try { if (System.IO.File.Exists(tempFile)) System.IO.File.Delete(tempFile); } catch { }
-            }
-        }
-
-        [HttpPost]
         public JsonResult ScanOpticalReader(string deviceType = "auto")
         {
             var user = GetUser();
