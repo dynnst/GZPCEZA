@@ -33,7 +33,13 @@ namespace gzpegm.Services
             @"C:\Program Files (x86)\Regula\Reader\DocReader.exe",
             @"C:\Program Files\Regula\Document Reader SDK\Bin\Regula Reader.exe",
             @"C:\Program Files (x86)\Regula\Document Reader SDK\Bin\Regula Reader.exe",
-            @"C:\Program Files\Regula\Document Reader SDK\RegulaReaderService.exe"
+            @"C:\Program Files\Regula\Document Reader SDK\RegulaReaderService.exe",
+            @"C:\Program Files (x86)\Regula\Document Reader SDK\RegulaReaderService.exe",
+            @"C:\Program Files\Regula\Document Reader SDK\Regula Reader.exe",
+            @"C:\Program Files (x86)\Regula\Document Reader SDK\Regula Reader.exe",
+            @"C:\Regula\DocReader.exe",
+            @"C:\Regula\Reader\DocReader.exe",
+            @"C:\Regula\Document Reader SDK\Bin\DocReader.exe"
         };
 
         private static readonly string[] DeskoPaths = new string[]
@@ -49,19 +55,84 @@ namespace gzpegm.Services
         {
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Regula\Document Reader SDK\Scans"),
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Regula\Document Reader SDK\Scans"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Regula\Scans"),
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), @"Regula\Scans"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), @"Regula\Scans"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), @"Documents\Regula\Scans"),
             @"C:\Regula\Scans",
-            @"C:\RegulaScans"
+            @"C:\RegulaScans",
+            @"D:\Regula\Scans",
+            @"C:\Regula\DocReader\Scans",
+            Path.Combine(Path.GetTempPath(), "Regula"),
+            Path.Combine(Path.GetTempPath(), "DocReader")
         };
+
+        public static bool IsRegulaRunning()
+        {
+            try
+            {
+                var procs = Process.GetProcesses();
+                foreach (var p in procs)
+                {
+                    try
+                    {
+                        string n = p.ProcessName.ToLowerInvariant();
+                        if (n.Contains("regula") || n.Contains("docreader") || n.Contains("documentreader"))
+                        {
+                            return true;
+                        }
+                    }
+                    catch { }
+                }
+            }
+            catch { }
+            return false;
+        }
+
+        public static bool IsRegulaAvailable()
+        {
+            if (IsRegulaRunning()) return true;
+
+            // Regula yerel Web API portları açık mı? (41101, 8080, 41102)
+            int[] ports = new int[] { 41101, 8080, 41102 };
+            foreach (var port in ports)
+            {
+                try
+                {
+                    using (var tcp = new System.Net.Sockets.TcpClient())
+                    {
+                        var res = tcp.ConnectAsync("127.0.0.1", port);
+                        if (res.Wait(120)) return true;
+                    }
+                }
+                catch { }
+            }
+
+            // Regula tarama klasörlerinde son 5 dk içinde oluşturulmuş belge var mı?
+            try
+            {
+                foreach (var folder in RegulaScanFolders)
+                {
+                    if (Directory.Exists(folder))
+                    {
+                        var dir = new DirectoryInfo(folder);
+                        bool hasRecent = dir.GetFiles("*.*", SearchOption.AllDirectories)
+                                            .Any(f => (DateTime.UtcNow - f.LastWriteTimeUtc).TotalMinutes < 5);
+                        if (hasRecent) return true;
+                    }
+                }
+            }
+            catch { }
+
+            return false;
+        }
 
         public static object ConnectDevice(string deviceType = "auto")
         {
             try
             {
                 bool is3MRunning = Process.GetProcessesByName("OutputWedgeSysTray").Length > 0;
-                bool isRegulaRunning = Process.GetProcessesByName("DocReader").Length > 0
-                                    || Process.GetProcessesByName("Regula Reader").Length > 0
-                                    || Process.GetProcessesByName("RegulaReaderService").Length > 0;
+                bool isRegulaRunning = IsRegulaAvailable();
                 bool isDeskoRunning = Process.GetProcessesByName("PentaScanner").Length > 0
                                    || Process.GetProcessesByName("DeskoService").Length > 0;
 
@@ -150,9 +221,7 @@ namespace gzpegm.Services
                 }
 
                 bool is3M = Process.GetProcessesByName("OutputWedgeSysTray").Length > 0;
-                bool isRegula = Process.GetProcessesByName("DocReader").Length > 0
-                             || Process.GetProcessesByName("Regula Reader").Length > 0
-                             || Process.GetProcessesByName("RegulaReaderService").Length > 0;
+                bool isRegula = IsRegulaAvailable();
                 bool isDesko = Process.GetProcessesByName("PentaScanner").Length > 0
                             || Process.GetProcessesByName("DeskoService").Length > 0;
                 bool isAnyRunning = is3M || isRegula || isDesko;
@@ -246,9 +315,7 @@ namespace gzpegm.Services
                 }
 
                 bool is3MProcess = Process.GetProcessesByName("OutputWedgeSysTray").Length > 0;
-                bool isRegula = Process.GetProcessesByName("DocReader").Length > 0
-                             || Process.GetProcessesByName("Regula Reader").Length > 0
-                             || Process.GetProcessesByName("RegulaReaderService").Length > 0;
+                bool isRegula = IsRegulaAvailable();
                 bool isDesko = Process.GetProcessesByName("PentaScanner").Length > 0
                             || Process.GetProcessesByName("DeskoService").Length > 0;
 
@@ -276,7 +343,7 @@ namespace gzpegm.Services
 
         /// <summary>
         /// Doğrudan optik okuyucudan (3M AT9000/PV40/PV60, Regula 70X4/70X7 veya Desko PENTA)
-        /// donanım SDK'sı üzerinden pasaport/kimlik verilerini ve görselini çeker.
+        /// donanım SDK'sı, yerel Web API veya dosya aktarımı üzerinden pasaport/kimlik verilerini ve görselini çeker.
         /// </summary>
         public static object ScanDevice(string deviceType = "auto")
         {
@@ -284,14 +351,28 @@ namespace gzpegm.Services
             {
                 try
                 {
-                    bool isRegulaRunning = Process.GetProcessesByName("DocReader").Length > 0
-                                        || Process.GetProcessesByName("Regula Reader").Length > 0
-                                        || Process.GetProcessesByName("RegulaReaderService").Length > 0;
+                    string requested = (deviceType ?? "auto").Trim().ToLowerInvariant();
 
-                    string requested = (deviceType ?? "auto").ToLowerInvariant();
+                    // 1. Regula özel olarak talep edildiyse
+                    if (requested == "regula")
+                    {
+                        var regulaRes = TryScanRegula();
+                        if (regulaRes != null) return regulaRes;
+                        return new { success = false, message = "Regula optik okuyucudan belge okunamadı. Lütfen pasaportu cihaz camının üzerine yerleştirip tekrar deneyiniz." };
+                    }
 
-                    // 1. Regula okuyucu seçildiyse veya Auto modunda Regula aktifse
-                    if (requested == "regula" || (requested == "auto" && isRegulaRunning))
+                    // 2. 3M özel olarak talep edildiyse
+                    if (requested == "3m")
+                    {
+                        string mmmErr = "";
+                        var mmmRes = TryScan3M(out mmmErr);
+                        if (mmmRes != null) return mmmRes;
+                        return new { success = false, message = "3M Cogent okuyucudan belge okunamadı. " + mmmErr };
+                    }
+
+                    // 3. Auto modu (Akıllı Cihaz Tespiti & Sıralı Okuma):
+                    // A) Önce Regula okuyucunun hazır olup olmadığını kontrol et
+                    if (IsRegulaAvailable())
                     {
                         var regulaResult = TryScanRegula();
                         if (regulaResult != null)
@@ -300,133 +381,29 @@ namespace gzpegm.Services
                         }
                     }
 
-                    // 2. 3M / Gemalto donanım tarayıcısını doğrudan çalıştır (ReaderScanner.exe)
-                    string scannerExe = ResolveAppDataPath("ReaderScanner.exe");
-                    if (!File.Exists(scannerExe))
+                    // B) 3M / Gemalto donanım tarayıcısını doğrudan çalıştır (ReaderScanner.exe)
+                    string mmmError = "";
+                    var scan3M = TryScan3M(out mmmError);
+                    if (scan3M != null)
                     {
-                        return new { success = false, message = "Optik tarayıcı yürütücüsü (ReaderScanner.exe) bulunamadı. Lütfen App_Data klasörünü kontrol ediniz." };
+                        return scan3M;
                     }
 
-                    // 3M OutputWedge donanım portunu meşgul ediyorsa geçici olarak durdur
-                    bool was3MRunning = false;
-                    var runningWedges = Process.GetProcessesByName("OutputWedgeSysTray");
-                    if (runningWedges.Length > 0)
+                    // C) 3M başarısız olduysa veya donanım bulunamadıysa, Regula'yı ikinci şans olarak tekrar dene
+                    var regulaFallback = TryScanRegula();
+                    if (regulaFallback != null)
                     {
-                        was3MRunning = true;
-                        foreach (var p in runningWedges)
-                        {
-                            try { p.Kill(); } catch { }
-                        }
-                        System.Threading.Thread.Sleep(350);
+                        return regulaFallback;
                     }
 
-                    try
+                    // D) İki okuyucudan da sonuç alınamadıysa kullanıcıya anlaşılır bilgi ver
+                    string finalMsg = "Optik okuyucudan belge okunamadı. Lütfen pasaport veya kimliği cihaz camının (3M veya Regula) üzerine yerleştirip tekrar deneyiniz.";
+                    if (!string.IsNullOrEmpty(mmmError) && !mmmError.Contains("CANNOT_CONNECT_TO_READER") && !mmmError.Contains("NO_READER_FOUND"))
                     {
-                        var psi = new ProcessStartInfo
-                        {
-                            FileName = scannerExe,
-                            Arguments = "--scan",
-                            UseShellExecute = false,
-                            RedirectStandardOutput = true,
-                            RedirectStandardError = true,
-                            CreateNoWindow = true,
-                            StandardOutputEncoding = System.Text.Encoding.UTF8
-                        };
-
-                        using (var proc = Process.Start(psi))
-                        {
-                            string output = proc.StandardOutput.ReadToEnd();
-                            string errOutput = proc.StandardError.ReadToEnd();
-                            proc.WaitForExit(14000);
-
-                            if (string.IsNullOrWhiteSpace(output))
-                            {
-                                string detail = !string.IsNullOrWhiteSpace(errOutput) ? " (" + errOutput.Trim() + ")" : "";
-                                return new { success = false, message = "Optik okuyucudan veri yanıtı alınamadı." + detail };
-                            }
-
-                            int jsonStart = output.IndexOf('{');
-                            int jsonEnd = output.LastIndexOf('}');
-                            if (jsonStart < 0 || jsonEnd <= jsonStart)
-                            {
-                                string detail = !string.IsNullOrWhiteSpace(errOutput) ? " [Hata: " + errOutput.Trim() + "]" : "";
-                                return new { success = false, message = "Okuyucu çıktısı ayrıştırılamadı: " + output + detail };
-                            }
-
-                            string jsonStr = output.Substring(jsonStart, jsonEnd - jsonStart + 1);
-                            var jsonObj = JObject.Parse(jsonStr);
-
-                            bool success = (bool?)jsonObj["success"] ?? false;
-                            if (!success)
-                            {
-                                string msg = (string)jsonObj["message"] ?? "Optik okuyucudan belge okunamadı. Lütfen belgeyi camın üzerine yerleştiriniz.";
-                                return new { success = false, message = msg };
-                            }
-
-                            string visBase64 = (string)jsonObj["visBase64"] ?? "";
-                            string line1 = (string)jsonObj["line1"] ?? "";
-                            string line2 = (string)jsonObj["line2"] ?? "";
-                            string line3 = (string)jsonObj["line3"] ?? "";
-                            string docTypeStr = (string)jsonObj["docType"] ?? "PASSPORT";
-
-                            // Satırları ICAO formatına göre ayrıştır
-                            var parsed = ParseMrzCodelines(line1, line2, line3, docTypeStr);
-
-                            return new
-                            {
-                                success = true,
-                                deviceName = "3M Cogent / Gemalto (PV40/PV60/AT9000)",
-                                visBase64 = visBase64,
-                                isTurkishCitizen = parsed.IsTurkishCitizen,
-                                message = parsed.Message,
-                                documentType = parsed.DocumentType,
-                                docTypeCode = parsed.DocTypeCode,
-                                country = parsed.Country,
-                                countryCode = parsed.CountryCode,
-                                documentNumber = parsed.DocumentNumber,
-                                fullName = parsed.FullName,
-                                surname = parsed.Surname,
-                                givenNames = parsed.GivenNames,
-                                birthDate = parsed.BirthDate,
-                                age = parsed.Age,
-                                isAdult = parsed.IsAdult,
-                                adultCode = parsed.AdultCode,
-                                personalNumber = parsed.PersonalNumber,
-                                sex = parsed.Sex,
-                                rawText = parsed.RawText,
-                                line1 = line1,
-                                line2 = line2,
-                                line3 = line3,
-                                summary = parsed.IsTurkishCitizen
-                                    ? "TÜRK VATANDAŞI (Ceza Uygulanmaz)"
-                                    : (parsed.FullName + " (" + parsed.DocumentNumber + ") - " + parsed.Country)
-                            };
-                        }
+                        finalMsg += " (" + mmmError + ")";
                     }
-                    finally
-                    {
-                        // Daha önce OutputWedge çalışıyorduysa tekrar arka planda başlat
-                        if (was3MRunning)
-                        {
-                            try
-                            {
-                                foreach (var p in MmmPaths)
-                                {
-                                    if (File.Exists(p))
-                                    {
-                                        Process.Start(new ProcessStartInfo
-                                        {
-                                            FileName = p,
-                                            WorkingDirectory = Path.GetDirectoryName(p),
-                                            UseShellExecute = true
-                                        });
-                                        break;
-                                    }
-                                }
-                            }
-                            catch { }
-                        }
-                    }
+
+                    return new { success = false, message = finalMsg };
                 }
                 catch (Exception ex)
                 {
@@ -435,116 +412,474 @@ namespace gzpegm.Services
             }
         }
 
-        private static object TryScanRegula()
+        private static object TryScan3M(out string errorDetail)
         {
+            errorDetail = "";
+            string scannerExe = ResolveAppDataPath("ReaderScanner.exe");
+            if (!File.Exists(scannerExe))
+            {
+                errorDetail = "Optik tarayıcı yürütücüsü (ReaderScanner.exe) bulunamadı.";
+                return null;
+            }
+
+            // 3M OutputWedge donanım portunu meşgul ediyorsa geçici olarak durdur
+            bool was3MRunning = false;
+            var runningWedges = Process.GetProcessesByName("OutputWedgeSysTray");
+            if (runningWedges.Length > 0)
+            {
+                was3MRunning = true;
+                foreach (var p in runningWedges)
+                {
+                    try { p.Kill(); } catch { }
+                }
+                System.Threading.Thread.Sleep(350);
+            }
+
             try
             {
-                // Regula Web API kontrolü (localhost:41101)
-                using (var client = new HttpClient())
+                var psi = new ProcessStartInfo
                 {
-                    client.Timeout = TimeSpan.FromMilliseconds(2000);
-                    var response = client.GetAsync("http://127.0.0.1:41101/api/process").Result;
-                    if (response.IsSuccessStatusCode)
+                    FileName = scannerExe,
+                    Arguments = "--scan",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true,
+                    StandardOutputEncoding = System.Text.Encoding.UTF8
+                };
+
+                using (var proc = Process.Start(psi))
+                {
+                    string output = proc.StandardOutput.ReadToEnd();
+                    string errOutput = proc.StandardError.ReadToEnd();
+                    proc.WaitForExit(14000);
+
+                    if (string.IsNullOrWhiteSpace(output))
                     {
-                        string jsonContent = response.Content.ReadAsStringAsync().Result;
-                        var json = JObject.Parse(jsonContent);
+                        errorDetail = !string.IsNullOrWhiteSpace(errOutput) ? errOutput.Trim() : "3M okuyucudan yanıt alınamadı.";
+                        return null;
+                    }
 
-                        string visBase64 = "";
-                        string rawMrz = "";
+                    int jsonStart = output.IndexOf('{');
+                    int jsonEnd = output.LastIndexOf('}');
+                    if (jsonStart < 0 || jsonEnd <= jsonStart)
+                    {
+                        errorDetail = !string.IsNullOrWhiteSpace(errOutput) ? errOutput.Trim() : "3M çıktısı ayrıştırılamadı.";
+                        return null;
+                    }
 
-                        var containerList = json["ContainerList"]?["List"] as JArray;
-                        if (containerList != null)
+                    string jsonStr = output.Substring(jsonStart, jsonEnd - jsonStart + 1);
+                    var jsonObj = JObject.Parse(jsonStr);
+
+                    bool success = (bool?)jsonObj["success"] ?? false;
+                    if (!success)
+                    {
+                        errorDetail = (string)jsonObj["message"] ?? "Optik okuyucudan belge okunamadı.";
+                        return null;
+                    }
+
+                    string visBase64 = (string)jsonObj["visBase64"] ?? "";
+                    string line1 = (string)jsonObj["line1"] ?? "";
+                    string line2 = (string)jsonObj["line2"] ?? "";
+                    string line3 = (string)jsonObj["line3"] ?? "";
+                    string docTypeStr = (string)jsonObj["docType"] ?? "PASSPORT";
+
+                    // Satırları ICAO formatına göre ayrıştır
+                    var parsed = ParseMrzCodelines(line1, line2, line3, docTypeStr);
+
+                    return new
+                    {
+                        success = true,
+                        deviceName = "3M Cogent / Gemalto (PV40/PV60/AT9000)",
+                        visBase64 = visBase64,
+                        isTurkishCitizen = parsed.IsTurkishCitizen,
+                        message = parsed.Message,
+                        documentType = parsed.DocumentType,
+                        docTypeCode = parsed.DocTypeCode,
+                        country = parsed.Country,
+                        countryCode = parsed.CountryCode,
+                        documentNumber = parsed.DocumentNumber,
+                        fullName = parsed.FullName,
+                        surname = parsed.Surname,
+                        givenNames = parsed.GivenNames,
+                        birthDate = parsed.BirthDate,
+                        age = parsed.Age,
+                        isAdult = parsed.IsAdult,
+                        adultCode = parsed.AdultCode,
+                        personalNumber = parsed.PersonalNumber,
+                        sex = parsed.Sex,
+                        rawText = parsed.RawText,
+                        line1 = line1,
+                        line2 = line2,
+                        line3 = line3,
+                        summary = parsed.IsTurkishCitizen
+                            ? "TÜRK VATANDAŞI (Ceza Uygulanmaz)"
+                            : (parsed.FullName + " (" + parsed.DocumentNumber + ") - " + parsed.Country)
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                errorDetail = ex.Message;
+                return null;
+            }
+            finally
+            {
+                // Daha önce OutputWedge çalışıyorduysa tekrar arka planda başlat
+                if (was3MRunning)
+                {
+                    try
+                    {
+                        foreach (var p in MmmPaths)
                         {
-                            foreach (var item in containerList)
+                            if (File.Exists(p))
                             {
-                                int resultType = (int?)item["result_type"] ?? 0;
-                                if (resultType == 1 || resultType == 201)
-                                    visBase64 = (string)item["image"] ?? visBase64;
-                                else if (resultType == 36 || resultType == 3)
+                                Process.Start(new ProcessStartInfo
                                 {
-                                    string text = (string)item["raw_data"] ?? (string)item["mrz"] ?? "";
-                                    if (!string.IsNullOrEmpty(text)) rawMrz = text;
+                                    FileName = p,
+                                    WorkingDirectory = Path.GetDirectoryName(p),
+                                    UseShellExecute = true
+                                });
+                                break;
+                            }
+                        }
+                    }
+                    catch { }
+                }
+            }
+        }
+
+        private static object TryScanRegula()
+        {
+            // 1. Regula Web API kontrolleri (Varsayılan port 8080, ek portlar 41101, 41102)
+            string[] endpoints = new string[]
+            {
+                "http://127.0.0.1:41101/api/process",
+                "http://127.0.0.1:8080/api/process",
+                "http://127.0.0.1:41102/api/process"
+            };
+
+            foreach (var url in endpoints)
+            {
+                try
+                {
+                    using (var client = new HttpClient())
+                    {
+                        client.Timeout = TimeSpan.FromMilliseconds(1800);
+                        HttpResponseMessage response = null;
+
+                        // A) Regula standardı: POST metodu ile Mrz senaryosu gönder
+                        try
+                        {
+                            var content = new StringContent("{\"processParam\":{\"scenario\":\"Mrz\"}}", System.Text.Encoding.UTF8, "application/json");
+                            response = client.PostAsync(url, content).Result;
+                        }
+                        catch { }
+
+                        // B) Boş gövde ile POST dene
+                        if (response == null || !response.IsSuccessStatusCode)
+                        {
+                            try
+                            {
+                                var content = new StringContent("{}", System.Text.Encoding.UTF8, "application/json");
+                                response = client.PostAsync(url, content).Result;
+                            }
+                            catch { }
+                        }
+
+                        // C) GET isteği ile sorgula
+                        if (response == null || !response.IsSuccessStatusCode)
+                        {
+                            try
+                            {
+                                response = client.GetAsync(url).Result;
+                            }
+                            catch { }
+                        }
+
+                        if (response != null && response.IsSuccessStatusCode)
+                        {
+                            string jsonContent = response.Content.ReadAsStringAsync().Result;
+                            if (!string.IsNullOrWhiteSpace(jsonContent))
+                            {
+                                var json = JObject.Parse(jsonContent);
+
+                                string visBase64 = "";
+                                string rawMrz = "";
+
+                                var containerList = json["ContainerList"]?["List"] as JArray;
+                                if (containerList != null)
+                                {
+                                    foreach (var item in containerList)
+                                    {
+                                        int resultType = (int?)item["result_type"] ?? 0;
+                                        if (resultType == 1 || resultType == 201)
+                                        {
+                                            visBase64 = (string)item["image"] ?? (string)item["Image"] ?? visBase64;
+                                        }
+                                        else if (resultType == 36 || resultType == 3 || resultType == 17)
+                                        {
+                                            string text = (string)item["raw_data"] ?? (string)item["mrz"] ?? (string)item["RawData"] ?? (string)item["Text"] ?? "";
+                                            if (!string.IsNullOrEmpty(text)) rawMrz = text;
+                                        }
+                                    }
+                                }
+
+                                if (string.IsNullOrEmpty(rawMrz))
+                                {
+                                    rawMrz = (string)json["rawMrz"] ?? (string)json["mrz"] ?? (string)json["RawMrz"] ?? "";
+                                }
+
+                                ParsedMrz parsed = null;
+                                string l1 = "", l2 = "", l3 = "";
+
+                                if (!string.IsNullOrEmpty(rawMrz))
+                                {
+                                    var lines = (rawMrz ?? "").Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+                                    l1 = lines.Length > 0 ? lines[0] : "";
+                                    l2 = lines.Length > 1 ? lines[1] : "";
+                                    l3 = lines.Length > 2 ? lines[2] : "";
+                                    parsed = ParseMrzCodelines(l1, l2, l3, "REGULA WEB API");
+                                }
+                                else if (!string.IsNullOrEmpty(visBase64))
+                                {
+                                    // Görsel var fakat MRZ metni ayrıştırılamadıysa OCR ile MRZ çıkar
+                                    string tempFile = Path.Combine(Path.GetTempPath(), "regula_web_" + Guid.NewGuid().ToString("N") + ".jpg");
+                                    try
+                                    {
+                                        File.WriteAllBytes(tempFile, Convert.FromBase64String(visBase64));
+                                        var ocrRes = ProcessPassportImage(tempFile);
+                                        if (ocrRes != null)
+                                        {
+                                            var ocrObj = JObject.FromObject(ocrRes);
+                                            bool ocrOk = (bool?)ocrObj["success"] ?? false;
+                                            if (ocrOk)
+                                            {
+                                                bool isTk = (bool?)ocrObj["isTurkishCitizen"] ?? false;
+                                                string fullName = (string)ocrObj["fullName"] ?? "";
+                                                string docNo = (string)ocrObj["documentNumber"] ?? "";
+                                                string country = (string)ocrObj["country"] ?? "";
+                                                string birthDate = (string)ocrObj["birthDate"] ?? "";
+
+                                                return new
+                                                {
+                                                    success = true,
+                                                    deviceName = "Regula Document Reader (Web API + OCR)",
+                                                    visBase64 = visBase64,
+                                                    isTurkishCitizen = isTk,
+                                                    message = (string)ocrObj["message"] ?? "",
+                                                    documentType = (string)ocrObj["documentType"] ?? "Umuma Mahsus Pasaport",
+                                                    docTypeCode = (string)ocrObj["docTypeCode"] ?? "1",
+                                                    country = country,
+                                                    countryCode = (string)ocrObj["countryCode"] ?? "",
+                                                    documentNumber = docNo,
+                                                    fullName = fullName,
+                                                    surname = (string)ocrObj["surname"] ?? "",
+                                                    givenNames = (string)ocrObj["givenNames"] ?? "",
+                                                    birthDate = birthDate,
+                                                    age = (int?)ocrObj["age"],
+                                                    isAdult = (bool?)ocrObj["isAdult"] ?? true,
+                                                    adultCode = (string)ocrObj["adultCode"] ?? "1",
+                                                    personalNumber = (string)ocrObj["personalNumber"] ?? "",
+                                                    sex = (string)ocrObj["sex"] ?? "",
+                                                    rawText = (string)ocrObj["rawText"] ?? "",
+                                                    summary = isTk ? "TÜRK VATANDAŞI (Ceza Uygulanmaz)" : (fullName + " (" + docNo + ") - " + country)
+                                                };
+                                            }
+                                        }
+                                    }
+                                    catch { }
+                                    finally
+                                    {
+                                        try { if (File.Exists(tempFile)) File.Delete(tempFile); } catch { }
+                                    }
+                                }
+
+                                if (parsed != null && (!string.IsNullOrEmpty(parsed.DocumentNumber) || !string.IsNullOrEmpty(parsed.FullName) || parsed.IsTurkishCitizen))
+                                {
+                                    return new
+                                    {
+                                        success = true,
+                                        deviceName = "Regula Document Reader (Web API)",
+                                        visBase64 = visBase64,
+                                        isTurkishCitizen = parsed.IsTurkishCitizen,
+                                        message = parsed.Message,
+                                        documentType = parsed.DocumentType,
+                                        docTypeCode = parsed.DocTypeCode,
+                                        country = parsed.Country,
+                                        countryCode = parsed.CountryCode,
+                                        documentNumber = parsed.DocumentNumber,
+                                        fullName = parsed.FullName,
+                                        surname = parsed.Surname,
+                                        givenNames = parsed.GivenNames,
+                                        birthDate = parsed.BirthDate,
+                                        age = parsed.Age,
+                                        isAdult = parsed.IsAdult,
+                                        adultCode = parsed.AdultCode,
+                                        personalNumber = parsed.PersonalNumber,
+                                        sex = parsed.Sex,
+                                        rawText = parsed.RawText,
+                                        line1 = l1,
+                                        line2 = l2,
+                                        line3 = l3,
+                                        summary = parsed.IsTurkishCitizen
+                                            ? "TÜRK VATANDAŞI (Ceza Uygulanmaz)"
+                                            : (parsed.FullName + " (" + parsed.DocumentNumber + ") - " + parsed.Country)
+                                    };
                                 }
                             }
                         }
-
-                        if (!string.IsNullOrEmpty(rawMrz) || !string.IsNullOrEmpty(visBase64))
-                        {
-                            var lines = (rawMrz ?? "").Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
-                            string l1 = lines.Length > 0 ? lines[0] : "";
-                            string l2 = lines.Length > 1 ? lines[1] : "";
-                            string l3 = lines.Length > 2 ? lines[2] : "";
-
-                            var parsed = ParseMrzCodelines(l1, l2, l3, "REGULA DOCUMENT");
-
-                            return new
-                            {
-                                success = true,
-                                deviceName = "Regula Document Reader (Web API)",
-                                visBase64 = visBase64,
-                                isTurkishCitizen = parsed.IsTurkishCitizen,
-                                message = parsed.Message,
-                                documentType = parsed.DocumentType,
-                                docTypeCode = parsed.DocTypeCode,
-                                country = parsed.Country,
-                                countryCode = parsed.CountryCode,
-                                documentNumber = parsed.DocumentNumber,
-                                fullName = parsed.FullName,
-                                surname = parsed.Surname,
-                                givenNames = parsed.GivenNames,
-                                birthDate = parsed.BirthDate,
-                                age = parsed.Age,
-                                isAdult = parsed.IsAdult,
-                                adultCode = parsed.AdultCode,
-                                personalNumber = parsed.PersonalNumber,
-                                sex = parsed.Sex,
-                                rawText = parsed.RawText,
-                                line1 = l1,
-                                line2 = l2,
-                                line3 = l3,
-                                summary = parsed.IsTurkishCitizen
-                                    ? "TÜRK VATANDAŞI (Ceza Uygulanmaz)"
-                                    : (parsed.FullName + " (" + parsed.DocumentNumber + ") - " + parsed.Country)
-                            };
-                        }
                     }
                 }
+                catch { }
             }
-            catch { }
 
-            // Regula dosya klasöründen aktarımı dene
+            // 2. Regula aktif dosya / klasör (Folder Drop) kontrolü
             try
             {
                 foreach (var folder in RegulaScanFolders)
                 {
-                    if (Directory.Exists(folder))
-                    {
-                        var dir = new DirectoryInfo(folder);
-                        var recentFiles = dir.GetFiles("*.*", SearchOption.TopDirectoryOnly)
-                                             .Where(f => (DateTime.UtcNow - f.LastWriteTimeUtc).TotalMinutes < 3)
-                                             .OrderByDescending(f => f.LastWriteTimeUtc)
-                                             .ToList();
+                    if (!Directory.Exists(folder)) continue;
 
-                        if (recentFiles.Any())
+                    var dir = new DirectoryInfo(folder);
+                    // Son 5 dakika içindeki tarama dosyalarını bul (alt dizinler dahil)
+                    var recentFiles = dir.GetFiles("*.*", SearchOption.AllDirectories)
+                                         .Where(f => (DateTime.UtcNow - f.LastWriteTimeUtc).TotalMinutes < 5)
+                                         .OrderByDescending(f => f.LastWriteTimeUtc)
+                                         .ToList();
+
+                    if (!recentFiles.Any()) continue;
+
+                    // A) Görsel dosyasını bul (vis, white, color veya son oluşturulmuş jpg/png)
+                    var imgFile = recentFiles.FirstOrDefault(x =>
+                    {
+                        string name = x.Name.ToLowerInvariant();
+                        return (name.Contains("vis") || name.Contains("white") || name.Contains("color")) &&
+                               (x.Extension.Equals(".jpg", StringComparison.OrdinalIgnoreCase) || x.Extension.Equals(".jpeg", StringComparison.OrdinalIgnoreCase) || x.Extension.Equals(".png", StringComparison.OrdinalIgnoreCase) || x.Extension.Equals(".bmp", StringComparison.OrdinalIgnoreCase));
+                    });
+
+                    if (imgFile == null)
+                    {
+                        imgFile = recentFiles.FirstOrDefault(x =>
+                            x.Extension.Equals(".jpg", StringComparison.OrdinalIgnoreCase) ||
+                            x.Extension.Equals(".jpeg", StringComparison.OrdinalIgnoreCase) ||
+                            x.Extension.Equals(".png", StringComparison.OrdinalIgnoreCase) ||
+                            x.Extension.Equals(".bmp", StringComparison.OrdinalIgnoreCase));
+                    }
+
+                    // B) XML, JSON veya TXT dosyasını bul (DocReader.xml, Results.xml vb.)
+                    var dataFile = recentFiles.FirstOrDefault(x =>
+                        x.Extension.Equals(".xml", StringComparison.OrdinalIgnoreCase) ||
+                        x.Extension.Equals(".txt", StringComparison.OrdinalIgnoreCase) ||
+                        x.Extension.Equals(".json", StringComparison.OrdinalIgnoreCase));
+
+                    string visBase64 = "";
+                    if (imgFile != null)
+                    {
+                        try { visBase64 = Convert.ToBase64String(File.ReadAllBytes(imgFile.FullName)); } catch { }
+                    }
+
+                    // Eğer XML veya TXT dosyası varsa MRZ satırlarını doğrudan ayrıştır
+                    if (dataFile != null)
+                    {
+                        try
                         {
-                            var f = recentFiles.FirstOrDefault(x => x.Name.ToLowerInvariant().Contains("vis") || x.Name.ToLowerInvariant().Contains("white"));
-                            if (f != null)
+                            string textContent = File.ReadAllText(dataFile.FullName, System.Text.Encoding.UTF8);
+                            var mrzMatches = Regex.Matches(textContent, @"[A-Z0-9<]{28,45}");
+                            var candidateLines = new List<string>();
+                            foreach (Match m in mrzMatches)
                             {
-                                string visBase64 = Convert.ToBase64String(File.ReadAllBytes(f.FullName));
+                                string cl = CleanMrzLine(m.Value);
+                                if (cl.Contains("<") && (cl.Length == 44 || cl.Length == 30 || cl.Length == 36))
+                                {
+                                    if (!candidateLines.Contains(cl)) candidateLines.Add(cl);
+                                }
+                            }
+
+                            if (candidateLines.Count >= 2)
+                            {
+                                string l1 = candidateLines[0];
+                                string l2 = candidateLines[1];
+                                string l3 = candidateLines.Count > 2 ? candidateLines[2] : "";
+                                var parsed = ParseMrzCodelines(l1, l2, l3, "Regula Data File");
+
+                                if (!string.IsNullOrEmpty(parsed.DocumentNumber) || !string.IsNullOrEmpty(parsed.FullName) || parsed.IsTurkishCitizen)
+                                {
+                                    return new
+                                    {
+                                        success = true,
+                                        deviceName = "Regula Document Reader (Folder Scan)",
+                                        visBase64 = visBase64,
+                                        isTurkishCitizen = parsed.IsTurkishCitizen,
+                                        message = parsed.Message,
+                                        documentType = parsed.DocumentType,
+                                        docTypeCode = parsed.DocTypeCode,
+                                        country = parsed.Country,
+                                        countryCode = parsed.CountryCode,
+                                        documentNumber = parsed.DocumentNumber,
+                                        fullName = parsed.FullName,
+                                        surname = parsed.Surname,
+                                        givenNames = parsed.GivenNames,
+                                        birthDate = parsed.BirthDate,
+                                        age = parsed.Age,
+                                        isAdult = parsed.IsAdult,
+                                        adultCode = parsed.AdultCode,
+                                        personalNumber = parsed.PersonalNumber,
+                                        sex = parsed.Sex,
+                                        rawText = parsed.RawText,
+                                        line1 = l1,
+                                        line2 = l2,
+                                        line3 = l3,
+                                        summary = parsed.IsTurkishCitizen
+                                            ? "TÜRK VATANDAŞI (Ceza Uygulanmaz)"
+                                            : (parsed.FullName + " (" + parsed.DocumentNumber + ") - " + parsed.Country)
+                                    };
+                                }
+                            }
+                        }
+                        catch { }
+                    }
+
+                    // C) Eğer XML/TXT'ten MRZ alınamadıysa ama görsel varsa, görseli OCR motoruna ver
+                    if (imgFile != null)
+                    {
+                        var ocrRes = ProcessPassportImage(imgFile.FullName);
+                        if (ocrRes != null)
+                        {
+                            var ocrObj = JObject.FromObject(ocrRes);
+                            bool ocrOk = (bool?)ocrObj["success"] ?? false;
+
+                            if (ocrOk)
+                            {
+                                bool isTk = (bool?)ocrObj["isTurkishCitizen"] ?? false;
+                                string fullName = (string)ocrObj["fullName"] ?? "";
+                                string docNo = (string)ocrObj["documentNumber"] ?? "";
+                                string country = (string)ocrObj["country"] ?? "";
+                                string birthDate = (string)ocrObj["birthDate"] ?? "";
+
                                 return new
                                 {
                                     success = true,
-                                    deviceName = "Regula Document Reader (Folder)",
+                                    deviceName = "Regula Document Reader (Folder Scan + OCR)",
                                     visBase64 = visBase64,
-                                    isTurkishCitizen = false,
-                                    documentType = "Umuma Mahsus Pasaport",
-                                    docTypeCode = "1",
-                                    country = "",
-                                    countryCode = "",
-                                    documentNumber = "",
-                                    fullName = "",
-                                    birthDate = "",
-                                    summary = "Regula klasöründen görsel başarıyla alındı"
+                                    isTurkishCitizen = isTk,
+                                    message = (string)ocrObj["message"] ?? "",
+                                    documentType = (string)ocrObj["documentType"] ?? "Umuma Mahsus Pasaport",
+                                    docTypeCode = (string)ocrObj["docTypeCode"] ?? "1",
+                                    country = country,
+                                    countryCode = (string)ocrObj["countryCode"] ?? "",
+                                    documentNumber = docNo,
+                                    fullName = fullName,
+                                    surname = (string)ocrObj["surname"] ?? "",
+                                    givenNames = (string)ocrObj["givenNames"] ?? "",
+                                    birthDate = birthDate,
+                                    age = (int?)ocrObj["age"],
+                                    isAdult = (bool?)ocrObj["isAdult"] ?? true,
+                                    adultCode = (string)ocrObj["adultCode"] ?? "1",
+                                    personalNumber = (string)ocrObj["personalNumber"] ?? "",
+                                    sex = (string)ocrObj["sex"] ?? "",
+                                    rawText = (string)ocrObj["rawText"] ?? "",
+                                    summary = isTk ? "TÜRK VATANDAŞI (Ceza Uygulanmaz)" : (fullName + " (" + docNo + ") - " + country)
                                 };
                             }
                         }
@@ -992,12 +1327,27 @@ namespace gzpegm.Services
                     };
                 }
 
+                string detectedCountryCode = "";
+                foreach (var kvp in CountryMap)
+                {
+                    if (string.Equals(kvp.Value, country, StringComparison.OrdinalIgnoreCase) || string.Equals(kvp.Key, country, StringComparison.OrdinalIgnoreCase))
+                    {
+                        detectedCountryCode = kvp.Key;
+                        break;
+                    }
+                }
+
+                bool isTurkish = (country == "Türkiye" || country == "TUR" || country == "TR" || detectedCountryCode == "TUR" || detectedCountryCode == "TR" || (!string.IsNullOrEmpty(tckn) && ValidateTckn(tckn)));
+
                 return new
                 {
                     success = true,
+                    isTurkishCitizen = isTurkish,
+                    message = isTurkish ? "Okunan belge Türk vatandaşına aittir (TUR). Türk vatandaşlarına vize/ceza işlemi uygulanamaz." : "",
                     documentType = docType,
                     docTypeCode = docTypeCode,
                     country = country,
+                    countryCode = detectedCountryCode,
                     documentNumber = docNo,
                     personalNumber = tckn,
                     fullName = fullName,
@@ -1008,9 +1358,11 @@ namespace gzpegm.Services
                     age = age,
                     isAdult = isAdult,
                     adultCode = isAdult ? "1" : "2",
-                    summary = (!string.IsNullOrEmpty(fullName) ? fullName : "Yolcu") +
-                              (!string.IsNullOrEmpty(docNo) ? " (" + docNo + ")" : "") +
-                              (!string.IsNullOrEmpty(country) ? " - " + country : ""),
+                    summary = isTurkish
+                        ? "TÜRK VATANDAŞI (Ceza Uygulanmaz)"
+                        : ((!string.IsNullOrEmpty(fullName) ? fullName : "Yolcu") +
+                           (!string.IsNullOrEmpty(docNo) ? " (" + docNo + ")" : "") +
+                           (!string.IsNullOrEmpty(country) ? " - " + country : "")),
                     rawText = rawText
                 };
             }
