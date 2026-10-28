@@ -127,6 +127,45 @@ namespace gzpegm.Services
             return false;
         }
 
+        public static string CheckRegulaDriverStatus()
+        {
+            try
+            {
+                using (var usbKey = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Enum\USB"))
+                {
+                    if (usbKey == null) return null;
+                    foreach (var subName in usbKey.GetSubKeyNames())
+                    {
+                        if (subName.IndexOf("1C6A", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            using (var devKey = usbKey.OpenSubKey(subName))
+                            {
+                                if (devKey == null) continue;
+                                foreach (var instName in devKey.GetSubKeyNames())
+                                {
+                                    using (var instKey = devKey.OpenSubKey(instName))
+                                    {
+                                        if (instKey == null) continue;
+                                        string desc = instKey.GetValue("DeviceDesc") as string ?? "";
+                                        string svc = instKey.GetValue("Service") as string ?? "";
+                                        int configFlags = 0;
+                                        try { configFlags = Convert.ToInt32(instKey.GetValue("ConfigFlags") ?? 0); } catch { }
+
+                                        if (desc.IndexOf("FX3", StringComparison.OrdinalIgnoreCase) >= 0 || (configFlags & 0x40) != 0 || (string.IsNullOrEmpty(svc) && subName.IndexOf("E338", StringComparison.OrdinalIgnoreCase) >= 0))
+                                        {
+                                            return "Regula 7024 optik okuyucu bilgisayara takılı, ancak Windows kamera sürücüsü (FX3) yüklü değil (Aygıt Yöneticisi Kod 28). Belge görüntüsünün alınabilmesi için lütfen Regula Document Reader sürücülerini / SDK paketini kurunuz.";
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+            return null;
+        }
+
         public static object ConnectDevice(string deviceType = "auto")
         {
             try
@@ -322,6 +361,24 @@ namespace gzpegm.Services
                 bool isRunning = is3MHardwareReady || is3MProcess || isRegula || isDesko;
                 string deviceName = (is3MHardwareReady || is3MProcess) ? "3M Cogent / Gemalto (PV40/PV60/AT9000)" : (isRegula ? "Regula 70X4/70X7" : (isDesko ? "Desko PENTA" : "Optik Okuyucu"));
 
+                string regDriverWarning = CheckRegulaDriverStatus();
+                if (!string.IsNullOrEmpty(regDriverWarning) && !isRunning)
+                {
+                    return new
+                    {
+                        success = true,
+                        isRunning = false,
+                        is3MReady = is3MHardwareReady,
+                        isDocumentOnWindow = isDocOnWindow,
+                        is3MRunning = is3MProcess,
+                        isRegulaRunning = false,
+                        isDeskoRunning = isDesko,
+                        driverMissing = true,
+                        deviceName = "Regula 7024 (Sürücü Eksik - FX3)",
+                        statusText = "Regula Takılı (Kamera Sürücüsü Eksik - Kod 28)"
+                    };
+                }
+
                 return new
                 {
                     success = true,
@@ -396,9 +453,19 @@ namespace gzpegm.Services
                         return regulaFallback;
                     }
 
-                    // D) İki okuyucudan da sonuç alınamadıysa kullanıcıya anlaşılır bilgi ver
-                    string finalMsg = "Optik okuyucudan belge okunamadı. Lütfen pasaport veya kimliği cihaz camının (3M veya Regula) üzerine yerleştirip tekrar deneyiniz.";
-                    if (!string.IsNullOrEmpty(mmmError) && !mmmError.Contains("CANNOT_CONNECT_TO_READER") && !mmmError.Contains("NO_READER_FOUND"))
+                    // D) İki okuyucudan da sonuç alınamadıysa donanım teşhisine göre net bilgi ver
+                    string regDriverDiag = CheckRegulaDriverStatus();
+                    if (!string.IsNullOrEmpty(regDriverDiag))
+                    {
+                        return new { success = false, message = regDriverDiag };
+                    }
+
+                    string finalMsg = "Optik okuyucudan belge okunamadı. Lütfen pasaport veya kimliği cihaz camının üzerine tam yerleştirip tekrar deneyiniz.";
+                    if (!string.IsNullOrEmpty(mmmError) &&
+                        !mmmError.Contains("CANNOT_CONNECT_TO_READER") &&
+                        !mmmError.Contains("NO_READER_FOUND") &&
+                        !mmmError.Contains("bağlı değil") &&
+                        !mmmError.Contains("meşgul"))
                     {
                         finalMsg += " (" + mmmError + ")";
                     }
