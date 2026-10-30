@@ -689,6 +689,11 @@
             if (window.PassportReader && typeof window.PassportReader.scanDevice === 'function') {
                 window.PassportReader.scanDevice(deviceType || 'auto');
             } else {
+                var isRemoteClient = (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1');
+                if (isRemoteClient) {
+                    alert('🟢 Masanızdaki optik okuyucu (3M veya Regula) klavye dinleyicisi üzerinden hazırdır.\n\nPasaport veya kimliği doğrudan cihazın camına koyunuz; sistem verileri otomatik dolduracaktır.');
+                    return;
+                }
                 var btns = $('#btnDirectOpticalScan, #btnPanelDirectScan');
                 var orig = btns.first().html();
                 btns.prop('disabled', true).html('<span class="spinner-border spinner-border-sm mr-1"></span> Okunuyor...');
@@ -716,6 +721,6 @@
             }
         }
     </script>
-    <script src="@Url.Content("~/js/calculate-index.js")?v=3.5"></script>
-    <script src="@Url.Content("~/js/passport-reader.js")?v=2.5"></script>
+    <script src="@Url.Content("~/js/calculate-index.js")?v=@DateTime.Now.Ticks"></script>
+    <script src="@Url.Content("~/js/passport-reader.js")?v=@DateTime.Now.Ticks"></script>
 }

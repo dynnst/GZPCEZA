@@ -288,6 +288,67 @@
         }
     }
 
+    var isRemoteClient = (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1');
+
+    function extractMrzFromRegulaResponse(data) {
+        if (!data) return "";
+        if (typeof data === 'string') {
+            try { data = JSON.parse(data); } catch (e) { return data; }
+        }
+        if (data.rawMrz) return data.rawMrz;
+        if (data.mrz) return data.mrz;
+        if (data.RawMrz) return data.RawMrz;
+        if (data.ContainerList && data.ContainerList.List && Array.isArray(data.ContainerList.List)) {
+            for (var i = 0; i < data.ContainerList.List.length; i++) {
+                var item = data.ContainerList.List[i];
+                var t = item.raw_data || item.mrz || item.RawData || item.Text;
+                if (t && typeof t === 'string' && t.trim().length >= 25) {
+                    return t;
+                }
+            }
+        }
+        return "";
+    }
+
+    function tryLocalClientRegula(callback) {
+        var endpoints = [
+            'http://127.0.0.1:41101/api/process',
+            'http://127.0.0.1:8080/api/process',
+            'http://127.0.0.1:41102/api/process'
+        ];
+
+        function tryNext(index) {
+            if (index >= endpoints.length) {
+                callback(null);
+                return;
+            }
+            var url = endpoints[index];
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: JSON.stringify({ processParam: { scenario: "Mrz" } }),
+                contentType: 'application/json',
+                timeout: 1200
+            }).done(function (data) {
+                if (data) callback(data);
+                else tryNext(index + 1);
+            }).fail(function () {
+                $.ajax({
+                    url: url,
+                    type: 'GET',
+                    timeout: 800
+                }).done(function (data2) {
+                    if (data2) callback(data2);
+                    else tryNext(index + 1);
+                }).fail(function () {
+                    tryNext(index + 1);
+                });
+            });
+        }
+
+        tryNext(0);
+    }
+
     function triggerDirectOpticalScan(deviceType) {
         if (isDirectScanActive) return;
         isDirectScanActive = true;
@@ -300,6 +361,31 @@
 
         btns.prop('disabled', true).html('<span class="spinner-border spinner-border-sm mr-1" role="status"></span> Okunuyor...');
 
+        // 1) Eğer Polnet istemci kabininde çalışılıyorsa (sunucu uzakta, okuyucu masada)
+        if (isRemoteClient) {
+            tryLocalClientRegula(function (localRes) {
+                isDirectScanActive = false;
+                btns.each(function (idx) {
+                    $(this).prop('disabled', false).html(originalHtmls[idx] || '<span class="passport-pulse-dot mr-1"></span> <i class="fas fa-camera mr-1"></i> Cihazdan Pasaport Oku');
+                });
+
+                if (localRes) {
+                    var mrz = extractMrzFromRegulaResponse(localRes);
+                    if (mrz && parseAndApplyPassportMrz(mrz, "Regula Yerel Web API")) {
+                        return;
+                    }
+                }
+
+                // Masadaki okuyucu Klavye Wedge (3M OutputWedge veya Regula Wedge) modunda hazır
+                showPassportAlert(
+                    '<strong>🟢 Masanızdaki Okuyucu Dinleniyor (Wedge Modu):</strong> Pasaport veya kimliği masanızdaki okuyucunun (3M veya Regula) camına yerleştiriniz. Sistem MRZ verisini milisaniyeler içinde yakalayarak form alanlarını otomatik dolduracaktır. (Polnet kabininde sunucuya bağlanma butonu gerekmez; masanızdaki okuyucu doğrudan tarayıcıya yazar.)',
+                    'info'
+                );
+            });
+            return;
+        }
+
+        // 2) Eğer localhost / sunucu ortamında çalışılıyorsa doğrudan C# servisine bağlan
         $.ajax({
             url: '/Calculate/ScanOpticalReader',
             type: 'POST',
@@ -322,6 +408,13 @@
     }
 
     function checkOpticalReaderStatus() {
+        if (isRemoteClient) {
+            $('#btnDirectOpticalScan, #btnPanelDirectScan')
+                .attr('title', 'Masanızdaki Okuyucu Dinleniyor (Wedge Modu) - Pasaportu veya kimliği doğrudan cihaz camına koyunuz')
+                .find('.passport-pulse-dot').css('background', '#22c55e');
+            return;
+        }
+
         $.ajax({
             url: '/Calculate/GetOpticalReaderStatus',
             type: 'GET',
@@ -335,6 +428,12 @@
     }
 
     function connectDevice(deviceType) {
+        if (isRemoteClient) {
+            showPassportAlert('<strong>🟢 İstemci / Masaüstü Modu:</strong> Masanızdaki okuyucu (3M veya Regula) klavye dinleyicisi üzerinden hazırdır. Pasaport veya kimliği doğrudan cihaz camına koyunuz.', 'info');
+            checkOpticalReaderStatus();
+            return;
+        }
+
         $.ajax({
             url: '/Calculate/ConnectOpticalReader',
             type: 'POST',
@@ -560,63 +659,117 @@
     }
 
     /* ==========================================================================
-       6. DONANIM OKUYUCU DİNLEYİCİSİ (KEYBOARD WEDGE)
+       6. DONANIM OKUYUCU DİNLEYİCİSİ (KEYBOARD WEDGE LISTENER)
        ========================================================================== */
     function initHardwareScannerListener() {
-        var buffer = '';
-        var lastCharTime = 0;
-        var MAX_KEY_INTERVAL = 45;
+        var scannerBuffer = "";
+        var lastKeystrokeTime = 0;
+        var scannerTimer = null;
+        var burstCount = 0;
 
-        $(window).on('keydown', function (e) {
-            var activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
-            var now = Date.now();
-            var charCode = e.which || e.keyCode;
-            var charStr = e.key;
-
-            if (buffer.length > 0 && (now - lastCharTime > MAX_KEY_INTERVAL)) {
-                buffer = '';
-            }
-            lastCharTime = now;
-
-            if (charCode === 13) {
-                if (buffer.length >= 20) {
-                    var isMrzOrWedge = (
-                        buffer.indexOf('P<') >= 0 ||
-                        buffer.indexOf('I<') >= 0 ||
-                        buffer.indexOf('A<') >= 0 ||
-                        buffer.indexOf('Surname') >= 0 ||
-                        buffer.indexOf('Doc') >= 0 ||
-                        buffer.indexOf('<<') >= 0 ||
-                        /^[A-Z0-9<]{24,}$/i.test(buffer.replace(/[\r\n\s]/g, ''))
-                    );
-
-                    if (isMrzOrWedge) {
-                        e.preventDefault();
-                        e.stopPropagation();
-
-                        var scannedData = buffer;
-                        buffer = '';
-
-                        var applied = parseAndApplyPassportMrz(scannedData, '3M / Regula / Desko (Wedge)');
-                        if (!applied) {
-                            showPassportAlert('Optik okuyucu verisi çözümlenemedi.', 'danger');
-                        }
-                        return false;
-                    }
-                }
-                buffer = '';
+        $(document).on('keydown', function (e) {
+            // Kontrol tuşlarını atla
+            if (e.key === 'Shift' || e.key === 'Control' || e.key === 'Alt' || e.key === 'Meta' || e.key === 'CapsLock') {
                 return;
             }
 
-            if (charStr && charStr.length === 1) {
-                buffer += charStr;
+            var now = Date.now();
+            var delta = now - lastKeystrokeTime;
+            lastKeystrokeTime = now;
 
-                if (buffer.length >= 15 && (buffer.indexOf('P<') === 0 || buffer.indexOf('I<') === 0 || buffer.indexOf('Surname') === 0)) {
-                    if (activeTag === 'input') {
-                        e.preventDefault();
-                    }
+            // Donanımsal okuyucular harfleri 5ms - 50ms aralığında yüksek hızda gönderir
+            var isFastBurst = (delta <= 50);
+            if (isFastBurst) {
+                burstCount++;
+            } else {
+                // Normal manuel klavye yazımı araya girdiyse (800ms'den uzun boşluk) buffer'ı sıfırla
+                if (delta > 800) {
+                    scannerBuffer = "";
+                    burstCount = 0;
                 }
             }
+
+            var key = e.key;
+            if (key === 'Enter') {
+                scannerBuffer += '\n';
+            } else if (key && key.length === 1) {
+                scannerBuffer += key;
+            }
+
+            // Donanım tarama imzası algılama
+            var hasScannerSignature = (
+                scannerBuffer.indexOf('START') >= 0 ||
+                scannerBuffer.indexOf('Surname:') >= 0 ||
+                scannerBuffer.indexOf('Last Name:') >= 0 ||
+                scannerBuffer.indexOf('Given Name:') >= 0 ||
+                scannerBuffer.indexOf('First Name:') >= 0 ||
+                scannerBuffer.indexOf('Doc. Number:') >= 0 ||
+                scannerBuffer.indexOf('Soyadı:') >= 0 ||
+                scannerBuffer.indexOf('Adı:') >= 0 ||
+                scannerBuffer.indexOf('Belge No:') >= 0 ||
+                scannerBuffer.indexOf('REGULA') >= 0 ||
+                scannerBuffer.indexOf('P<') >= 0 ||
+                scannerBuffer.indexOf('I<') >= 0 ||
+                scannerBuffer.indexOf('A<') >= 0 ||
+                scannerBuffer.indexOf('V<') >= 0
+            );
+
+            // Odaktaki input alanını donanım verisiyle kirletmemek için varsayılan yazmayı engelle
+            if ((burstCount >= 2 || hasScannerSignature) && e.target) {
+                var tag = (e.target.tagName || '').toUpperCase();
+                if (tag === 'INPUT' || tag === 'TEXTAREA') {
+                    e.preventDefault();
+                }
+            }
+
+            // 1) 3M Wedge END etiketi tespiti
+            if (/END[\r\n]*$/i.test(scannerBuffer) && scannerBuffer.length >= 25) {
+                e.preventDefault();
+                clearTimeout(scannerTimer);
+                var outputWedge = scannerBuffer;
+                scannerBuffer = "";
+                burstCount = 0;
+                parseAndApplyPassportMrz(outputWedge, "3M PV40/PV60 Donanım");
+                return false;
+            }
+
+            // 2) TD3 Pasaport tamamlandığında (2 satır x 44 karakter)
+            var td3Lines = scannerBuffer.split(/[\r\n]+/).filter(function (l) { return l.trim().length >= 40; });
+            if (td3Lines.length >= 2 && (td3Lines[0].indexOf('P<') >= 0 || td3Lines[0].indexOf('P') === 0 || td3Lines[0].indexOf('V<') >= 0)) {
+                if (td3Lines[1].length >= 44) {
+                    clearTimeout(scannerTimer);
+                    var td3Data = scannerBuffer;
+                    scannerBuffer = "";
+                    burstCount = 0;
+                    parseAndApplyPassportMrz(td3Data, "3M / Regula Pasaport Okuyucu");
+                    return;
+                }
+            }
+
+            // 3) TD1 Kimlik tamamlandığında (3 satır x 30 karakter)
+            var td1Lines = scannerBuffer.split(/[\r\n]+/).filter(function (l) { return l.trim().length >= 28; });
+            if (td1Lines.length >= 3 && (td1Lines[0].indexOf('I<') >= 0 || td1Lines[0].indexOf('I') === 0 || td1Lines[0].indexOf('A<') >= 0)) {
+                clearTimeout(scannerTimer);
+                var td1Data = scannerBuffer;
+                scannerBuffer = "";
+                burstCount = 0;
+                parseAndApplyPassportMrz(td1Data, "3M / Regula Kimlik Okuyucu");
+                return;
+            }
+
+            // Debounce zamanlayıcısı (500ms): tüm satırların ve tuş serilerinin tamamlanmasını bekler
+            clearTimeout(scannerTimer);
+            scannerTimer = setTimeout(function () {
+                if (scannerBuffer.trim().length >= 22) {
+                    var captured = scannerBuffer;
+                    scannerBuffer = "";
+                    burstCount = 0;
+                    parseAndApplyPassportMrz(captured, "Donanımsal Okuyucu (Wedge)");
+                } else {
+                    scannerBuffer = "";
+                    burstCount = 0;
+                }
+            }, 500);
         });
     }
 
@@ -625,12 +778,29 @@
        ========================================================================== */
     window.scanPassportDirect = triggerDirectOpticalScan;
 
+    window.simulatePassportScan = function (type) {
+        if (type === '3m_wedge') {
+            var s3m = "START\r\nSurname: SMITH\r\nForenames: JOHN\r\nDate of Birth: 15-05-88\r\nExpiry Date: 20-05-28\r\nDocument: PASSPORT\r\nDoc. Number: GBR123456\r\nNationality: GBR\r\nEND\r\n";
+            return parseAndApplyPassportMrz(s3m, "3M Wedge Test Simülasyonu");
+        } else if (type === 'regula_wedge') {
+            var sReg = "Surname: MULLER\r\nGiven Name: HANS\r\nDocument Number: C3X000123\r\nDate of Birth: 22.08.1985\r\nExpiry Date: 15.08.2032\r\nNationality: DEU\r\nSex: M\r\n";
+            return parseAndApplyPassportMrz(sReg, "Regula Wedge Test Simülasyonu");
+        } else if (type === 'td1') {
+            var sId = "I<DEU123456789712345678901234<\r\n8505205M3005204DEU<<<<<<<<<<<4\r\nSCHMIDT<<ANNA<<<<<<<<<<<<<<<<<";
+            return parseAndApplyPassportMrz(sId, "Kimlik Kartı (TD1) Test Simülasyonu");
+        } else {
+            var sPass = "P<GBRO'CONNOR<<JOHN<<<<<<<<<<<<<<<<<<<<<<<<<<\r\n1234567897GBR9001011M2501012<<<<<<<<<<<<<<02";
+            return parseAndApplyPassportMrz(sPass, "Pasaport (TD3) Test Simülasyonu");
+        }
+    };
+
     window.PassportReader = {
         scanDevice: triggerDirectOpticalScan,
         applyResult: applyScanResult,
         connectDevice: connectDevice,
         checkStatus: checkOpticalReaderStatus,
         parseAndApply: parseAndApplyPassportMrz,
+        simulateScan: window.simulatePassportScan,
         setCountry: setPassportCountry,
         showToast: showPassportToast,
         showAlert: showPassportAlert

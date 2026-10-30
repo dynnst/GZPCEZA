@@ -659,8 +659,67 @@ function initMrzParser() {
 }
 
 /* ==========================================================================
-   3M PV40 / PV60 DONANIMSAL OPTİK OKUYUCU DİNLEYİCİSİ (KEYBOARD WEDGE)
+   3M PV40 / PV60 & REGULA DONANIMSAL OPTIK OKUYUCU DINLEYICISI (KEYBOARD WEDGE)
    ========================================================================== */
+function tryLocalClientRegulaForEinad(callback) {
+    var endpoints = [
+        'http://127.0.0.1:41101/api/process',
+        'http://127.0.0.1:8080/api/process',
+        'http://127.0.0.1:41102/api/process'
+    ];
+
+    function tryNext(index) {
+        if (index >= endpoints.length) {
+            callback(null);
+            return;
+        }
+        var url = endpoints[index];
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: JSON.stringify({ processParam: { scenario: "Mrz" } }),
+            contentType: 'application/json',
+            timeout: 1200
+        }).done(function (data) {
+            if (data) callback(data);
+            else tryNext(index + 1);
+        }).fail(function () {
+            $.ajax({
+                url: url,
+                type: 'GET',
+                timeout: 800
+            }).done(function (data2) {
+                if (data2) callback(data2);
+                else tryNext(index + 1);
+            }).fail(function () {
+                tryNext(index + 1);
+            });
+        });
+    }
+
+    tryNext(0);
+}
+
+function extractMrzFromRegulaResponse(data) {
+    if (!data) return "";
+    if (typeof data === 'string') {
+        try { data = JSON.parse(data); } catch (e) { return data; }
+    }
+    if (data.rawMrz) return data.rawMrz;
+    if (data.mrz) return data.mrz;
+    if (data.RawMrz) return data.RawMrz;
+    if (data.ContainerList && data.ContainerList.List && Array.isArray(data.ContainerList.List)) {
+        for (var i = 0; i < data.ContainerList.List.length; i++) {
+            var item = data.ContainerList.List[i];
+            var t = item.raw_data || item.mrz || item.RawData || item.Text;
+            if (t && typeof t === 'string' && t.trim().length >= 25) {
+                return t;
+            }
+        }
+    }
+    return "";
+}
+
 function initHardwareScannerListener() {
     var scannerBuffer = "";
     var lastKeystrokeTime = 0;
@@ -668,7 +727,7 @@ function initHardwareScannerListener() {
     var burstCount = 0;
 
     $(document).on('keydown', function (e) {
-        // Kontrol tuşlarını yoksay
+        // Kontrol tuslarini yoksay
         if (e.key === 'Shift' || e.key === 'Control' || e.key === 'Alt' || e.key === 'Meta' || e.key === 'CapsLock') {
             return;
         }
@@ -677,14 +736,14 @@ function initHardwareScannerListener() {
         var delta = now - lastKeystrokeTime;
         lastKeystrokeTime = now;
 
-        // Donanımsal okuyucular harfleri 5ms - 45ms aralığında yüksek hızda gönderir
+        // Donanimsal okuyucular harfleri 5ms - 50ms araliginda yuksek hizda gonderir
         var isFastBurst = (delta <= 50);
 
         if (isFastBurst) {
             burstCount++;
         } else {
-            // Normal insan yazımı araya girdiyse (300ms'den uzun sessizlik) buffer'ı temizle
-            if (delta > 300) {
+            // Normal insan yazimi araya girdiyse (800ms'den uzun sessizlik) buffer'i temizle
+            if (delta > 800) {
                 scannerBuffer = "";
                 burstCount = 0;
             }
@@ -697,24 +756,33 @@ function initHardwareScannerListener() {
             scannerBuffer += key;
         }
 
-        // Donanım tarama imzası veya burst akışı algılandıysa:
-        // Odaktaki input alanını scanner verisiyle kirletmemek için varsayılan yazmayı engelle
+        // Donanim tarama imzasi veya burst akisi algilandiginda:
+        // Odaktaki input alanini scanner verisiyle kirletmemek icin varsayilan yazmayi engelle
         var hasScannerSignature = (
             scannerBuffer.indexOf('START') >= 0 ||
-            scannerBuffer.indexOf('Surname:') >= 0 || scannerBuffer.indexOf('Given Name:') >= 0 || scannerBuffer.indexOf('REGULA') >= 0 ||
+            scannerBuffer.indexOf('Surname:') >= 0 ||
+            scannerBuffer.indexOf('Last Name:') >= 0 ||
+            scannerBuffer.indexOf('Given Name:') >= 0 ||
+            scannerBuffer.indexOf('First Name:') >= 0 ||
             scannerBuffer.indexOf('Doc. Number:') >= 0 ||
+            scannerBuffer.indexOf('Soyadı:') >= 0 ||
+            scannerBuffer.indexOf('Adı:') >= 0 ||
+            scannerBuffer.indexOf('Belge No:') >= 0 ||
+            scannerBuffer.indexOf('REGULA') >= 0 ||
             scannerBuffer.indexOf('P<') >= 0 ||
-            scannerBuffer.indexOf('I<') >= 0
+            scannerBuffer.indexOf('I<') >= 0 ||
+            scannerBuffer.indexOf('A<') >= 0 ||
+            scannerBuffer.indexOf('V<') >= 0
         );
 
-        if ((burstCount >= 3 || hasScannerSignature) && e.target) {
+        if ((burstCount >= 2 || hasScannerSignature) && e.target) {
             var tag = (e.target.tagName || '').toUpperCase();
             if ((tag === 'INPUT' || tag === 'TEXTAREA') && e.target.id !== 'mrzInputText') {
                 e.preventDefault();
             }
         }
 
-        // 1) OutputWedge END etiketini gönderdiğinde anında işlet
+        // 1) OutputWedge END etiketini gonderdiginde aninda islet
         if (/END[\r\n]*$/i.test(scannerBuffer) && scannerBuffer.length >= 25) {
             e.preventDefault();
             clearTimeout(scannerTimer);
@@ -725,9 +793,9 @@ function initHardwareScannerListener() {
             return false;
         }
 
-        // 2) TD3 2 Satırlı Pasaport tamamlandığında (88+ karakter ve 2 satır)
+        // 2) TD3 2 Satirli Pasaport tamamlandiginda (88+ karakter ve 2 satir)
         var td3Lines = scannerBuffer.split(/[\r\n]+/).filter(function (l) { return l.trim().length >= 40; });
-        if (td3Lines.length >= 2 && (td3Lines[0].indexOf('P<') >= 0 || td3Lines[0].indexOf('P') === 0)) {
+        if (td3Lines.length >= 2 && (td3Lines[0].indexOf('P<') >= 0 || td3Lines[0].indexOf('P') === 0 || td3Lines[0].indexOf('V<') >= 0)) {
             if (td3Lines[1].length >= 44) {
                 clearTimeout(scannerTimer);
                 var td3Data = scannerBuffer;
@@ -738,9 +806,9 @@ function initHardwareScannerListener() {
             }
         }
 
-        // 3) TD1 3 Satırlı Kimlik tamamlandığında (3 satır x 30 karakter)
+        // 3) TD1 3 Satirli Kimlik tamamlandiginda (3 satir x 30 karakter)
         var td1Lines = scannerBuffer.split(/[\r\n]+/).filter(function (l) { return l.trim().length >= 28; });
-        if (td1Lines.length >= 3 && (td1Lines[0].indexOf('I<') >= 0 || td1Lines[0].indexOf('I') === 0)) {
+        if (td1Lines.length >= 3 && (td1Lines[0].indexOf('I<') >= 0 || td1Lines[0].indexOf('I') === 0 || td1Lines[0].indexOf('A<') >= 0)) {
             clearTimeout(scannerTimer);
             var td1Data = scannerBuffer;
             scannerBuffer = "";
@@ -749,7 +817,7 @@ function initHardwareScannerListener() {
             return;
         }
 
-        // Sondaki dinamik debounce zamanlayıcısı (donanım akışı durduktan 130ms sonra tetiklenir)
+        // Sondaki dinamik debounce zamanlayicisi (donanim akisi durduktan 500ms sonra tetiklenir)
         clearTimeout(scannerTimer);
         scannerTimer = setTimeout(function () {
             if (scannerBuffer.trim().length >= 20) {
@@ -761,7 +829,7 @@ function initHardwareScannerListener() {
                 scannerBuffer = "";
                 burstCount = 0;
             }
-        }, 130);
+        }, 500);
     });
 
     function processHardwareScan(capturedText) {
@@ -777,6 +845,8 @@ function initHardwareScannerListener() {
             capturedText.indexOf('Document Number:') >= 0 ||
             capturedText.indexOf('Passport Number:') >= 0 ||
             capturedText.indexOf('Personal Number:') >= 0 ||
+            capturedText.indexOf('Soyadı:') >= 0 ||
+            capturedText.indexOf('Adı:') >= 0 ||
             capturedText.indexOf('P<') >= 0 ||
             capturedText.indexOf('I<') >= 0 ||
             capturedText.length >= 44
@@ -784,7 +854,7 @@ function initHardwareScannerListener() {
 
         if (!isRecognizable) return;
 
-        // Modal kapalÄ±ysa yeni kayÄ±t penceresini aÃ§ ve modal hazÄ±r olunca veriyi doldur
+        // Modal kapaliysa yeni kayit penceresini ac ve modal hazir olunca veriyi doldur
         if (!$('#inadModal').hasClass('show')) {
             window._pendingHardwareScan = capturedText;
             openAdd();
@@ -792,65 +862,66 @@ function initHardwareScannerListener() {
                 if (window._pendingHardwareScan) {
                     var pending = window._pendingHardwareScan;
                     window._pendingHardwareScan = null;
-                    parseAndApplyMrz(pending, "3M / Regula DonanÄ±m");
+                    parseAndApplyMrz(pending, "3M / Regula Donanim");
                 }
             }, 600);
         } else {
-            parseAndApplyMrz(capturedText, "3M / Regula DonanÄ±m");
+            parseAndApplyMrz(capturedText, "3M / Regula Donanim");
         }
     }
 }
 
-// 3M & Regula Okuma SimÃ¼latÃ¶rÃ¼ (Test ve DoÄŸrulama YardÄ±mcÄ±sÄ±)
+// 3M & Regula Okuma Simulatoru (Test ve Dogrulama Yardimcisi)
 window.simulate3mScan = function (type) {
     if (type === 'regula') {
         var sampleRegula = "Surname: DEMIR\r\nGiven Name: MEHMET\r\nDocument Number: U98765432\r\nDate of Birth: 12.06.1990\r\nExpiry Date: 12.06.2030\r\nNationality: TUR\r\nSex: M\r\nPersonal Number: 28471928374\r\n";
-        parseAndApplyMrz(sampleRegula, "Regula Okuyucu Test SimÃ¼lasyonu");
+        parseAndApplyMrz(sampleRegula, "Regula Okuyucu Test Simulatoru");
     } else if (type === 'wedge') {
         var sampleWedge = "START\r\nSurname: DAYAN\r\nForenames: NASIT\r\nDate of Birth: 08-04-84\r\nExpiry Date: 23-02-29\r\nDocument: IDENTITY CARD\r\nDoc. Number: A17V79281\r\nEND\r\n";
-        parseAndApplyMrz(sampleWedge, "3M Wedge Test SimÃ¼lasyonu");
+        parseAndApplyMrz(sampleWedge, "3M Wedge Test Simulatoru");
     } else if (type === 'id') {
         var sampleId = "I<TUR123456789712345678901234<\r\n8505205M3005204TUR<<<<<<<<<<<4\r\nOZTURK<<FATMA<<<<<<<<<<<<<<<<<";
-        parseAndApplyMrz(sampleId, "Kimlik (TD1) Test SimÃ¼lasyonu");
+        parseAndApplyMrz(sampleId, "Kimlik (TD1) Test Simulatoru");
     } else {
         var samplePassport = "P<TURKOC<<MEHMET<<<<<<<<<<<<<<<<<<<<<<<<<<<<\r\nU987654321TUR9203102M3203105<<<<<<<<<<<<<<02";
-        parseAndApplyMrz(samplePassport, "Pasaport (TD3) Test SimÃ¼lasyonu");
+        parseAndApplyMrz(samplePassport, "Pasaport (TD3) Test Simulatoru");
     }
 };
 
 /* ==========================================================================
-   3M & REGULA OPTÄ°K OKUYUCU BAÄLAN & CANLI DURUM YÃ–NETÄ°MÄ°
-   ========================================================================= */
+   3M & REGULA OPTIK OKUYUCU BAGLAN & CANLI DURUM YONETIMI
+   ========================================================================== */
 function update3MStatusUI(isActive, message) {
     var btnModal = $('#btnModalConnect3M');
     var btnTab = $('#btnTabConnect3M');
     var btnTop = $('#btnTopConnect3M');
     var badge = $('.scanner-live-badge');
     var statusMsg = $('#connect3MStatusMessage');
+    var isRemoteClient = (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1');
 
     if (isActive) {
         btnModal.removeClass('btn-primary btn-outline-danger').addClass('btn-success')
-                .html('<i class="fas fa-check-circle mr-1"></i> <span id="btnModalConnect3MText">Cihaz BaÄŸlÄ±</span>');
+                .html('<i class="fas fa-check-circle mr-1"></i> <span id="btnModalConnect3MText">' + (isRemoteClient ? 'Masaüstü Hazır' : 'Cihaz Bağlı') + '</span>');
         btnTab.removeClass('btn-primary btn-outline-danger').addClass('btn-success')
-              .html('<i class="fas fa-check-circle mr-2"></i> 3M & Regula BaÄŸlandÄ± ve HazÄ±r');
+              .html('<i class="fas fa-check-circle mr-2"></i> 3M & Regula Hazır (Wedge Dinleniyor)');
         btnTop.removeClass('btn-outline-info btn-outline-danger').addClass('btn-outline-success')
-              .html('<i class="fas fa-check-circle mr-1"></i> <span id="btnTopConnect3MText">3M / Regula BaÄŸlÄ±</span>');
+              .html('<i class="fas fa-check-circle mr-1"></i> <span id="btnTopConnect3MText">' + (isRemoteClient ? 'Masaüstü Hazır' : '3M / Regula Bağlı') + '</span>');
         
-        badge.html('<span class="scanner-dot" style="background:#22c55e;"></span> 3M & Regula Aktif');
+        badge.html('<span class="scanner-dot" style="background:#22c55e;"></span> ' + (isRemoteClient ? 'Masaüstü Okuyucu Aktif' : '3M & Regula Aktif'));
         if (statusMsg.length) {
-            statusMsg.html('<span class="text-success"><i class="fas fa-check-circle mr-1"></i> ' + (message || 'Cihaza baÅŸarÄ±yla baÄŸlanÄ±ldÄ±. Pasaport veya kimliÄŸi okuyucu camÄ±na koyabilirsiniz.') + '</span>');
+            statusMsg.html('<span class="text-success"><i class="fas fa-check-circle mr-1"></i> ' + (message || 'Masanızdaki optik okuyucu klavye (wedge) dinleyicisi üzerinden hazırdır. Pasaport veya kimliği doğrudan cihazın camına koyunuz.') + '</span>');
         }
     } else {
         btnModal.removeClass('btn-success').addClass('btn-primary')
-                .html('<i class="fas fa-plug mr-1"></i> <span id="btnModalConnect3MText">Cihaza BaÄŸlan</span>');
+                .html('<i class="fas fa-plug mr-1"></i> <span id="btnModalConnect3MText">Cihaza Bağlan</span>');
         btnTab.removeClass('btn-success').addClass('btn-primary')
-              .html('<i class="fas fa-plug mr-2"></i> 3M / Regula CihazÄ±na BaÄŸlan');
+              .html('<i class="fas fa-plug mr-2"></i> 3M / Regula Cihazına Bağlan');
         btnTop.removeClass('btn-outline-success').addClass('btn-outline-info')
-              .html('<i class="fas fa-plug mr-1"></i> <span id="btnTopConnect3MText">3M / Regula BaÄŸlan</span>');
+              .html('<i class="fas fa-plug mr-1"></i> <span id="btnTopConnect3MText">3M / Regula Bağlan</span>');
         
-        badge.html('<span class="scanner-dot" style="background:#eab308;"></span> 3M / Regula BaÄŸlantÄ± Bekleniyor');
+        badge.html('<span class="scanner-dot" style="background:#eab308;"></span> 3M / Regula Bağlantı Bekleniyor');
         if (statusMsg.length) {
-            statusMsg.html('<span class="text-muted"><i class="fas fa-info-circle mr-1"></i> Okuyucuya baÄŸlanmak veya servisi baÅŸlatmak iÃ§in butona tÄ±klayÄ±n.</span>');
+            statusMsg.html('<span class="text-muted"><i class="fas fa-info-circle mr-1"></i> Okuyucuya bağlanmak veya servisi başlatmak için butona tıklayın.</span>');
         }
     }
 }
@@ -860,15 +931,48 @@ window.connect3MDevice = function () {
     var btnTab = $('#btnTabConnect3M');
     var btnTop = $('#btnTopConnect3M');
     var statusMsg = $('#connect3MStatusMessage');
+    var isRemoteClient = (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1');
 
-    btnModal.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> BaÄŸlanÄ±yor...');
-    btnTab.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i> Okuyucuya BaÄŸlanÄ±lÄ±yor...');
-    btnTop.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> BaÄŸlanÄ±yor...');
-    if (statusMsg.length) {
-        statusMsg.html('<span class="text-primary font-weight-bold"><i class="fas fa-spinner fa-spin mr-1"></i> 3M / Regula cihazÄ±na baÄŸlanÄ±lÄ±yor, okuyucu servisi baÅŸlatÄ±lÄ±yor...</span>');
+    btnModal.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Kontrol Ediliyor...');
+    btnTab.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i> Okuyucu Kontrol Ediliyor...');
+    btnTop.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Kontrol Ediliyor...');
+
+    // 1) Polnet Uzak Istemci Modu: Okuyucu kullanicinin masasinda baglidir
+    if (isRemoteClient) {
+        if (statusMsg.length) {
+            statusMsg.html('<span class="text-primary font-weight-bold"><i class="fas fa-spinner fa-spin mr-1"></i> Masanızdaki okuyucu kontrol ediliyor...</span>');
+        }
+
+        tryLocalClientRegulaForEinad(function (localRes) {
+            btnModal.prop('disabled', false);
+            btnTab.prop('disabled', false);
+            btnTop.prop('disabled', false);
+
+            if (localRes) {
+                var mrz = extractMrzFromRegulaResponse(localRes);
+                if (mrz) {
+                    parseAndApplyMrz(mrz, "Regula Yerel Web Servisi");
+                    update3MStatusUI(true, "Regula Okuyucu ile Belge Okundu");
+                    return;
+                }
+            }
+
+            update3MStatusUI(true, "Masanızdaki 3M / Regula Okuyucu Dinleniyor (Wedge Modu)");
+            if (statusMsg.length) {
+                statusMsg.html('<div class="alert alert-info p-2 mb-0 mt-1 small shadow-sm"><i class="fas fa-info-circle mr-1"></i> <strong>Masanızdaki Okuyucu Dinleniyor:</strong> 3M (OutputWedge) veya Regula cihazınız klavye dinleyicisi üzerinden tam aktiftir. Pasaport veya kimliği doğrudan cihazın camına koyunuz. ("Cihaza Bağlan" butonu sunucu odasındaki cihaz içindir, Polnet istemci kabinlerinde masanızdaki okuyucu otomatik veri gönderir.)</div>');
+            }
+            if (typeof showEInadStatus === 'function') {
+                showEInadStatus('<i class="fas fa-keyboard mr-1"></i> Masanızdaki okuyucu dinleniyor. Pasaport veya kimliği doğrudan cihaz camına koyunuz.', 'info');
+            }
+        });
+        return;
     }
 
-    // 1) Windows Custom URI protocol Ã§aÄŸrÄ±sÄ± (Uzak istemci bilgisayarlar iÃ§in yerel baÅŸlatÄ±cÄ±)
+    // 2) Yerel Sunucu Ortami (localhost)
+    if (statusMsg.length) {
+        statusMsg.html('<span class="text-primary font-weight-bold"><i class="fas fa-spinner fa-spin mr-1"></i> 3M / Regula cihazına bağlanılıyor, okuyucu servisi başlatılıyor...</span>');
+    }
+
     try {
         var protoFrame = document.getElementById('egm3mProtocolFrame');
         if (!protoFrame) {
@@ -880,7 +984,6 @@ window.connect3MDevice = function () {
         protoFrame.src = 'egm-3m://connect';
     } catch (e) { }
 
-    // 2) Sunucu tarafÄ± C# ConnectOpticalReader / Connect3MReader API Ã§aÄŸrÄ±sÄ±
     var token = getAntiForgeryToken();
     $.ajax({
         url: getEinadUrl('data-url-connect-3m', '/EInad/ConnectOpticalReader'),
@@ -892,7 +995,7 @@ window.connect3MDevice = function () {
             playScanBeep();
             update3MStatusUI(true, res.message);
             if (typeof showEInadStatus === 'function') {
-                showEInadStatus('<i class="fas fa-check-circle mr-1"></i> ' + (res.deviceName || '3M / Regula') + ' okuyucu baÄŸlandÄ± ve aktif!', 'success');
+                showEInadStatus('<i class="fas fa-check-circle mr-1"></i> ' + (res.deviceName || '3M / Regula') + ' okuyucu bağlandı ve aktif!', 'success');
             }
         } else {
             setTimeout(function () {
@@ -911,6 +1014,12 @@ window.connect3MDevice = function () {
 };
 
 window.check3MStatus = function (notifyIfFailed) {
+    var isRemoteClient = (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1');
+    if (isRemoteClient) {
+        update3MStatusUI(true, "Masanızdaki 3M / Regula Okuyucu Dinleniyor (Wedge Modu)");
+        return;
+    }
+
     $.ajax({
         url: getEinadUrl('data-url-status-3m', '/EInad/GetOpticalReaderStatus'),
         type: 'GET',
@@ -921,7 +1030,7 @@ window.check3MStatus = function (notifyIfFailed) {
         } else {
             update3MStatusUI(false);
             if (notifyIfFailed) {
-                var msg = "Okuyucu servisi henÃ¼z yanÄ±t vermedi. LÃ¼tfen 3M veya Regula cihazÄ±nÄ±n USB kablosunun takÄ±lÄ± olduÄŸundan emin olun.";
+                var msg = "Okuyucu servisi henüz yanıt vermedi. Lütfen 3M veya Regula cihazının USB kablosunun takılı olduğundan emin olun.";
                 $('#connect3MStatusMessage').html('<span class="text-danger"><i class="fas fa-exclamation-triangle mr-1"></i> ' + msg + '</span>');
             }
         }
@@ -929,7 +1038,6 @@ window.check3MStatus = function (notifyIfFailed) {
         update3MStatusUI(false);
     });
 };
-
 /* ==========================================================================
    PASAPORT FOTOÄRAFI YÃœKLEME & MRZ AYRIÅTIRMA (DROPZONE & AJAX OCR)
    ========================================================================== */
