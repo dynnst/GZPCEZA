@@ -624,6 +624,66 @@ namespace gzpegm.Controllers
             }
         }
 
+        private void PopulateInadDropDowns(E_Inad model = null)
+        {
+            ViewBag.Countries = InadHelpers.Ulkeler;
+            ViewBag.PasaportTurleri = InadHelpers.PasaportTurleri;
+            ViewBag.BeyanTurleri = InadHelpers.BeyanTurleri;
+            ViewBag.YolcuDurumlari = InadHelpers.YolcuDurumlari;
+            ViewBag.InadSebepleri = InadHelpers.InadSebepleri;
+        }
+
+        [HttpGet]
+        public ActionResult Create()
+        {
+            var user = GetCurrentUser();
+            if (user == null)
+            {
+                TempData["msgError"] = "LÃ¼tfen sisteme giriÅŸ yapÄ±n.";
+                return RedirectToAction("Index", "Giris");
+            }
+
+            var borderName = (user.fldBorder ?? "").Trim();
+            var valilik = !string.IsNullOrEmpty(borderName) ? borderName.Split(' ')[0] : "";
+
+            var model = new E_Inad
+            {
+                InadId = 0,
+                TarihSaat = DateTime.Now,
+                GeldigiTarihSaat = DateTime.Now,
+                PasaportTuru = "Umuma Mahsus",
+                Durum = "Ä°nad OdasÄ±na AlÄ±ndÄ±",
+                Kapi = borderName,
+                Valilik = valilik,
+                Personel = (user.fldSicil ?? "").Trim(),
+                Sicil = (user.fldSicil ?? "").Trim()
+            };
+
+            PopulateInadDropDowns(model);
+            return View("Create", model);
+        }
+
+        [HttpGet]
+        public ActionResult Edit(int id)
+        {
+            var user = GetCurrentUser();
+            if (user == null)
+            {
+                TempData["msgError"] = "LÃ¼tfen sisteme giriÅŸ yapÄ±n.";
+                return RedirectToAction("Index", "Giris");
+            }
+
+            var existing = db.E_Inad.Find(id);
+            if (existing == null || !HasAccessToRecord(existing, user))
+            {
+                TempData["msgError"] = "KayÄ±t bulunamadÄ± veya bu kaydÄ± dÃ¼zenleme yetkiniz yok.";
+                return RedirectToAction("Index");
+            }
+
+            PopulateInadDropDowns(existing);
+            return View("Create", existing);
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult AddInad(E_Inad model)

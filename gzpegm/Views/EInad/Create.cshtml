@@ -1,0 +1,1013 @@
+@model gzpegm.Models.E_Inad
+@{
+    bool isEdit = Model != null && Model.InadId > 0;
+    ViewBag.Title = isEdit ? "İNAD Kaydını Düzenle (#" + Model.InadId + ")" : "Yeni İNAD Kaydı Ekle";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    var countries = ViewBag.Countries as List<string> ?? new List<string>();
+    var pasaportTurleri = ViewBag.PasaportTurleri as List<string> ?? new List<string>();
+    var beyanTurleri = ViewBag.BeyanTurleri as List<string> ?? new List<string>();
+    var yolcuDurumlari = ViewBag.YolcuDurumlari as List<string> ?? new List<string>();
+
+    var selectedSebep = (Model?.InadSebep ?? "")
+        .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+        .Select(s => s.Trim())
+        .ToList();
+
+    var selectedNakil = (Model?.UcagaNakil ?? "")
+        .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+        .Select(s => s.Trim())
+        .ToList();
+
+    string tarihSaatVal = Model?.TarihSaat.HasValue == true
+        ? Model.TarihSaat.Value.ToString("yyyy-MM-ddTHH:mm")
+        : DateTime.Now.ToString("yyyy-MM-ddTHH:mm");
+
+    string dogumTVal = Model?.DogumT.HasValue == true
+        ? Model.DogumT.Value.ToString("yyyy-MM-dd")
+        : "";
+
+    string geldigiTarihSaatVal = Model?.GeldigiTarihSaat.HasValue == true
+        ? Model.GeldigiTarihSaat.Value.ToString("yyyy-MM-ddTHH:mm")
+        : "";
+
+    string gidisTarihSaatVal = Model?.GidisTarihSaat.HasValue == true
+        ? Model.GidisTarihSaat.Value.ToString("yyyy-MM-ddTHH:mm")
+        : "";
+}
+
+<style>
+    .einad-page-header {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: #fff;
+        padding: 1.25rem 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 12px rgba(30, 60, 114, 0.15);
+    }
+    .scanner-live-badge {
+        display: inline-flex;
+        align-items: center;
+        background-color: rgba(40, 167, 69, 0.15);
+        color: #28a745;
+        border: 1px solid rgba(40, 167, 69, 0.3);
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.82rem;
+        font-weight: 600;
+    }
+    .scanner-dot {
+        width: 9px;
+        height: 9px;
+        background-color: #28a745;
+        border-radius: 50%;
+        margin-right: 6px;
+        box-shadow: 0 0 6px #28a745;
+        animation: pulseDot 2s infinite ease-in-out;
+    }
+    @@keyframes pulseDot {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.4; transform: scale(1.3); }
+    }
+    .einad-dropzone {
+        border: 2px dashed #17a2b8;
+        border-radius: 8px;
+        background-color: #f7fafc;
+        padding: 1.25rem 1rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+    }
+    .einad-dropzone:hover, .einad-dropzone.dragover {
+        border-color: #28a745;
+        background-color: #f0fff4;
+    }
+    .einad-dropzone .dropzone-icon {
+        font-size: 2rem;
+        color: #17a2b8;
+        margin-bottom: 0.5rem;
+    }
+    .passport-preview-box {
+        background: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-top: 0.75rem;
+    }
+    .passport-thumbnail {
+        max-width: 140px;
+        max-height: 95px;
+        object-fit: contain;
+        border-radius: 4px;
+        border: 1px solid #ced4da;
+    }
+    .btn-chip {
+        border-radius: 16px;
+        font-size: 0.82rem;
+        padding: 4px 12px;
+        margin: 2px;
+        transition: all 0.15s ease-in-out;
+    }
+    .btn-chip.active {
+        background-color: #dc3545 !important;
+        color: #fff !important;
+        border-color: #dc3545 !important;
+        font-weight: bold;
+    }
+    .highlight-flash {
+        animation: flashGreen 1.2s ease-out;
+    }
+    @@keyframes flashGreen {
+        0% { background-color: #d4edda; box-shadow: 0 0 8px #28a745; }
+        100% { background-color: #fff; }
+    }
+    .form-section-card {
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        margin-bottom: 1.25rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+    }
+    .form-section-header {
+        background-color: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+        padding: 0.75rem 1.25rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+</style>
+
+<div class="container-fluid px-4 py-3">
+
+    <!-- Header & Breadcrumb -->
+    <div class="einad-page-header d-flex flex-wrap justify-content-between align-items-center">
+        <div>
+            <div class="small text-white-50 mb-1">
+                <a href="@Url.Action("Index", "EInad")" class="text-white-50 text-decoration-none">
+                    <i class="fas fa-arrow-left mr-1"></i> E-İnad Yönetim Listesi
+                </a>
+                <span class="mx-2">/</span>
+                <span>@(isEdit ? "Kayıt Düzenle" : "Yeni Kayıt")</span>
+            </div>
+            <h3 class="font-weight-bold mb-0">
+                <i class="fas @(isEdit ? "fa-user-edit" : "fa-user-plus") mr-2"></i>
+                @(isEdit ? "İNAD Kaydını Düzenle (ID: #" + Model.InadId + ")" : "Yeni İNAD Kaydı Ekle")
+            </h3>
+        </div>
+        <div class="d-flex align-items-center mt-2 mt-md-0">
+            <a href="@Url.Action("Index", "EInad")" class="btn btn-outline-light mr-2">
+                <i class="fas fa-list mr-1"></i> Listeye Dön
+            </a>
+            <button type="button" class="btn btn-success font-weight-bold shadow mr-2 px-3" onclick="scanPassportForCreatePage();" id="btnTopScan">
+                <i class="fas fa-camera mr-1"></i> Cihazdan Pasaport / Kimlik Oku
+            </button>
+            <button type="submit" form="inadForm" class="btn btn-warning font-weight-bold shadow px-4">
+                <i class="fas fa-save mr-1"></i> Kaydet
+            </button>
+        </div>
+    </div>
+
+    <!-- Bildirim Alanı -->
+    <div id="pageAlertArea"></div>
+
+    <!-- HIZLI PASAPORT & OPTİK OKUYUCU MERKEZİ -->
+    <div class="card mb-4 border-info shadow-sm">
+        <div class="card-header bg-info-light py-2 px-3 d-flex flex-wrap justify-content-between align-items-center" style="background-color: #e3f2fd;">
+            <div class="d-flex align-items-center">
+                <span class="font-weight-bold text-info mr-3">
+                    <i class="fas fa-qrcode mr-1"></i> Hızlı Pasaport & Optik Okuyucu Merkezi
+                </span>
+                <span class="scanner-live-badge" title="3M, Regula veya Desko Optik Okuyucu Hazır">
+                    <span class="scanner-dot"></span> Regula / 3M / Desko Hazır
+                </span>
+            </div>
+            <div class="d-flex align-items-center mt-1 mt-md-0">
+                <button type="button" class="btn btn-sm btn-success font-weight-bold px-3 shadow-sm mr-2" id="btnPageScanPassport" onclick="scanPassportForCreatePage();">
+                    <i class="fas fa-camera mr-1"></i> Cihazdan Pasaport / Kimlik Oku
+                </button>
+                <span class="badge badge-secondary small" style="cursor: pointer;" data-toggle="collapse" data-target="#scannerDetailArea">
+                    <i class="fas fa-chevron-down mr-1"></i> Seçenekler
+                </span>
+            </div>
+        </div>
+
+        <div id="scannerDetailArea" class="collapse show">
+            <div class="card-body bg-light py-3 px-3">
+                <ul class="nav nav-pills nav-fill mb-3" id="scannerPills" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active font-weight-bold py-1" id="tab-direct-link" data-toggle="pill" href="#tab-direct" role="tab">
+                            <i class="fas fa-microchip mr-1"></i> 1. Donanımdan Doğrudan Oku (Regula / 3M / Desko)
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link font-weight-bold py-1" id="tab-photo-link" data-toggle="pill" href="#tab-photo" role="tab">
+                            <i class="fas fa-camera mr-1"></i> 2. Pasaport Görseli Yükle (Dropzone)
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link font-weight-bold py-1" id="tab-mrz-link" data-toggle="pill" href="#tab-mrz" role="tab">
+                            <i class="fas fa-keyboard mr-1"></i> 3. MRZ Kodu Yapıştır
+                        </a>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="scannerPillsContent">
+                    <!-- TAB 1: Doğrudan Donanım -->
+                    <div class="tab-pane fade show active" id="tab-direct" role="tabpanel">
+                        <div class="p-3 bg-white rounded border text-center shadow-sm">
+                            <p class="text-dark mb-2">
+                                Belgeyi (Pasaport veya Kimlik Kartı) okuyucunun camına yerleştirin ve aşağıdaki butona tıklayın:
+                            </p>
+                            <button type="button" class="btn btn-lg btn-success font-weight-bold px-4 py-2 shadow" onclick="scanPassportForCreatePage();" id="btnBigDirectScan">
+                                <i class="fas fa-camera fa-lg mr-2"></i> Cihazdan Pasaport / Kimlik Oku
+                            </button>
+                            <div id="directScanFeedback" class="small mt-2 font-weight-bold text-muted">
+                                Regula 7024, 3M Cogent/Gemalto ve Desko PENTA aygıtları otomatik algılanır.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 2: Fotoğraf Yükle -->
+                    <div class="tab-pane fade" id="tab-photo" role="tabpanel">
+                        <input type="file" id="passportPhotoInput" accept="image/*" style="display:none;">
+                        <div class="einad-dropzone" id="passportDropzone">
+                            <div class="dropzone-icon">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                            </div>
+                            <div class="font-weight-bold text-dark mb-1">
+                                Pasaport Görselini Buraya Sürükleyip Bırakın
+                            </div>
+                            <p class="small text-muted mb-2">
+                                JPG, PNG veya WEBP pasaport görüntüsü yükleyin. Sistem MRZ bölgesini otomatik okur.
+                            </p>
+                            <button type="button" class="btn btn-sm btn-info px-3 font-weight-bold" id="btnBrowsePassport">
+                                <i class="fas fa-folder-open mr-1"></i> Bilgisayardan Fotoğraf Seç
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- TAB 3: Manuel MRZ -->
+                    <div class="tab-pane fade" id="tab-mrz" role="tabpanel">
+                        <p class="small text-muted mb-2">
+                            Pasaportun veya kimliğin altındaki 2 veya 3 satırlı MRZ kodunu yapıştırın:
+                        </p>
+                        <div class="input-group">
+                            <textarea id="mrzInputText" class="form-control font-monospace text-uppercase" rows="2" placeholder="P<UTOERIKSSON<<ANNA<<<<<<<<<<<<<<<<<<<<<<<<<<<&#10;L898902C36UTO7408122F1204159ZE184226B<<<<<10"></textarea>
+                            <div class="input-group-append">
+                                <button class="btn btn-info font-weight-bold px-3" type="button" id="btnParseMrz" onclick="parseMrzDirect();">
+                                    <i class="fas fa-magic mr-1"></i> Ayrıştır & Doldur
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pasaport Önizleme Kutusu -->
+                <div id="passportPreviewContainer" style="display:none;" class="passport-preview-box">
+                    <img id="passportPreviewImg" src="" alt="Pasaport Önizleme" class="passport-thumbnail" />
+                    <div class="flex-grow-1">
+                        <div id="photoStatusText" class="small font-weight-bold text-dark">Belge okundu</div>
+                        <div id="photoFileName" class="text-muted small"></div>
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-sm btn-outline-danger" id="btnRemovePhoto">
+                            <i class="fas fa-trash-alt mr-1"></i> Kaldır
+                        </button>
+                    </div>
+                </div>
+
+                <div id="mrzFeedback" class="small font-weight-bold mt-2" style="display:none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- INAD VERİ GİRİŞ FORMU -->
+    <form id="inadForm" method="post" action="@(isEdit ? Url.Action("EditInad", "EInad") : Url.Action("AddInad", "EInad"))">
+        @Html.AntiForgeryToken()
+        <input type="hidden" id="InadId" name="InadId" value="@(Model != null ? Model.InadId : 0)" />
+        <input type="hidden" id="Personel" name="Personel" value="@(Model != null ? Model.Personel : "")" />
+
+        <!-- 1. BÖLÜM: YOLCU KİMLİK BİLGİLERİ (HER ZAMAN AÇIK) -->
+        <div class="form-section-card">
+            <div class="form-section-header">
+                <span class="text-primary font-weight-bold">
+                    <i class="fas fa-id-card mr-2"></i> 1. Yolcu Kimlik Bilgileri
+                </span>
+                <span class="badge badge-primary">Zorunlu Alanlar</span>
+            </div>
+            <div id="accKimlik" class="p-3 bg-white">
+                <div class="form-row">
+                    <div class="form-group col-md-4">
+                        <label class="font-weight-bold">İşlem Tarih ve Saati <span class="text-danger">*</span></label>
+                        <input type="datetime-local" class="form-control required" id="TarihSaat" name="TarihSaat" value="@tarihSaatVal" required>
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label class="font-weight-bold">Yolcunun Adı ve Soyadı <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control required" id="AdSoyad" name="AdSoyad" value="@(Model?.AdSoyad ?? "")" placeholder="Yolcunun Adı Soyadı" required>
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label class="font-weight-bold">Doğum Tarihi</label>
+                        <input type="date" class="form-control" id="DogumT" name="DogumT" value="@dogumTVal">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-md-3">
+                        <label class="font-weight-bold">Cinsiyet</label>
+                        <select class="form-control" id="Cinsiyet" name="Cinsiyet">
+                            <option value="">-- Seçiniz --</option>
+                            <option value="Erkek" @(Model?.Cinsiyet == "Erkek" ? "selected" : "")>Erkek</option>
+                            <option value="Bayan" @(Model?.Cinsiyet == "Bayan" || Model?.Cinsiyet == "Kadın" ? "selected" : "")>Bayan</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label class="font-weight-bold">Uyruk <span class="text-danger">*</span></label>
+                        <select class="form-control required" id="Uyruk" name="Uyruk" required>
+                            <option value="">-- Uyruk Seçiniz --</option>
+                            @foreach (var u in countries)
+                            {
+                                <option value="@u" @(string.Equals(Model?.Uyruk, u, StringComparison.OrdinalIgnoreCase) ? "selected" : "")>@u</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="form-group col-md-3">
+                        <label class="font-weight-bold">Doğum Yeri</label>
+                        <input type="text" class="form-control" id="DogumY" name="DogumY" value="@(Model?.DogumY ?? "")" placeholder="Doğum Yeri">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. BÖLÜM: SEYAHAT BELGESİ & KİMLİK -->
+        <div class="form-section-card">
+            <div class="form-section-header">
+                <span class="text-primary font-weight-bold">
+                    <i class="fas fa-passport mr-2"></i> 2. Seyahat Belgesi & Kimlik Bilgileri
+                </span>
+            </div>
+            <div id="accBelge" class="p-3 bg-white">
+                <div class="form-row">
+                    <div class="form-group col-md-3">
+                        <label class="font-weight-bold">Pasaport No <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control required text-uppercase" id="PasaportNo" name="PasaportNo" value="@(Model?.PasaportNo ?? "")" placeholder="Örn: U12345678" required>
+                    </div>
+                    <div class="form-group col-md-3">
+                        <label class="font-weight-bold">Belge No</label>
+                        <input type="text" class="form-control text-uppercase" id="BelgeNo" name="BelgeNo" value="@(Model?.BelgeNo ?? "")">
+                    </div>
+                    <div class="form-group col-md-3">
+                        <label class="font-weight-bold">Kimlik No / Kişisel No</label>
+                        <input type="text" class="form-control" id="KimlikNo" name="KimlikNo" value="@(Model?.KimlikNo ?? "")">
+                    </div>
+                    <div class="form-group col-md-3">
+                        <label class="font-weight-bold">Pasaport Türü</label>
+                        <select class="form-control" id="PasaportTuru" name="PasaportTuru">
+                            @foreach (var pt in pasaportTurleri)
+                            {
+                                <option value="@pt" @(string.Equals(Model?.PasaportTuru ?? "Umuma Mahsus", pt, StringComparison.OrdinalIgnoreCase) ? "selected" : "")>@pt</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label class="font-weight-bold">Beyan Esası</label>
+                        <select class="form-control" id="Beyan" name="Beyan">
+                            <option value="">-- Seçiniz --</option>
+                            @foreach (var b in beyanTurleri)
+                            {
+                                <option value="@b" @(string.Equals(Model?.Beyan, b, StringComparison.OrdinalIgnoreCase) ? "selected" : "")>@b</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. BÖLÜM: İNAD SEBEPLERİ & HÜKÜM -->
+        <div class="form-section-card">
+            <div class="form-section-header">
+                <span class="text-danger font-weight-bold">
+                    <i class="fas fa-exclamation-triangle mr-2"></i> 3. İNAD Sebepleri & Hüküm
+                </span>
+            </div>
+            <div id="accInad" class="p-3 bg-white">
+                <!-- Hızlı Sebep Seçim Çipleri -->
+                <div class="mb-3 p-2 bg-light border rounded">
+                    <div class="small font-weight-bold text-muted mb-2">
+                        <i class="fas fa-bolt text-warning mr-1"></i> HIZLI SEÇİM ÇİPLERİ (Tek Tıkla Seç):
+                    </div>
+                    <div class="d-flex flex-wrap einad-reason-chips">
+                        <button type="button" class="btn btn-sm btn-outline-secondary btn-chip" data-val="Hakkında Türkiye'ye giriş yasağı bulunması">
+                            <i class="fas fa-ban text-danger mr-1"></i> Giriş Yasağı
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary btn-chip" data-val="Giriş vizesinin olmaması">
+                            <i class="fas fa-id-badge text-warning mr-1"></i> Vize Yok
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary btn-chip" data-val="Pasaport süresinin yetersiz olması">
+                            <i class="fas fa-hourglass-end text-info mr-1"></i> Pasaport Süresi
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary btn-chip" data-val="180 günde 90 gün uygulamasının ihlali">
+                            <i class="fas fa-calendar-times text-danger mr-1"></i> 180/90 Gün İhlali
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary btn-chip" data-val="Sahte pasaport">
+                            <i class="fas fa-skull-crossbones text-danger mr-1"></i> Sahte Pasaport
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary btn-chip" data-val="Sahte vize-ikamet">
+                            <i class="fas fa-file-excel text-danger mr-1"></i> Sahte Vize/İkamet
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary btn-chip" data-val="Türkiye'ye girişi sakıncalı görülmesi">
+                            <i class="fas fa-user-slash text-dark mr-1"></i> Girişi Sakıncalı
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary btn-chip" data-val="Yeterli maddi imkâna sahip olmaması">
+                            <i class="fas fa-coins text-warning mr-1"></i> Maddi İmkân Yetersiz
+                        </button>
+                    </div>
+                </div>
+
+                <!-- İNAD Sebep Checkboxları -->
+                <div class="form-group mb-2">
+                    <label class="font-weight-bold d-block text-dark">
+                        İNAD Sebepleri (Birden fazla seçilebilir) <span class="text-danger">*</span>
+                    </label>
+                    <div class="row">
+                        <div class="col-md-6">
+                            @{
+                                var sebepList1 = new[]
+                                {
+                                    "Kamu düzeni veya kamu güvenliği açısından sakıncalı görülmesi",
+                                    "Türkiye'ye girişi sakıncalı görülmesi",
+                                    "Yeterli maddi imkâna sahip olmaması",
+                                    "Hakkında Türkiye'ye giriş yasağı bulunması",
+                                    "Giriş vizesinin olmaması",
+                                    "Pasaport süresinin yetersiz olması",
+                                    "Sahte pasaport"
+                                };
+                                foreach (var s in sebepList1)
+                                {
+                                    bool isChk = selectedSebep.Contains(s);
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="InadSebep" id="sebep_@s.GetHashCode()" value="@s" @(isChk ? "checked" : "")>
+                                        <label class="form-check-label" for="sebep_@s.GetHashCode()">@s</label>
+                                    </div>
+                                }
+                            }
+                        </div>
+                        <div class="col-md-6">
+                            @{
+                                var sebepList2 = new[]
+                                {
+                                    "Pasaportta tahrifat yapılmış olması",
+                                    "Sahte vize-ikamet",
+                                    "Çalıntı belge",
+                                    "180 günde 90 gün uygulamasının ihlali",
+                                    "Türkiye'ye girmek istememesi",
+                                    "Diğer Sebepler / Other Reasons"
+                                };
+                                foreach (var s in sebepList2)
+                                {
+                                    bool isChk = selectedSebep.Contains(s);
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="InadSebep" id="sebep_@s.GetHashCode()" value="@s" @(isChk ? "checked" : "")>
+                                        <label class="form-check-label" for="sebep_@s.GetHashCode()">@s</label>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group mt-2 mb-0">
+                    <label class="font-weight-bold">İNAD Sebep Açıklaması / Notlar</label>
+                    <textarea class="form-control" id="InadSebepAciklama" name="InadSebepAciklama" rows="2" placeholder="Varsa ek açıklama, tespit ve tutanak notları...">@(Model?.InadSebepAciklama ?? "")</textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. BÖLÜM: UÇUŞ & SEVK / NAKİL BİLGİLERİ -->
+        <div class="form-section-card">
+            <div class="form-section-header">
+                <span class="text-primary font-weight-bold">
+                    <i class="fas fa-plane mr-2"></i> 4. Uçuş & Sevk / Nakil Bilgileri
+                </span>
+            </div>
+            <div id="accUcus" class="p-3 bg-white">
+                <div class="form-row">
+                    <div class="form-group col-md-3">
+                        <label class="font-weight-bold">Gelen Uçuş No</label>
+                        <input type="text" class="form-control text-uppercase" id="GelenUcusNo" name="GelenUcusNo" value="@(Model?.GelenUcusNo ?? "")" placeholder="Örn: PC402">
+                        <small class="text-muted">İlk 2 harf IATA kodudur</small>
+                    </div>
+                    <div class="form-group col-md-3">
+                        <label class="font-weight-bold">Gelen Havayolu</label>
+                        <input list="airlineList" class="form-control" id="GelenHavayolu" name="GelenHavayolu" value="@(Model?.GelenHavayolu ?? "")" placeholder="Seçin veya yazın">
+                    </div>
+                    <div class="form-group col-md-3">
+                        <label class="font-weight-bold">Geldiği Yer</label>
+                        <input type="text" class="form-control" id="GeldigiYer" name="GeldigiYer" value="@(Model?.GeldigiYer ?? "")" placeholder="Kalkış Havalimanı">
+                    </div>
+                    <div class="form-group col-md-3">
+                        <label class="font-weight-bold">Geldiği Tarih / Saat</label>
+                        <input type="datetime-local" class="form-control" id="GeldigiTarihSaat" name="GeldigiTarihSaat" value="@geldigiTarihSaatVal">
+                    </div>
+                </div>
+
+                <hr class="my-2" />
+
+                <div class="form-row">
+                    <div class="form-group col-md-3">
+                        <label class="font-weight-bold">Gidiş Uçuş No</label>
+                        <input type="text" class="form-control text-uppercase" id="GidisUcusNo" name="GidisUcusNo" value="@(Model?.GidisUcusNo ?? "")" placeholder="Örn: TK1821">
+                        <small class="text-muted">İlk 2 harf IATA kodudur</small>
+                    </div>
+                    <div class="form-group col-md-3">
+                        <label class="font-weight-bold">Giden Havayolu</label>
+                        <input list="airlineList" class="form-control" id="GidenHavayolu" name="GidenHavayolu" value="@(Model?.GidenHavayolu ?? "")" placeholder="Seçin veya yazın">
+                    </div>
+                    <div class="form-group col-md-3">
+                        <label class="font-weight-bold">Gidiş Yeri</label>
+                        <input type="text" class="form-control" id="GidisYer" name="GidisYer" value="@(Model?.GidisYer ?? "")" placeholder="Hedef Havalimanı">
+                    </div>
+                    <div class="form-group col-md-3">
+                        <label class="font-weight-bold">Gidiş Tarih / Saat</label>
+                        <input type="datetime-local" class="form-control" id="GidisTarihSaat" name="GidisTarihSaat" value="@gidisTarihSaatVal">
+                    </div>
+                </div>
+
+                <hr class="my-2" />
+
+                <div class="form-group mb-2">
+                    <label class="font-weight-bold d-block text-dark">Uçağa Nakil Şekli</label>
+                    <div class="d-flex flex-wrap gap-3">
+                        @{
+                            var nakilList = new[]
+                            {
+                                "Polis Nezaretinde",
+                                "Özel Güvenlik Nezaretinde",
+                                "Havayolu Yetkilisi Nezaretinde",
+                                "Yer Hizmetleri Nezaretinde"
+                            };
+                            foreach (var n in nakilList)
+                            {
+                                bool isChk = selectedNakil.Contains(n);
+                                <div class="form-check mr-4">
+                                    <input class="form-check-input" type="checkbox" name="UcagaNakil" id="nakil_@n.GetHashCode()" value="@n" @(isChk ? "checked" : "")>
+                                    <label class="form-check-label" for="nakil_@n.GetHashCode()">@n</label>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+
+                <div class="form-group mb-0">
+                    <label class="font-weight-bold">Üst Arama & Teslim Edilen Eşya</label>
+                    <textarea class="form-control" id="UstAramaEsya" name="UstAramaEsya" rows="2" placeholder="Üst aramada çıkan ve emanete alınan eşyalar...">@(Model?.UstAramaEsya ?? "")</textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. BÖLÜM: İDARİ BİLGİLER & GÖREVLİLER -->
+        <div class="form-section-card">
+            <div class="form-section-header">
+                <span class="text-primary font-weight-bold">
+                    <i class="fas fa-building mr-2"></i> 5. İdari Bilgiler & Görevliler
+                </span>
+            </div>
+            <div id="accIdari" class="p-3 bg-white">
+                <div class="form-row">
+                    <div class="form-group col-md-4">
+                        <label class="font-weight-bold">Kapı</label>
+                        <input type="text" class="form-control" id="Kapi" name="Kapi" value="@(Model?.Kapi ?? "")" readonly>
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label class="font-weight-bold">Tespit Eden Personel Sicili</label>
+                        <input type="text" class="form-control" id="Sicil" name="Sicil" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" value="@(Model?.Sicil ?? "")" placeholder="6 haneli sicil">
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label class="font-weight-bold">Hudut Kapısının Bulunduğu İl</label>
+                        <input type="text" class="form-control" id="Valilik" name="Valilik" value="@(Model?.Valilik ?? "")" readonly>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label class="font-weight-bold">Yolcunun Durumu <span class="text-danger">*</span></label>
+                        <select class="form-control font-weight-bold" id="Durum" name="Durum" required>
+                            <option value="">-- Seçiniz --</option>
+                            @foreach (var d in yolcuDurumlari)
+                            {
+                                <option value="@d" @(string.Equals(Model?.Durum ?? "İnad Odasına Alındı", d, StringComparison.OrdinalIgnoreCase) ? "selected" : "")>@d</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label class="font-weight-bold">Refakat Durumu</label>
+                        <input type="text" class="form-control" id="Refakat" name="Refakat" value="@(Model?.Refakat ?? "")" placeholder="Var / Yok">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-md-4">
+                        <label class="font-weight-bold">Özel Güvenlik</label>
+                        <input type="text" class="form-control" id="OzelGuvenlik" name="OzelGuvenlik" value="@(Model?.OzelGuvenlik ?? "")" placeholder="Ad / Birim">
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label class="font-weight-bold">Yer Hizmetleri Pers.</label>
+                        <input type="text" class="form-control" id="YerHizmetleriPersonel" name="YerHizmetleriPersonel" value="@(Model?.YerHizmetleriPersonel ?? "")" placeholder="Ad Soyad">
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label class="font-weight-bold">Yer Hizmetleri Firma</label>
+                        <input type="text" class="form-control" id="YerHizmetleri" name="YerHizmetleri" value="@(Model?.YerHizmetleri ?? "")" placeholder="TGS, Çelebi, Havaş...">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ALT BUTON ÇUBUĞU -->
+        <div class="card p-3 bg-light border shadow-sm mb-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <a href="@Url.Action("Index", "EInad")" class="btn btn-secondary px-4">
+                    <i class="fas fa-times mr-1"></i> Vazgeç / Listeye Dön
+                </a>
+                <div class="d-flex align-items-center">
+                    <button type="button" class="btn btn-outline-success font-weight-bold mr-2" onclick="scanPassportForCreatePage();">
+                        <i class="fas fa-camera mr-1"></i> Cihazdan Pasaport Oku
+                    </button>
+                    <button type="submit" class="btn btn-primary btn-lg font-weight-bold px-5 shadow">
+                        <i class="fas fa-save mr-2"></i> Kaydet
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </form>
+</div>
+
+<!-- Havayolları Datalist -->
+<datalist id="airlineList"></datalist>
+
+@section Scripts {
+    <script>
+        var URL_SCAN_PASSPORT = '@Url.Action("ScanPassport", "EInad")';
+        var URL_SCAN_IMAGE = '@Url.Action("ScanPassportImage", "EInad")';
+        var URL_GET_AIRLINES = '@Url.Action("GetEuropeanAirlines", "EInad")';
+        var URL_GET_IATA = '@Url.Action("GetByIataCode", "EInad")';
+
+        $(document).ready(function () {
+            loadAirlines();
+            initChips();
+            initDropzone();
+            initIataLookup();
+        });
+
+        // 1. Cihazdan Doğrudan Pasaport Oku
+        window.scanPassportForCreatePage = function () {
+            var $btn = $('#btnTopScan, #btnPageScanPassport, #btnBigDirectScan');
+            $btn.prop('disabled', true);
+            var origHtml = $('#btnPageScanPassport').html();
+            $btn.html('<i class="fas fa-spinner fa-spin mr-1"></i> Pasaport Taranıyor...');
+
+            $('#directScanFeedback').html('<span class="text-primary"><i class="fas fa-spinner fa-spin mr-1"></i> Optik okuyucudan veri çekiliyor, lütfen bekleyiniz...</span>');
+            $('#mrzFeedback').hide();
+
+            var token = $('input[name="__RequestVerificationToken"]').val();
+
+            $.ajax({
+                url: URL_SCAN_PASSPORT,
+                type: 'POST',
+                data: {
+                    deviceType: 'auto',
+                    __RequestVerificationToken: token
+                },
+                dataType: 'json',
+                timeout: 25000,
+                success: function (res) {
+                    if (res && res.success && res.data) {
+                        applyPassportDataToForm(res.data);
+                        $('#directScanFeedback').html('<span class="text-success font-weight-bold"><i class="fas fa-check-circle mr-1"></i> Pasaport başarıyla okundu! (' + (res.source || 'Donanım') + ')</span>');
+                        showFeedback('Pasaport başarıyla okundu: ' + (res.data.fullName || res.data.documentNumber || ''), 'success');
+                    } else {
+                        var msg = (res && res.message) ? res.message : 'Pasaport okunamadı. Lütfen belgenin okuyucu camına tam oturduğundan emin olun.';
+                        $('#directScanFeedback').html('<span class="text-danger font-weight-bold"><i class="fas fa-exclamation-triangle mr-1"></i> ' + msg + '</span>');
+                        showFeedback(msg, 'danger');
+                    }
+                },
+                error: function (xhr, status, err) {
+                    var errMsg = 'Optik okuyucu bağlantı hatası (' + (status || err) + '). Lütfen servisin çalıştığından emin olun.';
+                    $('#directScanFeedback').html('<span class="text-danger font-weight-bold"><i class="fas fa-times-circle mr-1"></i> ' + errMsg + '</span>');
+                    showFeedback(errMsg, 'danger');
+                },
+                complete: function () {
+                    $btn.prop('disabled', false);
+                    $('#btnTopScan').html('<i class="fas fa-camera mr-1"></i> Cihazdan Pasaport / Kimlik Oku');
+                    $('#btnPageScanPassport').html(origHtml);
+                    $('#btnBigDirectScan').html('<i class="fas fa-camera fa-lg mr-2"></i> Cihazdan Pasaport / Kimlik Oku');
+                }
+            });
+        };
+
+        // Formu pasaport verisiyle doldur ve 1. bölümü açık tut
+        function applyPassportDataToForm(d) {
+            if (!d) return;
+
+            if (d.fullName) $('#AdSoyad').val(d.fullName).addClass('highlight-flash');
+            if (d.documentNumber) $('#PasaportNo').val(d.documentNumber).addClass('highlight-flash');
+            if (d.personalNumber) $('#KimlikNo').val(d.personalNumber).addClass('highlight-flash');
+
+            if (d.birthDate) {
+                var bDate = normalizeDateForInput(d.birthDate);
+                if (bDate) $('#DogumT').val(bDate).addClass('highlight-flash');
+            }
+
+            if (d.sex) {
+                var s = d.sex.toLowerCase();
+                if (s.indexOf('e') === 0 || s === 'm' || s.indexOf('erkek') >= 0) {
+                    $('#Cinsiyet').val('Erkek').addClass('highlight-flash');
+                } else if (s.indexOf('k') === 0 || s.indexOf('b') === 0 || s === 'f' || s.indexOf('bayan') >= 0 || s.indexOf('kadın') >= 0) {
+                    $('#Cinsiyet').val('Bayan').addClass('highlight-flash');
+                }
+            }
+
+            if (d.country) {
+                var c = d.country.trim();
+                var matched = false;
+                $('#Uyruk option').each(function () {
+                    if ($(this).val().toLowerCase() === c.toLowerCase()) {
+                        $('#Uyruk').val($(this).val()).addClass('highlight-flash');
+                        matched = true;
+                        return false;
+                    }
+                });
+                if (!matched) {
+                    $('#Uyruk').val(c).addClass('highlight-flash');
+                }
+            }
+
+            if (d.documentType) {
+                var dt = d.documentType.toUpperCase();
+                if (dt.indexOf('P') >= 0) $('#PasaportTuru').val('Umuma Mahsus');
+                else if (dt.indexOf('I') >= 0 || dt.indexOf('C') >= 0 || dt.indexOf('A') >= 0) $('#PasaportTuru').val('Kimlik Kartı');
+            }
+
+            if (d.mrz) {
+                $('#mrzInputText').val(d.mrz);
+            }
+
+            if (d.photoBase64) {
+                $('#passportPreviewImg').attr('src', 'data:image/jpeg;base64,' + d.photoBase64);
+                $('#photoStatusText').text('Pasaport Görüntüsü Aktarıldı');
+                $('#photoFileName').text('Belge No: ' + (d.documentNumber || '-'));
+                $('#passportPreviewContainer').slideDown(200);
+            }
+
+            // 1. BÖLÜMÜN AÇIK OLDUĞUNDAN KESİNLİKLE EMİN OL
+            $('#accKimlik').show();
+
+            // Vurgu efektini kaldır
+            setTimeout(function () {
+                $('.highlight-flash').removeClass('highlight-flash');
+            }, 1500);
+
+            // 1. Bölüme yumuşak kaydır
+            $('html, body').animate({
+                scrollTop: $('#accKimlik').offset().top - 100
+            }, 300);
+        }
+
+        function normalizeDateForInput(raw) {
+            if (!raw) return '';
+            // GG.AA.YYYY veya DD.MM.YYYY
+            var parts = raw.split('.');
+            if (parts.length === 3) {
+                var dd = parts[0].padStart(2, '0');
+                var mm = parts[1].padStart(2, '0');
+                var yyyy = parts[2];
+                return yyyy + '-' + mm + '-' + dd;
+            }
+            // YYYY-MM-DD
+            if (raw.indexOf('-') >= 0 && raw.length >= 10) {
+                return raw.substring(0, 10);
+            }
+            return raw;
+        }
+
+        // Manuel MRZ Ayrıştır
+        window.parseMrzDirect = function () {
+            var raw = ($('#mrzInputText').val() || '').trim();
+            if (!raw) {
+                alert('Lütfen MRZ metnini yapıştırınız.');
+                return;
+            }
+            var lines = raw.split(/\r?\n/).map(function (l) { return l.trim(); }).filter(Boolean);
+            if (lines.length < 2) {
+                alert('Geçerli bir MRZ en az 2 satır olmalıdır.');
+                return;
+            }
+
+            var l1 = lines[0].replace(/\s+/g, '');
+            var l2 = lines[1].replace(/\s+/g, '');
+
+            var docNo = l2.length >= 9 ? l2.substring(0, 9).replace(/</g, '').trim() : '';
+            var nat = l2.length >= 13 ? l2.substring(10, 13).replace(/</g, '').trim() : '';
+            var dob = l2.length >= 19 ? l2.substring(13, 19) : '';
+            var sex = l2.length >= 21 ? l2.substring(20, 21) : '';
+
+            var names = l1.substring(5).split('<<');
+            var surname = (names[0] || '').replace(/</g, ' ').trim();
+            var givenNames = (names[1] || '').replace(/</g, ' ').trim();
+            var fullName = (surname + ' ' + givenNames).trim();
+
+            var data = {
+                fullName: fullName,
+                documentNumber: docNo,
+                country: nat,
+                sex: sex === 'M' ? 'Erkek' : (sex === 'F' ? 'Bayan' : ''),
+                birthDate: dob.length === 6 ? formatYymmdd(dob) : ''
+            };
+
+            applyPassportDataToForm(data);
+            showFeedback('MRZ başarıyla ayrıştırıldı ve forma aktarıldı.', 'success');
+        };
+
+        function formatYymmdd(yymmdd) {
+            if (!yymmdd || yymmdd.length !== 6) return '';
+            var yy = parseInt(yymmdd.substring(0, 2), 10);
+            var mm = yymmdd.substring(2, 4);
+            var dd = yymmdd.substring(4, 6);
+            var curYear = new Date().getFullYear() % 100;
+            var fullYear = yy <= curYear ? (2000 + yy) : (1900 + yy);
+            return fullYear + '-' + mm + '-' + dd;
+        }
+
+        // Dropzone & Dosya Yükleme
+        function initDropzone() {
+            var $dropzone = $('#passportDropzone');
+            var $fileInput = $('#passportPhotoInput');
+
+            $('#btnBrowsePassport, #passportDropzone').on('click', function (e) {
+                if (e.target.id === 'passportPhotoInput') return;
+                $fileInput.trigger('click');
+            });
+
+            $dropzone.on('dragover dragenter', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $dropzone.addClass('dragover');
+            });
+
+            $dropzone.on('dragleave dragend drop', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $dropzone.removeClass('dragover');
+            });
+
+            $dropzone.on('drop', function (e) {
+                var files = e.originalEvent.dataTransfer.files;
+                if (files && files.length > 0) {
+                    handlePhotoUpload(files[0]);
+                }
+            });
+
+            $fileInput.on('change', function () {
+                if (this.files && this.files.length > 0) {
+                    handlePhotoUpload(this.files[0]);
+                }
+            });
+
+            $('#btnRemovePhoto').on('click', function () {
+                $('#passportPreviewContainer').slideUp(150);
+                $('#passportPhotoInput').val('');
+                $('#passportPreviewImg').attr('src', '');
+            });
+        }
+
+        function handlePhotoUpload(file) {
+            if (!file.type.match(/image.*/)) {
+                alert('Lütfen geçerli bir resim dosyası seçin (JPG, PNG).');
+                return;
+            }
+
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                $('#passportPreviewImg').attr('src', e.target.result);
+                $('#photoStatusText').text('Görsel yüklendi, taranıyor...');
+                $('#photoFileName').text(file.name);
+                $('#passportPreviewContainer').slideDown(150);
+            };
+            reader.readAsDataURL(file);
+
+            var formData = new FormData();
+            formData.append('passportImage', file);
+            var token = $('input[name="__RequestVerificationToken"]').val();
+            if (token) formData.append('__RequestVerificationToken', token);
+
+            $.ajax({
+                url: URL_SCAN_IMAGE,
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res && res.success && res.data) {
+                        applyPassportDataToForm(res.data);
+                        $('#photoStatusText').html('<span class="text-success"><i class="fas fa-check-circle mr-1"></i> MRZ Algılandı</span>');
+                        showFeedback('Fotoğraftan pasaport verileri başarıyla aktarıldı.', 'success');
+                    } else {
+                        var msg = (res && res.message) ? res.message : 'Görselde MRZ okunamadı.';
+                        $('#photoStatusText').html('<span class="text-danger"><i class="fas fa-exclamation-triangle mr-1"></i> ' + msg + '</span>');
+                    }
+                },
+                error: function () {
+                    $('#photoStatusText').html('<span class="text-danger">Fotoğraf işleme hatası oluştu.</span>');
+                }
+            });
+        }
+
+        // Hızlı Sebep Çipleri
+        function initChips() {
+            $('.btn-chip').each(function () {
+                var val = $(this).attr('data-val');
+                var $chk = $('input[name="InadSebep"][value="' + val + '"]');
+                if ($chk.is(':checked')) {
+                    $(this).addClass('active');
+                }
+            });
+
+            $('.btn-chip').on('click', function () {
+                var val = $(this).attr('data-val');
+                var $chk = $('input[name="InadSebep"][value="' + val + '"]');
+                if ($chk.length) {
+                    var newState = !$chk.is(':checked');
+                    $chk.prop('checked', newState);
+                    $(this).toggleClass('active', newState);
+                }
+            });
+
+            $('input[name="InadSebep"]').on('change', function () {
+                var val = $(this).val();
+                var $chip = $('.btn-chip[data-val="' + val + '"]');
+                if ($chip.length) {
+                    $chip.toggleClass('active', $(this).is(':checked'));
+                }
+            });
+        }
+
+        // Havayolu Listesi
+        function loadAirlines() {
+            $.get(URL_GET_AIRLINES, function (data) {
+                if (data && data.length) {
+                    var $dl = $('#airlineList');
+                    $dl.empty();
+                    data.forEach(function (a) {
+                        $dl.append($('<option>').val(a.Name).text(a.IATACode + ' - ' + a.Name));
+                    });
+                }
+            });
+        }
+
+        // Uçuş No IATA Kodundan Otomatik Havayolu Doldurma
+        function initIataLookup() {
+            $('#GelenUcusNo').on('blur', function () {
+                var flight = $(this).val().trim().toUpperCase();
+                if (flight.length >= 2) {
+                    var iata = flight.substring(0, 2);
+                    $.get(URL_GET_IATA, { iata: iata }, function (res) {
+                        if (res && res.found && res.name) {
+                            if (!$('#GelenHavayolu').val()) {
+                                $('#GelenHavayolu').val(res.name);
+                            }
+                        }
+                    });
+                }
+            });
+
+            $('#GidisUcusNo').on('blur', function () {
+                var flight = $(this).val().trim().toUpperCase();
+                if (flight.length >= 2) {
+                    var iata = flight.substring(0, 2);
+                    $.get(URL_GET_IATA, { iata: iata }, function (res) {
+                        if (res && res.found && res.name) {
+                            if (!$('#GidenHavayolu').val()) {
+                                $('#GidenHavayolu').val(res.name);
+                            }
+                        }
+                    });
+                }
+            });
+        }
+
+        function showFeedback(msg, type) {
+            var cssType = type || 'info';
+            var html = '<div class="alert alert-' + cssType + ' alert-dismissible fade show" role="alert">' +
+                       '<strong>' + (type === 'success' ? 'Başarılı: ' : (type === 'danger' ? 'Hata: ' : 'Bilgi: ')) + '</strong>' +
+                       msg +
+                       '<button type="button" class="close" data-dismiss="alert" aria-label="Kapat">' +
+                       '<span aria-hidden="true">&times;</span></button></div>';
+            $('#pageAlertArea').html(html);
+        }
+    </script>
+}

@@ -1193,128 +1193,17 @@ function syncChipsWithCheckboxes() {
 }
 
 /* =========================
-   YENİ KAYIT
+   YENİ KAYIT & DÜZENLE (Statik Tam Sayfa Yönlendirmeleri)
 ========================= */
 function openAdd() {
-    $('#inadForm').attr('action', getEinadUrl('data-url-add-inad', '/EInad/AddInad'));
-    $('#inadModalTitle').text('Yeni İNAD Kaydı Ekle');
-    $('#inadForm')[0].reset();
-    $('#InadId').val(0);
-    $('#mrzInputText').val('');
-    $('#mrzFeedback').hide();
-
-    $('input[name="UcagaNakil"]').prop('checked', false);
-    $('input[name="InadSebep"]').prop('checked', false);
-    $('.btn-chip').removeClass('active');
-
-    $('#TarihSaat').val(getLocalDateTimeForInput());
-
-    refreshAllDropdowns().done(function () {
-        $.get(getEinadUrl('data-url-get-border', '/EInad/GetMyBorder'))
-            .done(function (res) {
-                if (res && res.success) {
-                    if (res.border) {
-                        $('#Kapi').val(res.border);
-                        $('#Valilik').val(res.border.split(' ')[0]);
-                    }
-                    if (res.sicil) {
-                        $('#Personel').val(res.sicil);
-                        $('#Sicil').val(res.sicil);
-                    }
-                }
-            })
-            .always(function () {
-                loadAirlineList();
-                $('#accKimlik').collapse('show');
-                $('#inadModal').modal('show');
-            });
-    });
+    window.location.href = '/EInad/Create';
 }
 
-/* =========================
-   DÜZENLE
-========================= */
 function openEdit(id) {
-    $('#mrzInputText').val('');
-    $('#mrzFeedback').hide();
-
-    refreshAllDropdowns().done(function () {
-        $.get(getEinadUrl('data-url-get-inad', '/EInad/GetInad'), { id: id }, function (res) {
-            if (!res || !res.success) {
-                alert("Kayıt bilgileri alınamadı.");
-                return;
-            }
-
-            var d = res.data || {};
-
-            $('#inadForm').attr('action', getEinadUrl('data-url-edit-inad', '/EInad/EditInad'));
-            $('#inadModalTitle').text('İNAD Kaydını Düzenle (ID: #' + d.InadId + ')');
-
-            $('#InadId').val(d.InadId || 0);
-            $('#TarihSaat').val(parseMsDateToLocal(d.TarihSaat));
-            $('#AdSoyad').val(d.AdSoyad || '');
-            $('#DogumT').val(parseMsDateToLocal(d.DogumT, true));
-            $('#DogumY').val(d.DogumY || '');
-            $('#Cinsiyet').val(d.Cinsiyet || '');
-
-            $('#PasaportNo').val(d.PasaportNo || '');
-            $('#BelgeNo').val(d.BelgeNo || '');
-            $('#KimlikNo').val(d.KimlikNo || '');
-
-            setTimeout(function () {
-                $('#Uyruk').val(d.Uyruk || '').trigger('change');
-                $('#PasaportTuru').val(d.PasaportTuru || '').trigger('change');
-                $('#Beyan').val(d.Beyan || '').trigger('change');
-                $('#Durum').val(d.Durum || '').trigger('change');
-            }, 100);
-
-            $('#Kapi').val(d.Kapi || '');
-            $('#Valilik').val(d.Valilik || '');
-
-            $('#Personel').val(d.Personel || '');
-            $('#Sicil').val(d.Sicil || '');
-            $('#OzelGuvenlik').val(d.OzelGuvenlik || '');
-            $('#YerHizmetleriPersonel').val(d.YerHizmetleriPersonel || '');
-            $('#YerHizmetleri').val(d.YerHizmetleri || '');
-            $('#Refakat').val(d.Refakat || '');
-
-            $('#GelenUcusNo').val(d.GelenUcusNo || '');
-            $('#GelenHavayolu').val(d.GelenHavayolu || '');
-            $('#GeldigiYer').val(d.GeldigiYer || '');
-            $('#GeldigiTarihSaat').val(parseMsDateToLocal(d.GeldigiTarihSaat));
-
-            $('#GidisUcusNo').val(d.GidisUcusNo || '');
-            $('#GidenHavayolu').val(d.GidenHavayolu || '');
-            $('#GidisYer').val(d.GidisYer || '');
-            $('#GidisTarihSaat').val(parseMsDateToLocal(d.GidisTarihSaat));
-
-            $('#UstAramaEsya').val(d.UstAramaEsya || '');
-
-            $('input[name="InadSebep"]').prop('checked', false);
-            if (d.InadSebep && typeof d.InadSebep === 'string') {
-                d.InadSebep.split(',').forEach(function (v) {
-                    var val = v.trim();
-                    if (val.length) $('input[name="InadSebep"][value="' + val + '"]').prop('checked', true);
-                });
-            }
-            syncChipsWithCheckboxes();
-
-            $('input[name="UcagaNakil"]').prop('checked', false);
-            if (d.UcagaNakil && typeof d.UcagaNakil === 'string') {
-                d.UcagaNakil.split(',').forEach(function (v) {
-                    var val = v.trim();
-                    if (val.length) $('input[name="UcagaNakil"][value="' + val + '"]').prop('checked', true);
-                });
-            }
-
-            loadAirlineList();
-            $('#accKimlik').collapse('show');
-            $('#inadModal').modal('show');
-        });
-    });
+    if (id) {
+        window.location.href = '/EInad/Edit/' + id;
+    }
 }
-
-/* =========================
    DROPDOWN YENİLEME
 ========================= */
 function refreshAllDropdowns() {
