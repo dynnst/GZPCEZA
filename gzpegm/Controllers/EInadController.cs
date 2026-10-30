@@ -1015,7 +1015,28 @@ namespace gzpegm.Controllers
             }
         }
 
+                [HttpPost]
+        [AllowAnonymous]
+        public JsonResult ScanPassport(string deviceType = "auto")
+        {
+            return ScanOpticalReader(deviceType);
+        }
+
         [HttpPost]
+        [AllowAnonymous]
+        public JsonResult ScanOpticalReader(string deviceType = "auto")
+        {
+            try
+            {
+                var result = gzpegm.Services.OpticalReaderService.ScanDevice(deviceType);
+                return JsonUtf8(result);
+            }
+            catch (Exception ex)
+            {
+                return JsonUtf8(new { success = false, message = "Tarama hatası: " + ex.Message });
+            }
+        }
+[HttpPost]
         [AllowAnonymous]
         public JsonResult Connect3MReader()
         {

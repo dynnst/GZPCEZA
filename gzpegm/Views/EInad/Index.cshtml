@@ -56,8 +56,11 @@
                         <i class="fas fa-map-marker-alt mr-1"></i> @myBorder
                     </span>
                 }
-                <button type="button" class="btn btn-outline-info font-weight-bold shadow-sm mr-2" id="btnTopConnect3M" onclick="connect3MDevice()" title="3M ve Regula Optik Okuyucuya Bağlan">
-                    <i class="fas fa-plug mr-1"></i> <span id="btnTopConnect3MText">3M / Regula Bağlan</span>
+                <button type="button" class="btn btn-success font-weight-bold shadow-sm mr-2" id="btnTopScanPassport" onclick="scanPassportDirectForEinad()" title="3M, Regula veya Desko Optik Okuyucudan Pasaport Oku">
+                    <i class="fas fa-camera mr-1"></i> <span id="btnTopScanPassportText">Cihazdan Pasaport Oku</span>
+                </button>
+                <button type="button" class="btn btn-outline-info font-weight-bold shadow-sm mr-2" id="btnTopConnect3M" onclick="connect3MDevice()" title="3M, Regula ve Desko Okuyucu Durumu">
+                    <i class="fas fa-plug mr-1"></i> <span id="btnTopConnect3MText">Cihaz Durumu</span>
                 </button>
                 <button type="button" class="btn btn-warning font-weight-bold shadow-sm" onclick="openAdd()">
                     <i class="fas fa-plus-circle mr-1"></i> Yeni İNAD Kaydı Ekle
@@ -369,16 +372,21 @@
 
                     <!-- MRZ / 3M Optik Okuyucu & Pasaport Fotoğrafı Yükleme Merkezi -->
                     <div class="card mb-3 einad-mrz-card border-info">
-                        <div class="card-header bg-info-light py-2 px-3 d-flex flex-wrap justify-content-between align-items-center" style="cursor: pointer;" data-toggle="collapse" data-target="#mrzCollapseArea">
+                        <div class="card-header bg-info-light py-2 px-3 d-flex flex-wrap justify-content-between align-items-center">
                             <div class="d-flex align-items-center">
                                 <span class="font-weight-bold text-info mr-2">
                                     <i class="fas fa-qrcode mr-1"></i> Hızlı Pasaport & Optik Okuyucu Merkezi
                                 </span>
-                                <span class="scanner-live-badge" title="3M PV40 / PV60 veya Regula Optik Okuyucu Dinleniyor">
-                                    <span class="scanner-dot"></span> 3M & Regula Dinleyici Aktif
+                                <span class="scanner-live-badge" title="3M, Regula veya Desko Optik Okuyucu Dinleniyor">
+                                    <span class="scanner-dot"></span> Okuyucu Hazır
                                 </span>
                             </div>
-                            <span class="badge badge-info small">Tıkla & Aç / Kapat</span>
+                            <div class="d-flex align-items-center">
+                                <button type="button" class="btn btn-sm btn-success font-weight-bold shadow-sm mr-2" id="btnModalScanPassport" onclick="scanPassportDirectForEinad();" title="3M, Regula veya Desko okuyucudan pasaportu doğrudan tara ve forma aktar">
+                                    <i class="fas fa-camera mr-1"></i> Cihazdan Pasaport Oku
+                                </button>
+                                <span class="badge badge-info small" style="cursor: pointer;" data-toggle="collapse" data-target="#mrzCollapseArea">Tıkla & Aç / Kapat</span>
+                            </div>
                         </div>
                         <div id="mrzCollapseArea" class="collapse show">
                             <div class="card-body py-3 px-3 bg-light">
@@ -452,62 +460,47 @@
                                         </div>
                                     </div>
 
-                                                                        <!-- TAB 3: 3M & Regula Entegrasyon KÄ±lavuzu & Test Konsolu -->
+                                                                        <!-- TAB 3: 3M & Regula & Desko Optik Okuyucu Entegrasyonu -->
                                     <div class="tab-pane fade" id="tab-3m" role="tabpanel">
                                         <div class="alert alert-light border mb-0 small">
                                             <div class="d-flex justify-content-between align-items-center mb-2">
                                                 <h6 class="font-weight-bold text-primary mb-0">
-                                                    <i class="fas fa-check-circle text-success mr-1"></i> 3M Cogent / Gemalto (PV40 & PV60) & Regula Document Reader
+                                                    <i class="fas fa-check-circle text-success mr-1"></i> 3M Cogent / Regula Document Reader / Desko PENTA
                                                 </h6>
                                                 <span class="badge badge-success px-2 py-1">
-                                                    <i class="fas fa-signal mr-1"></i> DonanÄ±m Dinleyici Aktif
+                                                    <i class="fas fa-signal mr-1"></i> Donanım Servisi Hazır
                                                 </span>
                                             </div>
                                             <div class="p-3 my-2 bg-white rounded border shadow-sm text-center">
-                                                <button type="button" class="btn btn-primary font-weight-bold px-4 py-2" id="btnTabConnect3M" onclick="connect3MDevice();">
-                                                    <i class="fas fa-plug mr-2"></i> 3M & Regula CihazÄ±na BaÄŸlan
+                                                <button type="button" class="btn btn-success font-weight-bold px-4 py-2 mr-2 shadow-sm" id="btnTabScanPassport" onclick="scanPassportDirectForEinad();">
+                                                    <i class="fas fa-camera mr-2"></i> Cihazdan Pasaport / Kimlik Oku
+                                                </button>
+                                                <button type="button" class="btn btn-outline-primary font-weight-bold px-3 py-2" id="btnTabConnect3M" onclick="connect3MDevice();">
+                                                    <i class="fas fa-sync-alt mr-1"></i> Cihaz Durumunu Kontrol Et
                                                 </button>
                                                 <div id="connect3MStatusMessage" class="small text-muted mt-2 font-weight-bold">
-                                                    Okuyucuya baÄŸlanmak ve veri akÄ±ÅŸÄ±nÄ± aktif etmek iÃ§in tÄ±klayÄ±n.
+                                                    Pasaport veya kimliği okuyucu camına koyup "Cihazdan Pasaport / Kimlik Oku" butonuna basınız.
                                                 </div>
                                             </div>
                                             <p class="mb-2 text-dark">
-                                                Optik okuyucunuz (3M PV40/PV60 veya Regula 70X4/7024/7034 vb.) bilgisayara USB ile baÄŸlÄ±yken <strong>pasaportu veya kimlik kartÄ±nÄ± okuyucu camÄ±nÄ±n Ã¼zerine koymanÄ±z yeterlidir</strong>.
-                                                Sistem gelen veriyi milisaniyelik hÄ±zda yakalar ve formu otomatik doldurur.
+                                                Optik okuyucunuz (<strong>3M PV40/PV60</strong>, <strong>Regula 7024/70X4</strong> veya <strong>Desko PENTA</strong>) bilgisayara USB ile bağlıyken <strong>belgeyi okuyucu camının üzerine koyup butona basmanız yeterlidir</strong>.
+                                                Sistem görseli ve MRZ verilerini doğrudan donanımdan çekerek formu saniyeler içinde doldurur.
                                             </p>
-                                            <div class="p-2 mb-2 bg-white rounded border">
-                                                <strong class="text-secondary d-block mb-1"><i class="fas fa-cogs mr-1"></i> Optik Okuyucu & SÃ¼rÃ¼cÃ¼ Durumu:</strong>
-                                                <ul class="mb-1 pl-3 text-muted">
-                                                    <li><strong>3M / Gemalto:</strong> OutputWedge servisi arka planda sistem tepsisinde dinlenir. Gerekirse proje ana dizinindeki <code class="text-primary font-weight-bold">3M_Okuyucu_Baslat.bat</code> ile baÅŸlatabilirsiniz.</li>
-                                                    <li><strong>Regula:</strong> Regula Document Reader SDK / Reader uygulamasÄ± veya arka plan servisi tam uyumludur.</li>
-                                                    <li>Hem <strong>Standart MRZ</strong> (TD3 Pasaport 2x44, TD1 Kimlik 3x30) hem de <strong>3M / Regula Wedge Key-Value</strong> (Personal Number / TC Kimlik No dahil) formatlarÄ± tam desteklenir.</li>
+                                            <div class="p-2 mb-0 bg-white rounded border">
+                                                <strong class="text-secondary d-block mb-1"><i class="fas fa-cogs mr-1"></i> Desteklenen Donanımlar:</strong>
+                                                <ul class="mb-0 pl-3 text-muted">
+                                                    <li><strong>Regula:</strong> 7024M, 7034, 70X4 ve 70X7 serisi doğrudan headless SDK entegrasyonu ile tam uyumludur.</li>
+                                                    <li><strong>3M / Gemalto / Cogent:</strong> AT9000, PV40, PV60 donanım SDK ve ReaderScanner motoru ile tam uyumludur.</li>
+                                                    <li><strong>Desko:</strong> PENTA Scanner ve OCR motoru desteklenir.</li>
+                                                    <li><strong>Klavye Dinleyicisi (Wedge):</strong> Hem standart 2-satırlı pasaport MRZ hem de 3-satırlı kimlik kartı MRZ formatı masadan otomatik algılanır.</li>
                                                 </ul>
-                                            </div>
-
-                                            <div class="d-flex flex-wrap align-items-center justify-content-between pt-1 border-top">
-                                                <span class="font-weight-bold text-dark mr-2 mb-1">
-                                                    <i class="fas fa-vial mr-1 text-info"></i> Okuyucu Test SimÃ¼lasyonu:
-                                                </span>
-                                                <div class="btn-group btn-group-sm mb-1">
-                                                    <button type="button" class="btn btn-outline-primary" onclick="simulate3mScan('passport')" title="TD3 Pasaport Okuma SimÃ¼lasyonu">
-                                                        <i class="fas fa-passport mr-1"></i> Pasaport Test Et
-                                                    </button>
-                                                    <button type="button" class="btn btn-outline-info" onclick="simulate3mScan('id')" title="TD1 Kimlik KartÄ± Okuma SimÃ¼lasyonu">
-                                                        <i class="fas fa-id-card mr-1"></i> Kimlik KartÄ± Test Et
-                                                    </button>
-                                                    <button type="button" class="btn btn-outline-success" onclick="simulate3mScan('wedge')" title="3M OutputWedge FormatÄ± SimÃ¼lasyonu">
-                                                        <i class="fas fa-terminal mr-1"></i> 3M Wedge Test Et
-                                                    </button>
-                                                    <button type="button" class="btn btn-outline-warning" onclick="simulate3mScan('regula')" title="Regula Okuyucu FormatÄ± SimÃ¼lasyonu">
-                                                        <i class="fas fa-barcode mr-1"></i> Regula Test Et
-                                                    </button>
-                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-
-                                <small id="mrzFeedback" class="text-success font-weight-bold mt-2 d-block" style="display:none;"></small>
+                            </div>
+                        </div>
+                        <small id="mrzFeedback" class="text-success font-weight-bold mt-2 d-block" style="display:none;"></small>
                             </div>
                         </div>
                     </div>
@@ -886,6 +879,7 @@
          data-url-delete-inad="@Url.Action("DeleteInad", "EInad")"
          data-url-update-status="@Url.Action("UpdateStatus", "EInad")"
          data-url-scan-image="@Url.Action("ScanPassportImage", "EInad")"
+          data-url-scan-passport="@Url.Action("ScanPassport", "EInad")"
          data-url-connect-3m="@Url.Action("Connect3MReader", "EInad")"
          data-url-status-3m="@Url.Action("Get3MReaderStatus", "EInad")"
          style="display:none;"></div>

@@ -1,4 +1,4 @@
-@{
+﻿@{
     Layout = "~/Views/Shared/_Master.cshtml";
     ViewBag.UseSelect2 = true;
 }
@@ -689,11 +689,6 @@
             if (window.PassportReader && typeof window.PassportReader.scanDevice === 'function') {
                 window.PassportReader.scanDevice(deviceType || 'auto');
             } else {
-                var isRemoteClient = (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1');
-                if (isRemoteClient) {
-                    alert('🟢 Masanızdaki optik okuyucu (3M veya Regula) klavye dinleyicisi üzerinden hazırdır.\n\nPasaport veya kimliği doğrudan cihazın camına koyunuz; sistem verileri otomatik dolduracaktır.');
-                    return;
-                }
                 var btns = $('#btnDirectOpticalScan, #btnPanelDirectScan');
                 var orig = btns.first().html();
                 btns.prop('disabled', true).html('<span class="spinner-border spinner-border-sm mr-1"></span> Okunuyor...');
@@ -712,6 +707,14 @@
                             alert('✓ Pasaport okundu: ' + (res.fullName || '') + ' (' + (res.documentNumber || '') + ')');
                         }
                     } else {
+                        alert((res && res.message) ? res.message : 'Optik okuyucudan pasaport okunamadı.');
+                    }
+                }).fail(function () {
+                    btns.prop('disabled', false).html(orig);
+                    alert('Optik okuyucu servisiyle iletişim kurulamadı.');
+                });
+            }
+        } else {
                         alert((res && res.message) ? res.message : 'Optik okuyucudan pasaport okunamadı.');
                     }
                 }).fail(function () {

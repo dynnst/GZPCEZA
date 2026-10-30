@@ -361,19 +361,7 @@
 
         btns.prop('disabled', true).html('<span class="spinner-border spinner-border-sm mr-1" role="status"></span> Okunuyor...');
 
-        // 1) Eğer Polnet istemci kabininde çalışılıyorsa (sunucu uzakta, okuyucu masada)
-        if (isRemoteClient) {
-            tryLocalClientRegula(function (localRes) {
-                isDirectScanActive = false;
-                btns.each(function (idx) {
-                    $(this).prop('disabled', false).html(originalHtmls[idx] || '<span class="passport-pulse-dot mr-1"></span> <i class="fas fa-camera mr-1"></i> Cihazdan Pasaport Oku');
-                });
-
-                if (localRes) {
-                    var mrz = extractMrzFromRegulaResponse(localRes);
-                    if (mrz && parseAndApplyPassportMrz(mrz, "Regula Yerel Web API")) {
-                        return;
-                    }
+        // 1) Doğrudan C# backend servisine bağlan
                 }
 
                 // Masadaki okuyucu Klavye Wedge (3M OutputWedge veya Regula Wedge) modunda hazır
@@ -408,12 +396,7 @@
     }
 
     function checkOpticalReaderStatus() {
-        if (isRemoteClient) {
-            $('#btnDirectOpticalScan, #btnPanelDirectScan')
-                .attr('title', 'Masanızdaki Okuyucu Dinleniyor (Wedge Modu) - Pasaportu veya kimliği doğrudan cihaz camına koyunuz')
-                .find('.passport-pulse-dot').css('background', '#22c55e');
-            return;
-        }
+        
 
         $.ajax({
             url: '/Calculate/GetOpticalReaderStatus',
@@ -428,11 +411,7 @@
     }
 
     function connectDevice(deviceType) {
-        if (isRemoteClient) {
-            showPassportAlert('<strong>🟢 İstemci / Masaüstü Modu:</strong> Masanızdaki okuyucu (3M veya Regula) klavye dinleyicisi üzerinden hazırdır. Pasaport veya kimliği doğrudan cihaz camına koyunuz.', 'info');
-            checkOpticalReaderStatus();
-            return;
-        }
+        
 
         $.ajax({
             url: '/Calculate/ConnectOpticalReader',

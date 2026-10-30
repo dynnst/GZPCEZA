@@ -871,23 +871,114 @@ function initHardwareScannerListener() {
     }
 }
 
-// 3M & Regula Okuma Simulatoru (Test ve Dogrulama Yardimcisi)
-window.simulate3mScan = function (type) {
-    if (type === 'regula') {
-        var sampleRegula = "Surname: DEMIR\r\nGiven Name: MEHMET\r\nDocument Number: U98765432\r\nDate of Birth: 12.06.1990\r\nExpiry Date: 12.06.2030\r\nNationality: TUR\r\nSex: M\r\nPersonal Number: 28471928374\r\n";
-        parseAndApplyMrz(sampleRegula, "Regula Okuyucu Test Simulatoru");
-    } else if (type === 'wedge') {
-        var sampleWedge = "START\r\nSurname: DAYAN\r\nForenames: NASIT\r\nDate of Birth: 08-04-84\r\nExpiry Date: 23-02-29\r\nDocument: IDENTITY CARD\r\nDoc. Number: A17V79281\r\nEND\r\n";
-        parseAndApplyMrz(sampleWedge, "3M Wedge Test Simulatoru");
-    } else if (type === 'id') {
-        var sampleId = "I<TUR123456789712345678901234<\r\n8505205M3005204TUR<<<<<<<<<<<4\r\nOZTURK<<FATMA<<<<<<<<<<<<<<<<<";
-        parseAndApplyMrz(sampleId, "Kimlik (TD1) Test Simulatoru");
-    } else {
-        var samplePassport = "P<TURKOC<<MEHMET<<<<<<<<<<<<<<<<<<<<<<<<<<<<\r\nU987654321TUR9203102M3203105<<<<<<<<<<<<<<02";
-        parseAndApplyMrz(samplePassport, "Pasaport (TD3) Test Simulatoru");
-    }
-};
+/* ==========================================================================
+   OPTİK OKUYUCUDAN DOĞRUDAN BELGE TARAMA (3M / REGULA / DESKO)
+   ========================================================================== */
+function applyScanResultForEinad(res) {
+    if (!res) return;
 
+    var docNo = res.documentNumber || res.passportNo || '';
+    if (docNo) {
+        $('#PasaportNo').val(docNo);
+        if (!$('#BelgeNo').val()) $('#BelgeNo').val(docNo);
+    }
+
+    var fullName = res.fullName || ((res.surname || '') + ' ' + (res.givenNames || '')).trim();
+    if (fullName) $('#AdSoyad').val(fullName);
+
+    var sex = parseSexString(res.sex || res.gender);
+    if (sex) $('#Cinsiyet').val(sex);
+
+    var bDate = parseDateString(res.birthDate);
+    if (bDate) $('#DogumT').val(bDate);
+
+    if (res.personalNumber) $('#KimlikNo').val(res.personalNumber);
+
+    var country = res.country || res.nationality;
+    var matchedCountry = applyCountryToSelect(country);
+
+    var photoB64 = res.visBase64 || res.photoBase64;
+    if (photoB64) {
+        var imgSrc = photoB64.indexOf('data:image') === 0 ? photoB64 : ('data:image/jpeg;base64,' + photoB64);
+        $('#passportPreviewImg').attr('src', imgSrc);
+        $('#photoStatusText').text('Görsel optik okuyucudan çekildi.');
+        $('#photoFileName').text(res.deviceName || 'Optik Okuyucu');
+        $('#passportPreviewContainer').show();
+        $('#passportDropzone').hide();
+    }
+
+    playScanBeep();
+
+    var devName = res.deviceName || 'Optik Okuyucu';
+    var feedback = '✅ ' + devName + ' ile Okundu: ' + (fullName || 'Yolcu') + ' | Belge No: ' + (docNo || '-') + ' | Uyruk: ' + (matchedCountry || country || '-');
+    $('#mrzFeedback').text(feedback).show();
+
+    var targetFields = $('#AdSoyad, #PasaportNo, #BelgeNo, #Uyruk, #Cinsiyet, #DogumT, #KimlikNo');
+    targetFields.css('transition', 'background-color 0.4s').css('background-color', '#dcfce7');
+    setTimeout(function () {
+        targetFields.css('background-color', '');
+    }, 1800);
+
+    $('#accKimlik').collapse('show');
+    $('#accBelge').collapse('show');
+
+    if (typeof showEInadStatus === 'function') {
+        showEInadStatus('<i class="fas fa-check-circle mr-1"></i> ' + feedback, 'success');
+    }
+}
+
+window.scanPassportDirectForEinad = function (deviceType) {
+    if (!$('#inadModal').hasClass('show')) {
+        if (typeof openAdd === 'function') {
+            openAdd();
+        } else {
+            $('#inadModal').modal('show');
+        }
+    }
+
+    var btns = $('#btnTopScanPassport, #btnModalScanPassport, #btnTabScanPassport');
+    var originalHtmls = [];
+    btns.each(function () {
+        originalHtmls.push($(this).html());
+    });
+    btns.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Okunuyor...');
+
+    var scanUrl = getEinadUrl('data-url-scan-passport', '/EInad/ScanPassport');
+
+    $.ajax({
+        url: scanUrl,
+        type: 'POST',
+        data: { deviceType: deviceType || 'auto' },
+        timeout: 25000,
+        success: function (res) {
+            btns.each(function (idx) {
+                $(this).prop('disabled', false).html(originalHtmls[idx] || '<i class="fas fa-camera mr-1"></i> Cihazdan Pasaport Oku');
+            });
+
+            if (res && res.success) {
+                applyScanResultForEinad(res);
+            } else {
+                var msg = (res && res.message) ? res.message : 'Optik okuyucudan belge okunamadı. Lütfen pasaport veya kimliği cihaz camına koyunuz.';
+                if (typeof showEInadStatus === 'function') {
+                    showEInadStatus('<i class="fas fa-exclamation-triangle mr-1"></i> ' + msg, 'warning');
+                } else {
+                    alert(msg);
+                }
+            }
+        },
+        error: function (xhr, status, err) {
+            btns.each(function (idx) {
+                $(this).prop('disabled', false).html(originalHtmls[idx] || '<i class="fas fa-camera mr-1"></i> Cihazdan Pasaport Oku');
+            });
+            var errMsg = 'Optik okuyucu servisiyle iletişim kurulamadı. (' + (err || status) + ')';
+            if (typeof showEInadStatus === 'function') {
+                showEInadStatus('<i class="fas fa-times-circle mr-1"></i> ' + errMsg, 'danger');
+            } else {
+                alert(errMsg);
+            }
+        }
+    });
+};
 /* ==========================================================================
    3M & REGULA OPTIK OKUYUCU BAGLAN & CANLI DURUM YONETIMI
    ========================================================================== */
@@ -897,128 +988,7 @@ function update3MStatusUI(isActive, message) {
     var btnTop = $('#btnTopConnect3M');
     var badge = $('.scanner-live-badge');
     var statusMsg = $('#connect3MStatusMessage');
-    var isRemoteClient = (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1');
-
-    if (isActive) {
-        btnModal.removeClass('btn-primary btn-outline-danger').addClass('btn-success')
-                .html('<i class="fas fa-check-circle mr-1"></i> <span id="btnModalConnect3MText">' + (isRemoteClient ? 'Masaüstü Hazır' : 'Cihaz Bağlı') + '</span>');
-        btnTab.removeClass('btn-primary btn-outline-danger').addClass('btn-success')
-              .html('<i class="fas fa-check-circle mr-2"></i> 3M & Regula Hazır (Wedge Dinleniyor)');
-        btnTop.removeClass('btn-outline-info btn-outline-danger').addClass('btn-outline-success')
-              .html('<i class="fas fa-check-circle mr-1"></i> <span id="btnTopConnect3MText">' + (isRemoteClient ? 'Masaüstü Hazır' : '3M / Regula Bağlı') + '</span>');
-        
-        badge.html('<span class="scanner-dot" style="background:#22c55e;"></span> ' + (isRemoteClient ? 'Masaüstü Okuyucu Aktif' : '3M & Regula Aktif'));
-        if (statusMsg.length) {
-            statusMsg.html('<span class="text-success"><i class="fas fa-check-circle mr-1"></i> ' + (message || 'Masanızdaki optik okuyucu klavye (wedge) dinleyicisi üzerinden hazırdır. Pasaport veya kimliği doğrudan cihazın camına koyunuz.') + '</span>');
-        }
-    } else {
-        btnModal.removeClass('btn-success').addClass('btn-primary')
-                .html('<i class="fas fa-plug mr-1"></i> <span id="btnModalConnect3MText">Cihaza Bağlan</span>');
-        btnTab.removeClass('btn-success').addClass('btn-primary')
-              .html('<i class="fas fa-plug mr-2"></i> 3M / Regula Cihazına Bağlan');
-        btnTop.removeClass('btn-outline-success').addClass('btn-outline-info')
-              .html('<i class="fas fa-plug mr-1"></i> <span id="btnTopConnect3MText">3M / Regula Bağlan</span>');
-        
-        badge.html('<span class="scanner-dot" style="background:#eab308;"></span> 3M / Regula Bağlantı Bekleniyor');
-        if (statusMsg.length) {
-            statusMsg.html('<span class="text-muted"><i class="fas fa-info-circle mr-1"></i> Okuyucuya bağlanmak veya servisi başlatmak için butona tıklayın.</span>');
-        }
-    }
-}
-
-window.connect3MDevice = function () {
-    var btnModal = $('#btnModalConnect3M');
-    var btnTab = $('#btnTabConnect3M');
-    var btnTop = $('#btnTopConnect3M');
-    var statusMsg = $('#connect3MStatusMessage');
-    var isRemoteClient = (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1');
-
-    btnModal.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Kontrol Ediliyor...');
-    btnTab.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i> Okuyucu Kontrol Ediliyor...');
-    btnTop.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Kontrol Ediliyor...');
-
-    // 1) Polnet Uzak Istemci Modu: Okuyucu kullanicinin masasinda baglidir
-    if (isRemoteClient) {
-        if (statusMsg.length) {
-            statusMsg.html('<span class="text-primary font-weight-bold"><i class="fas fa-spinner fa-spin mr-1"></i> Masanızdaki okuyucu kontrol ediliyor...</span>');
-        }
-
-        tryLocalClientRegulaForEinad(function (localRes) {
-            btnModal.prop('disabled', false);
-            btnTab.prop('disabled', false);
-            btnTop.prop('disabled', false);
-
-            if (localRes) {
-                var mrz = extractMrzFromRegulaResponse(localRes);
-                if (mrz) {
-                    parseAndApplyMrz(mrz, "Regula Yerel Web Servisi");
-                    update3MStatusUI(true, "Regula Okuyucu ile Belge Okundu");
-                    return;
-                }
-            }
-
-            update3MStatusUI(true, "Masanızdaki 3M / Regula Okuyucu Dinleniyor (Wedge Modu)");
-            if (statusMsg.length) {
-                statusMsg.html('<div class="alert alert-info p-2 mb-0 mt-1 small shadow-sm"><i class="fas fa-info-circle mr-1"></i> <strong>Masanızdaki Okuyucu Dinleniyor:</strong> 3M (OutputWedge) veya Regula cihazınız klavye dinleyicisi üzerinden tam aktiftir. Pasaport veya kimliği doğrudan cihazın camına koyunuz. ("Cihaza Bağlan" butonu sunucu odasındaki cihaz içindir, Polnet istemci kabinlerinde masanızdaki okuyucu otomatik veri gönderir.)</div>');
-            }
-            if (typeof showEInadStatus === 'function') {
-                showEInadStatus('<i class="fas fa-keyboard mr-1"></i> Masanızdaki okuyucu dinleniyor. Pasaport veya kimliği doğrudan cihaz camına koyunuz.', 'info');
-            }
-        });
-        return;
-    }
-
-    // 2) Yerel Sunucu Ortami (localhost)
-    if (statusMsg.length) {
-        statusMsg.html('<span class="text-primary font-weight-bold"><i class="fas fa-spinner fa-spin mr-1"></i> 3M / Regula cihazına bağlanılıyor, okuyucu servisi başlatılıyor...</span>');
-    }
-
-    try {
-        var protoFrame = document.getElementById('egm3mProtocolFrame');
-        if (!protoFrame) {
-            protoFrame = document.createElement('iframe');
-            protoFrame.id = 'egm3mProtocolFrame';
-            protoFrame.style.display = 'none';
-            document.body.appendChild(protoFrame);
-        }
-        protoFrame.src = 'egm-3m://connect';
-    } catch (e) { }
-
-    var token = getAntiForgeryToken();
-    $.ajax({
-        url: getEinadUrl('data-url-connect-3m', '/EInad/ConnectOpticalReader'),
-        type: 'POST',
-        data: { __RequestVerificationToken: token },
-        timeout: 8000
-    }).done(function (res) {
-        if (res && res.success && res.isRunning) {
-            playScanBeep();
-            update3MStatusUI(true, res.message);
-            if (typeof showEInadStatus === 'function') {
-                showEInadStatus('<i class="fas fa-check-circle mr-1"></i> ' + (res.deviceName || '3M / Regula') + ' okuyucu bağlandı ve aktif!', 'success');
-            }
-        } else {
-            setTimeout(function () {
-                window.check3MStatus(true);
-            }, 1200);
-        }
-    }).fail(function () {
-        setTimeout(function () {
-            window.check3MStatus(true);
-        }, 1200);
-    }).always(function () {
-        btnModal.prop('disabled', false);
-        btnTab.prop('disabled', false);
-        btnTop.prop('disabled', false);
-    });
-};
-
-window.check3MStatus = function (notifyIfFailed) {
-    var isRemoteClient = (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1');
-    if (isRemoteClient) {
-        update3MStatusUI(true, "Masanızdaki 3M / Regula Okuyucu Dinleniyor (Wedge Modu)");
-        return;
-    }
+    
 
     $.ajax({
         url: getEinadUrl('data-url-status-3m', '/EInad/GetOpticalReaderStatus'),
