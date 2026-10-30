@@ -56,12 +56,6 @@
                         <i class="fas fa-map-marker-alt mr-1"></i> @myBorder
                     </span>
                 }
-                <button type="button" class="btn btn-success font-weight-bold shadow-sm mr-2" id="btnTopScanPassport" onclick="scanPassportDirectForEinad()" title="3M, Regula veya Desko Optik Okuyucudan Pasaport Oku">
-                    <i class="fas fa-camera mr-1"></i> <span id="btnTopScanPassportText">Cihazdan Pasaport Oku</span>
-                </button>
-                <button type="button" class="btn btn-outline-info font-weight-bold shadow-sm mr-2" id="btnTopConnect3M" onclick="connect3MDevice()" title="3M, Regula ve Desko Okuyucu Durumu">
-                    <i class="fas fa-plug mr-1"></i> <span id="btnTopConnect3MText">Cihaz Durumu</span>
-                </button>
                 <button type="button" class="btn btn-warning font-weight-bold shadow-sm" onclick="openAdd()">
                     <i class="fas fa-plus-circle mr-1"></i> Yeni İNAD Kaydı Ekle
                 </button>
@@ -355,7 +349,7 @@
 </div>
 
 <!-- Add / Edit Modal (Advanced Police Ergonomics) -->
-<div id="inadModal" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">
+<div id="inadModal" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
     <div class="modal-dialog custom-wide">
         <div class="modal-content">
             <form id="inadForm" method="post">
@@ -365,7 +359,7 @@
                         <i class="fas fa-shield-alt fa-lg mr-2"></i>
                         <h5 class="modal-title font-weight-bold mb-0" id="inadModalTitle">İNAD Kayıt İşlemleri</h5>
                     </div>
-                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Kapat">&times;</button>
+                    <button type="button" class="close text-white" onclick="confirmCloseInadModal()" aria-label="Kapat">&times;</button>
                 </div>
                 <div class="modal-body p-4">
                     <input type="hidden" id="InadId" name="InadId" value="0" />
@@ -511,7 +505,7 @@
                             <div class="card-header bg-light py-2" data-toggle="collapse" data-target="#accKimlik">
                                 <strong class="text-primary"><i class="fas fa-id-card mr-2"></i>1. Yolcu Kimlik Bilgileri</strong>
                             </div>
-                            <div id="accKimlik" class="collapse show" data-parent="#inadAccordion">
+                            <div id="accKimlik" class="collapse show" >
                                 <div class="card-body">
                                     <div class="form-row">
                                         <div class="form-group col-md-4">
@@ -561,7 +555,7 @@
                             <div class="card-header bg-light py-2" data-toggle="collapse" data-target="#accBelge">
                                 <strong class="text-primary"><i class="fas fa-passport mr-2"></i>2. Seyahat Belgesi & Kimlik Bilgileri</strong>
                             </div>
-                            <div id="accBelge" class="collapse" data-parent="#inadAccordion">
+                            <div id="accBelge" class="collapse" >
                                 <div class="card-body">
                                     <div class="form-row">
                                         <div class="form-group col-md-3">
@@ -607,7 +601,7 @@
                             <div class="card-header bg-light py-2" data-toggle="collapse" data-target="#accInad">
                                 <strong class="text-danger"><i class="fas fa-exclamation-triangle mr-2"></i>3. İNAD Sebepleri & Hüküm</strong>
                             </div>
-                            <div id="accInad" class="collapse" data-parent="#inadAccordion">
+                            <div id="accInad" class="collapse" >
                                 <div class="card-body">
                                     <!-- Hızlı Sebep Seçim Çipleri -->
                                     <div class="mb-3 p-2 bg-light border rounded">
@@ -711,7 +705,7 @@
                             <div class="card-header bg-light py-2" data-toggle="collapse" data-target="#accUcus">
                                 <strong class="text-primary"><i class="fas fa-plane mr-2"></i>4. Uçuş & Sevk / Nakil Bilgileri</strong>
                             </div>
-                            <div id="accUcus" class="collapse" data-parent="#inadAccordion">
+                            <div id="accUcus" class="collapse" >
                                 <div class="card-body">
                                     <div class="form-row">
                                         <div class="form-group col-md-3">
@@ -798,7 +792,7 @@
                             <div class="card-header bg-light py-2" data-toggle="collapse" data-target="#accIdari">
                                 <strong class="text-primary"><i class="fas fa-building mr-2"></i>5. İdari Bilgiler & Görevliler</strong>
                             </div>
-                            <div id="accIdari" class="collapse" data-parent="#inadAccordion">
+                            <div id="accIdari" class="collapse" >
                                 <div class="card-body">
                                     <div class="form-row">
                                         <div class="form-group col-md-4">
@@ -851,9 +845,7 @@
                 </div>
 
                 <div class="modal-footer bg-light py-2">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
-                        <i class="fas fa-times mr-1"></i> Vazgeç
-                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="confirmCloseInadModal()"><i class="fas fa-times mr-1"></i> Vazgeç</button>
                     <button type="submit" id="saveButton" class="btn btn-primary px-4 font-weight-bold">
                         <i class="fas fa-save mr-1"></i> Kaydet
                     </button>

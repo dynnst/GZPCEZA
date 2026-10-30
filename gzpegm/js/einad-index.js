@@ -1,4 +1,19 @@
-﻿/* ==========================================================================
+﻿window.confirmCloseInadModal = function () {
+    var name = ($('#AdSoyad').val() || '').trim();
+    var pass = ($('#PasaportNo').val() || '').trim();
+    var bDate = ($('#DogumT').val() || '').trim();
+    var mrz = ($('#mrzInputText').val() || '').trim();
+
+    if (name || pass || bDate || mrz) {
+        if (!confirm('⚠️ DİKKAT: Formda girilmiş veya optik okuyucudan aktarılmış yolcu verileri bulunmaktadır.\n\nPencereyi kapatırsanız bu bilgiler kaybolacaktır.\n\nYine de kapatmak istiyor musunuz?')) {
+            return false;
+        }
+    }
+
+    $('#inadModal').modal('hide');
+    return true;
+};
+/* ==========================================================================
    E-INAD Yonetim JavaScript (einad-index.js v2.0)
    Modern EGM Hudut Polisi Komuta & Sevk Scriptleri
    ========================================================================== */
@@ -727,6 +742,12 @@ function initHardwareScannerListener() {
     var burstCount = 0;
 
     $(document).on('keydown', function (e) {
+        // Optik okuyucu dinleyicisi YALNIZCA İNAD modalı açıkken çalışır
+        if (!$('#inadModal').hasClass('show')) {
+            scannerBuffer = "";
+            burstCount = 0;
+            return;
+        }
         // Kontrol tuslarini yoksay
         if (e.key === 'Shift' || e.key === 'Control' || e.key === 'Alt' || e.key === 'Meta' || e.key === 'CapsLock') {
             return;
