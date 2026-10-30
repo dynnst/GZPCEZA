@@ -697,24 +697,21 @@
                     if (window.PassportReader && window.PassportReader.applyResult) {
                         window.PassportReader.applyResult(res);
                     } else if (res && res.success) {
+                        if (res.fullName) $('#NameCFORM').val(res.fullName);
+                        if (res.documentNumber) $('#PassportCFORM').val(res.documentNumber);
+                        if (res.country) {
+                            if ($('#CountryCalculate option[value="' + res.country + '"]').length === 0) {
+                                $('#CountryCalculate').append(new Option(res.country + ' (Test Modu)', res.country, true, true));
+                            }
+                            $('#CountryCalculate').val(res.country).trigger('change');
+                        }
+                        if (res.birthDate) $('#BirthDateCalculate').val(res.birthDate).trigger('change');
                         if (res.isTurkishCitizen) {
-                            alert('⚠️ TÜRK VATANDAŞI (TUR): Bu sistemde yalnızca yabancı yolculara ceza işlemi uygulanır.');
+                            alert('ℹ️ TEST MODU (TUR): Türk vatandaşı belgesi okundu ve form alanları dolduruldu.');
                         } else {
-                            if (res.fullName) $('#NameCFORM').val(res.fullName);
-                            if (res.documentNumber) $('#PassportCFORM').val(res.documentNumber);
-                            if (res.country) $('#CountryCalculate').val(res.country).trigger('change');
-                            if (res.birthDate) $('#BirthDateCalculate').val(res.birthDate).trigger('change');
                             alert('✓ Pasaport okundu: ' + (res.fullName || '') + ' (' + (res.documentNumber || '') + ')');
                         }
                     } else {
-                        alert((res && res.message) ? res.message : 'Optik okuyucudan pasaport okunamadı.');
-                    }
-                }).fail(function () {
-                    btns.prop('disabled', false).html(orig);
-                    alert('Optik okuyucu servisiyle iletişim kurulamadı.');
-                });
-            }
-        } else {
                         alert((res && res.message) ? res.message : 'Optik okuyucudan pasaport okunamadı.');
                     }
                 }).fail(function () {
