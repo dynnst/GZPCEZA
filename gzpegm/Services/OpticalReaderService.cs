@@ -127,6 +127,26 @@ namespace gzpegm.Services
             return false;
         }
 
+        public static bool CheckRegulaUsbPlugged()
+        {
+            try
+            {
+                using (var usbKey = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Enum\USB"))
+                {
+                    if (usbKey == null) return false;
+                    foreach (var subName in usbKey.GetSubKeyNames())
+                    {
+                        if (subName.IndexOf("1C6A", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+            catch { }
+            return false;
+        }
+
         public static string CheckRegulaDriverStatus()
         {
             try
@@ -438,6 +458,25 @@ namespace gzpegm.Services
                         }
                     }
 
+                    // USB'de Regula okuyucu takılıysa 3M Cogent tarayıcısını (ReaderScanner.exe) ASLA ÇALIŞTIRMA!
+                    // Çünkü masada 3M yok, Regula var; 3M çalıştırılırsa "3M okuyucu meşgul veya bağlı değil" yanıltıcı hatası üretir!
+                    string regDriverDiag = "";
+                    bool isRegulaUsbPlugged = CheckRegulaUsbPlugged();
+                    if (isRegulaUsbPlugged && requested != "3m")
+                    {
+                        regDriverDiag = CheckRegulaDriverStatus();
+                        if (!string.IsNullOrEmpty(regDriverDiag))
+                        {
+                            return new { success = false, message = regDriverDiag };
+                        }
+
+                        return new
+                        {
+                            success = false,
+                            message = "Regula optik okuyucu (5.0 Mp) masanızda bağlı ve hazır. Belgenin taranabilmesi için lütfen masaüstündeki 'Regula Document Reader' (DocReader) programını başlatıp pasaportu okuyucu camına koyunuz."
+                        };
+                    }
+
                     // B) 3M / Gemalto donanım tarayıcısını doğrudan çalıştır (ReaderScanner.exe)
                     string mmmError = "";
                     var scan3M = TryScan3M(out mmmError);
@@ -454,7 +493,7 @@ namespace gzpegm.Services
                     }
 
                     // D) İki okuyucudan da sonuç alınamadıysa donanım teşhisine göre net bilgi ver
-                    string regDriverDiag = CheckRegulaDriverStatus();
+                    regDriverDiag = CheckRegulaDriverStatus();
                     if (!string.IsNullOrEmpty(regDriverDiag))
                     {
                         return new { success = false, message = regDriverDiag };
