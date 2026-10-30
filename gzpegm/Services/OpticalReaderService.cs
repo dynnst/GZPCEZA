@@ -149,40 +149,6 @@ namespace gzpegm.Services
 
         public static string CheckRegulaDriverStatus()
         {
-            try
-            {
-                using (var usbKey = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Enum\USB"))
-                {
-                    if (usbKey == null) return null;
-                    foreach (var subName in usbKey.GetSubKeyNames())
-                    {
-                        if (subName.IndexOf("1C6A", StringComparison.OrdinalIgnoreCase) >= 0)
-                        {
-                            using (var devKey = usbKey.OpenSubKey(subName))
-                            {
-                                if (devKey == null) continue;
-                                foreach (var instName in devKey.GetSubKeyNames())
-                                {
-                                    using (var instKey = devKey.OpenSubKey(instName))
-                                    {
-                                        if (instKey == null) continue;
-                                        string desc = instKey.GetValue("DeviceDesc") as string ?? "";
-                                        string svc = instKey.GetValue("Service") as string ?? "";
-                                        int configFlags = 0;
-                                        try { configFlags = Convert.ToInt32(instKey.GetValue("ConfigFlags") ?? 0); } catch { }
-
-                                        if (desc.IndexOf("FX3", StringComparison.OrdinalIgnoreCase) >= 0 || (configFlags & 0x40) != 0 || (string.IsNullOrEmpty(svc) && subName.IndexOf("E338", StringComparison.OrdinalIgnoreCase) >= 0))
-                                        {
-                                            return "Regula 7024 optik okuyucu bilgisayara takılı, ancak Windows kamera sürücüsü (FX3) yüklü değil (Aygıt Yöneticisi Kod 28). Belge görüntüsünün alınabilmesi için lütfen Regula Document Reader sürücülerini / SDK paketini kurunuz.";
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            catch { }
             return null;
         }
 
@@ -454,11 +420,6 @@ namespace gzpegm.Services
                     // 1. Regula özel olarak talep edildiyse veya USB'de takılıysa (Auto modunda)
                     if (requested == "regula" || (requested == "auto" && (isRegulaUsbPlugged || IsRegulaAvailable())))
                     {
-                        if (!string.IsNullOrEmpty(regDriverDiag))
-                        {
-                            return new { success = false, message = regDriverDiag };
-                        }
-
                         // Doğrudan arka plan RegulaScanner ile sessiz/headless SDK taraması yap (DocReader açmaya GEREK YOK)
                         string regulaErr = "";
                         var directRes = ScanRegulaDirectly(out regulaErr);
@@ -472,6 +433,11 @@ namespace gzpegm.Services
                         if (fallbackRes != null)
                         {
                             return fallbackRes;
+                        }
+
+                        if (!string.IsNullOrEmpty(regDriverDiag))
+                        {
+                            return new { success = false, message = regDriverDiag };
                         }
 
                         string msg = !string.IsNullOrEmpty(regulaErr)
