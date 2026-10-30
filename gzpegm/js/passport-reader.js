@@ -1,4 +1,4 @@
-/**
+﻿/**
  * CEZAM - Pasaport & Optik Okuyucu Entegrasyon Modülü
  * Desteklenen Donanımlar: 3M Cogent / Gemalto (PV40, PV60, AT9000), Regula (70X4, 7024), Desko (Penta, BRS)
  * Not: Bu sistemde yalnızca yabancı yolculara ihlal cezası uygulanır. Türk vatandaşlarına ceza işlemi uygulanmaz.
@@ -515,9 +515,22 @@
                 var lineClean = rawLines[j].toUpperCase().replace(/\s+/g, '');
                 lineClean = lineClean.replace(/[«»‹›]/g, '<');
                 lineClean = lineClean.replace(/[{}[\]()]/g, '<');
+                lineClean = lineClean.replace(/[^A-Z0-9<]/g, '<');
 
                 if (lineClean.length >= 26 && /^[A-Z0-9<]+$/.test(lineClean)) {
                     mrzLines.push(lineClean);
+                }
+            }
+
+            // Tek parca 80+ karakter geldiyse (satir basi olmadan 88 karakterlik TD3 veya 90 karakterlik TD1)
+            if (mrzLines.length === 1 && mrzLines[0].length >= 80) {
+                var single = mrzLines[0];
+                if (single.indexOf('P<') >= 0 || single.indexOf('P') === 0 || single.indexOf('V<') >= 0) {
+                    var pIdx = Math.max(0, single.indexOf('P<'));
+                    mrzLines = [single.substr(pIdx, 44), single.substr(pIdx + 44, 44)];
+                } else if (single.indexOf('I<') >= 0 || single.indexOf('I') === 0 || single.indexOf('A<') >= 0) {
+                    var iIdx = Math.max(0, single.indexOf('I<'));
+                    mrzLines = [single.substr(iIdx, 30), single.substr(iIdx + 30, 30), single.substr(iIdx + 60, 30)];
                 }
             }
 
