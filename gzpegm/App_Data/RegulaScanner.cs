@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -93,6 +93,7 @@ namespace Sahtecilik.RegulaScanner
                     rr.DoMRZOCR = true;
                     rr.DoVisualOCR = true;
                     rr.DoGraphics = true;
+                    rr.DoAuthenticity = true;
                 }
                 catch { }
 
@@ -298,6 +299,32 @@ namespace Sahtecilik.RegulaScanner
                     catch { }
                 }
 
+                                // 4. Regula Dahili Adli Güvenlik Sonuçlarını Çek
+                int secStatus = -1;
+                int mrzStatus = -1;
+                int optStatus = -1;
+                int txtStatus = -1;
+                string authRaw = null;
+
+                try { secStatus = (int)rr.CheckStatusSecurity; } catch { }
+                try { mrzStatus = (int)rr.CheckStatusMRZ; } catch { }
+                try { optStatus = (int)rr.CheckStatusOptical; } catch { }
+                try { txtStatus = (int)rr.CheckStatusTextComparison; } catch { }
+
+                try
+                {
+                    int totalAuth = (int)rr.IsReaderResultTypeAvailable(5); // RPRM_ResultType_Authenticity = 5
+                    if (totalAuth > 0)
+                    {
+                        try { authRaw = (string)rr.CheckReaderResultJSON(5, 0, 0); } catch { }
+                        if (string.IsNullOrEmpty(authRaw))
+                        {
+                            try { authRaw = (string)rr.CheckReaderResultXML(5, 0, 0); } catch { }
+                        }
+                    }
+                }
+                catch { }
+
                 if (string.IsNullOrEmpty(visBase64) && string.IsNullOrEmpty(line1))
                 {
                     Console.WriteLine("{\"success\":false,\"message\":\"Regula optik okuyucu camında belge algılanamadı. Lütfen pasaportu camın üzerine tam yerleştiriniz.\"}");
@@ -315,7 +342,12 @@ namespace Sahtecilik.RegulaScanner
                 sb.Append("\"line1\":\"" + EscapeJson(line1) + "\",");
                 sb.Append("\"line2\":\"" + EscapeJson(line2) + "\",");
                 sb.Append("\"line3\":\"" + EscapeJson(line3) + "\",");
-                sb.Append("\"docType\":\"" + EscapeJson(docType) + "\"");
+                                sb.Append("\"docType\":\"" + EscapeJson(docType) + "\",");
+                sb.Append("\"regulaSecurityStatus\":" + secStatus + ",");
+                sb.Append("\"regulaMrzStatus\":" + mrzStatus + ",");
+                sb.Append("\"regulaOpticalStatus\":" + optStatus + ",");
+                sb.Append("\"regulaTextStatus\":" + txtStatus + ",");
+                sb.Append("\"regulaAuthenticityRaw\":\"" + EscapeJson(authRaw ?? "") + "\"");
                 sb.Append("}");
 
                 Console.WriteLine(sb.ToString());

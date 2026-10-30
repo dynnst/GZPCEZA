@@ -1,4 +1,4 @@
-@model gzpegm.Models.E_Inad
+﻿@model gzpegm.Models.E_Inad
 @{
     bool isEdit = Model != null && Model.InadId > 0;
     ViewBag.Title = isEdit ? "İNAD Kaydını Düzenle (#" + Model.InadId + ")" : "Yeni İNAD Kaydı Ekle";
@@ -746,7 +746,18 @@
                     }
                 });
                 if (!matched) {
-                    $('#Uyruk').val(c).addClass('highlight-flash');
+                    if (c.toUpperCase() === 'TUR' || c.toUpperCase() === 'TR' || c.toLowerCase().indexOf('türk') >= 0) {
+                        $('#Uyruk option').each(function () {
+                            if ($(this).val().toLowerCase().indexOf('türk') >= 0) {
+                                $('#Uyruk').val($(this).val()).addClass('highlight-flash');
+                                matched = true;
+                                return false;
+                            }
+                        });
+                    }
+                    if (!matched) {
+                        $('#Uyruk').val(c).addClass('highlight-flash');
+                    }
                 }
             }
 

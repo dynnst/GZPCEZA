@@ -146,7 +146,13 @@
 
         // Türk vatandaşı kontrolü
         if (target === 'TUR' || target === 'TR' || target === 'TÜRKİYE' || target === 'TURKEY') {
-            return "TUR";
+            if ($('#CountryCalculate').length && $('#CountryCalculate option[value="Türkiye"]').length === 0) {
+                $('#CountryCalculate').append(new Option('Türkiye (Test Modu)', 'Türkiye', true, true));
+            }
+            if ($('#CountryCalculate').length) {
+                $('#CountryCalculate').val('Türkiye').trigger('change');
+            }
+            return "Türkiye";
         }
 
         var mappedName = _isoCountryMap[target] || countryCodeOrName.trim();
@@ -212,13 +218,12 @@
         }
 
         if (res.success) {
-            // 1. Türk Vatandaşı Kontrolü (Türklere ceza uygulanmaz!)
+            // 1. Türk Vatandaşı Bilgilendirmesi (Test amacıyla form doldurulur)
             if (res.isTurkishCitizen || (res.countryCode && (res.countryCode === 'TUR' || res.countryCode === 'TR'))) {
                 showPassportAlert(
-                    '<strong>TÜRK VATANDAŞI (TUR):</strong> Bu sistemde yalnızca yabancı yolculara ihlal cezası uygulanmaktadır. Türk vatandaşlarına ceza işlemi uygulanamaz.',
-                    'danger'
+                    '<strong>BİLGİ / TEST MODU (TUR):</strong> Türk vatandaşı belgesi okundu. Test amacıyla tüm alanlar başarıyla dolduruldu.',
+                    'info'
                 );
-                return;
             }
 
             // 2. Yabancı Yolcu Adı Soyadı

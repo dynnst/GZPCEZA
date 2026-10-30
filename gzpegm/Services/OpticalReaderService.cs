@@ -1,4 +1,4 @@
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -1543,7 +1543,7 @@ namespace gzpegm.Services
                 {
                     success = true,
                     isTurkishCitizen = isTurkish,
-                    message = isTurkish ? "Okunan belge Türk vatandaşına aittir (TUR). Türk vatandaşlarına vize/ceza işlemi uygulanamaz." : "",
+                    message = "",
                     documentType = docType,
                     docTypeCode = docTypeCode,
                     country = country,
@@ -1621,7 +1621,7 @@ namespace gzpegm.Services
                 {
                     p.IsTurkishCitizen = true;
                     p.Country = "Türkiye";
-                    p.Message = "Okunan belge Türk vatandaşına aittir (TUR). Türk vatandaşlarına vize/ceza işlemi uygulanamaz.";
+                    p.Message = null;
                 }
                 else if (!string.IsNullOrEmpty(cCode))
                 {
@@ -1645,7 +1645,7 @@ namespace gzpegm.Services
                         p.IsTurkishCitizen = true;
                         p.Country = "Türkiye";
                         p.CountryCode = natCode;
-                        p.Message = "Okunan belge Türk vatandaşına aittir (TUR). Türk vatandaşlarına vize/ceza işlemi uygulanamaz.";
+                        p.Message = null;
                     }
                     else if (string.IsNullOrEmpty(p.Country))
                     {
@@ -1688,7 +1688,7 @@ namespace gzpegm.Services
                 {
                     p.IsTurkishCitizen = true;
                     p.Country = "Türkiye";
-                    p.Message = "Okunan belge Türk vatandaşına aittir (TUR). Türk vatandaşlarına vize/ceza işlemi uygulanamaz.";
+                    p.Message = null;
                 }
                 else if (!string.IsNullOrEmpty(cCode))
                 {
