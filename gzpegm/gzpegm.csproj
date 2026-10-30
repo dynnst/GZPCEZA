@@ -8192,6 +8192,10 @@
   <ItemGroup>
     <Folder Include="App_Data\" />
     <Content Include="App_Data\PassportOcr.ps1" />
+    <Content Include="App_Data\ReaderScanner.exe" />
+    <None Include="App_Data\ReaderScanner.cs" />
+    <Content Include="App_Data\RegulaScanner.exe" />
+    <None Include="App_Data\RegulaScanner.cs" />
     <Folder Include="aspnet_client\system_web\2_0_50727\" />
     <Folder Include="aspnet_client\system_web\4_0_30319\" />
     <Folder Include="ccc\dilekce\" />

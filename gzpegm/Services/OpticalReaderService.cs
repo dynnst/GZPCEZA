@@ -280,24 +280,42 @@ namespace gzpegm.Services
                 }
 
                 bool is3M = Process.GetProcessesByName("OutputWedgeSysTray").Length > 0;
-                bool isRegula = IsRegulaAvailable();
+                bool isRegulaUsb = CheckRegulaUsbPlugged();
+                string regDriverWarning = CheckRegulaDriverStatus();
+                bool isRegulaReady = (isRegulaUsb && string.IsNullOrEmpty(regDriverWarning)) || IsRegulaAvailable();
                 bool isDesko = Process.GetProcessesByName("PentaScanner").Length > 0
                             || Process.GetProcessesByName("DeskoService").Length > 0;
-                bool isAnyRunning = is3M || isRegula || isDesko;
+                bool isAnyRunning = is3M || isRegulaReady || isDesko;
 
-                string activeDevice = is3M && isRegula ? "3M & Regula" : (is3M ? "3M PV40/PV60/AT9000" : (isRegula ? "Regula 70X4/70X7" : (isDesko ? "Desko PENTA" : (deviceName != "" ? deviceName : "Optik Okuyucu"))));
+                string activeDevice = is3M && isRegulaReady ? "3M & Regula" : (is3M ? "3M PV40/PV60/AT9000" : (isRegulaReady ? "Regula 7024M / 70X4" : (isDesko ? "Desko PENTA" : (deviceName != "" ? deviceName : "Optik Okuyucu"))));
+
+                string statusMsg;
+                if (isRegulaReady && !is3M)
+                {
+                    statusMsg = "Regula optik okuyucu (7024M / 70X4) masanızda takılı ve arka plan tarama servisi hazır. Pasaport veya kimliği doğrudan cihazın camına yerleştirebilirsiniz.";
+                }
+                else if (isAnyRunning)
+                {
+                    statusMsg = activeDevice + " servisine başarıyla bağlanıldı ve dinleniyor. Pasaport veya kimliği okuyucuya koyabilirsiniz.";
+                }
+                else if (!string.IsNullOrEmpty(regDriverWarning))
+                {
+                    statusMsg = regDriverWarning;
+                }
+                else
+                {
+                    statusMsg = "Okuyucu servisi başlatılamadı. Lütfen cihazın USB bağlantısını ve sürücüsünü kontrol ediniz.";
+                }
 
                 return new
                 {
                     success = true,
                     isRunning = isAnyRunning,
                     is3MRunning = is3M,
-                    isRegulaRunning = isRegula,
+                    isRegulaRunning = isRegulaReady,
                     isDeskoRunning = isDesko,
                     deviceName = activeDevice,
-                    message = isAnyRunning
-                        ? activeDevice + " servisine başarıyla bağlanıldı ve dinleniyor. Pasaport veya kimliği okuyucuya koyabilirsiniz."
-                        : "Okuyucu servisi başlatılamadı. Lütfen cihazın USB bağlantısını ve sürücüsünü kontrol ediniz."
+                    message = statusMsg
                 };
             }
             catch (Exception ex)
@@ -374,14 +392,15 @@ namespace gzpegm.Services
                 }
 
                 bool is3MProcess = Process.GetProcessesByName("OutputWedgeSysTray").Length > 0;
-                bool isRegula = IsRegulaAvailable();
+                bool isRegulaUsb = CheckRegulaUsbPlugged();
+                string regDriverWarning = CheckRegulaDriverStatus();
+                bool isRegulaReady = (isRegulaUsb && string.IsNullOrEmpty(regDriverWarning)) || IsRegulaAvailable();
                 bool isDesko = Process.GetProcessesByName("PentaScanner").Length > 0
                             || Process.GetProcessesByName("DeskoService").Length > 0;
 
-                bool isRunning = is3MHardwareReady || is3MProcess || isRegula || isDesko;
-                string deviceName = (is3MHardwareReady || is3MProcess) ? "3M Cogent / Gemalto (PV40/PV60/AT9000)" : (isRegula ? "Regula 70X4/70X7" : (isDesko ? "Desko PENTA" : "Optik Okuyucu"));
+                bool isRunning = is3MHardwareReady || is3MProcess || isRegulaReady || isDesko;
+                string deviceName = (is3MHardwareReady || is3MProcess) ? "3M Cogent / Gemalto (PV40/PV60/AT9000)" : (isRegulaReady ? "Regula 7024M / 70X4" : (isDesko ? "Desko PENTA" : "Optik Okuyucu"));
 
-                string regDriverWarning = CheckRegulaDriverStatus();
                 if (!string.IsNullOrEmpty(regDriverWarning) && !isRunning)
                 {
                     return new
@@ -406,7 +425,7 @@ namespace gzpegm.Services
                     is3MReady = is3MHardwareReady,
                     isDocumentOnWindow = isDocOnWindow,
                     is3MRunning = is3MProcess,
-                    isRegulaRunning = isRegula,
+                    isRegulaRunning = isRegulaReady,
                     isDeskoRunning = isDesko,
                     deviceName = deviceName,
                     statusText = isRunning ? (deviceName + " Bağlı & Hazır") : "Bağlantı Bekleniyor"
@@ -429,71 +448,59 @@ namespace gzpegm.Services
                 try
                 {
                     string requested = (deviceType ?? "auto").Trim().ToLowerInvariant();
-
-                    // 1. Regula özel olarak talep edildiyse
-                    if (requested == "regula")
-                    {
-                        var regulaRes = TryScanRegula();
-                        if (regulaRes != null) return regulaRes;
-                        return new { success = false, message = "Regula optik okuyucudan belge okunamadı. Lütfen pasaportu cihaz camının üzerine yerleştirip tekrar deneyiniz." };
-                    }
-
-                    // 2. 3M özel olarak talep edildiyse
-                    if (requested == "3m")
-                    {
-                        string mmmErr = "";
-                        var mmmRes = TryScan3M(out mmmErr);
-                        if (mmmRes != null) return mmmRes;
-                        return new { success = false, message = "3M Cogent okuyucudan belge okunamadı. " + mmmErr };
-                    }
-
-                    // 3. Auto modu (Akıllı Cihaz Tespiti & Sıralı Okuma):
-                    // A) Önce Regula okuyucunun hazır olup olmadığını kontrol et
-                    if (IsRegulaAvailable())
-                    {
-                        var regulaResult = TryScanRegula();
-                        if (regulaResult != null)
-                        {
-                            return regulaResult;
-                        }
-                    }
-
-                    // USB'de Regula okuyucu takılıysa 3M Cogent tarayıcısını (ReaderScanner.exe) ASLA ÇALIŞTIRMA!
-                    // Çünkü masada 3M yok, Regula var; 3M çalıştırılırsa "3M okuyucu meşgul veya bağlı değil" yanıltıcı hatası üretir!
-                    string regDriverDiag = "";
                     bool isRegulaUsbPlugged = CheckRegulaUsbPlugged();
-                    if (isRegulaUsbPlugged && requested != "3m")
+                    string regDriverDiag = CheckRegulaDriverStatus();
+
+                    // 1. Regula özel olarak talep edildiyse veya USB'de takılıysa (Auto modunda)
+                    if (requested == "regula" || (requested == "auto" && (isRegulaUsbPlugged || IsRegulaAvailable())))
                     {
-                        regDriverDiag = CheckRegulaDriverStatus();
                         if (!string.IsNullOrEmpty(regDriverDiag))
                         {
                             return new { success = false, message = regDriverDiag };
                         }
 
-                        return new
+                        // Doğrudan arka plan RegulaScanner ile sessiz/headless SDK taraması yap (DocReader açmaya GEREK YOK)
+                        string regulaErr = "";
+                        var directRes = ScanRegulaDirectly(out regulaErr);
+                        if (directRes != null)
                         {
-                            success = false,
-                            message = "Regula optik okuyucu (5.0 Mp) masanızda bağlı ve hazır. Belgenin taranabilmesi için lütfen masaüstündeki 'Regula Document Reader' (DocReader) programını başlatıp pasaportu okuyucu camına koyunuz."
-                        };
+                            return directRes;
+                        }
+
+                        // İkincil alternatif: Eğer varsa Regula Web API / Dosya havuzunu kontrol et
+                        var fallbackRes = TryScanRegula();
+                        if (fallbackRes != null)
+                        {
+                            return fallbackRes;
+                        }
+
+                        string msg = !string.IsNullOrEmpty(regulaErr)
+                            ? regulaErr
+                            : "Regula optik okuyucu hazır; ancak belgeden veri okunamadı. Lütfen pasaportu cihaz camına yerleştiriniz.";
+                        return new { success = false, message = msg };
                     }
 
-                    // B) 3M / Gemalto donanım tarayıcısını doğrudan çalıştır (ReaderScanner.exe)
+                    // 2. 3M özel olarak talep edildiyse veya 3M Auto modunda donanım taraması
                     string mmmError = "";
-                    var scan3M = TryScan3M(out mmmError);
-                    if (scan3M != null)
+                    if (requested == "3m" || requested == "auto")
                     {
-                        return scan3M;
+                        var mmmRes = TryScan3M(out mmmError);
+                        if (mmmRes != null) return mmmRes;
+
+                        if (requested == "3m")
+                        {
+                            return new { success = false, message = "3M Cogent okuyucudan belge okunamadı. " + mmmError };
+                        }
                     }
 
-                    // C) 3M başarısız olduysa veya donanım bulunamadıysa, Regula'yı ikinci şans olarak tekrar dene
+                    // 3. Fallback olarak Regula'yı tekrar dene
                     var regulaFallback = TryScanRegula();
                     if (regulaFallback != null)
                     {
                         return regulaFallback;
                     }
 
-                    // D) İki okuyucudan da sonuç alınamadıysa donanım teşhisine göre net bilgi ver
-                    regDriverDiag = CheckRegulaDriverStatus();
+                    // Donanım sürücü teşhisi
                     if (!string.IsNullOrEmpty(regDriverDiag))
                     {
                         return new { success = false, message = regDriverDiag };
@@ -515,6 +522,127 @@ namespace gzpegm.Services
                 {
                     return new { success = false, message = "Cihazdan tarama hatası: " + ex.Message };
                 }
+            }
+        }
+
+        /// <summary>
+        /// Regula Document Reader donanımından harici program (DocReader) açmaya GEREK KALMADAN,
+        /// arka planda sessizce (headless COM otomasyonu) VIS ve MRZ verilerini doğrudan çeker.
+        /// </summary>
+        private static object ScanRegulaDirectly(out string errorDetail)
+        {
+            errorDetail = "";
+            string scannerExe = ResolveAppDataPath("RegulaScanner.exe");
+            if (!File.Exists(scannerExe))
+            {
+                errorDetail = "Regula tarayıcı yürütücüsü (RegulaScanner.exe) bulunamadı.";
+                return null;
+            }
+
+            // COM sunucu kilitlenmesini önlemek için önceki oturumdan kalan zombie READERDEMO süreçlerini temizle
+            try
+            {
+                var zombies = Process.GetProcessesByName("READERDEMO");
+                foreach (var z in zombies) { try { z.Kill(); z.WaitForExit(600); } catch { } }
+            }
+            catch { }
+
+            try
+            {
+                var psi = new ProcessStartInfo
+                {
+                    FileName = scannerExe,
+                    Arguments = "--scan",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true,
+                    StandardOutputEncoding = System.Text.Encoding.UTF8
+                };
+
+                using (var proc = Process.Start(psi))
+                {
+                    string output = proc.StandardOutput.ReadToEnd();
+                    string errOutput = proc.StandardError.ReadToEnd();
+                    proc.WaitForExit(18000);
+
+                    if (string.IsNullOrWhiteSpace(output))
+                    {
+                        errorDetail = !string.IsNullOrWhiteSpace(errOutput) ? errOutput.Trim() : "Regula okuyucudan veri yanıtı alınamadı.";
+                        return null;
+                    }
+
+                    int jsonStart = output.IndexOf('{');
+                    int jsonEnd = output.LastIndexOf('}');
+                    if (jsonStart < 0 || jsonEnd <= jsonStart)
+                    {
+                        errorDetail = !string.IsNullOrWhiteSpace(errOutput) ? errOutput.Trim() : "Regula çıktısı ayrıştırılamadı: " + output;
+                        return null;
+                    }
+
+                    string jsonStr = output.Substring(jsonStart, jsonEnd - jsonStart + 1);
+                    var jsonObj = JObject.Parse(jsonStr);
+
+                    bool success = (bool?)jsonObj["success"] ?? false;
+                    if (!success)
+                    {
+                        errorDetail = (string)jsonObj["message"] ?? "Regula okuyucudan belge okunamadı.";
+                        return null;
+                    }
+
+                    string visBase64 = (string)jsonObj["visBase64"] ?? "";
+                    string line1 = (string)jsonObj["line1"] ?? "";
+                    string line2 = (string)jsonObj["line2"] ?? "";
+                    string line3 = (string)jsonObj["line3"] ?? "";
+                    string docTypeStr = (string)jsonObj["docType"] ?? "PASSPORT";
+
+                    // Satırları ICAO formatına göre ayrıştır
+                    var parsed = ParseMrzCodelines(line1, line2, line3, docTypeStr);
+
+                    return new
+                    {
+                        success = true,
+                        deviceName = "Regula Document Reader (7024M / 70X4)",
+                        visBase64 = visBase64,
+                        isTurkishCitizen = parsed.IsTurkishCitizen,
+                        message = parsed.Message,
+                        documentType = parsed.DocumentType,
+                        docTypeCode = parsed.DocTypeCode,
+                        country = parsed.Country,
+                        countryCode = parsed.CountryCode,
+                        documentNumber = parsed.DocumentNumber,
+                        fullName = parsed.FullName,
+                        surname = parsed.Surname,
+                        givenNames = parsed.GivenNames,
+                        birthDate = parsed.BirthDate,
+                        age = parsed.Age,
+                        isAdult = parsed.IsAdult,
+                        adultCode = parsed.AdultCode,
+                        personalNumber = parsed.PersonalNumber,
+                        sex = parsed.Sex,
+                        rawText = parsed.RawText,
+                        line1 = line1,
+                        line2 = line2,
+                        line3 = line3,
+                        summary = parsed.IsTurkishCitizen
+                            ? "TÜRK VATANDAŞI (Ceza Uygulanmaz)"
+                            : (parsed.FullName + " (" + parsed.DocumentNumber + ") - " + parsed.Country)
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                errorDetail = ex.Message;
+                return null;
+            }
+            finally
+            {
+                try
+                {
+                    var leftovers = Process.GetProcessesByName("READERDEMO");
+                    foreach (var l in leftovers) { try { l.Kill(); } catch { } }
+                }
+                catch { }
             }
         }
 

@@ -19,23 +19,102 @@ namespace Sahtecilik.ReaderScanner
 
         static string resolvedBinDir = null;
 
+        static string FindSdkBinDir()
+        {
+            // 1. Bilinen standart yolları kontrol et
+            foreach (var dir in possibleBinDirs)
+            {
+                if (Directory.Exists(dir) && File.Exists(Path.Combine(dir, "MMMReaderDotNet40.dll")))
+                {
+                    return dir;
+                }
+            }
+
+            // 2. Thales, Gemalto ve 3M ana klasörleri altında tüm sürümleri dinamik ara
+            string[] baseRoots = new string[]
+            {
+                @"C:\Program Files (x86)\Thales\Gemalto Document Reader SDK",
+                @"C:\Program Files\Thales\Gemalto Document Reader SDK",
+                @"C:\Program Files (x86)\Gemalto\Document Reader SDK",
+                @"C:\Program Files\Gemalto\Document Reader SDK",
+                @"C:\Program Files (x86)\Thales",
+                @"C:\Program Files\Thales",
+                @"C:\Program Files (x86)\Gemalto",
+                @"C:\Program Files\Gemalto",
+                @"C:\Program Files (x86)\3M",
+                @"C:\Program Files\3M",
+                @"C:\Program Files (x86)\3M Cogent",
+                @"C:\Program Files\3M Cogent",
+                @"C:\3M",
+                @"C:\Gemalto"
+            };
+
+            foreach (var root in baseRoots)
+            {
+                if (Directory.Exists(root))
+                {
+                    try
+                    {
+                        var files = Directory.GetFiles(root, "MMMReaderDotNet40.dll", SearchOption.AllDirectories);
+                        if (files.Length > 0)
+                        {
+                            foreach (var f in files)
+                            {
+                                var d = Path.GetDirectoryName(f);
+                                if (d.IndexOf("Bin", StringComparison.OrdinalIgnoreCase) >= 0)
+                                    return d;
+                            }
+                            return Path.GetDirectoryName(files[0]);
+                        }
+                    }
+                    catch { }
+                }
+            }
+
+            // 3. Windows Kayıt Defteri (Registry) üzerinden dinamik kurulum yolu tespiti
+            try
+            {
+                using (var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"))
+                {
+                    if (key != null)
+                    {
+                        foreach (var sub in key.GetSubKeyNames())
+                        {
+                            using (var subKey = key.OpenSubKey(sub))
+                            {
+                                var disp = subKey?.GetValue("DisplayName") as string;
+                                if (disp != null && (disp.IndexOf("Gemalto Document Reader", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                                     disp.IndexOf("Thales Document Reader", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                                     disp.IndexOf("3M Page Reader", StringComparison.OrdinalIgnoreCase) >= 0))
+                                {
+                                    var loc = subKey.GetValue("InstallLocation") as string;
+                                    if (!string.IsNullOrEmpty(loc) && Directory.Exists(loc))
+                                    {
+                                        var bin = Path.Combine(loc, "Bin");
+                                        if (File.Exists(Path.Combine(bin, "MMMReaderDotNet40.dll"))) return bin;
+                                        if (File.Exists(Path.Combine(loc, "MMMReaderDotNet40.dll"))) return loc;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            return null;
+        }
+
         [STAThread]
         static void Main(string[] args)
         {
             Console.OutputEncoding = Encoding.UTF8;
 
-            foreach (var dir in possibleBinDirs)
-            {
-                if (Directory.Exists(dir) && File.Exists(Path.Combine(dir, "MMMReaderDotNet40.dll")))
-                {
-                    resolvedBinDir = dir;
-                    break;
-                }
-            }
+            resolvedBinDir = FindSdkBinDir();
 
             if (resolvedBinDir == null)
             {
-                Console.WriteLine("{\"success\":false,\"message\":\"3M / Gemalto Reader SDK kütüphaneleri bulunamadı.\"}");
+                Console.WriteLine("{\"success\":false,\"message\":\"3M / Gemalto Reader SDK kütüphaneleri bulunamadı. Lütfen Thales/Gemalto Document Reader SDK kurulum dizinini kontrol ediniz.\"}");
                 return;
             }
 
