@@ -1,4 +1,4 @@
-﻿/* ==========================================================================
+/* ==========================================================================
    UserBox Header Widget Stilleri (userbox.css)
    ========================================================================== */
 
@@ -201,20 +201,41 @@
 
     .userbox-header #mainNav .dropdown-submenu > .dropdown-menu {
         left: 100% !important;
-        margin-left: 0;
-        margin-top: 0;
+        margin-left: -6px !important;
+        margin-top: -2px !important;
         position: absolute;
         top: 0 !important;
-        z-index: 2600;
+        z-index: 9999;
+        min-width: 250px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        -webkit-transition: none !important;
+        transition: none !important;
+        -webkit-transform: none !important;
+        transform: none !important;
     }
 
-    .userbox-header #mainNav .dropdown-submenu > .dropdown-menu:before {
-        bottom: 0;
+    /* Nested second-level submenus (e.g. Havalimanı İstatistiki Veriler) */
+    .userbox-header #mainNav .dropdown-submenu .dropdown-submenu > .dropdown-menu {
+        left: 100% !important;
+        margin-left: -4px !important;
+        top: -4px !important;
+        z-index: 10005 !important;
+        min-width: 260px;
+    }
+
+    /* Hover bridge only active when the submenu itself is actively hovered or shown */
+    .userbox-header #mainNav .dropdown-submenu:hover > .dropdown-menu:before,
+    .userbox-header #mainNav .dropdown-submenu.show > .dropdown-menu:before,
+    .userbox-header #mainNav .dropdown-submenu.open > .dropdown-menu:before,
+    .userbox-header #mainNav .dropdown-submenu.is-active > .dropdown-menu:before {
+        bottom: -20px;
         content: "";
-        left: -8px;
+        left: -30px;
         position: absolute;
-        top: 0;
-        width: 8px;
+        top: -20px;
+        width: 35px;
+        background: transparent;
+        pointer-events: auto;
     }
 
     .userbox-header #mainNav > li.dropdown:hover > .dropdown-menu,
@@ -223,8 +244,32 @@
     }
 
     .userbox-header #mainNav .dropdown-submenu:hover > .dropdown-menu,
-    .userbox-header #mainNav .dropdown-submenu.show > .dropdown-menu {
-        display: block;
+    .userbox-header #mainNav .dropdown-submenu.show > .dropdown-menu,
+    .userbox-header #mainNav .dropdown-submenu.open > .dropdown-menu,
+    .userbox-header #mainNav .dropdown-submenu.is-active > .dropdown-menu {
+        display: block !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        transform: none !important;
+        pointer-events: auto !important;
+    }
+
+    /* Faydalı Linkler: Do NOT open on mouse pass-through. Only open when explicitly clicked/toggled */
+    .userbox-header #mainNav .dropdown-submenu.faydali-linkler:not(.show):not(.open) > .dropdown-menu {
+        display: none !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+    }
+
+    .userbox-header #mainNav .dropdown-submenu.faydali-linkler.show > .dropdown-menu,
+    .userbox-header #mainNav .dropdown-submenu.faydali-linkler.open > .dropdown-menu {
+        display: block !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        pointer-events: auto !important;
+        transform: none !important;
+    }
     }
 
     .userbox-header .divider {

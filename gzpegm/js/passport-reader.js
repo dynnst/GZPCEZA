@@ -366,19 +366,7 @@
 
         btns.prop('disabled', true).html('<span class="spinner-border spinner-border-sm mr-1" role="status"></span> Okunuyor...');
 
-        // 1) Doğrudan C# backend servisine bağlan
-                }
-
-                // Masadaki okuyucu Klavye Wedge (3M OutputWedge veya Regula Wedge) modunda hazır
-                showPassportAlert(
-                    '<strong>🟢 Masanızdaki Okuyucu Dinleniyor (Wedge Modu):</strong> Pasaport veya kimliği masanızdaki okuyucunun (3M veya Regula) camına yerleştiriniz. Sistem MRZ verisini milisaniyeler içinde yakalayarak form alanlarını otomatik dolduracaktır. (Polnet kabininde sunucuya bağlanma butonu gerekmez; masanızdaki okuyucu doğrudan tarayıcıya yazar.)',
-                    'info'
-                );
-            });
-            return;
-        }
-
-        // 2) Eğer localhost / sunucu ortamında çalışılıyorsa doğrudan C# servisine bağlan
+        // Doğrudan C# backend servisine bağlan (Regula, 3M veya Desko otomatik taranır)
         $.ajax({
             url: '/Calculate/ScanOpticalReader',
             type: 'POST',

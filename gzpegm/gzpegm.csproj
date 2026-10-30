@@ -7246,6 +7246,7 @@
     <Compile Include="Services\IMessageService.cs" />
     <Compile Include="Services\MessageService.cs" />
     <Compile Include="Services\OpticalReaderService.cs" />
+    <Compile Include="Services\StatService.cs" />
     <Compile Include="Startup.cs" />
     <Compile Include="ViewModels\DashboardViewModel.cs" />
     <Compile Include="ViewModels\RecentActivityViewModel.cs" />
@@ -7715,6 +7716,10 @@
     <Content Include="vendor\summernote\summernote-lite.js.map" />
     <Content Include="vendor\summernote\summernote.js.map" />
     <Content Include="Views\Istatistik\Index.cshtml" />
+    <Content Include="Views\Istatistik\FaaliyetRaporu.cshtml" />
+    <Content Include="Views\Istatistik\PrintFaaliyetRaporu.cshtml" />
+    <Content Include="Views\Istatistik\VeriGiris.cshtml" />
+    <Content Include="Views\Istatistik\Yonetim.cshtml" />
     <Content Include="Views\Ulke\Index.cshtml" />
     <Content Include="Views\Country\Index.cshtml" />
     <Content Include="Views\Shared\_MinimalMaster.cshtml" />

@@ -1204,6 +1204,7 @@ function openEdit(id) {
         window.location.href = '/EInad/Edit/' + id;
     }
 }
+/* =========================
    DROPDOWN YENİLEME
 ========================= */
 function refreshAllDropdowns() {

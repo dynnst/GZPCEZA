@@ -1,0 +1,715 @@
+@model List<gzpegm.Services.StatReportDepartmentDto>
+@{
+    Layout = null;
+    var criteria = ViewBag.Criteria as gzpegm.Services.StatPeriodCriteria ?? new gzpegm.Services.StatPeriodCriteria();
+    criteria.ResolveDatesAndHeaders();
+    int activeYear = criteria.Year;
+    string borderName = ViewBag.BorderName as string ?? "HUDUT KAPISI";
+    string valilikName = ViewBag.ValilikName as string ?? "T.C. VALİLİĞİ";
+}
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HİZMETE ÖZEL - @valilikName - @borderName - @activeYear YILI FAALİYET RAPORU</title>
+    <link rel="stylesheet" href="@Url.Content("~/vendor/bootstrap/css/bootstrap.css")" />
+    <link rel="stylesheet" href="@Url.Content("~/vendor/font-awesome/css/fontawesome-all.min.css")" />
+
+    <!-- Dinamik Sayfa Yönlendirme (Dikey / Yatay) CSS Stili -->
+    <style id="pageOrientationCss">
+        @@page {
+            size: A4 portrait;
+            margin: 10mm 12mm 10mm 12mm;
+        }
+    </style>
+
+    <style>
+        /* Modern Studio Önizleme Çalışma Alanı */
+        body {
+            background-color: #cbd5e1;
+            color: #0f172a;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 95px 0 50px 0;
+        }
+
+        /* Sabit Üst Yazdırma Paneli (Tam Ekran Genişliği) */
+        .print-studio-navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
+            background: #0f172a;
+            border-bottom: 2px solid #2563eb;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+            z-index: 99999;
+        }
+
+        .studio-control-card {
+            display: inline-flex;
+            align-items: center;
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            padding: 3px 10px;
+            height: 38px;
+        }
+        .studio-control-label {
+            color: #94a3b8;
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            margin-right: 8px;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        .studio-btn-group .btn {
+            font-size: 0.82rem;
+            font-weight: 700;
+            padding: 4px 12px;
+            border: 1px solid #334155;
+            background: #0f172a;
+            color: #cbd5e1;
+            transition: all 0.15s ease;
+        }
+        .studio-btn-group .btn:hover {
+            color: #ffffff;
+            background: #334155;
+        }
+        .studio-btn-group .btn.active {
+            background: #2563eb !important;
+            color: #ffffff !important;
+            border-color: #2563eb !important;
+            box-shadow: 0 0 0 1px #2563eb;
+        }
+
+        .studio-select {
+            background: #0f172a;
+            color: #ffffff;
+            border: 1px solid #334155;
+            font-weight: 700;
+            font-size: 0.82rem;
+            height: 30px;
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+        .studio-select:focus {
+            background: #0f172a;
+            color: #ffffff;
+            border-color: #3b82f6;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+        }
+
+        .studio-filter-btn {
+            font-size: 0.82rem;
+            padding: 4px 10px;
+            border-radius: 4px;
+            background: #0f172a;
+            color: #38bdf8;
+            border-color: #334155;
+        }
+        .studio-filter-btn:hover {
+            background: #334155;
+            color: #ffffff;
+        }
+
+        .studio-dropdown-menu {
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.2);
+            min-width: 360px;
+        }
+
+        .table-filter-item {
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.15s ease;
+            user-select: none;
+            margin-bottom: 2px;
+        }
+        .table-filter-item:hover {
+            background: #f1f5f9;
+        }
+        .table-filter-item input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        /* Önizleme Sayfa Konteyneri */
+        .report-page-container {
+            margin: 0 auto;
+            transition: max-width 0.25s ease;
+        }
+        .report-page-container.view-portrait {
+            max-width: 880px;
+        }
+        .report-page-container.view-landscape {
+            max-width: 1180px;
+        }
+
+        .sheet-preview-label {
+            text-align: center;
+            margin-bottom: 8px;
+            font-size: 0.80rem;
+            font-weight: 700;
+            color: #475569;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        /* Ekranda Canlı A4 Kâğıdı Görünümü (Resmi Belge Times New Roman) */
+        .official-print-page {
+            font-family: 'Times New Roman', Times, serif, Arial;
+            background: #ffffff;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.15), 0 1px 4px rgba(15, 23, 42, 0.08);
+            margin: 0 auto 35px auto;
+            padding: 30px 35px;
+            border-radius: 4px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .report-page-container.view-portrait .official-print-page {
+            min-height: 1050px;
+        }
+        .report-page-container.view-landscape .official-print-page {
+            min-height: 540px;
+        }
+        .report-page-container.view-flow .official-print-page {
+            min-height: auto;
+        }
+
+        .hizmete-ozel-stamp {
+            font-size: 11pt;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-align: right;
+            margin-bottom: 12px;
+        }
+        .header-title-block {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        .header-title-block h4 {
+            font-size: 13pt;
+            font-weight: bold;
+            margin: 2px 0;
+            text-transform: uppercase;
+        }
+        .header-title-block h3 {
+            font-size: 14pt;
+            font-weight: bold;
+            margin: 4px 0;
+            text-transform: uppercase;
+        }
+        .dept-title-text {
+            text-align: center;
+            font-size: 11.5pt;
+            font-weight: bold;
+            letter-spacing: 1px;
+            margin: 14px 0 4px 0;
+            text-decoration: underline;
+        }
+        .table-title-text {
+            text-align: center;
+            font-size: 10.5pt;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        .print-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 16px;
+            font-size: 9.5pt;
+        }
+        .report-page-container.view-landscape .print-table {
+            font-size: 10pt;
+        }
+        .print-table th, .print-table td {
+            border: 1.5px solid #000000;
+            padding: 6px 8px;
+            vertical-align: middle;
+        }
+        .print-table th {
+            background-color: #f2f2f2 !important;
+            font-weight: bold;
+            text-align: center;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        .print-table td.text-center {
+            text-align: center;
+        }
+        .print-table td.text-left {
+            text-align: left;
+        }
+
+        .page-footer-block {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            font-weight: bold;
+            font-size: 10pt;
+            border-top: 1px solid #000000;
+            padding-top: 6px;
+        }
+
+        /* Yazıcı (Print) Çıktı Kuralları - Sıfır Taşma ve Tam Senkronizasyon */
+        @@media print {
+            html, body {
+                background-color: #ffffff !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                color: #000000 !important;
+                width: 100% !important;
+                height: auto !important;
+                overflow: visible !important;
+            }
+            .no-print, .print-studio-navbar, .sheet-preview-label {
+                display: none !important;
+            }
+            .report-page-container {
+                max-width: 100% !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            .official-print-page {
+                box-shadow: none !important;
+                border: none !important;
+                border-radius: 0 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                min-height: 0 !important;
+                height: auto !important;
+                max-height: none !important;
+                display: block !important;
+                page-break-after: always !important;
+                break-after: page !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+            .report-page-container.view-portrait .official-print-page,
+            .report-page-container.view-landscape .official-print-page {
+                min-height: 0 !important;
+                height: auto !important;
+                padding: 0 !important;
+            }
+            .official-print-page:last-child {
+                page-break-after: avoid !important;
+                break-after: avoid !important;
+            }
+            .report-page-container.view-flow .official-print-page {
+                page-break-after: auto !important;
+                break-after: auto !important;
+            }
+
+            .print-table {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+            .page-footer-block {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+
+            /* Yatay (Landscape) Baskıda Kompakt Dikey Boşluklar (Sayfa Taşmasını Önler) */
+            .report-page-container.view-landscape .hizmete-ozel-stamp {
+                margin-bottom: 6px !important;
+                font-size: 10pt !important;
+            }
+            .report-page-container.view-landscape .header-title-block {
+                margin-bottom: 8px !important;
+            }
+            .report-page-container.view-landscape .header-title-block h4 {
+                font-size: 11pt !important;
+                margin: 1px 0 !important;
+            }
+            .report-page-container.view-landscape .header-title-block h3 {
+                font-size: 12pt !important;
+                margin: 2px 0 !important;
+            }
+            .report-page-container.view-landscape .dept-title-text {
+                font-size: 10.5pt !important;
+                margin: 6px 0 2px 0 !important;
+            }
+            .report-page-container.view-landscape .table-title-text {
+                font-size: 9.5pt !important;
+                margin-bottom: 4px !important;
+            }
+            .report-page-container.view-landscape .print-table {
+                font-size: 9pt !important;
+                margin-bottom: 8px !important;
+            }
+            .report-page-container.view-landscape .print-table th,
+            .report-page-container.view-landscape .print-table td {
+                padding: 4px 6px !important;
+            }
+            .report-page-container.view-landscape .page-footer-block {
+                margin-top: 10px !important;
+                padding-top: 4px !important;
+                font-size: 9pt !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SABİT ÜST YAZDIRMA PANELİ (TAM EKRAN GENİŞLİĞİNDE FERAH KONTROL ÇUBUĞU) -->
+    <header class="print-studio-navbar no-print">
+        <div class="container-fluid px-3 px-xl-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-center py-2">
+                <!-- Sol: Belge Başlığı & Kapı -->
+                <div class="d-flex align-items-center mr-3 my-1">
+                    <span class="badge badge-primary px-3 py-2 mr-2 font-weight-bold" style="font-size: 0.78rem; letter-spacing: 0.5px;">
+                        <i class="fas fa-print mr-1"></i> RESMİ BRİFİNG
+                    </span>
+                    <div class="text-truncate" style="max-width: 280px;">
+                        <div class="text-white font-weight-bold text-sm text-truncate">@valilikName</div>
+                        <div class="text-muted text-xs text-truncate">@borderName &bull; @activeYear Yılı</div>
+                    </div>
+                </div>
+
+                <!-- Orta: Yazdırma Parametreleri (Geniş ve Ferah Kontrol Kümesi) -->
+                <div class="d-flex flex-wrap align-items-center justify-content-center my-1">
+                    <!-- 1. Yönlendirme (Dikey / Yatay) -->
+                    <div class="studio-control-card mr-2 my-1">
+                        <span class="studio-control-label">YÖN:</span>
+                        <div class="btn-group btn-group-sm studio-btn-group" role="group">
+                            <button type="button" class="btn btn-dark active" id="btnOrientPortrait" onclick="setOrientation('portrait')">
+                                <i class="fas fa-file-alt mr-1"></i> Dikey
+                            </button>
+                            <button type="button" class="btn btn-dark" id="btnOrientLandscape" onclick="setOrientation('landscape')">
+                                <i class="fas fa-file-alt fa-rotate-90 mr-1"></i> Yatay
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 2. Sayfa Başına Tablo (Sayfa Düzeni) -->
+                    <div class="studio-control-card mr-2 my-1">
+                        <span class="studio-control-label">DÜZEN:</span>
+                        <select id="selectTablesPerPage" class="form-control form-control-sm studio-select" onchange="changeTablesPerPage(this.value)">
+                            <option value="1" selected>1 Tablo / Sayfa (Müstakil)</option>
+                            <option value="2">2 Tablo / Sayfa</option>
+                            <option value="3">3 Tablo / Sayfa</option>
+                            <option value="all">Sürekli Akış (Aralıksız)</option>
+                        </select>
+                    </div>
+
+                    <!-- 3. Tablo Seçim Menüsü -->
+                    <div class="studio-control-card my-1">
+                        <span class="studio-control-label">FİLTRE:</span>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-info dropdown-toggle font-weight-bold studio-filter-btn" type="button" id="tableFilterDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fas fa-filter mr-1"></i> Tablolar (<span id="selectedTablesCount">0</span>/<span id="totalTablesCount">0</span>)
+                            </button>
+                            <div class="dropdown-menu p-3 shadow-lg studio-dropdown-menu" aria-labelledby="tableFilterDropdown">
+                                <div class="d-flex justify-content-between align-items-center pb-2 mb-2 border-bottom">
+                                    <span class="font-weight-bold text-xs text-uppercase text-dark">Basılacak Tablolar</span>
+                                    <div>
+                                        <button type="button" class="btn btn-xs btn-outline-primary py-0 px-2 font-weight-bold" onclick="toggleAllTables(true)">Tümü</button>
+                                        <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2 font-weight-bold ml-1" onclick="toggleAllTables(false)">Temizle</button>
+                                    </div>
+                                </div>
+                                <div id="tableCheckboxesList" style="max-height: 320px; overflow-y: auto;">
+                                    <!-- JS ile dinamik doldurulur -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sağ: Eylemler (Yazdır & Kapat) -->
+                <div class="d-flex align-items-center my-1">
+                    <button type="button" class="btn btn-success font-weight-bold px-3 py-2 mr-2 shadow" style="font-size:0.85rem;" onclick="window.print();">
+                        <i class="fas fa-print mr-1"></i> Sayfayı Yazdır (Ctrl + P)
+                    </button>
+                    <button type="button" class="btn btn-outline-light font-weight-bold px-3 py-2" style="font-size:0.85rem;" onclick="window.close();" title="Kapat">
+                        <i class="fas fa-times mr-1"></i> Kapat
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- HAM VERİ KAYNAĞI (Gizli Şablon Havuzu) -->
+    <div id="rawTablesSource" style="display:none;">
+        @if (Model != null && Model.Count > 0)
+        {
+            int tableCounter = 0;
+            foreach (var dept in Model)
+            {
+                foreach (var tbl in dept.Tables)
+                {
+                    tableCounter++;
+                    string uniqueId = $"tbl_{dept.DepartmentId}_{tbl.TableId}";
+                    <div class="raw-table-item" 
+                         data-unique-id="@uniqueId" 
+                         data-table-id="@tbl.TableId" 
+                         data-dept-id="@dept.DepartmentId" 
+                         data-dept-name="@dept.DepartmentName" 
+                         data-table-title="@tbl.TableTitle">
+                        
+                        <div class="dept-title-text">@dept.DepartmentName</div>
+                        <div class="table-title-text">@activeYear YILI İTİBARİYLE @tbl.TableTitle</div>
+
+                        <table class="print-table">
+                            <thead>
+                                <tr>
+                                    <th rowspan="2" style="width: 28%; text-align:left;">YAPILAN İŞLEM</th>
+                                    <th colspan="3" style="width: 36%;">@criteria.P1GroupHeader</th>
+                                    <th colspan="3" style="width: 36%;">@criteria.P2GroupHeader</th>
+                                </tr>
+                                <tr>
+                                    <th style="width: 11%;">@criteria.P1PrevTitle</th>
+                                    <th style="width: 11%;">@criteria.P1CurrTitle</th>
+                                    <th style="width: 14%;">FARK / DEĞİŞİM</th>
+                                    <th style="width: 11%;">@criteria.P2PrevTitle</th>
+                                    <th style="width: 11%;">@criteria.P2CurrTitle</th>
+                                    <th style="width: 14%;">FARK / DEĞİŞİM</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var row in tbl.Rows)
+                                {
+                                    string mSign = row.MonthDiff > 0 ? "+" : "";
+                                    string ySign = row.YtdDiff > 0 ? "+" : "";
+
+                                    <tr>
+                                        <td class="text-left font-weight-bold">@row.RowTitle</td>
+                                        <td class="text-center">@row.MonthPrevYear.ToString("0.##")</td>
+                                        <td class="text-center font-weight-bold">@row.MonthCurrYear.ToString("0.##")</td>
+                                        <td class="text-center">
+                                            @mSign@row.MonthDiff.ToString("0.##") (@mSign@row.MonthChangePercent.ToString("F1")%)
+                                        </td>
+                                        <td class="text-center">@row.YtdPrevYear.ToString("0.##")</td>
+                                        <td class="text-center font-weight-bold">@row.YtdCurrYear.ToString("0.##")</td>
+                                        <td class="text-center">
+                                            @ySign@row.YtdDiff.ToString("0.##") (@ySign@row.YtdChangePercent.ToString("F1")%)
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            }
+        }
+    </div>
+
+    <!-- DİNAMİK YAZDIRMA VE ÖNİZLEME SAYFALARI KONTEYNERİ -->
+    <div class="report-page-container view-portrait" id="printPagesContainer">
+        <!-- renderPages() fonksiyonu tarafından sayfalar buraya basılacaktır -->
+    </div>
+
+    <script src="@Url.Content("~/vendor/jquery/jquery.js")"></script>
+    <script src="@Url.Content("~/vendor/bootstrap/js/bootstrap.bundle.min.js")"></script>
+
+    <script>
+        var currentOrientation = 'portrait'; // 'portrait' | 'landscape'
+        var currentTablesPerPage = '1';      // '1' | '2' | '3' | 'all'
+        var valilikName = '@Html.Raw(HttpUtility.JavaScriptStringEncode(valilikName))';
+        var borderName = '@Html.Raw(HttpUtility.JavaScriptStringEncode(borderName))';
+
+        // Checkbox tıklamasında dropdown kapanmasın
+        $(document).on('click', '#tableFilterDropdown + .dropdown-menu', function (e) {
+            e.stopPropagation();
+        });
+
+        // 1. Tablo Seçim Listesini Doldur
+        function initTableCheckboxes() {
+            var $list = $('#tableCheckboxesList');
+            $list.empty();
+            var $rawItems = $('#rawTablesSource .raw-table-item');
+            $('#totalTablesCount').text($rawItems.length);
+
+            $rawItems.each(function (idx, el) {
+                var uid = $(el).attr('data-unique-id');
+                var dept = $(el).attr('data-dept-name');
+                var title = $(el).attr('data-table-title');
+
+                var $row = $(
+                    '<div class="table-filter-item d-flex align-items-center">' +
+                        '<input type="checkbox" id="chk_' + uid + '" class="table-chk mr-2" value="' + uid + '" checked onchange="onTableSelectionChange()">' +
+                        '<label for="chk_' + uid + '" class="mb-0 text-xs font-weight-bold text-dark cursor-pointer flex-grow-1">' +
+                            dept + ' - <span class="text-primary">' + title + '</span>' +
+                        '</label>' +
+                    '</div>'
+                );
+                $list.append($row);
+            });
+
+            updateSelectedCount();
+        }
+
+        function updateSelectedCount() {
+            var checkedCount = $('.table-chk:checked').length;
+            $('#selectedTablesCount').text(checkedCount);
+        }
+
+        function toggleAllTables(checkAll) {
+            $('.table-chk').prop('checked', checkAll);
+            updateSelectedCount();
+            renderPages();
+        }
+
+        function onTableSelectionChange() {
+            updateSelectedCount();
+            renderPages();
+        }
+
+        // 2. Sayfa Yönü (Dikey / Yatay) Değiştir
+        function setOrientation(orient) {
+            currentOrientation = orient;
+            var isLandscape = (orient === 'landscape');
+
+            if (isLandscape) {
+                $('#btnOrientLandscape').addClass('active');
+                $('#btnOrientPortrait').removeClass('active');
+                $('#printPagesContainer').removeClass('view-portrait').addClass('view-landscape');
+                applyPageStyle('\x40page { size: A4 landscape; margin: 8mm 10mm 8mm 10mm; }');
+            } else {
+                $('#btnOrientPortrait').addClass('active');
+                $('#btnOrientLandscape').removeClass('active');
+                $('#printPagesContainer').removeClass('view-landscape').addClass('view-portrait');
+                applyPageStyle('\x40page { size: A4 portrait; margin: 10mm 12mm 10mm 12mm; }');
+            }
+            renderPages();
+        }
+
+        // Dinamik stil enjeksiyonu fonksiyonu
+        function applyPageStyle(cssText) {
+            var oldStyle = document.getElementById('pageOrientationCss');
+            if (oldStyle && oldStyle.parentNode) {
+                oldStyle.parentNode.removeChild(oldStyle);
+            }
+            var newStyle = document.createElement('style');
+            newStyle.id = 'pageOrientationCss';
+            newStyle.innerHTML = cssText;
+            document.head.appendChild(newStyle);
+        }
+
+        // 3. Sayfa Başına Tablo Sayısını Değiştir
+        function changeTablesPerPage(val) {
+            currentTablesPerPage = val;
+            if (val === 'all') {
+                $('#printPagesContainer').addClass('view-flow');
+            } else {
+                $('#printPagesContainer').removeClass('view-flow');
+            }
+            renderPages();
+        }
+
+        // 4. Sayfaları Dinamik Oluştur ve Numaralandır
+        function renderPages() {
+            var $container = $('#printPagesContainer');
+            $container.empty();
+
+            var selectedUids = [];
+            $('.table-chk:checked').each(function () {
+                selectedUids.push($(this).val());
+            });
+
+            if (selectedUids.length === 0) {
+                $container.html(
+                    '<div class="official-print-page text-center py-5">' +
+                        '<h5 class="text-danger font-weight-bold mb-2"><i class="fas fa-exclamation-triangle mr-2"></i>Yazdırılacak Tablo Seçilmedi</h5>' +
+                        '<p class="text-muted">Lütfen üstteki "Tablolar" menüsünden en az bir tablo işaretleyiniz.</p>' +
+                    '</div>'
+                );
+                return;
+            }
+
+            var selectedElements = [];
+            selectedUids.forEach(function (uid) {
+                var $el = $('#rawTablesSource .raw-table-item[data-unique-id="' + uid + '"]');
+                if ($el.length) {
+                    selectedElements.push($el.clone());
+                }
+            });
+
+            // Sayfa gruplarını hesapla
+            var pageGroups = [];
+            if (currentTablesPerPage === 'all') {
+                pageGroups.push(selectedElements);
+            } else {
+                var perPage = parseInt(currentTablesPerPage, 10);
+                if (isNaN(perPage) || perPage < 1) perPage = 1;
+
+                for (var i = 0; i < selectedElements.length; i += perPage) {
+                    pageGroups.push(selectedElements.slice(i, i + perPage));
+                }
+            }
+
+            var totalPages = pageGroups.length;
+            var orientLabel = currentOrientation === 'landscape' ? 'Yatay A4' : 'Dikey A4';
+
+            // Her sayfa grubunu resmi belge şablonuyla sar
+            pageGroups.forEach(function (group, pageIdx) {
+                var pageNum = pageIdx + 1;
+                var pageText = totalPages > 1 ? ('Sayfa ' + pageNum + ' / ' + totalPages) : 'Sayfa 1';
+
+                // Ekranda sayfa ayrım etiketi
+                var $previewLabel = $(
+                    '<div class="sheet-preview-label no-print">' +
+                        '<i class="fas fa-file-invoice mr-1 text-primary"></i> ' + pageText + ' &bull; ' + orientLabel +
+                    '</div>'
+                );
+                $container.append($previewLabel);
+
+                var $page = $('<div class="official-print-page"></div>');
+
+                // Üst Gizlilik Damgası
+                var $topStamp = $('<div class="hizmete-ozel-stamp">HİZMETE ÖZEL</div>');
+                $page.append($topStamp);
+
+                // Üst Resmi Antet
+                var $headerBlock = $(
+                    '<div class="header-title-block">' +
+                        '<h4>T.C.</h4>' +
+                        '<h3>' + valilikName + '</h3>' +
+                        '<h4>İl Emniyet Müdürlüğü</h4>' +
+                        '<h4>' + borderName + '</h4>' +
+                    '</div>'
+                );
+                $page.append($headerBlock);
+
+                // Bu sayfadaki tablolar konteyneri
+                var $tablesWrapper = $('<div class="page-tables-content flex-grow-1"></div>');
+                group.forEach(function ($tblItem) {
+                    $tablesWrapper.append($tblItem);
+                });
+                $page.append($tablesWrapper);
+
+                // Alt Gizlilik ve Sayfa Numarası
+                var $footerBlock = $(
+                    '<div class="page-footer-block">' +
+                        '<div>HİZMETE ÖZEL</div>' +
+                        '<div>' + pageText + '</div>' +
+                        '<div>HİZMETE ÖZEL</div>' +
+                    '</div>'
+                );
+                $page.append($footerBlock);
+
+                $container.append($page);
+            });
+        }
+
+        // Sayfa yüklendiğinde başlat
+        $(document).ready(function () {
+            initTableCheckboxes();
+            renderPages();
+        });
+    </script>
+</body>
+</html>

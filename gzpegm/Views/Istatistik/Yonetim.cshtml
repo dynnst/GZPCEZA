@@ -1,0 +1,859 @@
+@model List<gzpegm.Services.StatDepartmentDto>
+@{
+    ViewBag.Title = "İstatistik Büro ve Tablo Yönetimi (Yalnızca Admin)";
+    Layout = "~/Views/Shared/_Master.cshtml";
+
+    var borders = ViewBag.Borders as List<gzpegm.Models.E_Border> ?? new List<gzpegm.Models.E_Border>();
+    int selectedBorderId = (int)(ViewBag.SelectedBorderId ?? 14);
+    string borderName = ViewBag.BorderName as string ?? "HUDUT KAPISI";
+    bool isSuperAdmin = Convert.ToBoolean(ViewBag.IsSuperAdmin ?? false);
+    bool isKapiAdmin = Convert.ToBoolean(ViewBag.IsKapiAdmin ?? false);
+    var permissions = ViewBag.Permissions as List<gzpegm.Services.StatUserPermissionDto> ?? new List<gzpegm.Services.StatUserPermissionDto>();
+    var allUsers = ViewBag.AllUsers as List<gzpegm.Services.StatUserListItemDto> ?? new List<gzpegm.Services.StatUserListItemDto>();
+}
+
+<style>
+    .nav-tabs-custom {
+        border-bottom: 2px solid #0f172a;
+    }
+    .nav-tabs-custom .nav-link {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #475569;
+        border: 1px solid #e2e8f0;
+        border-bottom: none;
+        border-top: 3px solid transparent;
+        padding: 12px 24px;
+        background: #f8fafc;
+        margin-right: 6px;
+        border-radius: 8px 8px 0 0;
+        transition: all 0.2s ease;
+    }
+    .nav-tabs-custom .nav-link:hover {
+        background: #e2e8f0;
+        color: #0f172a;
+    }
+    .nav-tabs-custom .nav-link.active {
+        color: #0f172a;
+        background: #ffffff;
+        border-top: 3px solid #2563eb;
+        border-left: 2px solid #0f172a;
+        border-right: 2px solid #0f172a;
+        border-bottom: 2px solid #ffffff;
+        margin-bottom: -2px;
+        box-shadow: 0 -3px 8px rgba(0,0,0,0.06);
+    }
+    .admin-dept-card {
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        background: #ffffff;
+    }
+    .admin-dept-header {
+        background: #0f172a;
+        color: #ffffff;
+        padding: 12px 20px;
+        font-weight: 700;
+        font-size: 1.1rem;
+        border-top-left-radius: 7px;
+        border-top-right-radius: 7px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .admin-table-block {
+        border-left: 4px solid #3b82f6;
+        background: #f8fafc;
+        padding: 14px 18px;
+        margin-bottom: 20px;
+        border-radius: 6px;
+    }
+    .badge-kapi-admin {
+        background: #b91c1c;
+        color: #ffffff;
+        font-size: 0.82rem;
+        font-weight: 700;
+        padding: 6px 12px;
+        border-radius: 6px;
+    }
+    .badge-birim-editor {
+        background: #15803d;
+        color: #ffffff;
+        font-size: 0.82rem;
+        font-weight: 700;
+        padding: 6px 12px;
+        border-radius: 6px;
+    }
+    .badge-viewer {
+        background: #475569;
+        color: #ffffff;
+        font-size: 0.82rem;
+        font-weight: 700;
+        padding: 6px 12px;
+        border-radius: 6px;
+    }
+    .perm-table th {
+        background-color: #0f172a;
+        color: #ffffff;
+        font-weight: 700;
+        font-size: 0.9rem;
+        border: none;
+        vertical-align: middle;
+    }
+    .perm-table td {
+        vertical-align: middle;
+        font-size: 0.92rem;
+    }
+</style>
+
+<div class="row">
+    <div class="col-12">
+        <!-- Başlık & Üst Menü -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3">
+            <div>
+                <h3 class="font-weight-bold text-dark mb-1">
+                    <i class="fas fa-cogs text-warning mr-2"></i> İstatistik Büro ve Tablo Yönetim Paneli
+                </h3>
+                <p class="text-muted mb-0">
+                    <span class="badge badge-danger mr-1">YÖNETİM</span> Hudut kapılarına ait büro şablonlarını, tabloları ve personel veri giriş yetkilerini bu ekrandan yönetebilirsiniz.
+                </p>
+            </div>
+            <div class="mt-2 mt-md-0 d-flex flex-wrap align-items-center">
+                <button type="button" class="btn btn-warning font-weight-bold shadow-sm px-3 py-2 mr-2 mb-1" onclick="openPermissionModal(0, 0, '', 'BirimEditor');">
+                    <i class="fas fa-user-plus mr-1"></i> Yeni Personel Yetkilendir
+                </button>
+                <button type="button" class="btn btn-success font-weight-bold shadow-sm px-3 py-2 mr-2 mb-1" onclick="openDeptModal(0, '', '', 1);">
+                    <i class="fas fa-plus mr-1"></i> Yeni Büro Amirliği Ekle
+                </button>
+                <a href="@Url.Action("FaaliyetRaporu", "Istatistik", new { borderId = selectedBorderId })" class="btn btn-primary font-weight-bold shadow-sm px-3 py-2 mr-2 mb-1">
+                    <i class="fas fa-chart-line mr-1"></i> Faaliyet Raporu
+                </a>
+                <a href="@Url.Action("VeriGiris", "Istatistik", new { borderId = selectedBorderId })" class="btn btn-secondary font-weight-bold shadow-sm px-3 py-2 mb-1">
+                    <i class="fas fa-edit mr-1"></i> Günlük Sayı Girişi
+                </a>
+            </div>
+        </div>
+
+        <!-- Hudut Kapısı Seçimi -->
+        <div class="card mb-4 border-0 shadow-sm" style="border-radius:8px; background:#f1f5f9;">
+            <div class="card-body py-2 d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+                <div class="d-flex align-items-center mb-2 mb-md-0">
+                    <strong class="mr-2 text-dark"><i class="fas fa-archway text-primary mr-1"></i> Seçili Hudut Kapısı:</strong>
+                    @if (isSuperAdmin)
+                    {
+                        <form method="get" action="@Url.Action("Yonetim", "Istatistik")" id="kapiForm" class="form-inline mb-0">
+                            <select name="borderId" class="form-control form-control-sm font-weight-bold text-primary" onchange="$('#kapiForm').submit();" style="min-width: 260px; font-size: 0.95rem;">
+                                @foreach (var b in borders)
+                                {
+                                    <option value="@b.fldId" @(b.fldId == selectedBorderId ? "selected" : "")>@b.fldName</option>
+                                }
+                            </select>
+                        </form>
+                    }
+                    else
+                    {
+                        <span class="font-weight-bold text-dark px-2 py-1 bg-white border rounded">@borderName</span>
+                    }
+                </div>
+                <div>
+                    @if (isSuperAdmin)
+                    {
+                        <span class="badge badge-danger px-3 py-2 font-weight-bold mr-1">
+                            <i class="fas fa-crown mr-1"></i> Süper Admin Yetkisi (Tüm Kapılar)
+                        </span>
+                    }
+                    else if (isKapiAdmin)
+                    {
+                        <span class="badge badge-primary px-3 py-2 font-weight-bold mr-1">
+                            <i class="fas fa-shield-alt mr-1"></i> @borderName Kapı Admini
+                        </span>
+                    }
+                    <span class="badge badge-dark px-3 py-2 font-weight-bold">
+                        Aktif Büro: @Model.Count Adet
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sekmeler (Tabs) -->
+        <ul class="nav nav-tabs nav-tabs-custom mb-4" id="yonetimTabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" id="tab-templates-link" data-toggle="tab" href="#tab-templates" role="tab" aria-controls="tab-templates" aria-selected="true">
+                    <i class="fas fa-sitemap text-primary mr-2"></i> 1. Büro, Tablo ve Gösterge Şablonları
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="tab-permissions-link" data-toggle="tab" href="#tab-permissions" role="tab" aria-controls="tab-permissions" aria-selected="false">
+                    <i class="fas fa-users-cog text-warning mr-2"></i> 2. Personel Yetkilendirme (Kapı Admini & Veri Giriş Personeli)
+                    @if (permissions.Count > 0)
+                    {
+                        <span class="badge badge-info ml-2 px-2 py-1">@permissions.Count</span>
+                    }
+                </a>
+            </li>
+        </ul>
+
+        <!-- Sekme İçerikleri -->
+        <div class="tab-content" id="yonetimTabsContent">
+            
+            <!-- SEKME 1: BÜRO VE TABLO ŞABLONLARI -->
+            <div class="tab-pane fade show active" id="tab-templates" role="tabpanel" aria-labelledby="tab-templates-link">
+                @if (Model == null || Model.Count == 0)
+                {
+                    <div class="alert alert-info text-center py-5 font-weight-bold">
+                        <i class="fas fa-info-circle fa-2x mb-2 d-block"></i>
+                        Henüz tanımlı büro bulunamadı. "Yeni Büro Amirliği Ekle" butonuna basarak ilk büronuzu oluşturabilirsiniz.
+                    </div>
+                }
+                else
+                {
+                    foreach (var dept in Model)
+                    {
+                        <div class="admin-dept-card">
+                            <div class="admin-dept-header">
+                                <div>
+                                    <i class="fas fa-university text-warning mr-2"></i> @dept.DepartmentName
+                                    @if (!string.IsNullOrEmpty(dept.Code))
+                                    {
+                                        <span class="badge badge-secondary ml-2 font-weight-normal text-xs">[@dept.Code]</span>
+                                    }
+                                    @if (dept.BorderId == null)
+                                    {
+                                        <span class="badge badge-light text-dark ml-2 text-xs">Standart (Tüm Kapılar)</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-warning text-dark ml-2 text-xs">Bu Kapıya Özel</span>
+                                    }
+                                </div>
+                                <div>
+                                    <button type="button" class="btn btn-sm btn-outline-light mr-1" onclick="openDeptModal(@dept.DepartmentId, '@dept.DepartmentName', '@dept.Code', @dept.DisplayOrder);">
+                                        <i class="fas fa-edit mr-1"></i> Düzenle
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-primary mr-1" onclick="openTableModal(0, @dept.DepartmentId, '', '', 1);">
+                                        <i class="fas fa-plus mr-1"></i> Tablo Ekle
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-danger" onclick="deleteDept(@dept.DepartmentId);">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="card-body p-3">
+                                @if (dept.Tables.Count == 0)
+                                {
+                                    <div class="text-muted text-center py-3">Bu büro amirliğine ait tablo tanımlanmamış.</div>
+                                }
+                                else
+                                {
+                                    foreach (var tbl in dept.Tables)
+                                    {
+                                        <div class="admin-table-block">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <h6 class="font-weight-bold text-dark mb-0">
+                                                    <i class="fas fa-table text-primary mr-1"></i> @tbl.TableTitle
+                                                    @if (!string.IsNullOrEmpty(tbl.Description))
+                                                    {
+                                                        <small class="text-muted ml-2 font-weight-normal">(@tbl.Description)</small>
+                                                    }
+                                                </h6>
+                                                <div>
+                                                    <button type="button" class="btn btn-xs btn-outline-primary mr-1 py-1 px-2" onclick="openTableModal(@tbl.TableId, @dept.DepartmentId, '@tbl.TableTitle', '@tbl.Description', @tbl.DisplayOrder);">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <button type="button" class="btn btn-xs btn-success mr-1 py-1 px-2 font-weight-bold" onclick="openRowModal(0, @tbl.TableId, '', 'Kişi', 1);">
+                                                        <i class="fas fa-plus mr-1"></i> Satır Ekle
+                                                    </button>
+                                                    <button type="button" class="btn btn-xs btn-outline-danger py-1 px-2" onclick="deleteTable(@tbl.TableId);">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <table class="table table-sm table-bordered bg-white mb-0">
+                                                <thead class="thead-light">
+                                                    <tr>
+                                                        <th style="width: 50%;">Yapılan İşlem / Satır Başlığı</th>
+                                                        <th style="width: 20%;" class="text-center">Birim</th>
+                                                        <th style="width: 15%;" class="text-center">Sıra</th>
+                                                        <th style="width: 15%;" class="text-center">İşlem</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @if (tbl.Rows.Count == 0)
+                                                    {
+                                                        <tr><td colspan="4" class="text-center text-muted">Satır eklenmemiş.</td></tr>
+                                                    }
+                                                    else
+                                                    {
+                                                        foreach (var row in tbl.Rows)
+                                                        {
+                                                            <tr>
+                                                                <td class="font-weight-bold text-dark">@row.RowTitle</td>
+                                                                <td class="text-center text-muted font-weight-bold">@row.Unit</td>
+                                                                <td class="text-center">@row.DisplayOrder</td>
+                                                                <td class="text-center">
+                                                                    <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2 mr-1" onclick="openRowModal(@row.RowId, @tbl.TableId, '@row.RowTitle', '@row.Unit', @row.DisplayOrder);">
+                                                                        <i class="fas fa-pencil-alt"></i>
+                                                                    </button>
+                                                                    <button type="button" class="btn btn-xs btn-outline-danger py-0 px-2" onclick="deleteRow(@row.RowId);">
+                                                                        <i class="fas fa-times"></i>
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        }
+                                                    }
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+
+            <!-- SEKME 2: PERSONEL YETKİLENDİRME (KAPI ADMİNİ VE VERİ GİRİŞ PERSONELİ) -->
+            <div class="tab-pane fade" id="tab-permissions" role="tabpanel" aria-labelledby="tab-permissions-link">
+                
+                <!-- Hiyerarşik Bilgilendirme Kutusu -->
+                <div class="card mb-4 border-left-primary shadow-sm" style="border-left: 4px solid #2563eb; background:#f8fafc;">
+                    <div class="card-body p-3">
+                        <h6 class="font-weight-bold text-dark mb-2">
+                            <i class="fas fa-info-circle text-primary mr-1"></i> İstatistik Personel Yetkilendirme Hiyerarşisi Nasıl Çalışır?
+                        </h6>
+                        <div class="row text-muted small">
+                            <div class="col-md-4 mb-2 mb-md-0">
+                                <strong class="text-danger d-block mb-1"><i class="fas fa-user-shield mr-1"></i> 1. Kapı Admini (Kapı Yöneticisi):</strong>
+                                Hudut kapısındaki <u>tüm büroların</u> verilerini girer, günceller, geçmişe dönük düzeltme yapar ve kendi kapısındaki polislere veri giriş yetkisi tanımlayabilir.
+                            </div>
+                            <div class="col-md-4 mb-2 mb-md-0">
+                                <strong class="text-success d-block mb-1"><i class="fas fa-user-edit mr-1"></i> 2. Birim Editörü (Veri Giriş Personeli):</strong>
+                                Yalnızca kendisine yetki verilen büro amirliğinin (örn: <em>Bilgi Teknolojileri</em> veya <em>Adli Büro</em>) günlük faaliyet istatistiğini girer. Başka bürolara müdahale edemez.
+                            </div>
+                            <div class="col-md-4">
+                                <strong class="text-secondary d-block mb-1"><i class="fas fa-eye mr-1"></i> 3. Rapor İzleyici (Görüntüleme):</strong>
+                                Kapıya ait istatistik ve faaliyet raporlarını yalnızca inceler, yeni veri giremez veya değiştiremez.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Yetkili Listesi Başlığı ve Ekleme Butonu -->
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white py-3 d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+                        <div>
+                            <h5 class="font-weight-bold text-dark mb-1">
+                                <i class="fas fa-id-card text-primary mr-2"></i> @borderName Yetkili Personel Listesi
+                            </h5>
+                            <span class="text-muted small">
+                                Bu kapı için tanımlanmış <strong>@permissions.Count</strong> adet yetki kaydı bulunmaktadır.
+                            </span>
+                        </div>
+                        <div class="mt-2 mt-md-0">
+                            <button type="button" class="btn btn-warning font-weight-bold shadow-sm px-3 py-2" onclick="openPermissionModal(0, 0, '', 'BirimEditor');">
+                                <i class="fas fa-user-plus mr-1"></i> Yeni Personel Yetkilendir
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (permissions.Count == 0)
+                        {
+                            <div class="alert alert-warning m-4 text-center font-weight-bold">
+                                <i class="fas fa-exclamation-triangle fa-2x mb-2 d-block"></i>
+                                Bu hudut kapısı için henüz özel bir personel yetkilendirmesi yapılmamış.<br />
+                                Yukarıdaki <strong>"Yeni Personel Yetkilendir"</strong> butonuna basarak bir <u>Kapı Admini</u> veya bürolar için <u>Veri Giriş Personeli</u> belirleyebilirsiniz.
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover table-striped perm-table mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 50px;" class="text-center">#</th>
+                                            <th style="width: 140px;">Sicil No</th>
+                                            <th>Personel Adı Soyadı</th>
+                                            <th>Kullanıcı Birimi / Kapısı</th>
+                                            <th style="width: 180px;">Yetki Rolü</th>
+                                            <th>Yetki Kapsamı (Büro)</th>
+                                            <th style="width: 150px;">Tanımlanma Tarihi</th>
+                                            <th style="width: 120px;" class="text-center">İşlem</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @{ int pIdx = 1; }
+                                        @foreach (var p in permissions)
+                                        {
+                                            <tr>
+                                                <td class="text-center font-weight-bold text-muted">@(pIdx++)</td>
+                                                <td class="font-weight-bold text-dark">
+                                                    <span class="badge badge-light border px-2 py-1">@p.UserSicil</span>
+                                                </td>
+                                                <td class="font-weight-bold text-dark">
+                                                    <i class="fas fa-user text-muted mr-1"></i> @p.UserFullName
+                                                </td>
+                                                <td class="text-muted small">
+                                                    @p.UserBorder
+                                                </td>
+                                                <td>
+                                                    @if (p.PermissionRole == "KapiAdmin")
+                                                    {
+                                                        <span class="badge-kapi-admin">
+                                                            <i class="fas fa-user-shield mr-1"></i> Kapı Admini
+                                                        </span>
+                                                    }
+                                                    else if (p.PermissionRole == "BirimEditor")
+                                                    {
+                                                        <span class="badge-birim-editor">
+                                                            <i class="fas fa-user-edit mr-1"></i> Birim Editörü
+                                                        </span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge-viewer">
+                                                            <i class="fas fa-eye mr-1"></i> Rapor İzleyici
+                                                        </span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    @if (p.DepartmentId == null)
+                                                    {
+                                                        <span class="badge badge-primary px-2 py-1 font-weight-bold">
+                                                            <i class="fas fa-globe mr-1"></i> Tüm Bürolar (Kapı Geneli)
+                                                        </span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge badge-light border text-dark px-2 py-1 font-weight-bold">
+                                                            <i class="fas fa-building text-info mr-1"></i> @p.DepartmentName
+                                                        </span>
+                                                    }
+                                                </td>
+                                                <td class="text-muted small">
+                                                    @p.AssignedDate.ToString("dd.MM.yyyy HH:mm")
+                                                </td>
+                                                <td class="text-center">
+                                                    <button type="button" class="btn btn-sm btn-outline-primary py-1 px-2 mr-1" title="Yetkiyi Düzenle" onclick="openPermissionModal(@p.PermissionId, @p.UserId, '@(p.DepartmentId.HasValue ? p.DepartmentId.Value.ToString() : "")', '@p.PermissionRole');">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-outline-danger py-1 px-2" title="Yetkiyi Kaldır" onclick="deletePermission(@p.PermissionId, '@p.UserFullName');">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- ==================================================================================== -->
+<!-- MODALLER: PERSONEL YETKİLENDİRME / BÜRO / TABLO / SATIR -->
+<!-- ==================================================================================== -->
+
+<!-- Personel Yetkilendirme Modalı -->
+<div class="modal fade" id="permissionModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title font-weight-bold" id="permModalTitle">
+                    <i class="fas fa-user-shield text-warning mr-2"></i> Personel Yetki Tanımlama
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body p-4">
+                <input type="hidden" id="permId" value="0" />
+                
+                <div class="form-group mb-3">
+                    <label class="font-weight-bold text-dark">
+                        <i class="fas fa-user mr-1 text-primary"></i> Yetkilendirilecek Personel (Polis Memuru / Amir):
+                    </label>
+                    <select id="permUserId" class="form-control select2" style="width: 100%;">
+                        <option value="">-- Personel Seçiniz (Sicil No veya İsim ile Arayabilirsiniz) --</option>
+                        @foreach (var u in allUsers)
+                        {
+                            <option value="@u.UserId">
+                                @(!string.IsNullOrEmpty(u.Sicil) ? u.Sicil + " - " : "")@u.FullName @(!string.IsNullOrEmpty(u.Border) ? " (" + u.Border + ")" : "")
+                            </option>
+                        }
+                    </select>
+                    <small class="form-text text-muted">Sistemde kayıtlı personelleri sicil veya isim yazarak arayabilirsiniz.</small>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label class="font-weight-bold text-dark">
+                        <i class="fas fa-user-tag mr-1 text-success"></i> Yetki Rolü:
+                    </label>
+                    <select id="permRole" class="form-control font-weight-bold" onchange="onRoleChange();">
+                        <option value="BirimEditor" selected>Birim Editörü (Seçilen Büro Amirliğinde Veri Girişi Yapar)</option>
+                        <option value="KapiAdmin">Kapı Admini (Kapıdaki Tüm Büroları Yönetir & Personele Yetki Tanımlar)</option>
+                        <option value="Viewer">Rapor İzleyici (Yalnızca Rapor ve Grafikleri Görüntüler)</option>
+                    </select>
+                </div>
+
+                <div class="form-group mb-3" id="permDeptGroup">
+                    <label class="font-weight-bold text-dark">
+                        <i class="fas fa-building mr-1 text-info"></i> Yetki Kapsamı / Büro Amirliği:
+                    </label>
+                    <select id="permDeptId" class="form-control">
+                        <option value="">Tüm Bürolar (Kapı Geneli - Sınırsız Veri Girişi)</option>
+                        @foreach (var dept in Model)
+                        {
+                            <option value="@dept.DepartmentId">@dept.DepartmentName</option>
+                        }
+                    </select>
+                    <small class="form-text text-muted">Birim Editörü için personelin sorumlu olduğu büro amirliğini seçiniz.</small>
+                </div>
+
+                <div class="alert alert-light border p-3 mb-0" id="permRoleHint">
+                    <!-- Dinamik açıklama js tarafından doldurulur -->
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary font-weight-bold px-3" data-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-primary font-weight-bold px-4 shadow-sm" onclick="savePermission();">
+                    <i class="fas fa-save mr-1"></i> Yetkiyi Kaydet
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Büro Modal -->
+<div class="modal fade" id="deptModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title font-weight-bold" id="deptModalTitle">Büro Amirliği Tanımla</h5>
+                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="deptId" value="0" />
+                <div class="form-group">
+                    <label class="font-weight-bold">Büro / Birim Adı:</label>
+                    <input type="text" id="deptName" class="form-control" placeholder="Örn: Bilgi Teknolojileri Büro Amirliği" required />
+                </div>
+                <div class="form-group">
+                    <label class="font-weight-bold">Kısa Kod:</label>
+                    <input type="text" id="deptCode" class="form-control" placeholder="Örn: BT, ADLI, PASAPORT" />
+                </div>
+                <div class="form-group">
+                    <label class="font-weight-bold">Sıra No:</label>
+                    <input type="number" id="deptOrder" class="form-control" value="1" />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-primary font-weight-bold" onclick="saveDept();">Kaydet</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tablo Modal -->
+<div class="modal fade" id="tableModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title font-weight-bold" id="tableModalTitle">Tablo Şablonu Tanımla</h5>
+                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="tableId" value="0" />
+                <input type="hidden" id="tableDeptId" value="0" />
+                <div class="form-group">
+                    <label class="font-weight-bold">Tablo Başlığı:</label>
+                    <input type="text" id="tableTitle" class="form-control" placeholder="Örn: SORUNLU YOLCU" required />
+                </div>
+                <div class="form-group">
+                    <label class="font-weight-bold">Açıklama / Not:</label>
+                    <input type="text" id="tableDesc" class="form-control" placeholder="Örn: Tahdit ve belge talebi işlemleri" />
+                </div>
+                <div class="form-group">
+                    <label class="font-weight-bold">Sıra No:</label>
+                    <input type="number" id="tableOrder" class="form-control" value="1" />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-primary font-weight-bold" onclick="saveTable();">Kaydet</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Satır Modal -->
+<div class="modal fade" id="rowModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title font-weight-bold" id="rowModalTitle">İşlem / Gösterge Satırı Tanımla</h5>
+                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="rowId" value="0" />
+                <input type="hidden" id="rowTableId" value="0" />
+                <div class="form-group">
+                    <label class="font-weight-bold">Yapılan İşlem / Satır Adı:</label>
+                    <input type="text" id="rowTitle" class="form-control" placeholder="Örn: TAHDİT BAKILAN KİŞİ" required />
+                </div>
+                <div class="form-group">
+                    <label class="font-weight-bold">Ölçü Birimi:</label>
+                    <input type="text" id="rowUnit" class="form-control" value="Kişi" placeholder="Kişi, Adet, Sayı" />
+                </div>
+                <div class="form-group">
+                    <label class="font-weight-bold">Sıra No:</label>
+                    <input type="number" id="rowOrder" class="form-control" value="1" />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-success font-weight-bold" onclick="saveRow();">Kaydet</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var borderId = @selectedBorderId;
+
+        $(document).ready(function () {
+            // Sayfa yenilendiğinde aktif sekmeyi koru
+            if (window.location.hash) {
+                $('#yonetimTabs a[href="' + window.location.hash + '"]').tab('show');
+            }
+            $('#yonetimTabs a').on('shown.bs.tab', function (e) {
+                window.location.hash = e.target.hash;
+            });
+
+            // Select2 başlat
+            try {
+                if ($.fn.select2) {
+                    $('#permUserId').select2({
+                        dropdownParent: $('#permissionModal'),
+                        placeholder: 'Sicil No veya İsim ile arayınız...',
+                        allowClear: true
+                    });
+                }
+            } catch (e) {
+                console.warn('Select2 başlatılamadı:', e);
+            }
+
+            onRoleChange();
+        });
+
+        // ==========================================
+        // PERSONEL YETKİLENDİRME FONKSİYONLARI
+        // ==========================================
+        function openPermissionModal(id, userId, deptId, role) {
+            $('#permId').val(id || 0);
+            if (id > 0) {
+                $('#permModalTitle').html('<i class="fas fa-user-edit text-warning mr-2"></i> Personel Yetkisini Düzenle');
+                $('#permUserId').val(userId).trigger('change');
+                $('#permRole').val(role || 'BirimEditor');
+                $('#permDeptId').val(deptId || '');
+            } else {
+                $('#permModalTitle').html('<i class="fas fa-user-plus text-warning mr-2"></i> Yeni Personel Yetkilendir');
+                $('#permUserId').val('').trigger('change');
+                $('#permRole').val('BirimEditor');
+                $('#permDeptId').val('');
+            }
+            onRoleChange();
+            $('#permissionModal').modal('show');
+        }
+
+        function onRoleChange() {
+            var role = $('#permRole').val();
+            if (role === 'KapiAdmin') {
+                $('#permDeptGroup').hide();
+                $('#permDeptId').val('');
+                $('#permRoleHint').html('<i class="fas fa-shield-alt text-danger mr-1"></i> <strong>Kapı Admini Yetkisi:</strong> Seçilen personele bu hudut kapısındaki <u>tüm bürolar</u> üzerinde tam veri girişi yapma, geçmişe dönük verileri düzeltme ve kendi personellerine büro yetkisi tanımlama salahiyeti verilir.');
+            } else if (role === 'BirimEditor') {
+                $('#permDeptGroup').show();
+                $('#permRoleHint').html('<i class="fas fa-user-edit text-success mr-1"></i> <strong>Birim Editörü Yetkisi:</strong> Personel yalnızca seçilen büro amirliği için günlük sayı girişi yapabilir. "Tüm Bürolar" seçilirse kapıdaki tüm bürolara sayı girebilir.');
+            } else {
+                $('#permDeptGroup').show();
+                $('#permRoleHint').html('<i class="fas fa-eye text-secondary mr-1"></i> <strong>İzleyici Yetkisi:</strong> Personel rapor ve analiz ekranlarını görebilir, veri girişi veya değiştirme yapamaz.');
+            }
+        }
+
+        function savePermission() {
+            var userId = $('#permUserId').val();
+            if (!userId || userId === '' || userId === '0') {
+                alert('Lütfen yetkilendirilecek personeli seçiniz.');
+                return;
+            }
+
+            var role = $('#permRole').val();
+            var deptId = $('#permDeptId').val();
+
+            $.post('@Url.Action("AdminSavePermission", "Istatistik")', {
+                id: $('#permId').val(),
+                userId: parseInt(userId),
+                borderId: borderId,
+                departmentId: (deptId && deptId !== '') ? parseInt(deptId) : null,
+                role: role
+            }, function (res) {
+                if (res && res.success) {
+                    window.location.hash = '#tab-permissions';
+                    location.reload();
+                } else {
+                    alert(res.message || 'Yetki kaydedilemedi.');
+                }
+            }).fail(function () {
+                alert('Sunucuyla iletişim kurulurken bir hata oluştu.');
+            });
+        }
+
+        function deletePermission(id, userName) {
+            if (!confirm(userName + ' personeline ait yetkiyi kaldırmak istediğinize emin misiniz?')) {
+                return;
+            }
+
+            $.post('@Url.Action("AdminDeletePermission", "Istatistik")', {
+                id: id,
+                borderId: borderId
+            }, function (res) {
+                if (res && res.success) {
+                    window.location.hash = '#tab-permissions';
+                    location.reload();
+                } else {
+                    alert(res.message || 'Yetki silinemedi.');
+                }
+            }).fail(function () {
+                alert('Yetki silinirken bir hata oluştu.');
+            });
+        }
+
+        // ==========================================
+        // BÜRO / TABLO / SATIR FONKSİYONLARI
+        // ==========================================
+        function openDeptModal(id, name, code, order) {
+            $('#deptId').val(id || 0);
+            $('#deptName').val(name || '');
+            $('#deptCode').val(code || '');
+            $('#deptOrder').val(order || 1);
+            $('#deptModalTitle').text(id > 0 ? 'Büro Amirliğini Düzenle' : 'Yeni Büro Amirliği Ekle');
+            $('#deptModal').modal('show');
+        }
+
+        function saveDept() {
+            var name = $('#deptName').val();
+            if (!name) { alert('Lütfen büro adını yazınız.'); return; }
+            $.post('@Url.Action("AdminSaveDepartment", "Istatistik")', {
+                id: $('#deptId').val(),
+                borderId: borderId,
+                name: name,
+                code: $('#deptCode').val(),
+                order: $('#deptOrder').val()
+            }, function (res) {
+                if (res && res.success) { 
+                    window.location.hash = '#tab-templates';
+                    location.reload(); 
+                }
+                else { alert(res.message || 'Hata oluştu.'); }
+            });
+        }
+
+        function deleteDept(id) {
+            if (!confirm('Bu büroyu ve altındaki tüm tabloları silmek istediğinize emin misiniz?')) return;
+            $.post('@Url.Action("AdminDeleteDepartment", "Istatistik")', { id: id }, function (res) {
+                if (res && res.success) { 
+                    window.location.hash = '#tab-templates';
+                    location.reload(); 
+                }
+                else { alert('Silinemedi.'); }
+            });
+        }
+
+        function openTableModal(id, deptId, title, desc, order) {
+            $('#tableId').val(id || 0);
+            $('#tableDeptId').val(deptId);
+            $('#tableTitle').val(title || '');
+            $('#tableDesc').val(desc || '');
+            $('#tableOrder').val(order || 1);
+            $('#tableModalTitle').text(id > 0 ? 'Tabloyu Düzenle' : 'Yeni Tablo Ekle');
+            $('#tableModal').modal('show');
+        }
+
+        function saveTable() {
+            var title = $('#tableTitle').val();
+            if (!title) { alert('Lütfen tablo başlığını yazınız.'); return; }
+            $.post('@Url.Action("AdminSaveTable", "Istatistik")', {
+                id: $('#tableId').val(),
+                deptId: $('#tableDeptId').val(),
+                title: title,
+                desc: $('#tableDesc').val(),
+                order: $('#tableOrder').val()
+            }, function (res) {
+                if (res && res.success) { 
+                    window.location.hash = '#tab-templates';
+                    location.reload(); 
+                }
+                else { alert(res.message || 'Hata oluştu.'); }
+            });
+        }
+
+        function deleteTable(id) {
+            if (!confirm('Bu tabloyu silmek istediğinize emin misiniz?')) return;
+            $.post('@Url.Action("AdminDeleteTable", "Istatistik")', { id: id }, function (res) {
+                if (res && res.success) { 
+                    window.location.hash = '#tab-templates';
+                    location.reload(); 
+                }
+                else { alert('Silinemedi.'); }
+            });
+        }
+
+        function openRowModal(id, tableId, title, unit, order) {
+            $('#rowId').val(id || 0);
+            $('#rowTableId').val(tableId);
+            $('#rowTitle').val(title || '');
+            $('#rowUnit').val(unit || 'Kişi');
+            $('#rowOrder').val(order || 1);
+            $('#rowModalTitle').text(id > 0 ? 'Satırı Düzenle' : 'Yeni Satır Ekle');
+            $('#rowModal').modal('show');
+        }
+
+        function saveRow() {
+            var title = $('#rowTitle').val();
+            if (!title) { alert('Lütfen satır başlığını yazınız.'); return; }
+            $.post('@Url.Action("AdminSaveRow", "Istatistik")', {
+                id: $('#rowId').val(),
+                tableId: $('#rowTableId').val(),
+                title: title,
+                unit: $('#rowUnit').val(),
+                order: $('#rowOrder').val()
+            }, function (res) {
+                if (res && res.success) { 
+                    window.location.hash = '#tab-templates';
+                    location.reload(); 
+                }
+                else { alert(res.message || 'Hata oluştu.'); }
+            });
+        }
+
+        function deleteRow(id) {
+            if (!confirm('Bu satırı silmek istediğinize emin misiniz?')) return;
+            $.post('@Url.Action("AdminDeleteRow", "Istatistik")', { id: id }, function (res) {
+                if (res && res.success) { 
+                    window.location.hash = '#tab-templates';
+                    location.reload(); 
+                }
+                else { alert('Silinemedi.'); }
+            });
+        }
+    </script>
+}

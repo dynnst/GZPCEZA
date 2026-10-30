@@ -1,4 +1,4 @@
-﻿using gzpegm.Helpers;
+using gzpegm.Helpers;
 using gzpegm.Models;
 using gzpegm.Services;
 using System;
@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Data.Entity;
 using System.Globalization;
 using System.Linq;
+using System.Web;
 using System.Web.Mvc;
 
 namespace gzpegm.Controllers
@@ -702,6 +703,385 @@ ORDER BY SUM([Count]) DESC";
             }
 
             return toplam;
+        }
+
+        [NonAction]
+        public E_User GetCurrentUser()
+        {
+            HttpCookie userCookie = Request.Cookies["Token"];
+            Cont.Token token = new Cont.Token();
+            Cont.User user = new Cont.User();
+            int userId = 0;
+            if (userCookie != null)
+            {
+                var tokenData = token.GetToken(userCookie.Value.ToString());
+                if (tokenData?.fldUserId != null)
+                    int.TryParse(tokenData.fldUserId.ToString(), out userId);
+            }
+            return user.GetUserById(userId);
+        }
+
+        // ====================================================================================
+        // 1. FAALİYET RAPORU (KULLANICININ YÜKLEDİĞİ BELGE FORMATINDA RESMİ İSTATİSTİK)
+        // ====================================================================================
+        [HttpGet]
+        public ActionResult FaaliyetRaporu(
+            int? borderId, 
+            int? departmentId, 
+            string mode, 
+            int? year, 
+            int? compareYear,
+            int? month, 
+            int? cumMonths,
+            string startDate, 
+            string endDate, 
+            string compStartDate, 
+            string compEndDate)
+        {
+            var currentUser = GetCurrentUser();
+            if (currentUser == null)
+                return RedirectToAction("Index", "Giris");
+
+            int activeBorderId = borderId ?? StatService.ResolveBorderId(currentUser);
+            bool isSuper = StatService.IsSuperAdmin(currentUser);
+            bool isKapiAdmin = StatService.IsKapiAdmin(currentUser, activeBorderId);
+
+            // Hudut kapısı listesi (Sadece admin değiştirebilir, normal kullanıcı kendi kapısını görür)
+            using (var db = new GZPEGM1())
+            {
+                ViewBag.Borders = db.E_Border.AsNoTracking().OrderBy(b => b.fldName).ToList();
+                var currentBorder = db.E_Border.AsNoTracking().FirstOrDefault(b => b.fldId == activeBorderId);
+                ViewBag.BorderName = currentBorder != null ? currentBorder.fldName : "HUDUT KAPISI";
+                ViewBag.ValilikName = StatService.ResolveValilikName(ViewBag.BorderName);
+            }
+
+            var criteria = new StatPeriodCriteria
+            {
+                BorderId = activeBorderId,
+                DepartmentId = departmentId,
+                Mode = string.Equals(mode, "range", StringComparison.OrdinalIgnoreCase) ? "range" : "month",
+                Year = year ?? DateTime.Now.Year,
+                CompareYear = compareYear,
+                Month = month ?? DateTime.Now.Month,
+                CumulativeMonths = cumMonths ?? 0
+            };
+
+            if (criteria.Mode == "range")
+            {
+                if (DateTime.TryParse(startDate, out DateTime sDate))
+                    criteria.StartDate = sDate.Date;
+                else
+                    criteria.StartDate = DateTime.Today.AddDays(-19); // 20 günlük varsayılan
+
+                if (DateTime.TryParse(endDate, out DateTime eDate))
+                    criteria.EndDate = eDate.Date;
+                else
+                    criteria.EndDate = DateTime.Today;
+
+                if (DateTime.TryParse(compStartDate, out DateTime csDate))
+                    criteria.CompareStartDate = csDate.Date;
+                if (DateTime.TryParse(compEndDate, out DateTime ceDate))
+                    criteria.CompareEndDate = ceDate.Date;
+            }
+
+            criteria.ResolveDatesAndHeaders();
+
+            ViewBag.Departments = StatService.GetDepartmentsWithStructure(activeBorderId, currentUser);
+            ViewBag.SelectedBorderId = activeBorderId;
+            ViewBag.SelectedDepartmentId = departmentId;
+            ViewBag.IsAdmin = isSuper || isKapiAdmin;
+            ViewBag.CurrentUser = currentUser;
+            ViewBag.Criteria = criteria;
+
+            var model = StatService.GetComparativeReport(criteria);
+            return View(model);
+        }
+
+        // ====================================================================================
+        // 2. GÜNLÜK VERİ GİRİŞ EKRANI (KULLANICI SADECE TARİH SEÇER, EKLEME MENÜSÜ YOKTUR)
+        // ====================================================================================
+        [HttpGet]
+        public ActionResult VeriGiris(int? borderId, string date)
+        {
+            var currentUser = GetCurrentUser();
+            if (currentUser == null)
+                return RedirectToAction("Index", "Giris");
+
+            int activeBorderId = borderId ?? StatService.ResolveBorderId(currentUser);
+            DateTime activeDate = DateTime.Today;
+            if (!string.IsNullOrWhiteSpace(date) && DateTime.TryParse(date, out DateTime parsedDate))
+            {
+                activeDate = parsedDate.Date;
+            }
+
+            bool isSuper = StatService.IsSuperAdmin(currentUser);
+            bool isKapiAdmin = StatService.IsKapiAdmin(currentUser, activeBorderId);
+
+            using (var db = new GZPEGM1())
+            {
+                ViewBag.Borders = db.E_Border.AsNoTracking().OrderBy(b => b.fldName).ToList();
+                var currentBorder = db.E_Border.AsNoTracking().FirstOrDefault(b => b.fldId == activeBorderId);
+                ViewBag.BorderName = currentBorder != null ? currentBorder.fldName : "HUDUT KAPISI";
+                ViewBag.ValilikName = StatService.ResolveValilikName(ViewBag.BorderName);
+            }
+
+            ViewBag.SelectedBorderId = activeBorderId;
+            ViewBag.SelectedDate = activeDate.ToString("yyyy-MM-dd");
+            ViewBag.DisplayDate = activeDate.ToString("dd.MM.yyyy");
+            ViewBag.IsAdmin = isSuper || isKapiAdmin;
+            ViewBag.CurrentUser = currentUser;
+
+            var model = StatService.GetDailyEntrySheet(activeBorderId, activeDate, currentUser);
+            return View(model);
+        }
+
+        [HttpPost]
+        public JsonResult SaveDailyEntry(int borderId, int rowId, string date, decimal value, string note)
+        {
+            try
+            {
+                var currentUser = GetCurrentUser();
+                if (currentUser == null)
+                    return Json(new { success = false, message = "Oturum süreniz dolmuş, lütfen tekrar giriş yapınız." });
+
+                if (!DateTime.TryParse(date, out DateTime parsedDate))
+                    return Json(new { success = false, message = "Geçersiz tarih formatı." });
+
+                bool saved = StatService.SaveDailyValue(borderId, rowId, parsedDate, value, note, currentUser.fldId);
+                return Json(new { success = saved, message = saved ? "Kaydedildi." : "Kayıt yapılamadı." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Hata: " + ex.Message });
+            }
+        }
+
+        // ====================================================================================
+        // 3. RESMİ BRİFİNG ÇIKTISI (YAZDIR / PDF)
+        // ====================================================================================
+        [HttpGet]
+        public ActionResult PrintFaaliyetRaporu(
+            int? borderId, 
+            int? departmentId, 
+            string mode, 
+            int? year, 
+            int? compareYear,
+            int? month, 
+            int? cumMonths,
+            string startDate, 
+            string endDate, 
+            string compStartDate, 
+            string compEndDate)
+        {
+            var currentUser = GetCurrentUser();
+            if (currentUser == null)
+                return RedirectToAction("Index", "Giris");
+
+            int activeBorderId = borderId ?? StatService.ResolveBorderId(currentUser);
+
+            using (var db = new GZPEGM1())
+            {
+                var currentBorder = db.E_Border.AsNoTracking().FirstOrDefault(b => b.fldId == activeBorderId);
+                ViewBag.BorderName = currentBorder != null ? currentBorder.fldName : "HUDUT KAPISI";
+                ViewBag.ValilikName = StatService.ResolveValilikName(ViewBag.BorderName);
+            }
+
+            var criteria = new StatPeriodCriteria
+            {
+                BorderId = activeBorderId,
+                DepartmentId = departmentId,
+                Mode = string.Equals(mode, "range", StringComparison.OrdinalIgnoreCase) ? "range" : "month",
+                Year = year ?? DateTime.Now.Year,
+                CompareYear = compareYear,
+                Month = month ?? DateTime.Now.Month,
+                CumulativeMonths = cumMonths ?? 0
+            };
+
+            if (criteria.Mode == "range")
+            {
+                if (DateTime.TryParse(startDate, out DateTime sDate))
+                    criteria.StartDate = sDate.Date;
+                else
+                    criteria.StartDate = DateTime.Today.AddDays(-19);
+
+                if (DateTime.TryParse(endDate, out DateTime eDate))
+                    criteria.EndDate = eDate.Date;
+                else
+                    criteria.EndDate = DateTime.Today;
+
+                if (DateTime.TryParse(compStartDate, out DateTime csDate))
+                    criteria.CompareStartDate = csDate.Date;
+                if (DateTime.TryParse(compEndDate, out DateTime ceDate))
+                    criteria.CompareEndDate = ceDate.Date;
+            }
+
+            criteria.ResolveDatesAndHeaders();
+
+            ViewBag.SelectedBorderId = activeBorderId;
+            ViewBag.Criteria = criteria;
+
+            var model = StatService.GetComparativeReport(criteria);
+            return View(model);
+        }
+
+        // ====================================================================================
+        // 4. SADECE ADMİN YÖNETİM PANELİ (BÜRO / TABLO / SATIR / YETKİ TANIMLAMA)
+        // ====================================================================================
+        [HttpGet]
+        public ActionResult Yonetim(int? borderId)
+        {
+            var currentUser = GetCurrentUser();
+            if (currentUser == null)
+                return RedirectToAction("Index", "Giris");
+
+            int activeBorderId = borderId ?? StatService.ResolveBorderId(currentUser);
+            bool isSuper = StatService.IsSuperAdmin(currentUser);
+            bool isKapiAdmin = StatService.IsKapiAdmin(currentUser, activeBorderId);
+
+            // Eğer seçili kapıda admin değilse ama başka bir kapıda KapiAdmin ise, yetkili olduğu kapıya yönlendir:
+            if (!isSuper && !isKapiAdmin)
+            {
+                int? adminBorderId = StatService.GetFirstAdminBorderId(currentUser);
+                if (adminBorderId.HasValue)
+                {
+                    activeBorderId = adminBorderId.Value;
+                    isKapiAdmin = true;
+                }
+                else
+                {
+                    // Hiçbir kapıda admin yetkisi yoksa doğrudan Veri Giriş ekranına yönlendir
+                    return RedirectToAction("VeriGiris", new { borderId = activeBorderId });
+                }
+            }
+
+            using (var db = new GZPEGM1())
+            {
+                if (isSuper)
+                {
+                    ViewBag.Borders = db.E_Border.AsNoTracking().OrderBy(b => b.fldName).ToList();
+                }
+                else
+                {
+                    var adminBorderIds = StatService.GetAdminBorderIds(currentUser);
+                    ViewBag.Borders = db.E_Border.AsNoTracking().Where(b => adminBorderIds.Contains(b.fldId)).OrderBy(b => b.fldName).ToList();
+                }
+                var currentBorder = db.E_Border.AsNoTracking().FirstOrDefault(b => b.fldId == activeBorderId);
+                ViewBag.BorderName = currentBorder != null ? currentBorder.fldName : "HUDUT KAPISI";
+                ViewBag.ValilikName = StatService.ResolveValilikName(ViewBag.BorderName);
+            }
+
+            ViewBag.SelectedBorderId = activeBorderId;
+            ViewBag.IsAdmin = true;
+            ViewBag.IsSuperAdmin = isSuper;
+            ViewBag.IsKapiAdmin = isKapiAdmin;
+            ViewBag.CurrentUser = currentUser;
+            ViewBag.Permissions = StatService.GetPermissions(activeBorderId);
+            ViewBag.AllUsers = StatService.GetAllUsers(activeBorderId);
+            ViewBag.UseSelect2 = true;
+
+            var model = StatService.GetDepartmentsWithStructure(activeBorderId);
+            return View(model);
+        }
+
+        [HttpPost]
+        public JsonResult AdminSavePermission(int id, int userId, int borderId, int? departmentId, string role)
+        {
+            var currentUser = GetCurrentUser();
+            if (currentUser == null)
+                return Json(new { success = false, message = "Oturum süreniz dolmuş, lütfen tekrar giriş yapınız." });
+
+            bool isSuper = StatService.IsSuperAdmin(currentUser);
+            bool isKapiAdmin = StatService.IsKapiAdmin(currentUser, borderId);
+
+            // Yetki kontrolü: Yalnızca Süper Admin veya o kapının Kapı Admini yetki atayabilir
+            if (!isSuper && !isKapiAdmin)
+                return Json(new { success = false, message = "Bu kapıya personel yetkisi verme hakkınız bulunmamaktadır." });
+
+            bool ok = StatService.SavePermission(id, userId, borderId, departmentId, role);
+            return Json(new { success = ok, message = ok ? "Personel yetkisi başarıyla kaydedildi." : "Yetki kaydedilemedi." });
+        }
+
+        [HttpPost]
+        public JsonResult AdminDeletePermission(int id, int borderId)
+        {
+            var currentUser = GetCurrentUser();
+            if (currentUser == null)
+                return Json(new { success = false, message = "Oturum süreniz dolmuş." });
+
+            bool isSuper = StatService.IsSuperAdmin(currentUser);
+            bool isKapiAdmin = StatService.IsKapiAdmin(currentUser, borderId);
+
+            if (!isSuper && !isKapiAdmin)
+                return Json(new { success = false, message = "Yetkisiz işlem." });
+
+            bool ok = StatService.DeletePermission(id);
+            return Json(new { success = ok, message = ok ? "Yetki silindi." : "Yetki silinemedi." });
+        }
+
+        [HttpPost]
+        public JsonResult AdminSaveDepartment(int id, int? borderId, string name, string code, int order)
+        {
+            var currentUser = GetCurrentUser();
+            if (currentUser == null || (!StatService.IsSuperAdmin(currentUser) && !StatService.IsKapiAdmin(currentUser, borderId ?? 0)))
+                return Json(new { success = false, message = "Bu işlem için yetkiniz bulunmamaktadır." });
+
+            int newId = StatService.SaveDepartment(id, borderId, name, code, order);
+            return Json(new { success = newId > 0, id = newId });
+        }
+
+        [HttpPost]
+        public JsonResult AdminSaveTable(int id, int deptId, string title, string desc, int order)
+        {
+            var currentUser = GetCurrentUser();
+            if (currentUser == null || !StatService.IsSuperAdmin(currentUser))
+                return Json(new { success = false, message = "Yetkisiz işlem." });
+
+            int newId = StatService.SaveTableTemplate(id, deptId, title, desc, order);
+            return Json(new { success = newId > 0, id = newId });
+        }
+
+        [HttpPost]
+        public JsonResult AdminSaveRow(int id, int tableId, string title, string unit, int order)
+        {
+            var currentUser = GetCurrentUser();
+            if (currentUser == null || !StatService.IsSuperAdmin(currentUser))
+                return Json(new { success = false, message = "Yetkisiz işlem." });
+
+            int newId = StatService.SaveRowItem(id, tableId, title, unit, order);
+            return Json(new { success = newId > 0, id = newId });
+        }
+
+        [HttpPost]
+        public JsonResult AdminDeleteDepartment(int id)
+        {
+            var currentUser = GetCurrentUser();
+            if (currentUser == null || !StatService.IsSuperAdmin(currentUser))
+                return Json(new { success = false, message = "Yetkisiz işlem." });
+
+            bool ok = StatService.DeleteDepartment(id);
+            return Json(new { success = ok });
+        }
+
+        [HttpPost]
+        public JsonResult AdminDeleteTable(int id)
+        {
+            var currentUser = GetCurrentUser();
+            if (currentUser == null || !StatService.IsSuperAdmin(currentUser))
+                return Json(new { success = false, message = "Yetkisiz işlem." });
+
+            bool ok = StatService.DeleteTable(id);
+            return Json(new { success = ok });
+        }
+
+        [HttpPost]
+        public JsonResult AdminDeleteRow(int id)
+        {
+            var currentUser = GetCurrentUser();
+            if (currentUser == null || !StatService.IsSuperAdmin(currentUser))
+                return Json(new { success = false, message = "Yetkisiz işlem." });
+
+            bool ok = StatService.DeleteRow(id);
+            return Json(new { success = ok });
         }
     }
 }

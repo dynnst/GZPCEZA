@@ -27,6 +27,10 @@
     Func<bool> canUseEducation = () => hasAuth("2") || hasAuth("3") || hasAuth("6");
     Func<bool> canManageEducation = () => hasAuth("2") || hasAuth("6");
 
+    bool isStatSuperAdmin = gzpegm.Services.StatService.IsSuperAdmin(Model);
+    bool isStatKapiAdmin = gzpegm.Services.StatService.IsAnyKapiAdmin(Model);
+    bool canManageStats = isStatSuperAdmin || isStatKapiAdmin;
+
     var displayName = ((Model?.fldName ?? "") + " " + (Model?.fldLastName ?? "")).Trim();
     var displayNameUpper = string.IsNullOrWhiteSpace(displayName) ? "KULLANICI" : displayName.ToUpper(new System.Globalization.CultureInfo("tr-TR"));
     var title = Model?.fldTitle ?? "";
@@ -98,11 +102,30 @@
                                     </a>
                                     <ul class="dropdown-menu">
                                         <li class="dropdown-submenu">
-                                            <a class="dropdown-item dropdown-toggle" href="#" data-toggle="dropdown">
+                                            <a class="dropdown-item dropdown-toggle submenu-toggle" href="javascript:void(0);">
                                                 <i class="fas fa-passport"></i>
                                                 Hudut Kapıları
                                             </a>
                                             <ul class="dropdown-menu">
+                                                <li class="dropdown-submenu">
+                                                    <a class="dropdown-item dropdown-toggle submenu-toggle font-weight-bold" href="javascript:void(0);">
+                                                        <i class="fas fa-chart-line text-primary mr-1"></i>
+                                                        Havalimanı İstatistiki Veriler
+                                                    </a>
+                                                    <ul class="dropdown-menu">
+                                                        <li><a class="dropdown-item font-weight-bold" href="@Url.Action("FaaliyetRaporu", "Istatistik")"><i class="fas fa-file-alt text-primary mr-1"></i> <strong>Faaliyet Raporu (Resmi)</strong></a></li>
+                                                        <li><a class="dropdown-item font-weight-bold" href="@Url.Action("VeriGiris", "Istatistik")"><i class="fas fa-edit text-success mr-1"></i> <strong>Günlük Sayı Girişi</strong></a></li>
+                                                        @if (canManageStats)
+                                                        {
+                                                            <li>
+                                                                <a class="dropdown-item font-weight-bold" href="@Url.Action("Yonetim", "Istatistik")" style="color: #d97706;">
+                                                                    <i class="fas fa-users-cog text-warning mr-1"></i> <strong>@(isStatSuperAdmin ? "Büro & Personel Yetki Yönetimi" : "Kapı Yetki & Personel Yönetimi")</strong>
+                                                                </a>
+                                                            </li>
+                                                        }
+                                                    </ul>
+                                                </li>
+                                                <li class="divider"></li>
                                                 <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="/VIZEV">V-84 Şartlı Vize İşlemleri</a></li>
                                                 <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="@Url.Action("Index", "EInad")">İnad Kayıtları</a></li>
                                                 <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="/GRAFIK">İşlem Grafikleri</a></li>
@@ -111,8 +134,8 @@
                                         <li><a class="dropdown-item" href="@Url.Action("Index", "Tahdit")"><i class="fas fa-list"></i> Tahditler &amp; Yapılacaklar</a></li>
                                         <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="@Url.Action("Yardimci", "Home")"><i class="fas fa-question-circle"></i> Kullanma Rehberi</a></li>
                                         <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="/ISTATIK"><i class="fas fa-chart-bar"></i> İstatistik Bilgileri</a></li>
-                                        <li class="dropdown-submenu">
-                                            <a class="dropdown-item dropdown-toggle" href="#" data-toggle="dropdown">
+                                        <li class="dropdown-submenu faydali-linkler">
+                                            <a class="dropdown-item dropdown-toggle submenu-toggle" href="javascript:void(0);">
                                                 <i class="fas fa-link"></i>
                                                 Faydalı Linkler
                                             </a>
@@ -147,6 +170,8 @@
                                         <span>Sistem</span>
                                     </a>
                                     <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item font-weight-bold" href="@Url.Action("Yonetim", "Istatistik")"><i class="fas fa-users-cog text-warning mr-1"></i> İstatistik &amp; Personel Yetki Yönetimi</a></li>
+                                        <li class="divider"></li>
                                         <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="/tgvh">Tek Giriş Vize Harcı</a></li>
                                         <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="/auh">Aylık Ülke Harçları</a></li>
                                         <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="/TKod">Tahdit Kodları</a></li>
@@ -247,7 +272,7 @@
     </div>
 </header>
 
-<link rel="stylesheet" href="@Url.Content("~/css/userbox.css")?v=1.0" />
+<link rel="stylesheet" href="@Url.Content("~/css/userbox.css")?v=1.4" />
 
 <div id="userbox-config" data-unread-url="@Url.Action("GetUnreadCount", "Mesaj")" style="display:none;"></div>
-<script src="@Url.Content("~/js/userbox.js")?v=1.0"></script>
+<script src="@Url.Content("~/js/userbox.js")?v=1.4"></script>
