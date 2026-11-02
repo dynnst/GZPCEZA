@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.2.0.1\build\net46\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.props" Condition="Exists('..\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.2.0.1\build\net46\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.props')" />
   <Import Project="..\packages\EntityFramework.6.5.1\build\EntityFramework.props" Condition="Exists('..\packages\EntityFramework.6.5.1\build\EntityFramework.props')" />
@@ -354,6 +354,7 @@
     <Reference Include="System.EnterpriseServices" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="WindowsBase" />
+    <Reference Include="System.Management" />
     <Reference Include="Xceed.Document.NET, Version=5.2.25608.6677, Culture=neutral, PublicKeyToken=ba83ff368b7563c6, processorArchitecture=MSIL">
       <HintPath>..\packages\Xceed.Document.NET.5.2.25608.6677\lib\net40\Xceed.Document.NET.dll</HintPath>
     </Reference>
@@ -7252,9 +7253,13 @@
     <Compile Include="ViewModels\RecentActivityViewModel.cs" />
     <Compile Include="ViewModels\StudentDashboardViewModel.cs" />
     <Compile Include="ViewModels\TopStudentViewModel.cs" />
+    <Compile Include="Models\PCInfo\PCInfoModels.cs" />
+    <Compile Include="Services\PCInfoService.cs" />
+    <Compile Include="Controllers\PCInfoController.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Views\web.config" />
+    <Content Include="Views\PCInfo\Index.cshtml" />
     <Content Include="ajax\ajax-datatables-sample.json" />
     <Content Include="ajax\ajax-treeview-children.json" />
     <Content Include="ajax\ajax-treeview-roots.json" />

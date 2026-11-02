@@ -93,11 +93,11 @@ namespace gzpegm.Controllers
 
             token.RemoveToken(UserData.fldId);
 
-            string strToken = Crypto.HashPassword(UserData.fldId.ToString());
+            string strToken = Guid.NewGuid().ToString("N") + "_" + Convert.ToBase64String(Guid.NewGuid().ToByteArray()).Replace("+", "-").Replace("/", "_").TrimEnd('=');
 
             HttpCookie UserCookie = new HttpCookie("Token", strToken)
             {
-                Expires = DateTime.Now.AddHours(3),
+                Expires = DateTime.Now.AddHours(8),
                 HttpOnly = true,
                 Secure = Request.IsSecureConnection,
                 SameSite = SameSiteMode.Lax

@@ -20,7 +20,12 @@ namespace gzpegm.Cont
                         {
                             if (!string.IsNullOrEmpty(t.fldToken) && HttpRuntime.Cache != null)
                             {
-                                HttpRuntime.Cache.Remove("CurrentToken:" + t.fldToken.Trim());
+                                var trimmed = t.fldToken.Trim();
+                                HttpRuntime.Cache.Remove("CurrentToken:" + trimmed);
+                                if (trimmed.Contains("+"))
+                                    HttpRuntime.Cache.Remove("CurrentToken:" + trimmed.Replace("+", " "));
+                                if (trimmed.Contains(" "))
+                                    HttpRuntime.Cache.Remove("CurrentToken:" + trimmed.Replace(" ", "+"));
                             }
                         }
                         context.E_Token.RemoveRange(token);
@@ -50,6 +55,13 @@ namespace gzpegm.Cont
 
                         _db.E_Token.Add(token);
                         _db.SaveChanges();
+
+                        // Oturum tokenini hemen bellek onbellegine sliding expiration (4 saat) ile al
+                        if (HttpRuntime.Cache != null)
+                        {
+                            var sKey = "CurrentToken:" + Token.Trim();
+                            HttpRuntime.Cache.Insert(sKey, token, null, System.Web.Caching.Cache.NoAbsoluteExpiration, TimeSpan.FromHours(4));
+                        }
                     }
                     else
                     {
@@ -61,6 +73,12 @@ namespace gzpegm.Cont
                         token.fldIp = Ip;
                         _db.E_Token.Add(token);
                         _db.SaveChanges();
+
+                        if (HttpRuntime.Cache != null)
+                        {
+                            var sKey = "CurrentToken:" + Token.Trim();
+                            HttpRuntime.Cache.Insert(sKey, token, null, System.Web.Caching.Cache.NoAbsoluteExpiration, TimeSpan.FromHours(4));
+                        }
                     }
 
                 }
@@ -114,12 +132,27 @@ namespace gzpegm.Cont
 
                 if (token != null && HttpRuntime.Cache != null)
                 {
+                    // Sliding expiration: Kullanici sitede islem yaptikca onbellek suresi 4 saat kaydirilir.
                     HttpRuntime.Cache.Insert(
                         cacheKey,
                         token,
                         null,
-                        DateTime.UtcNow.AddMinutes(5),
-                        System.Web.Caching.Cache.NoSlidingExpiration);
+                        System.Web.Caching.Cache.NoAbsoluteExpiration,
+                        TimeSpan.FromHours(4));
+
+                    if (!string.IsNullOrEmpty(token.fldToken))
+                    {
+                        var dbKey = "CurrentToken:" + token.fldToken.Trim();
+                        if (dbKey != cacheKey)
+                        {
+                            HttpRuntime.Cache.Insert(
+                                dbKey,
+                                token,
+                                null,
+                                System.Web.Caching.Cache.NoAbsoluteExpiration,
+                                TimeSpan.FromHours(4));
+                        }
+                    }
                 }
 
                 if (items != null)

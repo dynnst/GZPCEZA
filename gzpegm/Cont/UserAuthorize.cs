@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
@@ -31,10 +31,33 @@ namespace gzpegm.Cont
                 return false;
             }
 
-            if (!check.fldDateTime.HasValue || check.fldDateTime.Value < DateTime.Now.AddHours(-3))
+            if (!check.fldDateTime.HasValue || check.fldDateTime.Value < DateTime.Now.AddHours(-8))
             {
                 token.RemoveToken(Convert.ToInt32(check.fldUserId));
                 return false;
+            }
+
+            // Kayan aktivite yenileme (Sliding Activity): Kullanici aktif islem yaptikca token zaman damgasi 10 dakikada bir guncellenir
+            if (check.fldDateTime.Value < DateTime.Now.AddMinutes(-10))
+            {
+                check.fldDateTime = DateTime.Now;
+                var currentTokenId = check.fldId;
+                System.Web.Hosting.HostingEnvironment.QueueBackgroundWorkItem(ct =>
+                {
+                    try
+                    {
+                        using (var _db = new gzpegm.Models.GZPEGM1())
+                        {
+                            var tRec = _db.E_Token.FirstOrDefault(t => t.fldId == currentTokenId);
+                            if (tRec != null)
+                            {
+                                tRec.fldDateTime = DateTime.Now;
+                                _db.SaveChanges();
+                            }
+                        }
+                    }
+                    catch { }
+                });
             }
 
             User userCont = new User();
@@ -45,6 +68,29 @@ namespace gzpegm.Cont
             {
                 token.RemoveToken(Convert.ToInt32(check.fldUserId));
                 return false;
+            }
+
+            // Kayan aktivite yenileme (Sliding Activity): Kullanici aktif islem yaptikca token zaman damgasi 10 dakikada bir guncellenir
+            if (check.fldDateTime.Value < DateTime.Now.AddMinutes(-10))
+            {
+                check.fldDateTime = DateTime.Now;
+                var currentTokenId = check.fldId;
+                System.Web.Hosting.HostingEnvironment.QueueBackgroundWorkItem(ct =>
+                {
+                    try
+                    {
+                        using (var _db = new gzpegm.Models.GZPEGM1())
+                        {
+                            var tRec = _db.E_Token.FirstOrDefault(t => t.fldId == currentTokenId);
+                            if (tRec != null)
+                            {
+                                tRec.fldDateTime = DateTime.Now;
+                                _db.SaveChanges();
+                            }
+                        }
+                    }
+                    catch { }
+                });
             }
 
             // Kullanıcı geçerli ve aktif - Oturum doğrulaması başarılı (Authenticated)

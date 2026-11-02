@@ -1,4 +1,4 @@
-@model gzpegm.Models.E_User
+﻿@model gzpegm.Models.E_User
 @using System
 @using System.Linq
 @using System.Collections.Generic
@@ -183,6 +183,7 @@
                                         <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="/Kullanıcılar">Kullanıcı İşlemleri</a></li>
                                         <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="@Url.Action("Dashboard", "Health")"><i class="fas fa-heartbeat"></i> Sistem Sağlık Kontrolü</a></li>
                                         <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="@Url.Action("Index", "ErrorLogs")"><i class="fas fa-bug"></i> Hata Logları</a></li>
+                                        <li><a class="dropdown-item" href="@Url.Action("Index", "PCInfo")"><i class="fas fa-desktop text-primary mr-1"></i> <strong>PC &amp; Donanım Denetimi (PCInfo)</strong></a></li>
                                        
                                     </ul>
                                 </li>

@@ -89,12 +89,13 @@ namespace gzpegm.Cont
 
                 if (user != null && HttpRuntime.Cache != null)
                 {
+                    // Sliding expiration: Kullanici aktif kaldikca onbellek 4 saat boyunca canli tutulur
                     HttpRuntime.Cache.Insert(
                         cacheKey,
                         user,
                         null,
-                        DateTime.UtcNow.AddMinutes(5),
-                        System.Web.Caching.Cache.NoSlidingExpiration);
+                        System.Web.Caching.Cache.NoAbsoluteExpiration,
+                        TimeSpan.FromHours(4));
                 }
 
                 if (items != null)
