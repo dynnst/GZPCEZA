@@ -1,4 +1,4 @@
-var z = 0;
+﻿var z = 0;
 // 180/90 hesaplama: formdaki tüm giriş/çıkış kayıtlarına göre en son çıkış tarihini referans alır.
 // Hesaplama motorundaki kuralla uyumlu olması için referans tarih her zaman en son çıkış tarihidir.
 function computeReEntryFromForm() {
@@ -541,7 +541,17 @@ function syncRussiaCalculationModel() {
 }
 window.syncRussiaCalculationModel = syncRussiaCalculationModel;
 
-function hesapla1() {
+var _hesapla1DebounceTimer = null;
+function hesapla1(immediate) {
+    clearTimeout(_hesapla1DebounceTimer);
+    if (immediate === true) {
+        _executeHesapla1();
+    } else {
+        _hesapla1DebounceTimer = setTimeout(_executeHesapla1, 100);
+    }
+}
+
+function _executeHesapla1() {
     syncRussiaCalculationModel();
     try {
         if (typeof window.computeAllDiffs === 'function') {
@@ -748,9 +758,6 @@ function _executeHesapla2() {
                     'country': $('#CountryCalculate').val()
                 },
                 success: function (result) {
-                    if (typeof window.refreshHistoryCount === 'function') {
-                        window.refreshHistoryCount();
-                    }
                     $(document).trigger('historyCountChanged');
                 }
             });

@@ -44,10 +44,6 @@
                         </a>
                     </div>
                 </div>
-                <div class="stat-pill mr-2" title="Sınır kapınızdaki toplam işlem sayısı">
-                    <span class="stat-label">Toplam İşlem:</span>
-                    <span id="userHistoryCount" class="stat-value">0</span>
-                </div>
                 <button type="button" onclick="resetCalculateForm()" class="btn btn-reset-calc" title="Tüm alanları sıfırlar ve yeni yolcu için hazırlar">
                     <i class="fas fa-redo-alt mr-1"></i> Yeni Yolcu
                 </button>
@@ -763,6 +759,6 @@
             }
         }
     </script>
-    <script src="@Url.Content("~/js/calculate-index.js")?v=@DateTime.Now.Ticks"></script>
-    <script src="@Url.Content("~/js/passport-reader.js")?v=@DateTime.Now.Ticks"></script>
+    <script src="@Url.Content("~/js/calculate-index.js")?v=@gzpegm.Helpers.AssetVersionHelper.CustomJsVersion"></script>
+    <script src="@Url.Content("~/js/passport-reader.js")?v=@gzpegm.Helpers.AssetVersionHelper.CustomJsVersion"></script>
 }

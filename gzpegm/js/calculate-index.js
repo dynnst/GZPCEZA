@@ -1,4 +1,4 @@
-/* ==========================================================================
+﻿/* ==========================================================================
    Ceza Hesaplama JavaScript (calculate-index.js) - Profesyonel Kabin Sürümü
    Sade, Hızlı ve Akıcı Tek Ekran Deneyimi (v3.0)
    ========================================================================== */
@@ -108,25 +108,10 @@
     };
 
     /**
-     * Sınır kapısı toplam işlem sayısını sunucudan çeker
+     * Sınır kapısı toplam işlem sayısını sunucudan çeker (Kullanıcı isteğiyle iptal edildi - Sıfır DB yükü)
      */
     function refreshHistoryCount() {
-        if (!$) return;
-        $.ajax({
-            url: '/Calculate/GetHistoryCount',
-            type: 'GET',
-            dataType: 'json',
-            cache: false,
-            success: function (res) {
-                if (res && typeof res.count !== 'undefined') {
-                    var $el = $('#userHistoryCount');
-                    if ($el.length) {
-                        $el.text(res.count);
-                    }
-                }
-            },
-            error: function () { }
-        });
+        // İptal edildi: Veritabanı sorgusu ve UI gecikmesi önlendi
     }
 
     window.refreshHistoryCount = refreshHistoryCount;
@@ -228,8 +213,6 @@
     window.resetCalculateForm = resetCalculateForm;
 
     $(document).ready(function () {
-        // İlk yüklemede toplam işlem sayısını al
-        refreshHistoryCount();
 
         // Tarih değişikliklerinde gün farkını hesapla
         $(document).on('change changeDate input keyup blur', '.endt, .exdt', function () {

@@ -51,49 +51,8 @@ namespace gzpegm.Controllers
         [HttpGet]
         public JsonResult GetHistoryCount()
         {
-            try
-            {
-                var currentUser = GetUser();
-                if (currentUser == null)
-                    return Json(new { count = 0 }, JsonRequestBehavior.AllowGet);
-
-                using (var db = new GZPEGM1())
-                {
-                    string fullName = ((currentUser.fldName ?? "").Trim() + " " + (currentUser.fldLastName ?? "").Trim()).Trim();
-                    string sicil = (currentUser.fldSicil ?? "").Trim();
-
-                    var query = db.E_History
-                        .AsNoTracking()
-                        .Where(h => h.fldUser != null);
-
-                    if (!string.IsNullOrEmpty(currentUser.fldBorder))
-                        query = query.Where(h => h.fldBorder == currentUser.fldBorder);
-
-                    if (!string.IsNullOrEmpty(sicil))
-                    {
-                        string sicilPrefix = sicil + "|";
-                        string userKey = !string.IsNullOrEmpty(fullName) ? sicil + "|" + fullName : null;
-
-                        query = query.Where(h =>
-                            h.fldUser == sicil ||
-                            h.fldUser == fullName ||
-                            h.fldUser == userKey ||
-                            h.fldUser.StartsWith(sicilPrefix));
-                    }
-                    else
-                    {
-                        query = query.Where(h => h.fldUser == fullName);
-                    }
-
-                    var count = query.Count();
-
-                    return Json(new { count }, JsonRequestBehavior.AllowGet);
-                }
-            }
-            catch (Exception)
-            {
-                return Json(new { count = 0 }, JsonRequestBehavior.AllowGet);
-            }
+            // Kullanıcı isteği ile veritabanı sayma işlemi iptal edildi (Performans optimizasyonu - Sıfır DB yükü)
+            return Json(new { count = 0 }, JsonRequestBehavior.AllowGet);
         }
 
         [HttpPost]

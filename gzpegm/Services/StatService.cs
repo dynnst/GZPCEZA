@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
@@ -568,6 +568,12 @@ namespace gzpegm.Services
             if (user == null) return false;
             if (IsSuperAdmin(user)) return true;
 
+            string cacheKey = "Stat_IsAnyKapiAdmin_" + user.fldId;
+            if (System.Web.HttpRuntime.Cache[cacheKey] is bool cachedVal)
+            {
+                return cachedVal;
+            }
+
             try
             {
                 using (var con = OpenConnection())
@@ -575,7 +581,9 @@ namespace gzpegm.Services
                 {
                     cmd.CommandText = "SELECT COUNT(*) FROM Stat_UserPermission WHERE UserId = @uid AND PermissionRole = 'KapiAdmin'";
                     cmd.Parameters.AddWithValue("@uid", user.fldId);
-                    return Convert.ToInt32(cmd.ExecuteScalar()) > 0;
+                    bool isAdmin = Convert.ToInt32(cmd.ExecuteScalar()) > 0;
+                    System.Web.HttpRuntime.Cache.Insert(cacheKey, isAdmin, null, System.Web.Caching.Cache.NoAbsoluteExpiration, TimeSpan.FromMinutes(30));
+                    return isAdmin;
                 }
             }
             catch { return false; }
