@@ -8187,6 +8187,7 @@
     <Content Include="Views\Error\Forbidden.cshtml" />
     <Content Include="Views\Error\MethodNotAllowed.cshtml" />
     <Content Include="Views\Error\Unauthorized.cshtml" />
+    <Content Include="Views\EInad\Create.cshtml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
@@ -8195,21 +8196,11 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="App_Data\" />
     <Content Include="App_Data\PassportOcr.ps1" />
     <Content Include="App_Data\ReaderScanner.exe" />
     <None Include="App_Data\ReaderScanner.cs" />
     <Content Include="App_Data\RegulaScanner.exe" />
     <None Include="App_Data\RegulaScanner.cs" />
-    <Folder Include="aspnet_client\system_web\2_0_50727\" />
-    <Folder Include="aspnet_client\system_web\4_0_30319\" />
-    <Folder Include="ccc\dilekce\" />
-    <Folder Include="files\Certificates\" />
-    <Folder Include="files\SiteEgitim\" />
-    <Folder Include="Hubs\" />
-    <Folder Include="Uploads\Tahdit\Summernote\" />
-    <Folder Include="Views\Ajax\" />
-    <Folder Include="Views\ServerRedirect\" />
   </ItemGroup>
   <ItemGroup>
     <Service Include="{4A0DDDB5-7A95-4FBF-97CC-616D07737A77}" />
@@ -8326,5 +8317,16 @@
   <ItemGroup>
     <Content Include="css\border-index.css" />
     <Content Include="js\border-index.js" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="aspnet_client\system_web\2_0_50727\" />
+    <Folder Include="aspnet_client\system_web\4_0_30319\" />
+    <Folder Include="ccc\dilekce\" />
+    <Folder Include="files\Certificates\" />
+    <Folder Include="files\SiteEgitim\" />
+    <Folder Include="Hubs\" />
+    <Folder Include="Uploads\Tahdit\Summernote\" />
+    <Folder Include="Views\Ajax\" />
+    <Folder Include="Views\ServerRedirect\" />
   </ItemGroup>
 </Project>

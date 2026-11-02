@@ -248,7 +248,7 @@ namespace gzpegm.Services
                 bool is3M = Process.GetProcessesByName("OutputWedgeSysTray").Length > 0;
                 bool isRegulaUsb = CheckRegulaUsbPlugged();
                 string regDriverWarning = CheckRegulaDriverStatus();
-                bool isRegulaReady = (isRegulaUsb && string.IsNullOrEmpty(regDriverWarning)) || IsRegulaAvailable();
+                bool isRegulaReady = IsRegulaAvailable();
                 bool isDesko = Process.GetProcessesByName("PentaScanner").Length > 0
                             || Process.GetProcessesByName("DeskoService").Length > 0;
                 bool isAnyRunning = is3M || isRegulaReady || isDesko;
@@ -360,7 +360,7 @@ namespace gzpegm.Services
                 bool is3MProcess = Process.GetProcessesByName("OutputWedgeSysTray").Length > 0;
                 bool isRegulaUsb = CheckRegulaUsbPlugged();
                 string regDriverWarning = CheckRegulaDriverStatus();
-                bool isRegulaReady = (isRegulaUsb && string.IsNullOrEmpty(regDriverWarning)) || IsRegulaAvailable();
+                bool isRegulaReady = IsRegulaAvailable();
                 bool isDesko = Process.GetProcessesByName("PentaScanner").Length > 0
                             || Process.GetProcessesByName("DeskoService").Length > 0;
 
@@ -413,76 +413,115 @@ namespace gzpegm.Services
             {
                 try
                 {
+
                     string requested = (deviceType ?? "auto").Trim().ToLowerInvariant();
-                    bool isRegulaUsbPlugged = CheckRegulaUsbPlugged();
-                    string regDriverDiag = CheckRegulaDriverStatus();
 
-                    // 1. Regula özel olarak talep edildiyse veya USB'de takılıysa (Auto modunda)
-                    if (requested == "regula" || (requested == "auto" && (isRegulaUsbPlugged || IsRegulaAvailable())))
+                    // =========================================================================
+                    // 1. OZEL TALEP: 3M COGENT / GEMALTO (PV40, PV60, AT9000)
+                    // =========================================================================
+                    if (requested == "3m")
                     {
-                        // Doğrudan arka plan RegulaScanner ile sessiz/headless SDK taraması yap (DocReader açmaya GEREK YOK)
-                        string regulaErr = "";
-                        var directRes = ScanRegulaDirectly(out regulaErr);
-                        if (directRes != null)
-                        {
-                            return directRes;
-                        }
-
-                        // İkincil alternatif: Eğer varsa Regula Web API / Dosya havuzunu kontrol et
-                        var fallbackRes = TryScanRegula();
-                        if (fallbackRes != null)
-                        {
-                            return fallbackRes;
-                        }
-
-                        if (!string.IsNullOrEmpty(regDriverDiag))
-                        {
-                            return new { success = false, message = regDriverDiag };
-                        }
-
-                        string msg = !string.IsNullOrEmpty(regulaErr)
-                            ? regulaErr
-                            : "Regula optik okuyucu hazır; ancak belgeden veri okunamadı. Lütfen pasaportu cihaz camına yerleştiriniz.";
-                        return new { success = false, message = msg };
-                    }
-
-                    // 2. 3M özel olarak talep edildiyse veya 3M Auto modunda donanım taraması
-                    string mmmError = "";
-                    if (requested == "3m" || requested == "auto")
-                    {
+                        string mmmError = "";
                         var mmmRes = TryScan3M(out mmmError);
                         if (mmmRes != null) return mmmRes;
 
-                        if (requested == "3m")
+                        if (Process.GetProcessesByName("OutputWedgeSysTray").Length > 0)
                         {
-                            return new { success = false, message = "3M Cogent okuyucudan belge okunamadı. " + mmmError };
+                            return new
+                            {
+                                success = false,
+                                message = "3M OutputWedge (Klavye Modu) aktif. Belgeyi okuyucu cam\u0131na yerle\u015ftirdi\u011finizde bilgiler ekrana otomatik aktar\u0131lacakt\u0131r."
+                            };
                         }
+
+                        string userErr = !string.IsNullOrEmpty(mmmError) ? mmmError : "Pasaport okuyucu cam\u0131nda tespit edilemedi.";
+                        return new { success = false, message = "3M Cogent okuyucudan belge okunamad\u0131. " + userErr };
                     }
 
-                    // 3. Fallback olarak Regula'yı tekrar dene
-                    var regulaFallback = TryScanRegula();
-                    if (regulaFallback != null)
+                    // =========================================================================
+                    // 2. OZEL TALEP: REGULA DOCUMENT READER (7024M, 70X4, 70X7)
+                    // =========================================================================
+                    if (requested == "regula")
                     {
-                        return regulaFallback;
+                        string regulaErr = "";
+                        var directRes = ScanRegulaDirectly(out regulaErr);
+                        if (directRes != null) return directRes;
+
+                        var fallbackRes = TryScanRegula();
+                        if (fallbackRes != null) return fallbackRes;
+
+                        string userErr = !string.IsNullOrEmpty(regulaErr) ? regulaErr : "Pasaport okuyucu cam\u0131nda tespit edilemedi.";
+                        return new { success = false, message = "Regula okuyucudan belge okunamad\u0131. " + userErr };
                     }
 
-                    // Donanım sürücü teşhisi
-                    if (!string.IsNullOrEmpty(regDriverDiag))
+                    // =========================================================================
+                    // 3. OZEL TALEP: DESKO PENTA SCANNER
+                    // =========================================================================
+                    if (requested == "desko")
                     {
-                        return new { success = false, message = regDriverDiag };
+                        bool isDesko = Process.GetProcessesByName("PentaScanner").Length > 0 || Process.GetProcessesByName("DeskoService").Length > 0;
+                        if (isDesko)
+                        {
+                            return new
+                            {
+                                success = false,
+                                message = "Desko PENTA okuyucu aktif (Klavye Wedge Modu). Pasaportu okuyucuya yerle\u015ftirdi\u011finizde bilgiler ekrana otomatik d\u00f6k\u00fclecektir."
+                            };
+                        }
+                        return new { success = false, message = "Desko PENTA okuyucu servisi \u00e7al\u0131\u015fm\u0131yor. L\u00fctfen Desko yaz\u0131l\u0131m\u0131n\u0131 ve USB ba\u011flant\u0131s\u0131n\u0131 kontrol ediniz." };
                     }
 
-                    string finalMsg = "Optik okuyucudan belge okunamadı. Lütfen pasaport veya kimliği cihaz camının üzerine tam yerleştirip tekrar deneyiniz.";
-                    if (!string.IsNullOrEmpty(mmmError) &&
-                        !mmmError.Contains("CANNOT_CONNECT_TO_READER") &&
-                        !mmmError.Contains("NO_READER_FOUND") &&
-                        !mmmError.Contains("bağlı değil") &&
-                        !mmmError.Contains("meşgul"))
+                    // =========================================================================
+                    // 4. OTOMATIK MOD (AUTO) - KESINTISIZ KADEMELI TARAMA
+                    // =========================================================================
+                    // Siralama: Once 3M -> Sonra Regula -> Sonra Desko.
+                    // Bir okuyucunun bulunamamasi veya uzerinde pasaport olmamasi diger okuyucuyu ASLA ENGELLEMEZ!
+
+                    string autoMmmErr = "";
+                    var auto3MRes = TryScan3M(out autoMmmErr);
+                    if (auto3MRes != null)
                     {
-                        finalMsg += " (" + mmmError + ")";
+                        return auto3MRes;
                     }
 
-                    return new { success = false, message = finalMsg };
+                    string autoRegErr = "";
+                    var autoRegDirectRes = ScanRegulaDirectly(out autoRegErr);
+                    if (autoRegDirectRes != null)
+                    {
+                        return autoRegDirectRes;
+                    }
+
+                    var autoRegFallbackRes = TryScanRegula();
+                    if (autoRegFallbackRes != null)
+                    {
+                        return autoRegFallbackRes;
+                    }
+
+                    // Hicbir okuyucudan belge verisi alinamadiysa durum teshisi
+                    bool is3MActive = Process.GetProcessesByName("OutputWedgeSysTray").Length > 0;
+                    bool isDocExpected3M = !string.IsNullOrEmpty(autoMmmErr) && (autoMmmErr.Contains("yerle\u015ftiriniz") || autoMmmErr.Contains("cam\u0131na") || autoMmmErr.Contains("tam"));
+                    bool isDocExpectedReg = !string.IsNullOrEmpty(autoRegErr) && (autoRegErr.Contains("yerle\u015ftiriniz") || autoRegErr.Contains("cam\u0131na") || autoRegErr.Contains("ba\u011fland\u0131"));
+
+                    if (isDocExpected3M)
+                    {
+                        return new { success = false, message = "3M Cogent okuyucu alg\u0131land\u0131; ancak pasaport veya kimlik tespit edilemedi. L\u00fctfen belgeyi okuyucu cam\u0131na tam yerle\u015ftirip tekrar deneyiniz." };
+                    }
+
+                    if (isDocExpectedReg)
+                    {
+                        return new { success = false, message = "Regula okuyucu alg\u0131land\u0131; ancak pasaport veya kimlik tespit edilemedi. L\u00fctfen belgeyi okuyucu cam\u0131na tam yerle\u015ftirip tekrar deneyiniz." };
+                    }
+
+                    if (is3MActive)
+                    {
+                        return new { success = false, message = "3M OutputWedge (Klavye Modu) aktif. Belgeyi cihaza yerle\u015ftirdi\u011finizde veriler ekrana otomatik aktar\u0131lacakt\u0131r." };
+                    }
+
+                    return new
+                    {
+                        success = false,
+                        message = "Optik okuyucudan belge okunamad\u0131. L\u00fctfen pasaport veya kimli\u011fi cihaz cam\u0131na tam yerle\u015ftiriniz. (3M Cogent, Regula ve Desko okuyucular desteklenmektedir.)"
+                    };
                 }
                 catch (Exception ex)
                 {

@@ -126,6 +126,15 @@ namespace Sahtecilik.ReaderScanner
                 {
                     return Assembly.LoadFrom(targetPath);
                 }
+                string[] alternatives = new string[] { "MMMReaderDotNet40.dll", "MMMReaderDotNet20.dll", "MMMReaderDotNet.dll" };
+                foreach (var alt in alternatives)
+                {
+                    var altPath = Path.Combine(resolvedBinDir, alt);
+                    if (File.Exists(altPath))
+                    {
+                        try { return Assembly.LoadFrom(altPath); } catch { }
+                    }
+                }
                 return null;
             };
 
@@ -157,6 +166,17 @@ namespace Sahtecilik.ReaderScanner
                     MMM.Readers.FullPage.Reader.Shutdown();
                     Console.WriteLine("{{\"success\":true,\"isInitialised\":true,\"isDocumentOnWindow\":{0}}}", isDoc ? "true" : "false");
                     return;
+                }
+
+                // Pasaport / kimlik cihaz camında değilse memurun yerleştirmesi için 3.5 saniyeye kadar bekle
+                int waitDocMs = 0;
+                while (waitDocMs < 3500)
+                {
+                    bool docOnWindow = false;
+                    try { docOnWindow = MMM.Readers.FullPage.Reader.IsDocumentOnWindow(); } catch { break; }
+                    if (docOnWindow) break;
+                    System.Threading.Thread.Sleep(200);
+                    waitDocMs += 200;
                 }
 
                 var readRes = MMM.Readers.FullPage.Reader.ReadDocument();
