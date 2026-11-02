@@ -124,6 +124,12 @@
             }
 
             <div class="btn-group">
+                @if (!string.IsNullOrWhiteSpace(ViewBag.SelectedTarget as string) && ViewBag.SelectedTarget != "localhost" && ViewBag.SelectedTarget != "127.0.0.1")
+                {
+                    <a href="@Url.Action("ConnectRdp", "PCInfo", new { ip = ViewBag.SelectedTarget })" class="btn btn-sm btn-info text-white" title="Uzak Masaüstü (RDP) Başlat">
+                        <i class="fas fa-desktop mr-1"></i> RDP Bağlan
+                    </a>
+                }
                 <a href="@Url.Action("ExportExcel", "PCInfo", new { target = Model?.Target })" class="btn btn-sm btn-success">
                     <i class="fas fa-file-excel mr-1"></i> Excel İndir
                 </a>
@@ -1222,6 +1228,9 @@
                 data.devices.forEach(function(d) {
                     var tr = document.createElement('tr');
                     var inspectBtn = '<button class="btn btn-xs btn-primary mr-1" onclick="inspectDiscovered(\'' + d.IpAddress + '\')"><i class="fas fa-search"></i> İncele</button>';
+                    if (d.DeviceType === 1 || (d.OpenPorts && (d.OpenPorts.indexOf(3389) > -1 || d.OpenPorts.indexOf(135) > -1))) {
+                        inspectBtn += '<a href="@Url.Action("ConnectRdp", "PCInfo")?ip=' + d.IpAddress + '" class="btn btn-xs btn-info mr-1 text-white" title="Uzak Masaüstü (RDP) Başlat"><i class="fas fa-desktop"></i> RDP</a>';
+                    }
                     inspectBtn += '<button class="btn btn-xs btn-warning mr-1 text-dark" onclick="saveScanItemToInventory(\'' + d.IpAddress + '\',\'' + (d.HostName || '') + '\',' + d.DeviceType + ',\'' + (d.Details || '') + '\')"><i class="fas fa-plus"></i> Envantere Ekle</button>';
                     if (d.DeviceType === 2) {
                         inspectBtn += '<button class="btn btn-xs btn-danger" onclick="openDiscoveredCamera(\'' + d.IpAddress + '\')"><i class="fas fa-video"></i> Kamera</button>';

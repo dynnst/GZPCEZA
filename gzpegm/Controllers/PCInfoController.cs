@@ -62,6 +62,29 @@ namespace gzpegm.Controllers
             return Json(camera, JsonRequestBehavior.AllowGet);
         }
 
+        [HttpGet]
+        public ActionResult ConnectRdp(string ip)
+        {
+            if (string.IsNullOrWhiteSpace(ip))
+            {
+                return HttpNotFound();
+            }
+
+            string cleanIp = ip.Trim();
+            // Tek tıkla Windows mstsc.exe'yi hedef IP ile açacak .rdp yapılandırma dosyası
+            string rdpContent = "full address:s:" + cleanIp + "\r\n" +
+                                "prompt for credentials:i:1\r\n" +
+                                "administrative session:i:1\r\n" +
+                                "screen mode id:i:2\r\n" +
+                                "use multimon:i:0\r\n" +
+                                "compression:i:1\r\n" +
+                                "keyboardhook:i:2\r\n" +
+                                "audiomode:i:0\r\n";
+
+            byte[] fileBytes = Encoding.ASCII.GetBytes(rdpContent);
+            return File(fileBytes, "application/x-rdp", $"{cleanIp}.rdp");
+        }
+
         #region CEZA VERİTABANI ENVANTER İŞLEMLERİ
 
         [HttpGet]
