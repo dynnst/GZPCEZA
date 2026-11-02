@@ -1,7 +1,7 @@
 @model gzpegm.Models.PCInfo.ComputerInfo
 @{
     Layout = "~/Views/Shared/_Master.cshtml";
-    ViewBag.Title = "PC & Donanım Denetimi (PCInfo)";
+    ViewBag.Title = "PC & Donanım Denetimi ve Envanteri (CEZA Veritabanı)";
 }
 
 <style>
@@ -15,9 +15,9 @@
     }
     .mode-tab-btn {
         cursor: pointer;
-        font-size: 14px;
+        font-size: 13.5px;
         font-weight: 700;
-        padding: 8px 18px;
+        padding: 8px 16px;
         border-radius: 20px;
         border: 1px solid rgba(255,255,255,0.25);
         background: rgba(255,255,255,0.08);
@@ -106,11 +106,11 @@
 <div class="pcinfo-header">
     <div class="d-flex justify-content-between align-items-center flex-wrap mb-3">
         <div>
-            <h2 class="mb-1 text-white font-weight-bold" style="font-size: 24px;">
-                <i class="fas fa-desktop text-info mr-2"></i> PC & Donanım Denetimi (PCInfo v2.0)
+            <h2 class="mb-1 text-white font-weight-bold" style="font-size: 23px;">
+                <i class="fas fa-desktop text-info mr-2"></i> PC & Donanım Denetimi ve Envanteri (CEZA Veritabanı)
             </h2>
             <p class="mb-0 text-white-50 small">
-                Sunucu, hudut gişe terminalleri, bağlı monitörler (seri no ile), USB/pasaport okuyucular, IP kameralar ve akıllı ağ tarayıcısı.
+                Hudut kapısı gişe terminalleri, sunucular, pasaport okuyucular, monitörler, kameralar ve CEZA veritabanı envanter arşivi.
             </p>
         </div>
         <div class="mt-2 mt-md-0 d-flex align-items-center">
@@ -147,6 +147,9 @@
         </span>
         <span class="mode-tab-btn" id="btnModeCamera" onclick="switchMainMode('camera')">
             <i class="fas fa-video mr-1"></i> 3. Hikvision IP Kamera Merkezi
+        </span>
+        <span class="mode-tab-btn" id="btnModeInventory" onclick="switchMainMode('inventory')">
+            <i class="fas fa-database text-warning mr-1"></i> 4. Cihaz Envanteri (CEZA Veritabanı)
         </span>
     </div>
 </div>
@@ -187,8 +190,14 @@
                         <button type="submit" id="btnSubmitQuery" class="btn btn-primary px-4 mr-2">
                             <i class="fas fa-search mr-1"></i> Donanımı Teftiş Et
                         </button>
+                        @if (Model != null && Model.IsOnline)
+                        {
+                            <button type="button" class="btn btn-warning text-dark font-weight-bold mr-2" onclick="openSaveInventoryModal()">
+                                <i class="fas fa-cloud-upload-alt mr-1"></i> Envantere Ekle
+                            </button>
+                        }
                         <button type="button" class="btn btn-outline-secondary" data-toggle="collapse" data-target="#remoteCreds">
-                            <i class="fas fa-key mr-1"></i> Uzak Giriş Bilgileri
+                            <i class="fas fa-key mr-1"></i> Uzak Giriş
                         </button>
                     </div>
                 </div>
@@ -493,25 +502,20 @@
                                                 }
                                             </div>
                                         }
-                                        else
-                                        {
-                                            <div class="text-muted small">Bu disk üzerinde mantıksal bölüm tanımlanmamış.</div>
-                                        }
                                     </div>
                                 </div>
                             }
                         }
                     </div>
 
-                    <!-- 4. BAĞLI MONİTÖRLER (SERİ NO İLE) -->
+                    <!-- 4. BAĞLI MONİTÖRLER -->
                     <div class="tab-pane fade" id="tab-monitors" role="tabpanel">
                         <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
                             <h5 class="font-weight-bold text-dark mb-0">
                                 <i class="fas fa-tv text-primary mr-1"></i> Bağlı Monitörler & EDID Kimlik Bilgileri
                             </h5>
-                            <span class="badge badge-primary p-2">@(Model.Monitors?.Count ?? 0) Monitör Tespit Edildi</span>
+                            <span class="badge badge-primary p-2">@(Model.Monitors?.Count ?? 0) Monitör Algılandı</span>
                         </div>
-
                         @if (Model.Monitors != null && Model.Monitors.Count > 0)
                         {
                             <div class="row">
@@ -540,7 +544,7 @@
                         else
                         {
                             <div class="alert alert-light border small text-muted">
-                                <i class="fas fa-info-circle mr-1"></i> Bağlı monitör EDID bilgisi WMI üzerinden alınamadı veya monitör doğrudan algılanamadı.
+                                <i class="fas fa-info-circle mr-1"></i> Bağlı monitör EDID bilgisi WMI üzerinden alınamadı.
                             </div>
                         }
                     </div>
@@ -548,7 +552,6 @@
                     <!-- 5. USB AYGITLARI VE YAZICILAR -->
                     <div class="tab-pane fade" id="tab-peripherals" role="tabpanel">
                         <div class="row">
-                            <!-- USB Aygıtları -->
                             <div class="col-md-7 mb-4">
                                 <h5 class="font-weight-bold text-dark border-bottom pb-2 mb-3">
                                     <i class="fas fa-usb text-info mr-1"></i> Bağlı USB / Pasaport / Optik Okuyucu Aygıtları
@@ -577,13 +580,8 @@
                                         </table>
                                     </div>
                                 }
-                                else
-                                {
-                                    <div class="text-muted small">USB aygıtı tespit edilemedi.</div>
-                                }
                             </div>
 
-                            <!-- Yazıcılar -->
                             <div class="col-md-5 mb-4">
                                 <h5 class="font-weight-bold text-dark border-bottom pb-2 mb-3">
                                     <i class="fas fa-print text-warning mr-1"></i> Tanımlı Yazıcılar
@@ -605,10 +603,6 @@
                                             </div>
                                         }
                                     </div>
-                                }
-                                else
-                                {
-                                    <div class="text-muted small">Yazıcı bulunamadı.</div>
                                 }
                             </div>
                         </div>
@@ -733,12 +727,6 @@
                                         }
                                     </tbody>
                                 </table>
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="alert alert-light border small text-muted">
-                                Yüklü yazılım listesi sadece doğrudan yerel sunucu sorgularında Windows Kayıt Defteri üzerinden çekilmektedir.
                             </div>
                         }
                     </div>
@@ -890,6 +878,140 @@
     </div>
 </div>
 
+<!-- ========================================== -->
+<!-- 4. BÖLÜM: CİHAZ ENVANTERİ (CEZA DB)        -->
+<!-- ========================================== -->
+<div id="sectionInventory" style="display:none;">
+    <div class="card mb-4 border">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap">
+            <div>
+                <h4 class="font-weight-bold text-dark mb-1">
+                    <i class="fas fa-database text-warning mr-2"></i> CEZA Veritabanı Donanım & Cihaz Envanteri
+                </h4>
+                <p class="text-muted small mb-0">CEZA veritabanındaki <code>dbo.tbl_PCInfoDevices</code> tablosuna kayıtlı tüm donanımlar.</p>
+            </div>
+            <div class="mt-2 mt-md-0 d-flex gap-2">
+                <button class="btn btn-success btn-sm mr-2" onclick="downloadInventoryExcel()">
+                    <i class="fas fa-file-excel mr-1"></i> Envanteri Excel'e Aktar
+                </button>
+                <button class="btn btn-primary btn-sm" onclick="openNewDeviceModal()">
+                    <i class="fas fa-plus mr-1"></i> Yeni Cihaz Kaydet
+                </button>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <!-- Filtreleme Çubuğu -->
+            <div class="row align-items-end mb-3">
+                <div class="col-md-4 mb-2">
+                    <label class="small font-weight-bold">Arama:</label>
+                    <input type="text" id="invSearch" class="form-control form-control-sm" placeholder="Marka, model, seri no, IP, gişe veya personel ara..." onkeyup="loadInventory()" />
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label class="small font-weight-bold">Kategori:</label>
+                    <select id="invCategory" class="form-control form-control-sm" onchange="loadInventory()">
+                        <option value="">Tüm Kategoriler</option>
+                        <option value="1">Masaüstü Bilgisayar</option>
+                        <option value="2">Laptop (Dizüstü)</option>
+                        <option value="3">Monitör</option>
+                        <option value="4">IP Kamera</option>
+                        <option value="5">Pasaport / Optik Okuyucu</option>
+                        <option value="6">Parmak İzi / Biyometrik</option>
+                        <option value="7">Yazıcı / Tarayıcı</option>
+                        <option value="8">Kesintisiz Güç Kaynağı (UPS)</option>
+                        <option value="9">Switch / Ağ Cihazı</option>
+                        <option value="10">Sunucu</option>
+                        <option value="99">Diğer</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label class="small font-weight-bold">Durum:</label>
+                    <select id="invStatus" class="form-control form-control-sm" onchange="loadInventory()">
+                        <option value="">Tüm Durumlar</option>
+                        <option value="1">Kullanımda / Faal</option>
+                        <option value="2">Depoda / Yedek</option>
+                        <option value="3">Arızalı / Tamirde</option>
+                        <option value="4">Hurda / HEK</option>
+                    </select>
+                </div>
+                <div class="col-md-2 mb-2">
+                    <button type="button" class="btn btn-secondary btn-sm w-100" onclick="loadInventory()">
+                        <i class="fas fa-sync-alt mr-1"></i> Yenile
+                    </button>
+                </div>
+            </div>
+
+            <!-- Envanter Tablosu -->
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0" id="inventoryTable">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>Kategori</th>
+                            <th>Marka / Model</th>
+                            <th>Seri Numarası</th>
+                            <th>Mevki / Gişe / Konum</th>
+                            <th>Zimmetli Personel</th>
+                            <th>Durum</th>
+                            <th>IP Adresi</th>
+                            <th class="text-right">İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryTableBody">
+                        <tr><td colspan="8" class="text-center p-3 text-muted"><i class="fas fa-spinner fa-spin mr-1"></i> Envanter yükleniyor...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: MEVCUT BİLGİSAYARI ENVANTERE KAYDET -->
+<div class="modal fade" id="modalSaveCurrent" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white py-2">
+                <h5 class="modal-title font-weight-bold"><i class="fas fa-cloud-upload-alt mr-1"></i> CEZA Envanterine Kaydet</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="small text-muted mb-3">Bu bilgisayarın teftiş bilgileri (İşlemci, RAM, Disk, Monitörler ve Seri Numarası) CEZA veritabanına kaydedilecektir.</p>
+                <div class="form-group mb-2">
+                    <label class="small font-weight-bold">Demirbaş No (İsteğe Bağlı):</label>
+                    <input type="text" id="modalAssetTag" class="form-control form-control-sm" placeholder="Örn: GZP-EGM-PC-01" />
+                </div>
+                <div class="form-group mb-2">
+                    <label class="small font-weight-bold">Kategori:</label>
+                    <select id="modalCategory" class="form-control form-control-sm">
+                        <option value="1" selected>Masaüstü Bilgisayar</option>
+                        <option value="2">Laptop (Dizüstü)</option>
+                        <option value="10">Sunucu</option>
+                    </select>
+                </div>
+                <div class="form-group mb-2">
+                    <label class="small font-weight-bold">Mevki / Kurulduğu Yer (Gişe / Büro):</label>
+                    <input type="text" id="modalLocation" class="form-control form-control-sm" value="Gelen Yolcu Gişe" required />
+                </div>
+                <div class="form-group mb-2">
+                    <label class="small font-weight-bold">Zimmetli Personel (Sicil veya İsim):</label>
+                    <input type="text" id="modalAssignedPerson" class="form-control form-control-sm" value="@(Model?.CurrentUser)" />
+                </div>
+                <div class="form-group mb-2">
+                    <label class="small font-weight-bold">Notlar / Açıklama:</label>
+                    <textarea id="modalNotes" class="form-control form-control-sm" rows="2" placeholder="Cihaz durumu veya özel notlar..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-success btn-sm" onclick="submitSaveCurrentInventory()">
+                    <i class="fas fa-check mr-1"></i> CEZA Veritabanına Kaydet
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     function setTarget(target) {
         document.getElementById('targetInput').value = target;
@@ -900,10 +1022,12 @@
         document.getElementById('btnModeInspector').classList.remove('active');
         document.getElementById('btnModeScanner').classList.remove('active');
         document.getElementById('btnModeCamera').classList.remove('active');
+        document.getElementById('btnModeInventory').classList.remove('active');
 
         document.getElementById('sectionInspector').style.display = 'none';
         document.getElementById('sectionScanner').style.display = 'none';
         document.getElementById('sectionCamera').style.display = 'none';
+        document.getElementById('sectionInventory').style.display = 'none';
 
         if (mode === 'scanner') {
             document.getElementById('btnModeScanner').classList.add('active');
@@ -911,6 +1035,10 @@
         } else if (mode === 'camera') {
             document.getElementById('btnModeCamera').classList.add('active');
             document.getElementById('sectionCamera').style.display = 'block';
+        } else if (mode === 'inventory') {
+            document.getElementById('btnModeInventory').classList.add('active');
+            document.getElementById('sectionInventory').style.display = 'block';
+            loadInventory();
         } else {
             document.getElementById('btnModeInspector').classList.add('active');
             document.getElementById('sectionInspector').style.display = 'block';
@@ -928,6 +1056,135 @@
             var rowText = tr[i].textContent || tr[i].innerText;
             tr[i].style.display = (rowText.toLowerCase().indexOf(filter) > -1) ? "" : "none";
         }
+    }
+
+    // Modal Aç
+    function openSaveInventoryModal() {
+        $('#modalSaveCurrent').modal('show');
+    }
+
+    function submitSaveCurrentInventory() {
+        var target = '@(Model?.Target ?? "localhost")';
+        var assetTag = document.getElementById('modalAssetTag').value;
+        var category = document.getElementById('modalCategory').value;
+        var location = document.getElementById('modalLocation').value;
+        var assignedPerson = document.getElementById('modalAssignedPerson').value;
+        var notes = document.getElementById('modalNotes').value;
+
+        var body = new URLSearchParams();
+        body.append('target', target);
+        body.append('assetTag', assetTag);
+        body.append('category', category);
+        body.append('location', location);
+        body.append('assignedPerson', assignedPerson);
+        body.append('notes', notes);
+
+        fetch('@Url.Action("SaveCurrentToInventory", "PCInfo")', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body.toString()
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            $('#modalSaveCurrent').modal('hide');
+            if (data.success) {
+                alert(data.message || 'Cihaz başarıyla CEZA veritabanına kaydedildi!');
+            } else {
+                alert('Hata: ' + data.message);
+            }
+        })
+        .catch(function(err) {
+            alert('Hata oluştu: ' + err);
+        });
+    }
+
+    // Envanter Listesini Yükle (CEZA DB)
+    function loadInventory() {
+        var search = document.getElementById('invSearch').value;
+        var category = document.getElementById('invCategory').value;
+        var status = document.getElementById('invStatus').value;
+
+        var url = '@Url.Action("GetInventory", "PCInfo")?search=' + encodeURIComponent(search) +
+            '&category=' + encodeURIComponent(category) +
+            '&status=' + encodeURIComponent(status);
+
+        fetch(url)
+        .then(function(res) { return res.json(); })
+        .then(function(res) {
+            var tbody = document.getElementById('inventoryTableBody');
+            tbody.innerHTML = '';
+
+            if (res.data && res.data.length > 0) {
+                res.data.forEach(function(d) {
+                    var tr = document.createElement('tr');
+                    var catName = getCategoryName(d.Category);
+                    var statusBadge = getStatusBadge(d.Status);
+
+                    tr.innerHTML = '<td><strong>' + catName + '</strong>' + (d.AssetTag ? '<br><small class="text-muted">' + d.AssetTag + '</small>' : '') + '</td>' +
+                        '<td><strong>' + (d.Brand || '') + ' ' + (d.Model || '') + '</strong></td>' +
+                        '<td><code class="text-danger">' + (d.SerialNumber || '—') + '</code></td>' +
+                        '<td>' + (d.Location || '—') + (d.RoomNumber ? ' (Oda: ' + d.RoomNumber + ')' : '') + '</td>' +
+                        '<td>' + (d.AssignedPerson || '—') + '</td>' +
+                        '<td>' + statusBadge + '</td>' +
+                        '<td>' + (d.IpAddress ? '<code>' + d.IpAddress + '</code>' : '—') + '</td>' +
+                        '<td class="text-right">' +
+                            '<button class="btn btn-xs btn-primary mr-1" onclick="inspectDiscovered(\'' + (d.IpAddress || d.Model) + '\')"><i class="fas fa-search"></i></button>' +
+                            '<button class="btn btn-xs btn-danger" onclick="deleteInventoryItem(' + d.Id + ')"><i class="fas fa-trash"></i></button>' +
+                        '</td>';
+                    tbody.appendChild(tr);
+                });
+            } else {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted p-4">CEZA veritabanında henüz kayıtlı envanter bulunmuyor. Teftiş ekranından veya Ağ Tarayıcısından cihazları kaydedebilirsiniz.</td></tr>';
+            }
+        })
+        .catch(function(err) {
+            document.getElementById('inventoryTableBody').innerHTML = '<tr><td colspan="8" class="text-center text-danger p-3">Veritabanından envanter yüklenirken hata: ' + err + '</td></tr>';
+        });
+    }
+
+    function deleteInventoryItem(id) {
+        if (!confirm('Bu envanter kaydını silmek istediğinize emin misiniz?')) return;
+
+        var body = new URLSearchParams();
+        body.append('id', id);
+
+        fetch('@Url.Action("DeleteInventoryDevice", "PCInfo")', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body.toString()
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            if (data.success) {
+                loadInventory();
+            } else {
+                alert('Silinemedi.');
+            }
+        });
+    }
+
+    function downloadInventoryExcel() {
+        var search = document.getElementById('invSearch').value;
+        var category = document.getElementById('invCategory').value;
+        var status = document.getElementById('invStatus').value;
+        window.location.href = '@Url.Action("ExportInventoryExcel", "PCInfo")?search=' + encodeURIComponent(search) + '&category=' + encodeURIComponent(category) + '&status=' + encodeURIComponent(status);
+    }
+
+    function getCategoryName(c) {
+        var cats = {
+            1: "Masaüstü PC", 2: "Laptop", 3: "Monitör", 4: "IP Kamera",
+            5: "Optik/Pasaport Okuyucu", 6: "Parmak İzi", 7: "Yazıcı",
+            8: "UPS", 9: "Ağ Cihazı", 10: "Sunucu"
+        };
+        return cats[c] || "Diğer Donanım";
+    }
+
+    function getStatusBadge(s) {
+        if (s === 1) return '<span class="badge badge-success">Faal</span>';
+        if (s === 2) return '<span class="badge badge-primary">Depoda</span>';
+        if (s === 3) return '<span class="badge badge-warning text-dark">Arızalı</span>';
+        if (s === 4) return '<span class="badge badge-danger">Hurda</span>';
+        return '<span class="badge badge-secondary">Bilinmiyor</span>';
     }
 
     // Akıllı Ağ Taraması
@@ -965,6 +1222,7 @@
                 data.devices.forEach(function(d) {
                     var tr = document.createElement('tr');
                     var inspectBtn = '<button class="btn btn-xs btn-primary mr-1" onclick="inspectDiscovered(\'' + d.IpAddress + '\')"><i class="fas fa-search"></i> İncele</button>';
+                    inspectBtn += '<button class="btn btn-xs btn-warning mr-1 text-dark" onclick="saveScanItemToInventory(\'' + d.IpAddress + '\',\'' + (d.HostName || '') + '\',' + d.DeviceType + ',\'' + (d.Details || '') + '\')"><i class="fas fa-plus"></i> Envantere Ekle</button>';
                     if (d.DeviceType === 2) {
                         inspectBtn += '<button class="btn btn-xs btn-danger" onclick="openDiscoveredCamera(\'' + d.IpAddress + '\')"><i class="fas fa-video"></i> Kamera</button>';
                     }
@@ -985,6 +1243,32 @@
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-play mr-1"></i> Taramayı Başlat';
             alert('Tarama sırasında hata oluştu: ' + err);
+        });
+    }
+
+    function saveScanItemToInventory(ip, hostname, deviceType, details) {
+        var loc = prompt('Bu cihaz için mevki / gişe / konum girin:', 'Hudut Kapısı');
+        if (loc === null) return;
+
+        var body = new URLSearchParams();
+        body.append('ip', ip);
+        body.append('hostname', hostname);
+        body.append('deviceType', deviceType);
+        body.append('location', loc);
+        body.append('details', details);
+
+        fetch('@Url.Action("SaveScanDeviceToInventory", "PCInfo")', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body.toString()
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            if (data.success) {
+                alert(data.message);
+            } else {
+                alert('Hata: ' + data.message);
+            }
         });
     }
 

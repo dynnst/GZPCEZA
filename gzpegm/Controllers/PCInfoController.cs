@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Text;
 using System.Web.Mvc;
 using gzpegm.Cont;
@@ -23,7 +24,7 @@ namespace gzpegm.Controllers
         {
             string cleanTarget = string.IsNullOrWhiteSpace(target) ? "localhost" : target.Trim();
             ViewBag.SelectedTarget = cleanTarget;
-            ViewBag.ActiveMode = mode; // "inspector", "scanner", "camera"
+            ViewBag.ActiveMode = mode; // "inspector", "scanner", "camera", "inventory"
 
             var model = _pcInfoService.GetComputerInfo(cleanTarget);
             return View(model);
@@ -61,6 +62,92 @@ namespace gzpegm.Controllers
             return Json(camera, JsonRequestBehavior.AllowGet);
         }
 
+        #region CEZA VERİTABANI ENVANTER İŞLEMLERİ
+
+        [HttpGet]
+        public ActionResult GetInventory(string search, int? category, int? status, string location)
+        {
+            var devices = _pcInfoService.GetAllDevices(search, category, status, location);
+            return Json(new { success = true, count = devices.Count, data = devices }, JsonRequestBehavior.AllowGet);
+        }
+
+        [HttpPost]
+        public ActionResult SaveDevice(DeviceEntity device)
+        {
+            try
+            {
+                int id = _pcInfoService.SaveDevice(device);
+                return Json(new { success = true, id = id, message = "Cihaz envantere başarıyla kaydedildi." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        [HttpPost]
+        public ActionResult SaveCurrentToInventory(string target, string location, string assignedPerson, string notes, string assetTag, int category = 1)
+        {
+            try
+            {
+                string cleanTarget = string.IsNullOrWhiteSpace(target) ? "localhost" : target.Trim();
+                var model = _pcInfoService.GetComputerInfo(cleanTarget);
+                if (!model.IsOnline)
+                {
+                    return Json(new { success = false, message = "Cihaza ulaşılamadığı için envantere kaydedilemedi." });
+                }
+
+                int id = _pcInfoService.SaveFromComputerInfo(model, location, assignedPerson, notes, assetTag, category);
+                return Json(new { success = true, id = id, message = $"'{model.ComputerName}' CEZA veritabanı envanterine kaydedildi." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        [HttpPost]
+        public ActionResult SaveScanDeviceToInventory(string ip, string hostname, int deviceType, string location, string details)
+        {
+            try
+            {
+                var scanItem = new ScanItemResult
+                {
+                    IpAddress = ip,
+                    HostName = hostname,
+                    DeviceType = (DeviceType)deviceType,
+                    Details = details
+                };
+
+                int id = _pcInfoService.SaveFromScanItem(scanItem, location);
+                return Json(new { success = true, id = id, message = $"{ip} envantere kaydedildi." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        [HttpPost]
+        public ActionResult DeleteInventoryDevice(int id)
+        {
+            bool result = _pcInfoService.DeleteDevice(id);
+            return Json(new { success = result });
+        }
+
+        [HttpGet]
+        public ActionResult ExportInventoryExcel(string search, int? category, int? status, string location)
+        {
+            var devices = _pcInfoService.GetAllDevices(search, category, status, location);
+            var fileBytes = _pcInfoService.ExportInventoryToExcel(devices);
+            string fileName = $"CEZA_Donanim_Envanteri_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+            return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+        }
+
+        #endregion
+
+        #region DIŞA AKTARMA (EXCEL / JSON / HTML)
+
         [HttpGet]
         public ActionResult ExportExcel(string target, string username, string password)
         {
@@ -93,5 +180,7 @@ namespace gzpegm.Controllers
 
             return Content(html, "text/html", Encoding.UTF8);
         }
+
+        #endregion
     }
 }

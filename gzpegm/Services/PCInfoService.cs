@@ -1162,5 +1162,341 @@ namespace gzpegm.Services
         }
 
         #endregion
+
+        #region 5. CEZA VERİTABANI ENVANTER YÖNETİMİ (INVENTORY)
+
+        private static bool _tableChecked = false;
+        private static readonly object _tableLock = new object();
+
+        public void EnsureInventoryTableExists()
+        {
+            if (_tableChecked) return;
+            lock (_tableLock)
+            {
+                if (_tableChecked) return;
+                try
+                {
+                    using (var db = new gzpegm.Models.GZPEGM1())
+                    {
+                        const string createTableSql = @"
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'tbl_PCInfoDevices' AND schema_id = SCHEMA_ID('dbo'))
+BEGIN
+    CREATE TABLE [dbo].[tbl_PCInfoDevices]
+    (
+        [Id]                   INT IDENTITY(1,1) NOT NULL PRIMARY KEY CLUSTERED,
+        [AssetTag]             NVARCHAR(64) NULL,
+        [Category]             INT NOT NULL DEFAULT 1,
+        [Brand]                NVARCHAR(128) NOT NULL DEFAULT '',
+        [Model]                NVARCHAR(128) NOT NULL DEFAULT '',
+        [SerialNumber]         NVARCHAR(128) NOT NULL DEFAULT '',
+        [Location]             NVARCHAR(256) NOT NULL DEFAULT '',
+        [RoomNumber]           NVARCHAR(64) NULL,
+        [AssignedPerson]       NVARCHAR(128) NULL,
+        [ProcurementDate]      DATETIME NULL,
+        [DeliveryDate]         DATETIME NULL,
+        [WarrantyExpiryDate]   DATETIME NULL,
+        [Status]               INT NOT NULL DEFAULT 1,
+        [IpAddress]            NVARCHAR(64) NULL,
+        [MacAddress]           NVARCHAR(64) NULL,
+        [ImagePath]            NVARCHAR(500) NULL,
+        [Notes]                NVARCHAR(2000) NULL,
+        [TechnicalDetailsJson] NVARCHAR(MAX) NULL,
+        [CreatedAt]            DATETIME NOT NULL DEFAULT GETDATE(),
+        [UpdatedAt]            DATETIME NOT NULL DEFAULT GETDATE()
+    );
+
+    CREATE NONCLUSTERED INDEX [IX_tbl_PCInfoDevices_SerialNumber] ON [dbo].[tbl_PCInfoDevices] ([SerialNumber] ASC);
+    CREATE NONCLUSTERED INDEX [IX_tbl_PCInfoDevices_IpAddress] ON [dbo].[tbl_PCInfoDevices] ([IpAddress] ASC);
+    CREATE NONCLUSTERED INDEX [IX_tbl_PCInfoDevices_Location] ON [dbo].[tbl_PCInfoDevices] ([Location] ASC);
+END";
+                        db.Database.ExecuteSqlCommand(createTableSql);
+                    }
+                    _tableChecked = true;
+                }
+                catch { }
+            }
+        }
+
+        public List<DeviceEntity> GetAllDevices(string search = null, int? category = null, int? status = null, string location = null)
+        {
+            EnsureInventoryTableExists();
+            try
+            {
+                using (var db = new gzpegm.Models.GZPEGM1())
+                {
+                    var sql = new StringBuilder("SELECT * FROM dbo.tbl_PCInfoDevices WHERE 1=1 ");
+                    var pars = new List<object>();
+
+                    if (!string.IsNullOrWhiteSpace(search))
+                    {
+                        var pName = "@p" + pars.Count;
+                        sql.Append($"AND (Brand LIKE {pName} OR Model LIKE {pName} OR SerialNumber LIKE {pName} OR Location LIKE {pName} OR AssignedPerson LIKE {pName} OR IpAddress LIKE {pName} OR AssetTag LIKE {pName}) ");
+                        pars.Add("%" + search.Trim() + "%");
+                    }
+
+                    if (category.HasValue && category.Value > 0)
+                    {
+                        var pName = "@p" + pars.Count;
+                        sql.Append($"AND Category = {pName} ");
+                        pars.Add(category.Value);
+                    }
+
+                    if (status.HasValue && status.Value > 0)
+                    {
+                        var pName = "@p" + pars.Count;
+                        sql.Append($"AND Status = {pName} ");
+                        pars.Add(status.Value);
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(location))
+                    {
+                        var pName = "@p" + pars.Count;
+                        sql.Append($"AND Location = {pName} ");
+                        pars.Add(location.Trim());
+                    }
+
+                    sql.Append("ORDER BY UpdatedAt DESC");
+
+                    return db.Database.SqlQuery<DeviceEntity>(sql.ToString(), pars.ToArray()).ToList();
+                }
+            }
+            catch
+            {
+                return new List<DeviceEntity>();
+            }
+        }
+
+        public DeviceEntity GetDeviceById(int id)
+        {
+            EnsureInventoryTableExists();
+            try
+            {
+                using (var db = new gzpegm.Models.GZPEGM1())
+                {
+                    return db.Database.SqlQuery<DeviceEntity>("SELECT * FROM dbo.tbl_PCInfoDevices WHERE Id=@p0", id).FirstOrDefault();
+                }
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public int SaveDevice(DeviceEntity d)
+        {
+            EnsureInventoryTableExists();
+            try
+            {
+                using (var db = new gzpegm.Models.GZPEGM1())
+                {
+                    if (d.Id > 0)
+                    {
+                        const string updateSql = @"
+UPDATE dbo.tbl_PCInfoDevices SET
+    AssetTag = @p0, Category = @p1, Brand = @p2, Model = @p3, SerialNumber = @p4,
+    Location = @p5, RoomNumber = @p6, AssignedPerson = @p7, ProcurementDate = @p8,
+    DeliveryDate = @p9, WarrantyExpiryDate = @p10, Status = @p11, IpAddress = @p12,
+    MacAddress = @p13, ImagePath = @p14, Notes = @p15, TechnicalDetailsJson = @p16,
+    UpdatedAt = GETDATE()
+WHERE Id = @p17";
+                        db.Database.ExecuteSqlCommand(updateSql,
+                            d.AssetTag ?? (object)DBNull.Value,
+                            d.Category,
+                            d.Brand ?? "",
+                            d.Model ?? "",
+                            d.SerialNumber ?? "",
+                            d.Location ?? "",
+                            d.RoomNumber ?? (object)DBNull.Value,
+                            d.AssignedPerson ?? (object)DBNull.Value,
+                            d.ProcurementDate ?? (object)DBNull.Value,
+                            d.DeliveryDate ?? (object)DBNull.Value,
+                            d.WarrantyExpiryDate ?? (object)DBNull.Value,
+                            d.Status,
+                            d.IpAddress ?? (object)DBNull.Value,
+                            d.MacAddress ?? (object)DBNull.Value,
+                            d.ImagePath ?? (object)DBNull.Value,
+                            d.Notes ?? (object)DBNull.Value,
+                            d.TechnicalDetailsJson ?? (object)DBNull.Value,
+                            d.Id);
+
+                        return d.Id;
+                    }
+                    else
+                    {
+                        const string insertSql = @"
+INSERT INTO dbo.tbl_PCInfoDevices
+    (AssetTag, Category, Brand, Model, SerialNumber, Location, RoomNumber, AssignedPerson, ProcurementDate, DeliveryDate, WarrantyExpiryDate, Status, IpAddress, MacAddress, ImagePath, Notes, TechnicalDetailsJson, CreatedAt, UpdatedAt)
+VALUES
+    (@p0, @p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11, @p12, @p13, @p14, @p15, @p16, GETDATE(), GETDATE());
+SELECT SCOPE_IDENTITY();";
+                        var newId = db.Database.SqlQuery<decimal>(insertSql,
+                            d.AssetTag ?? (object)DBNull.Value,
+                            d.Category,
+                            d.Brand ?? "",
+                            d.Model ?? "",
+                            d.SerialNumber ?? "",
+                            d.Location ?? "",
+                            d.RoomNumber ?? (object)DBNull.Value,
+                            d.AssignedPerson ?? (object)DBNull.Value,
+                            d.ProcurementDate ?? (object)DBNull.Value,
+                            d.DeliveryDate ?? (object)DBNull.Value,
+                            d.WarrantyExpiryDate ?? (object)DBNull.Value,
+                            d.Status,
+                            d.IpAddress ?? (object)DBNull.Value,
+                            d.MacAddress ?? (object)DBNull.Value,
+                            d.ImagePath ?? (object)DBNull.Value,
+                            d.Notes ?? (object)DBNull.Value,
+                            d.TechnicalDetailsJson ?? (object)DBNull.Value).FirstOrDefault();
+
+                        return Convert.ToInt32(newId);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Envanter kaydı kaydedilemedi: " + ex.Message, ex);
+            }
+        }
+
+        public bool DeleteDevice(int id)
+        {
+            EnsureInventoryTableExists();
+            try
+            {
+                using (var db = new gzpegm.Models.GZPEGM1())
+                {
+                    db.Database.ExecuteSqlCommand("DELETE FROM dbo.tbl_PCInfoDevices WHERE Id=@p0", id);
+                    return true;
+                }
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public int SaveFromComputerInfo(ComputerInfo pc, string location, string assignedPerson, string notes, string assetTag = null, int category = 1)
+        {
+            EnsureInventoryTableExists();
+
+            string json = Newtonsoft.Json.JsonConvert.SerializeObject(pc, Newtonsoft.Json.Formatting.None);
+            string ip = pc.NetworkAdapters?.SelectMany(n => n.IpAddresses).FirstOrDefault() ?? pc.Target;
+            string mac = pc.NetworkAdapters?.Select(n => n.MacAddress).FirstOrDefault(m => !string.IsNullOrWhiteSpace(m)) ?? "";
+
+            // Mevcut kayıt var mı kontrol et (Seri numarası veya IP eşleşmesi)
+            DeviceEntity existing = null;
+            if (!string.IsNullOrWhiteSpace(pc.SerialNumber) && pc.SerialNumber != "—" && pc.SerialNumber != "To be filled by O.E.M.")
+            {
+                using (var db = new gzpegm.Models.GZPEGM1())
+                {
+                    existing = db.Database.SqlQuery<DeviceEntity>("SELECT TOP 1 * FROM dbo.tbl_PCInfoDevices WHERE SerialNumber=@p0", pc.SerialNumber).FirstOrDefault();
+                }
+            }
+
+            if (existing == null && !string.IsNullOrWhiteSpace(ip) && ip != "localhost" && ip != "127.0.0.1")
+            {
+                using (var db = new gzpegm.Models.GZPEGM1())
+                {
+                    existing = db.Database.SqlQuery<DeviceEntity>("SELECT TOP 1 * FROM dbo.tbl_PCInfoDevices WHERE IpAddress=@p0", ip).FirstOrDefault();
+                }
+            }
+
+            var device = existing ?? new DeviceEntity();
+            if (!string.IsNullOrWhiteSpace(assetTag)) device.AssetTag = assetTag;
+            device.Category = category;
+            device.Brand = string.IsNullOrWhiteSpace(pc.Manufacturer) ? "Bilinmiyor" : pc.Manufacturer;
+            device.Model = string.IsNullOrWhiteSpace(pc.Model) ? pc.ComputerName : pc.Model;
+            device.SerialNumber = pc.SerialNumber ?? "";
+            device.Location = string.IsNullOrWhiteSpace(location) ? (device.Location ?? "Hudut Kapısı") : location;
+            device.AssignedPerson = string.IsNullOrWhiteSpace(assignedPerson) ? (device.AssignedPerson ?? pc.CurrentUser) : assignedPerson;
+            device.Notes = string.IsNullOrWhiteSpace(notes) ? device.Notes : notes;
+            device.IpAddress = ip;
+            device.MacAddress = mac;
+            device.TechnicalDetailsJson = json;
+            device.Status = 1; // Aktif / Faal
+
+            return SaveDevice(device);
+        }
+
+        public int SaveFromScanItem(ScanItemResult scan, string location = null)
+        {
+            EnsureInventoryTableExists();
+
+            DeviceEntity existing = null;
+            using (var db = new gzpegm.Models.GZPEGM1())
+            {
+                existing = db.Database.SqlQuery<DeviceEntity>("SELECT TOP 1 * FROM dbo.tbl_PCInfoDevices WHERE IpAddress=@p0", scan.IpAddress).FirstOrDefault();
+            }
+
+            int category = 1;
+            if (scan.DeviceType == DeviceType.HikvisionCamera) category = 4;
+            else if (scan.DeviceType == DeviceType.Printer) category = 7;
+            else if (scan.DeviceType == DeviceType.SwitchRouter) category = 9;
+
+            var device = existing ?? new DeviceEntity();
+            device.Category = category;
+            device.Brand = scan.DeviceType == DeviceType.HikvisionCamera ? "Hikvision" : "Ağ Cihazı";
+            device.Model = string.IsNullOrWhiteSpace(scan.HostName) ? scan.DeviceTypeDisplay : scan.HostName;
+            device.IpAddress = scan.IpAddress;
+            device.Location = string.IsNullOrWhiteSpace(location) ? (device.Location ?? "Hudut Kapısı Ağı") : location;
+            device.Notes = scan.Details;
+            device.Status = 1;
+
+            return SaveDevice(device);
+        }
+
+        public byte[] ExportInventoryToExcel(List<DeviceEntity> devices)
+        {
+            using (var wb = new XLWorkbook())
+            {
+                var ws = wb.Worksheets.Add("Donanım Envanteri");
+
+                string[] headers = {
+                    "ID", "Demirbaş No", "Kategori", "Marka", "Model",
+                    "Seri Numarası", "Mevki / Gişe", "Oda No", "Zimmetli Personel",
+                    "Durum", "IP Adresi", "MAC Adresi", "Açıklama / Notlar", "Kayıt Tarihi"
+                };
+
+                for (int i = 0; i < headers.Length; i++)
+                {
+                    var cell = ws.Cell(1, i + 1);
+                    cell.Value = headers[i];
+                    cell.Style.Font.Bold = true;
+                    cell.Style.Fill.BackgroundColor = XLColor.FromHtml("#1E293B");
+                    cell.Style.Font.FontColor = XLColor.White;
+                }
+
+                int row = 2;
+                foreach (var d in devices)
+                {
+                    ws.Cell(row, 1).Value = d.Id;
+                    ws.Cell(row, 2).Value = d.AssetTag ?? "";
+                    ws.Cell(row, 3).Value = d.GetCategoryName();
+                    ws.Cell(row, 4).Value = d.Brand;
+                    ws.Cell(row, 5).Value = d.Model;
+                    ws.Cell(row, 6).Value = d.SerialNumber;
+                    ws.Cell(row, 7).Value = d.Location;
+                    ws.Cell(row, 8).Value = d.RoomNumber ?? "";
+                    ws.Cell(row, 9).Value = d.AssignedPerson ?? "";
+                    ws.Cell(row, 10).Value = d.GetStatusName();
+                    ws.Cell(row, 11).Value = d.IpAddress ?? "";
+                    ws.Cell(row, 12).Value = d.MacAddress ?? "";
+                    ws.Cell(row, 13).Value = d.Notes ?? "";
+                    ws.Cell(row, 14).Value = d.CreatedAt.ToString("dd.MM.yyyy HH:mm");
+
+                    row++;
+                }
+
+                ws.Columns().AdjustToContents();
+
+                using (var ms = new MemoryStream())
+                {
+                    wb.SaveAs(ms);
+                    return ms.ToArray();
+                }
+            }
+        }
+
+        #endregion
     }
 }

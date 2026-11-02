@@ -7254,6 +7254,7 @@
     <Compile Include="ViewModels\StudentDashboardViewModel.cs" />
     <Compile Include="ViewModels\TopStudentViewModel.cs" />
     <Compile Include="Models\PCInfo\PCInfoModels.cs" />
+    <Compile Include="Models\PCInfo\DeviceEntity.cs" />
     <Compile Include="Services\PCInfoService.cs" />
     <Compile Include="Controllers\PCInfoController.cs" />
   </ItemGroup>
