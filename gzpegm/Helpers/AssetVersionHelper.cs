@@ -6,33 +6,44 @@ namespace gzpegm.Helpers
 {
     public static class AssetVersionHelper
     {
-        private static string _cachedCustomJsVersion = null;
-        private static readonly object _lock = new object();
+        public static string GetVersion(string virtualPath)
+        {
+            if (string.IsNullOrWhiteSpace(virtualPath))
+                return DateTime.UtcNow.Ticks.ToString();
+
+            try
+            {
+                string cleanPath = virtualPath.Trim();
+                string physicalPath = HttpContext.Current?.Server?.MapPath(cleanPath);
+                if (!string.IsNullOrEmpty(physicalPath) && File.Exists(physicalPath))
+                {
+                    // Dosyanın fiziksel son değiştirilme tarihini (Ticks) döner.
+                    // 1) Dosya değişmediği sürece bu sayı aynı kalır -> Tarayıcı dosyayı 0ms'de RAM/Disk önbelleğinden açar.
+                    // 2) Siz dosyayı sunucuya yüklediğiniz/güncellediğiniz anda bu sayı otomatik değişir -> Tarayıcı eski önbelleği anında atıp yeni dosyayı çeker.
+                    // Memurun tarayıcıyı sıfırlamasına veya Ctrl+F5 yapmasına gerek kalmaz!
+                    return File.GetLastWriteTimeUtc(physicalPath).Ticks.ToString();
+                }
+            }
+            catch { }
+
+            return CustomJsVersion;
+        }
 
         public static string CustomJsVersion
         {
             get
             {
-                if (_cachedCustomJsVersion != null)
-                    return _cachedCustomJsVersion;
-
-                lock (_lock)
+                try
                 {
-                    if (_cachedCustomJsVersion != null)
-                        return _cachedCustomJsVersion;
-
-                    try
+                    string path = HttpContext.Current?.Server?.MapPath("~/js/custom.js");
+                    if (!string.IsNullOrEmpty(path) && File.Exists(path))
                     {
-                        string path = HttpContext.Current?.Server?.MapPath("~/js/custom.js");
-                        if (!string.IsNullOrEmpty(path) && File.Exists(path))
-                        {
-                            return _cachedCustomJsVersion = File.GetLastWriteTimeUtc(path).Ticks.ToString();
-                        }
+                        return File.GetLastWriteTimeUtc(path).Ticks.ToString();
                     }
-                    catch { }
-
-                    return _cachedCustomJsVersion = DateTime.UtcNow.Ticks.ToString();
                 }
+                catch { }
+
+                return DateTime.UtcNow.Ticks.ToString();
             }
         }
     }

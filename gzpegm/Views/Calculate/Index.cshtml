@@ -3,7 +3,7 @@
     ViewBag.UseSelect2 = true;
 }
 @section Styles {
-    <link href="@Url.Content("~/css/calculate-index.css")?v=3.0" rel="stylesheet" />
+    <link href="@Url.Content("~/css/calculate-index.css")?v=@gzpegm.Helpers.AssetVersionHelper.GetVersion("~/css/calculate-index.css")" rel="stylesheet" />
 }
 
 <div class="calculate-card">
@@ -759,6 +759,6 @@
             }
         }
     </script>
-    <script src="@Url.Content("~/js/calculate-index.js")?v=@gzpegm.Helpers.AssetVersionHelper.CustomJsVersion"></script>
-    <script src="@Url.Content("~/js/passport-reader.js")?v=@gzpegm.Helpers.AssetVersionHelper.CustomJsVersion"></script>
+    <script src="@Url.Content("~/js/calculate-index.js")?v=@gzpegm.Helpers.AssetVersionHelper.GetVersion("~/js/calculate-index.js")"></script>
+    <script src="@Url.Content("~/js/passport-reader.js")?v=@gzpegm.Helpers.AssetVersionHelper.GetVersion("~/js/passport-reader.js")"></script>
 }
