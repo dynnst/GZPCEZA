@@ -85,6 +85,63 @@ namespace gzpegm.Controllers
             return File(fileBytes, "application/x-rdp", $"{cleanIp}.rdp");
         }
 
+        [HttpGet]
+        public ActionResult ConnectAssist(string ip, string mode = "msra")
+        {
+            if (string.IsNullOrWhiteSpace(ip))
+            {
+                return HttpNotFound();
+            }
+
+            string cleanIp = ip.Trim();
+            mode = (mode ?? "msra").ToLowerInvariant();
+
+            string scriptContent;
+            string fileName;
+
+            if (mode == "shadow")
+            {
+                // RDP Shadowing (Gölgeleme Modu - Oturumu kapatmadan bağlanma)
+                fileName = $"Golge_Baglanti_{cleanIp}.cmd";
+                scriptContent =
+"@echo off\r\n" +
+"chcp 65001 >nul\r\n" +
+"title RDP Golgeleme - " + cleanIp + "\r\n" +
+"echo =======================================================================\r\n" +
+"echo   EGM CEZAM - RDP GOLGELEME BAGLANTISI (OTURUM KAPANMAZ)\r\n" +
+"echo   Hedef IP: " + cleanIp + "\r\n" +
+"echo   Aciklama: Gisedeki memurun oturumu kilitlenmez, ekrana ortak olunur.\r\n" +
+"echo =======================================================================\r\n" +
+"echo.\r\n" +
+"echo Golgeleme oturumu baslatiliyor (Konsol Oturumu 1)...\r\n" +
+"start mstsc.exe /v:" + cleanIp + " /shadow:1 /control\r\n" +
+"timeout /t 2 >nul\r\n" +
+"exit\r\n";
+            }
+            else
+            {
+                // Windows Uzaktan Yardım (MSRA - Microsoft Remote Assistance Offer)
+                fileName = $"Uzaktan_Yardim_{cleanIp}.cmd";
+                scriptContent =
+"@echo off\r\n" +
+"chcp 65001 >nul\r\n" +
+"title Windows Uzaktan Yardim - " + cleanIp + "\r\n" +
+"echo =======================================================================\r\n" +
+"echo   EGM CEZAM - WINDOWS UZAKTAN YARDIM (OTURUM KAPANMAZ)\r\n" +
+"echo   Hedef IP: " + cleanIp + "\r\n" +
+"echo   Aciklama: Gisedeki polisin ekrani kapanmaz, onay alinarak canli yardim baslatilir.\r\n" +
+"echo =======================================================================\r\n" +
+"echo.\r\n" +
+"echo Hedef bilgisayara uzaktan yardim teklifi gonderiliyor...\r\n" +
+"start msra.exe /offerRA " + cleanIp + "\r\n" +
+"timeout /t 2 >nul\r\n" +
+"exit\r\n";
+            }
+
+            byte[] fileBytes = Encoding.UTF8.GetBytes(scriptContent);
+            return File(fileBytes, "application/octet-stream", fileName);
+        }
+
         #region CEZA VERİTABANI ENVANTER İŞLEMLERİ
 
         [HttpGet]

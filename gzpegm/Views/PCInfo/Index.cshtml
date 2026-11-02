@@ -1,4 +1,4 @@
-@model gzpegm.Models.PCInfo.ComputerInfo
+﻿@model gzpegm.Models.PCInfo.ComputerInfo
 @{
     Layout = "~/Views/Shared/_Master.cshtml";
     ViewBag.Title = "PC & Donanım Denetimi ve Envanteri (CEZA Veritabanı)";
@@ -123,15 +123,20 @@
                 <span class="badge badge-soft-danger p-2 mr-2"><i class="fas fa-times-circle"></i> Çevrimdışı / Hata</span>
             }
 
-            <div class="btn-group">
+            <div class="btn-group mr-2">
                 @if (!string.IsNullOrWhiteSpace(ViewBag.SelectedTarget as string) && ViewBag.SelectedTarget != "localhost" && ViewBag.SelectedTarget != "127.0.0.1")
                 {
-                    <a href="@Url.Action("ConnectRdp", "PCInfo", new { ip = ViewBag.SelectedTarget })" class="btn btn-sm btn-info text-white" title="Uzak Masaüstü (RDP) Başlat">
-                        <i class="fas fa-desktop mr-1"></i> RDP Bağlan
+                    <button type="button" class="btn btn-sm btn-success text-white" onclick="openRemoteAssistModal('@ViewBag.SelectedTarget', '@(Model?.ComputerName ?? ViewBag.SelectedTarget)')" title="Karşıdakinin oturumunu kapatmadan bağlan (Uzaktan Yardım / Gölgeleme)">
+                        <i class="fas fa-hands-helping mr-1"></i> Uzaktan Yardım (Oturum Kapanmaz)
+                    </button>
+                    <a href="@Url.Action("ConnectRdp", "PCInfo", new { ip = ViewBag.SelectedTarget })" class="btn btn-sm btn-info text-white" title="Standart Uzak Masaüstü (RDP) Başlat (Masaüstü Kilitlenir)">
+                        <i class="fas fa-desktop mr-1"></i> RDP (Devral)
                     </a>
                 }
-                <a href="@Url.Action("ExportExcel", "PCInfo", new { target = Model?.Target })" class="btn btn-sm btn-success">
-                    <i class="fas fa-file-excel mr-1"></i> Excel İndir
+            </div>
+            <div class="btn-group">
+                <a href="@Url.Action("ExportExcel", "PCInfo", new { target = Model?.Target })" class="btn btn-sm btn-outline-light">
+                    <i class="fas fa-file-excel mr-1"></i> Excel
                 </a>
                 <a href="@Url.Action("ExportHtml", "PCInfo", new { target = Model?.Target })" target="_blank" class="btn btn-sm btn-outline-light">
                     <i class="fas fa-print mr-1"></i> Yazdır / Rapor
@@ -1018,6 +1023,138 @@
     </div>
 </div>
 
+<!-- MODAL: UZAKTAN YARDIM VE GÖLGELEME SEÇENEKLERİ (OTURUMU KAPATMADAN BAĞLAN) -->
+<div class="modal fade" id="modalRemoteAssist" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-dark text-white py-3">
+                <div>
+                    <h5 class="modal-title font-weight-bold mb-0">
+                        <i class="fas fa-hands-helping text-success mr-2"></i> Uzaktan Bağlantı & Yardım Merkezi
+                    </h5>
+                    <small class="text-white-50" id="raModalSubTitle">Hedef Bilgisayar: —</small>
+                </div>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body p-4 bg-light">
+                <div class="alert alert-info border-0 shadow-sm mb-4">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    <strong>Gişe / Memur Dostu Çözüm:</strong> Standart RDP karşıdaki memurun oturumunu kilitler. Aşağıdaki ilk 2 yöntem ile <strong>kullanıcının oturumunu kapatmadan</strong> canlı ekrana birlikte eşlik edebilirsiniz.
+                </div>
+
+                <div class="row">
+                    <!-- KART 1: WINDOWS UZAKTAN YARDIM (MSRA) -->
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100 border-success shadow-sm">
+                            <div class="card-header bg-success text-white py-2 d-flex justify-content-between align-items-center">
+                                <span class="font-weight-bold"><i class="fas fa-user-friends mr-1"></i> Windows Uzaktan Yardım</span>
+                                <span class="badge badge-light text-success font-weight-bold">ÖNERİLEN</span>
+                            </div>
+                            <div class="card-body d-flex flex-column justify-content-between">
+                                <div>
+                                    <p class="small text-muted mb-2">
+                                        Karşıdaki polisin ekranında <em>"Sistem Yöneticisi yardım teklif ediyor, kabul ediyor musunuz?"</em> onayı çıkar.
+                                    </p>
+                                    <ul class="small pl-3 mb-3 text-secondary">
+                                        <li><strong>Oturum Kesilmez:</strong> Gişedeki memur işine devam eder.</li>
+                                        <li><strong>Ortak Ekran:</strong> İki taraf da aynı anda ekranı görür ve birlikte kontrol edebilir.</li>
+                                        <li>Ek bir yazılım kurulumu gerektirmez.</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <a id="btnLaunchMsra" href="#" class="btn btn-success btn-block btn-sm font-weight-bold mb-2">
+                                        <i class="fas fa-play mr-1"></i> Tek Tıkla Bağlan (.cmd İndir)
+                                    </a>
+                                    <div class="input-group input-group-sm">
+                                        <input type="text" id="cmdMsraText" class="form-control form-control-sm bg-white" readonly />
+                                        <div class="input-group-append">
+                                            <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('cmdMsraText')" title="Komutu Kopyala">
+                                                <i class="fas fa-copy"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <small class="text-muted d-block text-center mt-1">(Win+R ile doğrudan çalıştırabilirsiniz)</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- KART 2: RDP GÖLGELEME (SHADOWING) -->
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100 border-primary shadow-sm">
+                            <div class="card-header bg-primary text-white py-2 d-flex justify-content-between align-items-center">
+                                <span class="font-weight-bold"><i class="fas fa-clone mr-1"></i> RDP Gölgeleme (Shadow)</span>
+                                <span class="badge badge-light text-primary font-weight-bold">CANLI İZLEME</span>
+                            </div>
+                            <div class="card-body d-flex flex-column justify-content-between">
+                                <div>
+                                    <p class="small text-muted mb-2">
+                                        RDP servisi üzerinden gişedeki aktif konsol seansına kilitlenmeden doğrudan gölge bağlantı kurar.
+                                    </p>
+                                    <ul class="small pl-3 mb-3 text-secondary">
+                                        <li><strong>Oturum Kilitlenmez:</strong> Mevcut ekrana ayna gibi bağlanır.</li>
+                                        <li><strong>Doğrudan Kontrol:</strong> Fare ve klavye etkileşimi sağlar.</li>
+                                        <li>Konsol oturum ID'si (1) üzerinden bağlanır.</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <a id="btnLaunchShadow" href="#" class="btn btn-primary btn-block btn-sm font-weight-bold mb-2">
+                                        <i class="fas fa-play mr-1"></i> Gölge Bağlantı Başlat (.cmd)
+                                    </a>
+                                    <div class="input-group input-group-sm">
+                                        <input type="text" id="cmdShadowText" class="form-control form-control-sm bg-white" readonly />
+                                        <div class="input-group-append">
+                                            <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('cmdShadowText')" title="Komutu Kopyala">
+                                                <i class="fas fa-copy"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <small class="text-muted d-block text-center mt-1">(Win+R veya Komut Satırı için)</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KART 3: STANDART RDP (TAM DEVRALMA) -->
+                <div class="card border-info shadow-sm mt-2">
+                    <div class="card-body py-2 d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong class="text-info"><i class="fas fa-desktop mr-1"></i> Standart RDP (Tam Devralma):</strong>
+                            <span class="small text-muted ml-2">Karşıdaki kullanıcının oturumunu kilitler ve yönetimi tamamen sizin bilgisayarınıza alır.</span>
+                        </div>
+                        <div>
+                            <a id="btnLaunchRdpClassic" href="#" class="btn btn-sm btn-outline-info">
+                                <i class="fas fa-download mr-1"></i> .rdp İndir
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GEREKSİNİM VE YARDIM AKORDİYONU -->
+                <div class="mt-3">
+                    <button class="btn btn-link btn-sm text-secondary p-0 text-decoration-none" type="button" data-toggle="collapse" data-target="#collapseRaHelp">
+                        <i class="fas fa-question-circle mr-1"></i> Karşı gişe bilgisayarında uzaktan yardım açma komutları (Gereksinimler)
+                    </button>
+                    <div class="collapse mt-2" id="collapseRaHelp">
+                        <div class="card card-body bg-white border p-3 small text-muted">
+                            <p class="mb-1 font-weight-bold text-dark">Eğer karşı bilgisayarda Uzaktan Yardım henüz aktif edilmemişse:</p>
+                            <p class="mb-2">Aşağıdaki 2 satırlık komutu gişe bilgisayarında Yönetici Komut İstemi (CMD) ile çalıştırarak veya GPO ile tek seferlik açabilirsiniz:</p>
+                            <pre class="bg-dark text-warning p-2 rounded mb-1" style="font-size: 11px;">reg add "HKLM\SYSTEM\CurrentControlSet\Control\Remote Assistance" /v fAllowToGetHelp /t REG_DWORD /d 1 /f
+netsh advfirewall firewall set rule group="Remote Assistance" new enable=Yes</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer py-2 bg-white">
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Kapat</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     function setTarget(target) {
         document.getElementById('targetInput').value = target;
@@ -1229,7 +1366,8 @@
                     var tr = document.createElement('tr');
                     var inspectBtn = '<button class="btn btn-xs btn-primary mr-1" onclick="inspectDiscovered(\'' + d.IpAddress + '\')"><i class="fas fa-search"></i> İncele</button>';
                     if (d.DeviceType === 1 || (d.OpenPorts && (d.OpenPorts.indexOf(3389) > -1 || d.OpenPorts.indexOf(135) > -1))) {
-                        inspectBtn += '<a href="@Url.Action("ConnectRdp", "PCInfo")?ip=' + d.IpAddress + '" class="btn btn-xs btn-info mr-1 text-white" title="Uzak Masaüstü (RDP) Başlat"><i class="fas fa-desktop"></i> RDP</a>';
+                        inspectBtn += '<button class="btn btn-xs btn-success mr-1 text-white" onclick="openRemoteAssistModal(\'' + d.IpAddress + '\',\'' + (d.HostName || d.IpAddress) + '\')" title="Oturumu Kapatmadan Uzaktan Yardım / Gölgeleme"><i class="fas fa-hands-helping"></i> Uzak Yardım</button>';
+                        inspectBtn += '<a href="@Url.Action("ConnectRdp", "PCInfo")?ip=' + d.IpAddress + '" class="btn btn-xs btn-info mr-1 text-white" title="Standart RDP (Masaüstü Kilitlenir)"><i class="fas fa-desktop"></i> RDP</a>';
                     }
                     inspectBtn += '<button class="btn btn-xs btn-warning mr-1 text-dark" onclick="saveScanItemToInventory(\'' + d.IpAddress + '\',\'' + (d.HostName || '') + '\',' + d.DeviceType + ',\'' + (d.Details || '') + '\')"><i class="fas fa-plus"></i> Envantere Ekle</button>';
                     if (d.DeviceType === 2) {
@@ -1338,6 +1476,32 @@
         })
         .catch(function(err) {
             alert('Kamera sorgulanamadı: ' + err);
+        });
+    }
+
+    // Uzaktan Yardım & Gölgeleme Modalı Açma
+    function openRemoteAssistModal(ip, host) {
+        if (!ip) return;
+        document.getElementById('raModalSubTitle').innerText = 'Hedef: ' + ip + (host ? ' (' + host + ')' : '');
+        
+        // Bağlantı indirme linkleri
+        document.getElementById('btnLaunchMsra').href = '@Url.Action("ConnectAssist", "PCInfo")?ip=' + encodeURIComponent(ip) + '&mode=msra';
+        document.getElementById('btnLaunchShadow').href = '@Url.Action("ConnectAssist", "PCInfo")?ip=' + encodeURIComponent(ip) + '&mode=shadow';
+        document.getElementById('btnLaunchRdpClassic').href = '@Url.Action("ConnectRdp", "PCInfo")?ip=' + encodeURIComponent(ip);
+
+        // Kopyalama komutları
+        document.getElementById('cmdMsraText').value = 'msra.exe /offerRA ' + ip;
+        document.getElementById('cmdShadowText').value = 'mstsc.exe /v:' + ip + ' /shadow:1 /control';
+
+        $('#modalRemoteAssist').modal('show');
+    }
+
+    function copyToClipboard(elementId) {
+        var copyText = document.getElementById(elementId);
+        copyText.select();
+        copyText.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(copyText.value).then(function() {
+            alert('Komut panoya kopyalandı:\n' + copyText.value);
         });
     }
 </script>
