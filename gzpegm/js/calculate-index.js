@@ -1,4 +1,4 @@
-﻿/* ==========================================================================
+/* ==========================================================================
    Ceza Hesaplama JavaScript (calculate-index.js) - Profesyonel Kabin Sürümü
    Sade, Hızlı ve Akıcı Tek Ekran Deneyimi (v3.0)
    ========================================================================== */
@@ -89,7 +89,7 @@
 
         var maxExitDate = new Date(maxExitTime);
         var windowStartDate = new Date(maxExitDate.getTime());
-        windowStartDate.setDate(windowStartDate.getDate() - (windowDaysConfig - 1));
+        windowStartDate.setDate(windowStartDate.getDate() - windowDaysConfig);
 
         rows.forEach(function (r, i) {
             if (!r.valid) return;

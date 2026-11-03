@@ -1,4 +1,4 @@
-﻿using gzpegm.Cont;
+using gzpegm.Cont;
 using gzpegm.Models;
 using System;
 using System.Collections.Generic;
@@ -148,7 +148,7 @@ namespace gzpegm.Controllers
             bool isMultipleEntryExit = trips.Count > 1;
             DateTime referenceExit = trips.Max(x => x.Item2);
             int ruleWindowDays = (UVRdata.fldDay != null && UVRdata.fldDay > 0) ? Convert.ToInt32(UVRdata.fldDay) : 180;
-            DateTime windowStart = referenceExit.AddDays(-(ruleWindowDays - 1));
+            DateTime windowStart = referenceExit.AddDays(-ruleWindowDays);
 
             // Son çıkışa karşılık gelen güncel seferin giriş tarihi (Yasal Tarih Aralığı için)
             var latestTrip = trips.OrderByDescending(x => x.Item2).ThenByDescending(x => x.Item1).FirstOrDefault();
