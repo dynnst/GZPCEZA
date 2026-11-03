@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -2558,9 +2558,9 @@ class _CalculatorPageState extends State<CalculatorPage> {
                 Expanded(
                     child: _dateField(exitLabel, _entryExitRows[index].exit)),
                 SizedBox(
-                  width: 58,
+                  width: 76,
                   child: Padding(
-                    padding: const EdgeInsets.only(top: 16),
+                    padding: const EdgeInsets.only(top: 10),
                     child: Text(
                       _entryExitRowDayText(context, _entryExitRows[index]),
                       textAlign: TextAlign.center,
@@ -2599,6 +2599,32 @@ class _CalculatorPageState extends State<CalculatorPage> {
 
     // Arayuzde mevcut tek giris/cikis gun mantigini gostermeye devam et.
     final days = max(1, exit.difference(entry).inDays);
+
+    // 180 Gun Kurali seciliyse ve birden fazla sefer varsa pencere icindeki gunu de ek olarak yansit
+    if (_calculateType == 2 && _entryExitRows.length > 1) {
+      try {
+        final allExits = _entryExitRows
+            .map((r) => parseDate(r.exit.text))
+            .whereType<DateTime>()
+            .toList();
+        if (allExits.isNotEmpty) {
+          final referenceExit = allExits.reduce((a, b) => a.isAfter(b) ? a : b);
+          final windowStart = referenceExit.subtract(const Duration(days: 180));
+          if (exit.isBefore(windowStart)) {
+            return '${context.trValue("day_short", days)}\n(180G: 0)';
+          }
+          final clippedEntry = entry.isBefore(windowStart) ? windowStart : entry;
+          final clippedExit = exit.isAfter(referenceExit) ? referenceExit : exit;
+          if (!clippedEntry.isAfter(clippedExit)) {
+            final windowDays = max(1, clippedExit.difference(clippedEntry).inDays);
+            if (windowDays != days) {
+              return '${context.trValue("day_short", days)}\n(180G: $windowDays)';
+            }
+          }
+        }
+      } catch (_) {}
+    }
+
     return context.trValue('day_short', days);
   }
 
@@ -4598,7 +4624,7 @@ class PenaltyCalculator {
     // 180 Gun Kurali (calculateType == 2): En son cikis dahil geriye donuk 180 takvim gunu penceresi uygulanir.
     if (calculateType == 2) {
       final referenceExit = _referenceExit(ranges);
-      final windowStart = referenceExit.subtract(const Duration(days: 179));
+      final windowStart = referenceExit.subtract(const Duration(days: 180));
 
       return ranges.map((range) {
         final clippedEntry =
@@ -4608,8 +4634,8 @@ class PenaltyCalculator {
         if (clippedEntry.isAfter(clippedExit)) return 0;
         if (calculateType == 4) return 1;
 
-        // Schengen hesabinda hem giris hem cikis gunu kalis gunudur.
-        return clippedExit.difference(clippedEntry).inDays + 1;
+        // EGM Polnet standardi: Giris gunu sayilir, cikis gunu sayilmaz (ayni gun ise 1 gun).
+        return max(1, clippedExit.difference(clippedEntry).inDays);
       }).toList();
     }
 

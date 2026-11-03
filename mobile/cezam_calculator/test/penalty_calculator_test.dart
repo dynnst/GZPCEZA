@@ -1,8 +1,21 @@
-import 'package:cezam_calculator/main.dart';
+﻿import 'package:cezam_calculator/main.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('PenaltyCalculator 180 gun penceresi', () {
+    test('Polnet Norvec ornegi: 80 gun ve 19 gun kalis ile tam 9 gun ceza verir', () {
+      final result = PenaltyCalculator().calculate(
+        _settings([
+          DateRange(DateTime(2026, 3, 7), DateTime(2026, 5, 26)),
+          DateRange(DateTime(2026, 8, 15), DateTime(2026, 11, 3)),
+        ]),
+        _data(),
+      );
+
+      expect(result.stayDays, 99);
+      expect(result.ticketText, '9 Gun');
+    });
+
     test('coklu kayitta pencere disindaki gunleri tamamen yok sayar', () {
       final result = PenaltyCalculator().calculate(
         _settings([
@@ -12,8 +25,8 @@ void main() {
         _data(),
       );
 
-      expect(result.stayDays, 100);
-      expect(result.ticketText, '10 Gun');
+      expect(result.stayDays, 99);
+      expect(result.ticketText, '9 Gun');
     });
 
     test('normal hesaplamada (calculateType: 1) parcali seferleri kirpmadan eksiksiz toplar', () {
