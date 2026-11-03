@@ -224,6 +224,27 @@ namespace gzpegm.Controllers
 
                 cezagun = penalty;
             }
+            // Rusya Federasyonu özel kuralları (Tek girişte en fazla 60 gün, 180 günde toplam en fazla 90 gün)
+            else if (Country == "Rusya Federasyonu")
+            {
+                int maxOneTime = 60; // Rusya ikili anlaşması gereği tek seferde azami 60 gün
+                int maxPeriodTotal = Convert.ToInt32(UVRdata.fldLong); // 180 günlük dönemde azami 90 gün
+                int penalty = 0;
+
+                // 1. Münferit seferlerden 60 günü aşan kısımların toplamı
+                for (int i = 0; i < seferler.Length; i++)
+                {
+                    if (seferler[i] > maxOneTime)
+                        penalty += seferler[i] - maxOneTime;
+                }
+
+                // 2. 180 günlük kayan penceredeki toplam kalışın 90 günü aşan kısmı
+                if (kalmagun > maxPeriodTotal)
+                    penalty = Math.Max(penalty, kalmagun - maxPeriodTotal);
+
+                cezagun = penalty;
+                Visaday = maxOneTime; // Ekranda tek sefer hakkının 60 gün görünmesini garanti et
+            }
             else
             {
                 int check = 0;
