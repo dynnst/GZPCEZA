@@ -378,4 +378,9 @@ mobile/**/.gradle/
 mobile/**/.flutter-plugins
 mobile/**/.flutter-plugins-dependencies
 *.apk
-*.aab
+*.aab
+# Allow tracked APK releases in Apk folder
+!/Apk/*.apk
+!Apk/*.apk
+!/apk/*.apk
+!apk/*.apk
