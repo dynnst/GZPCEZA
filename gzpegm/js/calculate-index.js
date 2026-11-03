@@ -125,7 +125,7 @@
             } else if (windowStay < rawDays) {
                 var excludedDays = rawDays - windowStay;
                 r.$diff.val(rawDays + ' Gün (' + windowDaysConfig + 'G: ' + windowStay + ' G)');
-                r.$badge.html('<span class="badge badge-warning text-dark p-1" style="font-size:11px; font-weight:700;"><i class="fas fa-filter mr-1"></i>' + windowDaysConfig + 'G Kapsamı: ' + windowStay + ' Gün</span> <span class="text-muted font-italic" style="font-size:10.5px;">(' + excludedDays + ' gün 180 gün öncesi)</span>');
+                r.$badge.html('<span class="badge badge-warning text-dark p-1" style="font-size:11px; font-weight:700;"><i class="fas fa-filter mr-1"></i>' + windowDaysConfig + 'G Kapsamı: ' + windowStay + ' Gün</span> <span class="text-muted font-italic" style="font-size:10.5px;">(' + excludedDays + ' gün ' + windowDaysConfig + ' gün öncesi)</span>');
             } else {
                 r.$diff.val(rawDays + ' Gün (' + windowDaysConfig + 'G: ' + windowStay + ' G)');
                 r.$badge.html('<span class="badge badge-success p-1" style="font-size:11px; font-weight:700;"><i class="fas fa-check-circle mr-1"></i>' + windowDaysConfig + 'G Kapsamı: ' + windowStay + ' Gün</span>');
