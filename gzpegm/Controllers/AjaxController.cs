@@ -206,61 +206,32 @@ namespace gzpegm.Controllers
 
             // Sonraki tarih hesaplamalarında her zaman en son çıkış referans alınır.
             exitdt = referenceExit;
-            // Beyaz Rusya özel kuralları
-            if (Country == "Beyaz Rusya")
-            {
-                int maxOneTime = 30;
-                int maxYearTotal = 90;
-                int penalty = 0;
+            // Kanuni Kalış Kuralı: E_UVR tablosundaki (fldOneTime, fldLong, fldDay) parametrelerine göre dinamik hesaplama
+            // 1. Kural: Münferit seferlerin tek sefer kalış hakkını (fldOneTime) aşan kısımları
+            // 2. Kural: Kayan pencere içindeki (fldDay) toplam kalışın dönem tavanını (fldLong) aşan kısmı
+            int maxOneTime = (Visaday > 0) ? Visaday : (UVRdata.fldOneTime != null ? Convert.ToInt32(UVRdata.fldOneTime) : 0);
+            if (Country == "Rusya Federasyonu" && maxOneTime == 0) maxOneTime = 60;
+            if (Country == "Beyaz Rusya" && maxOneTime == 0) maxOneTime = 30;
 
+            int maxPeriodTotal = (UVRdata.fldLong != null && UVRdata.fldLong > 0) ? Convert.ToInt32(UVRdata.fldLong) : 90;
+            int penalty = 0;
+
+            if (maxOneTime > 0)
+            {
                 for (int i = 0; i < seferler.Length; i++)
                 {
                     if (seferler[i] > maxOneTime)
                         penalty += seferler[i] - maxOneTime;
                 }
-
-                if (kalmagun > maxYearTotal)
-                    penalty = Math.Max(penalty, kalmagun - maxYearTotal);
-
-                cezagun = penalty;
             }
-            // Rusya Federasyonu özel kuralları (Tek girişte en fazla 60 gün, 180 günde toplam en fazla 90 gün)
-            else if (Country == "Rusya Federasyonu")
+
+            if (maxPeriodTotal > 0 && kalmagun > maxPeriodTotal)
             {
-                int maxOneTime = 60; // Rusya ikili anlaşması gereği tek seferde azami 60 gün
-                int maxPeriodTotal = Convert.ToInt32(UVRdata.fldLong); // 180 günlük dönemde azami 90 gün
-                int penalty = 0;
-
-                // 1. Münferit seferlerden 60 günü aşan kısımların toplamı
-                for (int i = 0; i < seferler.Length; i++)
-                {
-                    if (seferler[i] > maxOneTime)
-                        penalty += seferler[i] - maxOneTime;
-                }
-
-                // 2. 180 günlük kayan penceredeki toplam kalışın 90 günü aşan kısmı
-                if (kalmagun > maxPeriodTotal)
-                    penalty = Math.Max(penalty, kalmagun - maxPeriodTotal);
-
-                cezagun = penalty;
-                Visaday = maxOneTime; // Ekranda tek sefer hakkının 60 gün görünmesini garanti et
+                penalty = Math.Max(penalty, kalmagun - maxPeriodTotal);
             }
-            else
-            {
-                int check = 0;
-                foreach (int d in seferler)
-                {
-                    if (d > Visaday)
-                    {
-                        cezagun = kalmagun - Visaday;
-                        check = 1;
-                        break;
-                    }
-                }
 
-                if (check == 0 && kalmagun > Convert.ToInt32(UVRdata.fldLong))
-                    cezagun = kalmagun - Convert.ToInt32(UVRdata.fldLong);
-            }
+            cezagun = penalty;
+            if (maxOneTime > 0) Visaday = maxOneTime;
 
             int hgun = cezagun;
             if (cezagun > 30)
