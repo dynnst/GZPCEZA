@@ -131,21 +131,49 @@ namespace gzpegm.Controllers
                 trips.Add(Tuple.Create(enterdt.Date, exitdt.Date));
             }
 
+            var UVRdata = contuvr.check(0, Country, Passport, Visa, Ctype);
+            if (UVRdata == null && Ctype == 2)
+            {
+                // 180 Gün Kuralı için spesifik kayıt yoksa Normal Hesaplama kuralını al
+                UVRdata = contuvr.check(0, Country, Passport, Visa, 1);
+            }
+
+            if (UVRdata == null)
+                return Json(new { Type = "0", Message = "Belirtilen bilgilere ait hesaplama bilgisi mevcut değildir..!" }, JsonRequestBehavior.AllowGet);
+
+            if (Ctype == 4) Visaday = 0;
+            else if (Visaday == 0)
+                Visaday = Convert.ToInt32(UVRdata.fldOneTime);
+
             bool isMultipleEntryExit = trips.Count > 1;
             DateTime referenceExit = trips.Max(x => x.Item2);
-            DateTime windowStart = referenceExit.AddDays(-179);
+            int ruleWindowDays = (UVRdata.fldDay != null && UVRdata.fldDay > 0) ? Convert.ToInt32(UVRdata.fldDay) : 180;
+            DateTime windowStart = referenceExit.AddDays(-(ruleWindowDays - 1));
+
+            // Son çıkışa karşılık gelen güncel seferin giriş tarihi (Yasal Tarih Aralığı için)
+            var latestTrip = trips.OrderByDescending(x => x.Item2).ThenByDescending(x => x.Item1).FirstOrDefault();
+            DateTime currentTripEntry = latestTrip != null ? latestTrip.Item1 : trips[0].Item1;
 
             foreach (var trip in trips)
             {
                 DateTime countedEntry = trip.Item1;
                 DateTime countedExit = trip.Item2;
 
-                // 180 Gun Kurali (Ctype == 2): En son cikis gunu dahil geriye donuk 180 takvim gunu penceresi uygulanir.
-                // Normal Hesaplama (Ctype == 1) ve diger modellerde ise girilen tum seferlerin kalis sureleri eksiksiz toplanir.
-                if (Ctype == 2)
+                // Çoklu giriş-çıkışlarda veya 180 Gün Kuralında geriye dönük takvim penceresi (örn. 180 gün) uygulanır.
+                // Pencere öncesindeki (180 gün dışındaki) kalışlar kanunen hesaba dahil edilmez.
+                if (isMultipleEntryExit || Ctype == 2)
                 {
-                    if (countedEntry < windowStart) countedEntry = windowStart;
-                    if (countedExit > referenceExit) countedExit = referenceExit;
+                    if (countedExit < windowStart)
+                    {
+                        // Sefer tamamen 180 günlük pencere başlangıcından önce kalmış
+                        countedEntry = windowStart;
+                        countedExit = windowStart.AddDays(-1);
+                    }
+                    else
+                    {
+                        if (countedEntry < windowStart) countedEntry = windowStart;
+                        if (countedExit > referenceExit) countedExit = referenceExit;
+                    }
                 }
 
                 int farkGun;
@@ -178,16 +206,6 @@ namespace gzpegm.Controllers
 
             // Sonraki tarih hesaplamalarında her zaman en son çıkış referans alınır.
             exitdt = referenceExit;
-
-            var UVRdata = contuvr.check(0, Country, Passport, Visa, Ctype);
-
-            if (Ctype == 4) Visaday = 0;
-            else if (Visaday == 0 && UVRdata != null)
-                Visaday = Convert.ToInt32(UVRdata.fldOneTime);
-
-            if (UVRdata == null)
-                return Json(new { Type = "0", Message = "Belirtilen bilgilere ait hesaplama bilgisi mevcut değildir..!" }, JsonRequestBehavior.AllowGet);
-
             // Beyaz Rusya özel kuralları
             if (Country == "Beyaz Rusya")
             {
@@ -244,6 +262,7 @@ namespace gzpegm.Controllers
                 Day = UVRdata.fldDay,
                 Daylong = UVRdata.fldLong,
                 OneTime = Visaday,
+                BasDate = currentTripEntry.ToString("dd.MM.yyyy"),
                 ShoulExtiTime = exitdt.AddDays(-hgun).ToString("dd.MM.yyyy"),
                 FarkAy = cezaay,
                 FarkGun = cezagun

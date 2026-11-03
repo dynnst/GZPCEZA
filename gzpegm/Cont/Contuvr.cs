@@ -110,11 +110,23 @@ namespace gzpegm.Cont
             string cClean = Country.Trim();
 
             var all = GetAllUVR();
-            return all.FirstOrDefault(c => c.fldId != fldId
+            var match = all.FirstOrDefault(c => c.fldId != fldId
                 && string.Equals(c.fldCountry?.Trim(), cClean, StringComparison.OrdinalIgnoreCase)
                 && c.fldPassportType == Passport
                 && c.fldVisaStatus == Visa
                 && c.fldCalculateType == Ctype);
+
+            if (match == null && Ctype == 2)
+            {
+                // 180 Gün Kuralı için ülkeye özel Ctype=2 kaydı yoksa Normal Hesaplama (Ctype=1) kuralına fallback yap
+                match = all.FirstOrDefault(c => c.fldId != fldId
+                    && string.Equals(c.fldCountry?.Trim(), cClean, StringComparison.OrdinalIgnoreCase)
+                    && c.fldPassportType == Passport
+                    && c.fldVisaStatus == Visa
+                    && c.fldCalculateType == 1);
+            }
+
+            return match;
         }
 
         public E_UVR GetByCountry(string country)

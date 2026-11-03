@@ -639,7 +639,7 @@ function _executeHesapla1() {
             if ($Visa == 4 || $Visa == 8 || $Visa == 10 || $Visa == 11 || $Visa == 12 || $Visa == 13 || $Visa == 14 || $Visa == 15) {
                 $('#BasCalculate').val($('#testarihi').val());
             } else {
-                $('#BasCalculate').val($Enter);
+                $('#BasCalculate').val(result.BasDate || $Enter);
             }
 
             $('#BitCalculate').val(result.ShoulExtiTime);
