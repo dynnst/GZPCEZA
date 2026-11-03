@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -152,11 +152,11 @@ namespace gzpegm.Models
 
             // Almanca ülkeler
             var almancaUlkeler = new[] { "Almanya", "Avusturya", "İsviçre", "Liechtenstein" };
-            if (almancaUlkeler.Any(u => ulkeNormalized.Contains(u, StringComparison.OrdinalIgnoreCase)))
+            if (almancaUlkeler.Any(u => ulkeNormalized.IndexOf(u, StringComparison.OrdinalIgnoreCase) >= 0))
                 return "Almanca";
 
             // Bulgarca ülkeler
-            if (ulkeNormalized.Contains("Bulgaristan", StringComparison.OrdinalIgnoreCase))
+            if (ulkeNormalized.IndexOf("Bulgaristan", StringComparison.OrdinalIgnoreCase) >= 0)
                 return "Bulgarca";
 
             // Farsça ülkeler
@@ -165,7 +165,7 @@ namespace gzpegm.Models
 
             // Fransızca ülkeler
             var fransizcaUlkeler = new[] { "Fransa", "Belçika", "Lüksemburg", "Monako", "Cezayir", "Fas", "Tunus", "Senegal", "Mali", "Nijer", "Çad", "Kamerun", "Gabon", "Kongo", "Madagaskar", "Mauritius", "Ruanda", "Burundi", "Cibuti", "Komor", "Vanuatu", "Haiti", "Kanada" };
-            if (fransizcaUlkeler.Any(u => ulkeNormalized.Contains(u, StringComparison.OrdinalIgnoreCase)))
+            if (fransizcaUlkeler.Any(u => ulkeNormalized.IndexOf(u, StringComparison.OrdinalIgnoreCase) >= 0))
                 return "Fransızca";
 
             // Gürcüce ülkeler
@@ -173,22 +173,22 @@ namespace gzpegm.Models
                 return "Gürcüce";
 
             // Peştuca ülkeler
-            if (ulkeNormalized.Contains("Afganistan", StringComparison.OrdinalIgnoreCase))
+            if (ulkeNormalized.IndexOf("Afganistan", StringComparison.OrdinalIgnoreCase) >= 0)
                 return "Peştuca";
 
             // Romence ülkeler
             var romenceUlkeler = new[] { "Romanya", "Moldovya", "Moldova" };
-            if (romenceUlkeler.Any(u => ulkeNormalized.Contains(u, StringComparison.OrdinalIgnoreCase)))
+            if (romenceUlkeler.Any(u => ulkeNormalized.IndexOf(u, StringComparison.OrdinalIgnoreCase) >= 0))
                 return "Romence";
 
             // Rusça ülkeler
             var ruscaUlkeler = new[] { "Rusya", "Belarus", "Ukrayna", "Kazakistan", "Kırgızistan", "Özbekistan", "Tacikistan", "Türkmenistan" };
-            if (ruscaUlkeler.Any(u => ulkeNormalized.Contains(u, StringComparison.OrdinalIgnoreCase)))
+            if (ruscaUlkeler.Any(u => ulkeNormalized.IndexOf(u, StringComparison.OrdinalIgnoreCase) >= 0))
                 return "Rusça";
 
             // Arapça ülkeler
             var arapcaUlkeler = new[] { "Suudi Arabistan", "Irak", "Suriye", "Ürdün", "Liban", "Yemen", "Umman", "Birleşik Arap Emirlikleri", "Bahreyn", "Katar", "Kuveyt", "Mısır", "Libya", "Sudan", "Somali", "Cibuti", "Mauritanya", "Tunus", "Cezayir", "Fas", "Filistin" };
-            if (arapcaUlkeler.Any(u => ulkeNormalized.Contains(u, StringComparison.OrdinalIgnoreCase)))
+            if (arapcaUlkeler.Any(u => ulkeNormalized.IndexOf(u, StringComparison.OrdinalIgnoreCase) >= 0))
                 return "Arapça";
 
             // Varsayılan: İngilizce
