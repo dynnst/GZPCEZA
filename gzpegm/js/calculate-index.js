@@ -22,91 +22,131 @@
         return null;
     }
 
-    /**
-     * Tek bir satır için gün farkını hesaplayıp .pair-diff alanına yazar
-     */
-    function computePairDiff(context) {
-        var $ctx = $(context || '#EnterDateCalculate');
-        var $row;
-
-        if ($ctx.is('.date-pair-row')) {
-            $row = $ctx;
-        } else {
-            $row = $ctx.closest('.date-pair-row');
-            if (!$row.length) {
-                $row = $ctx.closest('.form-group.row');
-            }
-        }
-
-        var $enter = ($row.length) ? $row.find('.endt').first() : $();
-        var $exit  = ($row.length) ? $row.find('.exdt').first() : $();
-        var $diff  = ($row.length) ? $row.find('.pair-diff').first() : $();
-
-        // İlk (statik) satır için mutlak fallback
-        if (!$enter.length || $enter.attr('id') === 'EnterDateCalculate' || $ctx.attr('id') === 'EnterDateCalculate' || $ctx.attr('id') === 'ExitDateCalculate' || $ctx.attr('id') === 'PairDiff_0') {
-            if (!$enter.length) $enter = $('#EnterDateCalculate');
-            if (!$exit.length)  $exit  = $('#ExitDateCalculate');
-            if (!$diff.length)  $diff  = $('#PairDiff_0');
-        }
-
-        if (!$enter.length || !$exit.length || !$diff.length) return;
-
-        var ev = ($enter.val() || '').trim();
-        var xv = ($exit.val() || '').trim();
-
-        if (!ev || !xv) {
-            $diff.val('').attr('placeholder', 'Gün');
-            return;
-        }
-
-        var start = parseDate(ev);
-        var end = parseDate(xv);
-
-        if (!start || !end) {
-            $diff.val('Hatalı');
-            return;
-        }
-
-        if (start > end) {
-            $diff.val('G > Ç');
-            return;
-        }
-
-        var msPerDay = 1000 * 60 * 60 * 24;
-        var uStart = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate());
-        var uEnd = Date.UTC(end.getFullYear(), end.getMonth(), end.getDate());
-        var days = Math.round((uEnd - uStart) / msPerDay);
-        if (days === 0) days = 1;
-
-        $diff.val(days + ' Gün');
+    function getWindowDaysConfig() {
+        var country = ($('#CountryCalculate').val() || '').trim();
+        if (country === 'Beyaz Rusya') return 365;
+        var dayVal = parseInt($('#DayCalculate').val(), 10);
+        return (dayVal > 0) ? dayVal : 180;
     }
 
-    window.computePairDiff = computePairDiff;
-
     /**
-     * Formdaki tüm giriş-çıkış çiftlerinin gün farkını hesaplar
+     * Formdaki tüm giriş-çıkış çiftlerinin gün farkını ve kayan pencere (180/365 gün) kapsamındaki gününü hesaplar
      */
-    function computeAllDiffs() {
-        computePairDiff($('#EnterDateCalculate'));
-        $('.date-pair-row.extra, .extra').each(function () {
-            computePairDiff(this);
+    function computeAllDiffs(serverSeferler) {
+        var rows = [];
+        var maxExitTime = 0;
+        var msPerDay = 1000 * 60 * 60 * 24;
+
+        $('.endt').each(function (idx) {
+            var $enter = $(this);
+            var $row = $enter.closest('.date-pair-row, .form-group.row');
+            if (!$row.length) $row = $enter.parent().parent();
+            var $exit = $row.find('.exdt').first();
+            var $diff = $row.find('.pair-diff').first();
+            var $badge = $row.find('.window-diff-badge');
+            if (!$badge.length) {
+                $badge = $('<div class="window-diff-badge mt-1" style="font-size:11.5px; font-weight:600;"></div>');
+                $diff.after($badge);
+            }
+
+            var ev = ($enter.val() || '').trim();
+            var xv = ($exit.val() || '').trim();
+            var start = parseDate(ev);
+            var end = parseDate(xv);
+
+            var item = {
+                index: idx,
+                $diff: $diff,
+                $badge: $badge,
+                start: start,
+                end: end,
+                valid: (start && end && start <= end),
+                rawDays: 0
+            };
+
+            if (item.valid) {
+                var uStart = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate());
+                var uEnd = Date.UTC(end.getFullYear(), end.getMonth(), end.getDate());
+                var days = Math.round((uEnd - uStart) / msPerDay);
+                item.rawDays = (days === 0) ? 1 : days;
+                if (end.getTime() > maxExitTime) {
+                    maxExitTime = end.getTime();
+                }
+            } else if (ev && xv && start && end && start > end) {
+                $diff.val('G > Ç');
+                $badge.empty();
+            } else {
+                $diff.val('').attr('placeholder', 'Gün');
+                $badge.empty();
+            }
+
+            rows.push(item);
+        });
+
+        var validRows = rows.filter(function (r) { return r.valid; });
+        var hasMultiple = validRows.length > 1;
+        var windowDaysConfig = getWindowDaysConfig();
+
+        var maxExitDate = new Date(maxExitTime);
+        var windowStartDate = new Date(maxExitDate.getTime());
+        windowStartDate.setDate(windowStartDate.getDate() - (windowDaysConfig - 1));
+
+        rows.forEach(function (r, i) {
+            if (!r.valid) return;
+
+            var rawDays = r.rawDays;
+
+            if (!hasMultiple) {
+                r.$diff.val(rawDays + ' Gün');
+                r.$badge.empty();
+                return;
+            }
+
+            var windowStay = 0;
+            if (serverSeferler && serverSeferler.length > i && typeof serverSeferler[i] === 'number') {
+                windowStay = serverSeferler[i];
+            } else {
+                if (r.end < windowStartDate) {
+                    windowStay = 0;
+                } else {
+                    var cStart = r.start < windowStartDate ? windowStartDate : r.start;
+                    var cExit = r.end > maxExitDate ? maxExitDate : r.end;
+                    var uCS = Date.UTC(cStart.getFullYear(), cStart.getMonth(), cStart.getDate());
+                    var uCE = Date.UTC(cExit.getFullYear(), cExit.getMonth(), cExit.getDate());
+                    var diffW = Math.round((uCE - uCS) / msPerDay);
+                    windowStay = (diffW === 0 && uCS <= uCE) ? 1 : Math.max(0, diffW);
+                }
+            }
+
+            // Kullanıcı talebi: Mevcut kalış günü dursun (örn. 80 Gün), ek olarak 180G içindeki süre yansıtılsın
+            if (windowStay === 0) {
+                r.$diff.val(rawDays + ' Gün (' + windowDaysConfig + 'G Dışı: 0 G)');
+                r.$badge.html('<span class="badge badge-secondary p-1" style="font-size:11px;"><i class="fas fa-history mr-1"></i>' + windowDaysConfig + ' Gün Dışı (0 G Dahil)</span>');
+            } else if (windowStay < rawDays) {
+                var excludedDays = rawDays - windowStay;
+                r.$diff.val(rawDays + ' Gün (' + windowDaysConfig + 'G: ' + windowStay + ' G)');
+                r.$badge.html('<span class="badge badge-warning text-dark p-1" style="font-size:11px; font-weight:700;"><i class="fas fa-filter mr-1"></i>' + windowDaysConfig + 'G Kapsamı: ' + windowStay + ' Gün</span> <span class="text-muted font-italic" style="font-size:10.5px;">(' + excludedDays + ' gün 180 gün öncesi)</span>');
+            } else {
+                r.$diff.val(rawDays + ' Gün (' + windowDaysConfig + 'G: ' + windowStay + ' G)');
+                r.$badge.html('<span class="badge badge-success p-1" style="font-size:11px; font-weight:700;"><i class="fas fa-check-circle mr-1"></i>' + windowDaysConfig + 'G Kapsamı: ' + windowStay + ' Gün</span>');
+            }
         });
     }
 
+    function computePairDiff(context) {
+        computeAllDiffs();
+    }
+
+    window.computePairDiff = computePairDiff;
     window.computeAllDiffs = computeAllDiffs;
 
     var originalComputeDiffForRow = window.computeDiffForRow;
     window.computeDiffForRow = function ($row) {
-        if ($row && $row.length) {
-            computePairDiff($row);
-        } else {
-            computeAllDiffs();
-        }
+        computeAllDiffs();
         if (typeof originalComputeDiffForRow === 'function') {
             try { originalComputeDiffForRow($row); } catch (e) { }
         }
     };
-
     /**
      * Sınır kapısı toplam işlem sayısını sunucudan çeker (Kullanıcı isteğiyle iptal edildi - Sıfır DB yükü)
      */

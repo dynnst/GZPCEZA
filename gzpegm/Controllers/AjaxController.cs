@@ -257,7 +257,8 @@ namespace gzpegm.Controllers
                 BasDate = currentTripEntry.ToString("dd.MM.yyyy"),
                 ShoulExtiTime = exitdt.AddDays(-hgun).ToString("dd.MM.yyyy"),
                 FarkAy = cezaay,
-                FarkGun = cezagun
+                FarkGun = cezagun,
+                Seferler = seferler
             }, JsonRequestBehavior.AllowGet);
         }
 

@@ -655,6 +655,7 @@ function _executeHesapla1() {
             // 180/90 kuralına göre tekrar giriş tarihini formdaki geçmiş giriş-çıkışlara göre hesapla ve göster
             try {
                 computeReEntryFromForm();
+            if (result.Seferler && typeof window.computeAllDiffs === 'function') { try { window.computeAllDiffs(result.Seferler); } catch (e) { } }
             } catch (e) {
                 console.warn('Re-entry hesaplama hatası', e);
             }
@@ -886,6 +887,7 @@ function gcadd() {
         + '<i class="fas fa-clock text-info mr-1"></i> Kalış Süresi'
         + '</label>'
         + '<input readonly id="' + diffId + '" class="form-control pair-diff" placeholder="Gün Farkı" />'
+        + '<div class="window-diff-badge mt-1" style="font-size:11.5px; font-weight:600;"></div>'
         + '</div>'
         + '<div class="col-xl-1 col-lg-1 col-md-1 col-sm-2 mb-2 text-center">'
         + '<button type="button" class="btn btn-sm btn-outline-danger btn-remove-row" onclick="gcremoveSpecificRow(this)" title="Bu satırı sil" style="border-radius:6px; padding:6px 10px;">'
