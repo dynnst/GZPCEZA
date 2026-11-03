@@ -1,4 +1,4 @@
-﻿/**
+/**
  * CEZAM - Pasaport & Optik Okuyucu Entegrasyon Modülü
  * Desteklenen Donanımlar: 3M Cogent / Gemalto (PV40, PV60, AT9000), Regula (70X4, 7024), Desko (Penta, BRS)
  * Not: Bu sistemde yalnızca yabancı yolculara ihlal cezası uygulanır. Türk vatandaşlarına ceza işlemi uygulanmaz.
@@ -366,7 +366,48 @@
 
         btns.prop('disabled', true).html('<span class="spinner-border spinner-border-sm mr-1" role="status"></span> Okunuyor...');
 
-        // Doğrudan C# backend servisine bağlan (Regula, 3M veya Desko otomatik taranır)
+        function finishScan() {
+            isDirectScanActive = false;
+            btns.each(function (idx) {
+                $(this).prop('disabled', false).html(originalHtmls[idx] || '<span class="passport-pulse-dot mr-1"></span> <i class="fas fa-camera mr-1"></i> Cihazdan Pasaport Oku');
+            });
+        }
+
+        // Istemci uzak bir bilgisayardan (orn. 176 IPli gise PC) sunucuya (138/75/76) baglaniyorsa:
+        if (isRemoteClient) {
+            tryLocalClientRegula(function (localData) {
+                if (localData) {
+                    var mrz = extractMrzFromRegulaResponse(localData);
+                    if (mrz && parseAndApplyPassportMrz(mrz, "Regula Yerel Okuyucu")) {
+                        finishScan();
+                        return;
+                    }
+                }
+
+                $.ajax({
+                    url: '/Calculate/ScanOpticalReader',
+                    type: 'POST',
+                    data: { deviceType: deviceType || 'auto' },
+                    timeout: 4000,
+                    success: function (res) {
+                        if (res && res.success) {
+                            applyScanResult(res);
+                        } else {
+                            showPassportAlert('<strong>3M / Regula Donanim Okuyucu Hazir:</strong> Pasaportu cihaz camina yerlestirdiginizde bilgiler aninda ekrana otomatik aktarilacaktir.', 'info');
+                        }
+                    },
+                    error: function () {
+                        showPassportAlert('<strong>3M / Regula Donanim Okuyucu Hazir:</strong> Pasaportu cihaz camina yerlestirdiginizde bilgiler aninda ekrana otomatik aktarilacaktir.', 'info');
+                    },
+                    complete: function () {
+                        finishScan();
+                    }
+                });
+            });
+            return;
+        }
+
+        // Yerel sunucu uzerinde (localhost) dogrudan tarama
         $.ajax({
             url: '/Calculate/ScanOpticalReader',
             type: 'POST',
@@ -376,14 +417,11 @@
                 applyScanResult(res);
             },
             error: function (xhr, status, err) {
-                var errMsg = 'Optik okuyucu servisiyle iletişim kurulamadı. (' + (err || status) + ')';
+                var errMsg = 'Optik okuyucu servisiyle iletisim kurulamadi. (' + (err || status) + ')';
                 showPassportAlert(errMsg, 'danger');
             },
             complete: function () {
-                isDirectScanActive = false;
-                btns.each(function (idx) {
-                    $(this).prop('disabled', false).html(originalHtmls[idx] || '<span class="passport-pulse-dot mr-1"></span> <i class="fas fa-camera mr-1"></i> Cihazdan Pasaport Oku');
-                });
+                finishScan();
             }
         });
     }
