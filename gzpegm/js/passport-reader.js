@@ -1,4 +1,4 @@
-/**
+﻿/**
  * CEZAM - Pasaport & Optik Okuyucu Entegrasyon Modülü
  * Desteklenen Donanımlar: 3M Cogent / Gemalto (PV40, PV60, AT9000), Regula (70X4, 7024), Desko (Penta, BRS)
  * Not: Bu sistemde yalnızca yabancı yolculara ihlal cezası uygulanır. Türk vatandaşlarına ceza işlemi uygulanmaz.
@@ -373,56 +373,34 @@
             });
         }
 
-        // Istemci uzak bir bilgisayardan (orn. 176 IPli gise PC) sunucuya (138/75/76) baglaniyorsa:
-        if (isRemoteClient) {
-            tryLocalClientRegula(function (localData) {
-                if (localData) {
-                    var mrz = extractMrzFromRegulaResponse(localData);
-                    if (mrz && parseAndApplyPassportMrz(mrz, "Regula Yerel Okuyucu")) {
-                        finishScan();
-                        return;
-                    }
+        // 1. Istemcide yerel Regula servisi (41101/8080) var mi kontrol et
+        tryLocalClientRegula(function (localData) {
+            if (localData) {
+                var mrz = extractMrzFromRegulaResponse(localData);
+                if (mrz && parseAndApplyPassportMrz(mrz, "Regula Yerel Okuyucu")) {
+                    finishScan();
+                    return;
                 }
-
-                $.ajax({
-                    url: '/Calculate/ScanOpticalReader',
-                    type: 'POST',
-                    data: { deviceType: deviceType || 'auto' },
-                    timeout: 4000,
-                    success: function (res) {
-                        if (res && res.success) {
-                            applyScanResult(res);
-                        } else {
-                            showPassportAlert('<strong>3M / Regula Donanim Okuyucu Hazir:</strong> Pasaportu cihaz camina yerlestirdiginizde bilgiler aninda ekrana otomatik aktarilacaktir.', 'info');
-                        }
-                    },
-                    error: function () {
-                        showPassportAlert('<strong>3M / Regula Donanim Okuyucu Hazir:</strong> Pasaportu cihaz camina yerlestirdiginizde bilgiler aninda ekrana otomatik aktarilacaktir.', 'info');
-                    },
-                    complete: function () {
-                        finishScan();
-                    }
-                });
-            });
-            return;
-        }
-
-        // Yerel sunucu uzerinde (localhost) dogrudan tarama
-        $.ajax({
-            url: '/Calculate/ScanOpticalReader',
-            type: 'POST',
-            data: { deviceType: deviceType || 'auto' },
-            timeout: 25000,
-            success: function (res) {
-                applyScanResult(res);
-            },
-            error: function (xhr, status, err) {
-                var errMsg = 'Optik okuyucu servisiyle iletisim kurulamadi. (' + (err || status) + ')';
-                showPassportAlert(errMsg, 'danger');
-            },
-            complete: function () {
-                finishScan();
             }
+
+            // 2. Dogrudan C# backend servisine baglan (3M Cogent, Regula, Desko)
+            // Cihazin optik taramayi, isiklandirmayi ve OCR cozumlemeyi tamamlamasi icin 25 saniye tam sure verilir
+            $.ajax({
+                url: '/Calculate/ScanOpticalReader',
+                type: 'POST',
+                data: { deviceType: deviceType || 'auto' },
+                timeout: 25000,
+                success: function (res) {
+                    applyScanResult(res);
+                },
+                error: function (xhr, status, err) {
+                    var errMsg = 'Optik okuyucu servisiyle iletisim kurulamadi. (' + (err || status) + ')';
+                    showPassportAlert(errMsg, 'danger');
+                },
+                complete: function () {
+                    finishScan();
+                }
+            });
         });
     }
 
@@ -621,8 +599,7 @@
                 '<strong>TÜRK VATANDAŞI (TUR):</strong> Bu sistemde yalnızca yabancı yolculara vize/ihlal cezası uygulanmaktadır. Türk vatandaşlarına ceza işlemi uygulanamaz.',
                 'danger'
             );
-            return false;
-        }
+            }
 
         var fullName = (surname + " " + givenNames).trim();
 
@@ -701,12 +678,12 @@
             lastKeystrokeTime = now;
 
             // Donanımsal okuyucular harfleri 5ms - 50ms aralığında yüksek hızda gönderir
-            var isFastBurst = (delta <= 50);
+            var isFastBurst = (delta <= 85);
             if (isFastBurst) {
                 burstCount++;
             } else {
                 // Normal manuel klavye yazımı araya girdiyse (800ms'den uzun boşluk) buffer'ı sıfırla
-                if (delta > 800) {
+                if (delta > 1200 && !hasScannerSignature) {
                     scannerBuffer = "";
                     burstCount = 0;
                 }
