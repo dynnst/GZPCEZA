@@ -20,6 +20,7 @@
                 </div>
             </div>
             <div class="d-flex align-items-center mt-2 mt-md-0">
+                <a href="@Url.Action("Mevzuat", "Calculate")" target="_blank" class="btn btn-outline-info mr-2 shadow-sm font-weight-bold" id="btnMevzuat" style="border-radius:6px; font-size:0.86rem; padding:6px 14px; border:1.5px solid #0284c7; background-color:#f0f9ff; color:#0369a1;" title="Hesaplama Algoritmaları ve Yasal Dayanaklar Rehberi"><i class="fas fa-balance-scale mr-1 text-primary"></i> İlgili Mevzuat & Algoritmalar</a>
                 <div class="btn-group mr-2 shadow-sm" role="group">
                     <button type="button" id="btnDirectOpticalScan" onclick="scanPassportDirect('auto');" class="btn btn-success font-weight-bold" style="border-radius:6px 0 0 6px; font-size:0.86rem; padding:6px 14px; background:linear-gradient(135deg, #059669 0%, #047857 100%); border:none;" title="Optik Okuyucudan Pasaport Oku (Otomatik Alg&#305;la)">
                         <span class="passport-pulse-dot"></span> <i class="fas fa-camera mr-1"></i> Cihazdan Pasaport Oku
@@ -652,6 +653,7 @@
                             <button onclick="hesapla3()" type="button" class="btn btn-sm btn-outline-primary btn-block font-weight-bold" id="btnHesapla3">
                                 <i class="fas fa-file-invoice mr-1"></i> Tutanak Bilgilerini Doldur
                             </button>
+                            <div class="text-center mt-2"><a href="@Url.Action("Mevzuat", "Calculate")" target="_blank" class="text-muted small font-weight-bold"><i class="fas fa-balance-scale mr-1 text-primary"></i> İlgili Mevzuat, Tahdit Kodları ve Yasal Dayanaklar Listesi</a></div>
                         </div>
 
                     </div>

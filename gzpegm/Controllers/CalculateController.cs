@@ -30,6 +30,22 @@ namespace gzpegm.Controllers
             return View();
         }
 
+        [Route("Hesaplama/Mevzuat")]
+        [Route("Calculate/Mevzuat")]
+        [Route("Mevzuat")]
+        public ActionResult Mevzuat()
+        {
+            var currentUser = GetUser();
+            if (currentUser != null)
+            {
+                string fullName = ((currentUser.fldName ?? "").Trim() + " " + (currentUser.fldLastName ?? "").Trim()).Trim();
+                string sicil = (currentUser.fldSicil ?? "").Trim();
+                ViewBag.OfficerName = !string.IsNullOrEmpty(sicil) ? fullName + " (" + sicil + ")" : fullName;
+                ViewBag.OfficerBorder = currentUser.fldBorder;
+            }
+            return View();
+        }
+
         [NonAction]
         public E_User GetUser()
         {

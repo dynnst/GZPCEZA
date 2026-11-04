@@ -80,11 +80,11 @@ namespace gzpegm.Controllers
             var Data = user.GetUserById(UserId);
             return Data;
         }
+
         [AllowAnonymous]
         [Route("Calculate1")]
         public JsonResult Calculate1(FormCollection form, string deneme)
         {
-            int[] seferler = new int[form["EnterDateCalculate"].Split(',').Length];
             string Country = form["CountryCalculate"],
                 enterdates = form["EnterDateCalculate"],
                 exitdates = form["ExitDateCalculate"];
@@ -97,35 +97,40 @@ namespace gzpegm.Controllers
                 cezaay = 0,
                 kalmagun = 0;
 
+            bool isPermitOrRestriction = (Visa == 4 || Visa == 8 || Visa == 10 || Visa == 11 || Visa == 12 || Visa == 13 || Visa == 14 || Visa == 15);
+
             // Visa tipi kontrolü
             if (Visa == 3)
                 Visaday = Convert.ToInt32(form["Visaday"]);
-            // ✅ V-137 Vize Süreli (13) eklendi
-            else if (Visa == 4 || Visa == 8 || Visa == 10 || Visa == 11 || Visa == 12 || Visa == 13 || Visa == 14 || Visa == 15)
+            else if (isPermitOrRestriction)
             {
                 enterdates = form["testarihi"];
-                exitdates = exitdates.Split(',')[exitdates.Split(',').Length - 1];
+                if (string.IsNullOrWhiteSpace(enterdates))
+                    return Json(new { Type = "0", Message = "Lütfen geçerli bitiş / tebliğ tarihini giriniz..!" }, JsonRequestBehavior.AllowGet);
+
+                var exitArr = (exitdates ?? "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                exitdates = exitArr.Length > 0 ? exitArr[exitArr.Length - 1] : "";
             }
 
             DateTime enterdt = DateTime.Now, exitdt = DateTime.Now;
             Contuvr contuvr = new Contuvr();
 
-            string[] entryDateValues = enterdates.Split(',');
-            string[] exitDateValues = exitdates.Split(',');
-            if (entryDateValues.Length != exitDateValues.Length)
-                return Json(new { Type = "0", Message = "Giriş ve çıkış tarihleri eşleşmiyor..!" }, JsonRequestBehavior.AllowGet);
+            string[] entryDateValues = (enterdates ?? "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+            string[] exitDateValues = (exitdates ?? "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+            if (entryDateValues.Length == 0 || exitDateValues.Length == 0 || entryDateValues.Length != exitDateValues.Length)
+                return Json(new { Type = "0", Message = "Giriş ve çıkış tarihleri eşleşmiyor veya boş..!" }, JsonRequestBehavior.AllowGet);
 
             var trips = new List<Tuple<DateTime, DateTime>>();
             for (int i = 0; i < entryDateValues.Length; i++)
             {
-                if (entryDateValues[i] == "" || exitDateValues[i] == "")
+                if (string.IsNullOrWhiteSpace(entryDateValues[i]) || string.IsNullOrWhiteSpace(exitDateValues[i]))
                     return Json(new { Type = "0", Message = "Tarihlerde boş bırakmayınız..!" }, JsonRequestBehavior.AllowGet);
 
                 if (!TryParseCalculationDate(entryDateValues[i], out enterdt) ||
                     !TryParseCalculationDate(exitDateValues[i], out exitdt))
                     return Json(new { Type = "0", Message = "Tarih biçimi geçersiz..!" }, JsonRequestBehavior.AllowGet);
 
-                if (enterdt > exitdt)
+                if (!isPermitOrRestriction && enterdt > exitdt)
                     return Json(new { Type = "0", Message = "Tarihlerde yanlışlık var lütfen kontrol ediniz.!" }, JsonRequestBehavior.AllowGet);
 
                 trips.Add(Tuple.Create(enterdt.Date, exitdt.Date));
@@ -137,17 +142,81 @@ namespace gzpegm.Controllers
                 // 180 Gün Kuralı için spesifik kayıt yoksa Normal Hesaplama kuralını al
                 UVRdata = contuvr.check(0, Country, Passport, Visa, 1);
             }
+            if (UVRdata == null && isPermitOrRestriction)
+            {
+                // İkamet/çalışma/tahdit için genel ülke kaydı varsa al
+                UVRdata = contuvr.check(0, Country, Passport, 2, 1) ?? contuvr.check(0, Country, Passport, 1, 1);
+            }
 
-            if (UVRdata == null)
+            if (UVRdata == null && !isPermitOrRestriction)
                 return Json(new { Type = "0", Message = "Belirtilen bilgilere ait hesaplama bilgisi mevcut değildir..!" }, JsonRequestBehavior.AllowGet);
 
+            int dayVal = UVRdata?.fldDay != null ? Convert.ToInt32(UVRdata.fldDay) : 0;
+            int longVal = UVRdata?.fldLong != null ? Convert.ToInt32(UVRdata.fldLong) : 0;
+
             if (Ctype == 4) Visaday = 0;
-            else if (Visaday == 0)
+            else if (Visaday == 0 && UVRdata?.fldOneTime != null)
                 Visaday = Convert.ToInt32(UVRdata.fldOneTime);
 
+            int[] seferler = new int[entryDateValues.Length];
+
+            // =========================================================================
+            // 1. İKAMET TEZKERESİ, ÇALIŞMA İZNİ VE TAHDİTLİ / TEBLİĞLİ İŞLEMLER HESABI
+            // (Visa == 4, 8, 10, 11, 12, 13, 14, 15)
+            // İkamet tezkeresi ve çalışma izinlerinde 10 günlük muafiyet kaldırılmıştır.
+            // Ceza, izin bitiş tarihinden sonraki günden itibaren başlar.
+            // =========================================================================
+            if (isPermitOrRestriction)
+            {
+                DateTime permitEndDt = trips[0].Item1; // İkamet / İzin bitiş veya tebliğ tarihi
+                DateTime borderExitDt = trips[trips.Count - 1].Item2; // Hudut kapısı çıkış tarihi
+
+                // Kişi izin bitiş tarihinde veya bitiş tarihinden önce çıkıyorsa cezası yoktur.
+                if (borderExitDt <= permitEndDt)
+                {
+                    return Json(new { Type = "0", Message = "İkamet tezkeresi veya izin geçerlilik süresi dolmamıştır. Cezalı Süresi Yoktur..!" }, JsonRequestBehavior.AllowGet);
+                }
+
+                // İzin bitiş tarihinden sonraki günden başlayarak çıkış tarihine kadar olan tüm günler cezalıdır.
+                int violationDays = (borderExitDt.Date - permitEndDt.Date).Days;
+                if (violationDays <= 0)
+                {
+                    return Json(new { Type = "0", Message = "Cezalı Süresi Yoktur..!" }, JsonRequestBehavior.AllowGet);
+                }
+
+                cezagun = violationDays;
+                if (cezagun > 30)
+                {
+                    cezaay = cezagun / 30;
+                    cezagun = cezagun % 30;
+                }
+                else
+                {
+                    cezaay = 0;
+                }
+
+                seferler[0] = violationDays;
+
+                return Json(new
+                {
+                    Type = "1",
+                    Day = dayVal,
+                    Daylong = longVal,
+                    OneTime = Visaday,
+                    BasDate = permitEndDt.ToString("dd.MM.yyyy"),
+                    ShoulExtiTime = permitEndDt.ToString("dd.MM.yyyy"),
+                    FarkAy = cezaay,
+                    FarkGun = cezagun,
+                    Seferler = seferler
+                }, JsonRequestBehavior.AllowGet);
+            }
+
+            // =========================================================================
+            // 2. NORMAL VİZELİ / VİZESİZ / TURİSTİK KALIŞ HESABI (90/180 vb.)
+            // =========================================================================
             bool isMultipleEntryExit = trips.Count > 1;
             DateTime referenceExit = trips.Max(x => x.Item2);
-            int ruleWindowDays = (UVRdata.fldDay != null && UVRdata.fldDay > 0) ? Convert.ToInt32(UVRdata.fldDay) : 180;
+            int ruleWindowDays = (dayVal > 0) ? dayVal : 180;
             DateTime windowStart = referenceExit.AddDays(-ruleWindowDays);
 
             // Son çıkışa karşılık gelen güncel seferin giriş tarihi (Yasal Tarih Aralığı için)
@@ -165,7 +234,6 @@ namespace gzpegm.Controllers
                 {
                     if (countedExit < windowStart)
                     {
-                        // Sefer tamamen 180 günlük pencere başlangıcından önce kalmış
                         countedEntry = windowStart;
                         countedExit = windowStart.AddDays(-1);
                     }
@@ -179,14 +247,12 @@ namespace gzpegm.Controllers
                 int farkGun;
                 if (countedEntry > countedExit)
                 {
-                    // 180 günlük pencerenin tamamen dışında kalan kayıt yok sayılır.
                     farkGun = 0;
                 }
                 else
                 {
                     // Saat bilgileri yok sayılır. Giriş günü sayılır, çıkış günü sayılmaz.
                     // İş kuralı gereği aynı gün giriş-çıkış 1 gün kabul edilir.
-                    // Çoklu kayıtta her döneme ayrıca +1 eklenmez.
                     farkGun = CalculateStayDays(countedEntry, countedExit);
                 }
 
@@ -204,16 +270,12 @@ namespace gzpegm.Controllers
                 sayac++;
             }
 
-            // Sonraki tarih hesaplamalarında her zaman en son çıkış referans alınır.
             exitdt = referenceExit;
-            // Kanuni Kalış Kuralı: E_UVR tablosundaki (fldOneTime, fldLong, fldDay) parametrelerine göre dinamik hesaplama
-            // 1. Kural: Münferit seferlerin tek sefer kalış hakkını (fldOneTime) aşan kısımları
-            // 2. Kural: Kayan pencere içindeki (fldDay) toplam kalışın dönem tavanını (fldLong) aşan kısmı
-            int maxOneTime = (Visaday > 0) ? Visaday : (UVRdata.fldOneTime != null ? Convert.ToInt32(UVRdata.fldOneTime) : 0);
+            int maxOneTime = (Visaday > 0) ? Visaday : (UVRdata?.fldOneTime != null ? Convert.ToInt32(UVRdata.fldOneTime) : 0);
             if (Country == "Rusya Federasyonu" && maxOneTime == 0) maxOneTime = 60;
             if (Country == "Beyaz Rusya" && maxOneTime == 0) maxOneTime = 30;
 
-            int maxPeriodTotal = (UVRdata.fldLong != null && UVRdata.fldLong > 0) ? Convert.ToInt32(UVRdata.fldLong) : 90;
+            int maxPeriodTotal = (longVal > 0) ? longVal : 90;
             int penalty = 0;
 
             if (maxOneTime > 0)
@@ -239,10 +301,6 @@ namespace gzpegm.Controllers
                 cezaay = cezagun / 30;
                 cezagun = cezagun % 30;
             }
-            else if (Visa == 4 && cezagun < 0)
-                return Json(new { Type = "0", Message = "İkamet teskeresi bitiş tarihinden veya tebliğ tarihinden itibaren 10 günden fazla süre geçmemiştir. Bu yüzden Cezalı Süresi Yoktur..!" }, JsonRequestBehavior.AllowGet);
-            else if (Visa == 4 && cezagun > 0)
-                cezagun -= 0;
             else if (cezagun > 0)
                 cezaay = 0;
             else
@@ -251,8 +309,8 @@ namespace gzpegm.Controllers
             return Json(new
             {
                 Type = "1",
-                Day = UVRdata.fldDay,
-                Daylong = UVRdata.fldLong,
+                Day = dayVal,
+                Daylong = longVal,
                 OneTime = Visaday,
                 BasDate = currentTripEntry.ToString("dd.MM.yyyy"),
                 ShoulExtiTime = exitdt.AddDays(-hgun).ToString("dd.MM.yyyy"),
@@ -394,13 +452,18 @@ namespace gzpegm.Controllers
             cezatl = Math.Round(Convert.ToDouble(Ceza) * Convert.ToDouble(KurP), 2);
             Contuvr contuvr = new Contuvr();
             tgvh tgvh = new tgvh();
-            if (contuvr.check(0, Country, Passport, Visa, CTtype).fldHB == 1)
+            var uvrRecord = contuvr.check(0, Country, Passport, Visa, CTtype);
+            if (uvrRecord != null && uvrRecord.fldHB == 1)
             {
-                var harcdata = tgvh.checkTGVH(Convert.ToDateTime(Enter).ToString("yyyy"));
+                DateTime parsedEnter;
+                string enterYear = TryParseCalculationDate(Enter, out parsedEnter)
+                    ? parsedEnter.ToString("yyyy")
+                    : DateTime.Now.ToString("yyyy");
+                var harcdata = tgvh.checkTGVH(enterYear);
                 if (harcdata == null) harcdata = tgvh.GetTGVH().OrderByDescending(c => c.fldYear).Take(1).SingleOrDefault();
-                VizeHarc = harcdata.fldPrice.ToString();
+                VizeHarc = (harcdata != null) ? harcdata.fldPrice.ToString() : "0";
             }
-            if (Visa != 4 && Visa != 10 && Visa != 12 && Visa != 14 && Visa != 15) Defter = tgvh.GetDefter().fldPrice.ToString();
+            if (Visa != 4 && Visa != 8 && Visa != 10 && Visa != 12 && Visa != 14 && Visa != 15) Defter = tgvh.GetDefter().fldPrice.ToString();
             double Toplam = Convert.ToDouble(cezatl) + Convert.ToDouble(Defter) + Convert.ToDouble(VizeHarc);
             if ((Visa == 11 || Visa == 13) && V137Expired) Idari = "20605";
             Toplam += Convert.ToDouble(Idari);
