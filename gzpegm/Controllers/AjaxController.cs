@@ -1,4 +1,4 @@
-﻿using gzpegm.Cont;
+using gzpegm.Cont;
 using gzpegm.Models;
 using System;
 using System.Collections.Generic;
@@ -206,86 +206,32 @@ namespace gzpegm.Controllers
 
             // Sonraki tarih hesaplamalarında her zaman en son çıkış referans alınır.
             exitdt = referenceExit;
+            // Kanuni Kalış Kuralı: E_UVR tablosundaki (fldOneTime, fldLong, fldDay) parametrelerine göre dinamik hesaplama
+            // 1. Kural: Münferit seferlerin tek sefer kalış hakkını (fldOneTime) aşan kısımları
+            // 2. Kural: Kayan pencere içindeki (fldDay) toplam kalışın dönem tavanını (fldLong) aşan kısmı
+            int maxOneTime = (Visaday > 0) ? Visaday : (UVRdata.fldOneTime != null ? Convert.ToInt32(UVRdata.fldOneTime) : 0);
+            if (Country == "Rusya Federasyonu" && maxOneTime == 0) maxOneTime = 60;
+            if (Country == "Beyaz Rusya" && maxOneTime == 0) maxOneTime = 30;
 
-            // Özel Vize Tipleri Kontrolü:
-            // 4: İkamet Teskereli (testarihi = İkamet Bitiş Tarihi)
-            // 8: Çalışma İzni (testarihi = Çalışma İzni Bitiş Tarihi)
-            // 7: İkamet Şartlı Giriş (V-84) (10 günlük başvuru süresi)
-            // 10, 11, 12, 13, 14, 15: Tahditli Şahıslar / Tebliğ
-            bool isPermitOrRestriction = (Visa == 4 || Visa == 8 || Visa == 7 ||
-                                          Visa == 10 || Visa == 11 || Visa == 12 ||
-                                          Visa == 13 || Visa == 14 || Visa == 15);
+            int maxPeriodTotal = (UVRdata.fldLong != null && UVRdata.fldLong > 0) ? Convert.ToInt32(UVRdata.fldLong) : 90;
+            int penalty = 0;
 
-            if (isPermitOrRestriction)
+            if (maxOneTime > 0)
             {
-                if (Visa == 4) // İkamet Teskereli
+                for (int i = 0; i < seferler.Length; i++)
                 {
-                    // 6458 sayılı YUKK md. 53/54: İkamet izni bitişinden itibaren 10 gün içinde çıkış yapılırsa ceza yoktur.
-                    if (kalmagun <= 10)
-                    {
-                        return Json(new { Type = "0", Message = "İkamet teskeresi bitiş tarihinden itibaren 10 günden fazla süre geçmemiştir. Bu yüzden Cezalı Süresi Yoktur..!" }, JsonRequestBehavior.AllowGet);
-                    }
-                    // 10 gün aşılmışsa tüm süre cezalı kalış sayılır
-                    cezagun = kalmagun;
-                }
-                else if (Visa == 8) // Çalışma İzni
-                {
-                    // 6458 sayılı YUKK ve Uluslararası İşgücü Kanunu: Çalışma izni bitişinden itibaren 10 gün yasal süre
-                    if (kalmagun <= 10)
-                    {
-                        return Json(new { Type = "0", Message = "Çalışma izni bitiş tarihinden itibaren 10 günden fazla süre geçmemiştir. Bu yüzden Cezalı Süresi Yoktur..!" }, JsonRequestBehavior.AllowGet);
-                    }
-                    // 10 gün aşılmışsa tüm süre cezalı kalış sayılır
-                    cezagun = kalmagun;
-                }
-                else if (Visa == 7) // İkamet Şartlı Giriş (V-84)
-                {
-                    // V-84 ile girişte 10 gün içinde ikamet iznine başvurma şartı vardır.
-                    if (kalmagun <= 10)
-                    {
-                        return Json(new { Type = "0", Message = "İkamet şartlı giriş (V-84) 10 günlük yasal başvuru süresi aşılmamıştır. Bu yüzden Cezalı Süresi Yoktur..!" }, JsonRequestBehavior.AllowGet);
-                    }
-                    cezagun = kalmagun - 10;
-                }
-                else // 10, 11, 12, 13, 14, 15 (Tahditli Şahıslar / Tebliğ Tarihi vb.)
-                {
-                    if (kalmagun <= 0)
-                    {
-                        return Json(new { Type = "0", Message = "Cezalı Süresi Yoktur..!" }, JsonRequestBehavior.AllowGet);
-                    }
-                    cezagun = kalmagun;
+                    if (seferler[i] > maxOneTime)
+                        penalty += seferler[i] - maxOneTime;
                 }
             }
-            else
+
+            if (maxPeriodTotal > 0 && kalmagun > maxPeriodTotal)
             {
-                // Standart Turist Vizesi / Vize Muafiyeti Kanuni Kalış Kuralı:
-                // E_UVR tablosundaki (fldOneTime, fldLong, fldDay) parametrelerine göre dinamik hesaplama
-                // 1. Kural: Münferit seferlerin tek sefer kalış hakkını (fldOneTime) aşan kısımları
-                // 2. Kural: Kayan pencere içindeki (fldDay) toplam kalışın dönem tavanını (fldLong) aşan kısmı
-                int maxOneTime = (Visaday > 0) ? Visaday : (UVRdata.fldOneTime != null ? Convert.ToInt32(UVRdata.fldOneTime) : 0);
-                if (Country == "Rusya Federasyonu" && maxOneTime == 0) maxOneTime = 60;
-                if (Country == "Beyaz Rusya" && maxOneTime == 0) maxOneTime = 30;
-
-                int maxPeriodTotal = (UVRdata.fldLong != null && UVRdata.fldLong > 0) ? Convert.ToInt32(UVRdata.fldLong) : 90;
-                int penalty = 0;
-
-                if (maxOneTime > 0)
-                {
-                    for (int i = 0; i < seferler.Length; i++)
-                    {
-                        if (seferler[i] > maxOneTime)
-                            penalty += seferler[i] - maxOneTime;
-                    }
-                }
-
-                if (maxPeriodTotal > 0 && kalmagun > maxPeriodTotal)
-                {
-                    penalty = Math.Max(penalty, kalmagun - maxPeriodTotal);
-                }
-
-                cezagun = penalty;
-                if (maxOneTime > 0) Visaday = maxOneTime;
+                penalty = Math.Max(penalty, kalmagun - maxPeriodTotal);
             }
+
+            cezagun = penalty;
+            if (maxOneTime > 0) Visaday = maxOneTime;
 
             int hgun = cezagun;
             if (cezagun > 30)
@@ -293,14 +239,14 @@ namespace gzpegm.Controllers
                 cezaay = cezagun / 30;
                 cezagun = cezagun % 30;
             }
+            else if (Visa == 4 && cezagun < 0)
+                return Json(new { Type = "0", Message = "İkamet teskeresi bitiş tarihinden veya tebliğ tarihinden itibaren 10 günden fazla süre geçmemiştir. Bu yüzden Cezalı Süresi Yoktur..!" }, JsonRequestBehavior.AllowGet);
+            else if (Visa == 4 && cezagun > 0)
+                cezagun -= 0;
             else if (cezagun > 0)
-            {
                 cezaay = 0;
-            }
             else
-            {
                 return Json(new { Type = "0", Message = "Cezalı Süresi Yoktur..!" }, JsonRequestBehavior.AllowGet);
-            }
 
             return Json(new
             {
@@ -448,8 +394,7 @@ namespace gzpegm.Controllers
             cezatl = Math.Round(Convert.ToDouble(Ceza) * Convert.ToDouble(KurP), 2);
             Contuvr contuvr = new Contuvr();
             tgvh tgvh = new tgvh();
-            var uvrRecord = contuvr.check(0, Country, Passport, Visa, CTtype);
-            if (uvrRecord != null && uvrRecord.fldHB == 1)
+            if (contuvr.check(0, Country, Passport, Visa, CTtype).fldHB == 1)
             {
                 var harcdata = tgvh.checkTGVH(Convert.ToDateTime(Enter).ToString("yyyy"));
                 if (harcdata == null) harcdata = tgvh.GetTGVH().OrderByDescending(c => c.fldYear).Take(1).SingleOrDefault();
