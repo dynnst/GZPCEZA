@@ -1,4 +1,4 @@
-﻿@model gzpegm.Models.E_Inad
+@model gzpegm.Models.E_Inad
 @{
     bool isEdit = Model != null && Model.InadId > 0;
     ViewBag.Title = isEdit ? "İNAD Kaydını Düzenle (#" + Model.InadId + ")" : "Yeni İNAD Kaydı Ekle";
@@ -679,37 +679,74 @@
 
             var token = $('input[name="__RequestVerificationToken"]').val();
 
-            $.ajax({
-                url: URL_SCAN_PASSPORT,
-                type: 'POST',
-                data: {
-                    deviceType: 'auto',
-                    __RequestVerificationToken: token
-                },
-                dataType: 'json',
-                timeout: 25000,
-                success: function (res) {
-                    if (res && res.success && res.data) {
-                        applyPassportDataToForm(res.data);
-                        $('#directScanFeedback').html('<span class="text-success font-weight-bold"><i class="fas fa-check-circle mr-1"></i> Pasaport başarıyla okundu! (' + (res.source || 'Donanım') + ')</span>');
-                        showFeedback('Pasaport başarıyla okundu: ' + (res.data.fullName || res.data.documentNumber || ''), 'success');
-                    } else {
-                        var msg = (res && res.message) ? res.message : 'Pasaport okunamadı. Lütfen belgenin okuyucu camına tam oturduğundan emin olun.';
-                        $('#directScanFeedback').html('<span class="text-danger font-weight-bold"><i class="fas fa-exclamation-triangle mr-1"></i> ' + msg + '</span>');
-                        showFeedback(msg, 'danger');
+            function finishScanButtons() {
+                $btn.prop('disabled', false);
+                $('#btnTopScan').html('<i class="fas fa-camera mr-1"></i> Cihazdan Pasaport / Kimlik Oku');
+                $('#btnPageScanPassport').html(origHtml);
+                $('#btnBigDirectScan').html('<i class="fas fa-camera fa-lg mr-2"></i> Cihazdan Pasaport / Kimlik Oku');
+            }
+
+            function tryServerScan() {
+                $.ajax({
+                    url: URL_SCAN_PASSPORT,
+                    type: 'POST',
+                    data: {
+                        deviceType: 'auto',
+                        __RequestVerificationToken: token
+                    },
+                    dataType: 'json',
+                    timeout: 25000,
+                    success: function (res) {
+                        if (res && res.success && res.data) {
+                            applyPassportDataToForm(res.data);
+                            $('#directScanFeedback').html('<span class="text-success font-weight-bold"><i class="fas fa-check-circle mr-1"></i> Pasaport başarıyla okundu! (' + (res.source || 'Donanım') + ')</span>');
+                            showFeedback('Pasaport başarıyla okundu: ' + (res.data.fullName || res.data.documentNumber || ''), 'success');
+                        } else {
+                            var msg = (res && res.message) ? res.message : 'Pasaport okunamadı. Lütfen belgenin okuyucu camına tam oturduğundan emin olun.';
+                            $('#directScanFeedback').html('<span class="text-danger font-weight-bold"><i class="fas fa-exclamation-triangle mr-1"></i> ' + msg + ' <a href="/EInad/DownloadBridgePackage" class="badge badge-warning text-dark ml-1 p-1"><i class="fas fa-download mr-1"></i>Köprüyü İndir</a></span>');
+                            showFeedback(msg, 'danger');
+                        }
+                    },
+                    error: function (xhr, status, err) {
+                        var errMsg = 'Optik okuyucu bağlantı hatası (' + (status || err) + '). Masanızdaki okuyucuya bağlanmak için köprüyü çalıştırınız: <a href="/EInad/DownloadBridgePackage" class="badge badge-warning text-dark ml-1 p-1"><i class="fas fa-download mr-1"></i>Köprüyü İndir</a>';
+                        $('#directScanFeedback').html('<span class="text-danger font-weight-bold"><i class="fas fa-times-circle mr-1"></i> ' + errMsg + '</span>');
+                        showFeedback(errMsg, 'danger');
+                    },
+                    complete: function () {
+                        finishScanButtons();
                     }
-                },
-                error: function (xhr, status, err) {
-                    var errMsg = 'Optik okuyucu bağlantı hatası (' + (status || err) + '). Lütfen servisin çalıştığından emin olun.';
-                    $('#directScanFeedback').html('<span class="text-danger font-weight-bold"><i class="fas fa-times-circle mr-1"></i> ' + errMsg + '</span>');
-                    showFeedback(errMsg, 'danger');
-                },
-                complete: function () {
-                    $btn.prop('disabled', false);
-                    $('#btnTopScan').html('<i class="fas fa-camera mr-1"></i> Cihazdan Pasaport / Kimlik Oku');
-                    $('#btnPageScanPassport').html(origHtml);
-                    $('#btnBigDirectScan').html('<i class="fas fa-camera fa-lg mr-2"></i> Cihazdan Pasaport / Kimlik Oku');
+                });
+            }
+
+            // 1. ÖNCELİK: Masadaki EGM Donanım Köprüsü (127.0.0.1:41102 - 3M Cogent & Regula)
+            $.ajax({
+                url: 'http://127.0.0.1:41102/scan?device=auto',
+                type: 'GET',
+                dataType: 'json',
+                timeout: 25000
+            }).done(function (bridgeRes) {
+                if (bridgeRes && (bridgeRes.success || bridgeRes.documentNumber || bridgeRes.fullName || bridgeRes.rawMrz)) {
+                    applyPassportDataToForm(bridgeRes);
+                    finishScanButtons();
+                    $('#directScanFeedback').html('<span class="text-success font-weight-bold"><i class="fas fa-check-circle mr-1"></i> Masanızdaki okuyucudan pasaport başarıyla okundu! (' + (bridgeRes.deviceName || '3M / Regula Masaüstü Köprüsü') + ')</span>');
+                    showFeedback('Pasaport başarıyla okundu: ' + (bridgeRes.fullName || bridgeRes.documentNumber || ''), 'success');
+                } else {
+                    tryServerScan();
                 }
+            }).fail(function () {
+                // Protokol üzerinden köprüyü sessizce tetiklemeyi dene
+                try {
+                    var protoIframe = document.getElementById('egm-bridge-create-frame');
+                    if (!protoIframe) {
+                        protoIframe = document.createElement('iframe');
+                        protoIframe.id = 'egm-bridge-create-frame';
+                        protoIframe.style.display = 'none';
+                        document.body.appendChild(protoIframe);
+                    }
+                    protoIframe.src = 'egm-reader://start';
+                } catch (e) { }
+
+                tryServerScan();
             });
         };
 

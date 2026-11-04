@@ -354,6 +354,38 @@
         tryNext(0);
     }
 
+    function launchBridgeViaProtocol() {
+        try {
+            var iframe = document.getElementById('egm-bridge-launcher-frame');
+            if (!iframe) {
+                iframe = document.createElement('iframe');
+                iframe.id = 'egm-bridge-launcher-frame';
+                iframe.style.display = 'none';
+                document.body.appendChild(iframe);
+            }
+            iframe.src = 'egm-reader://start';
+        } catch (e) { }
+    }
+
+    function tryLocalEgmBridge(deviceType, callback) {
+        var dev = deviceType || 'auto';
+        $.ajax({
+            url: 'http://127.0.0.1:41102/scan?device=' + encodeURIComponent(dev),
+            type: 'GET',
+            dataType: 'json',
+            timeout: 25000
+        }).done(function (res) {
+            if (res && (res.success || res.documentNumber || res.rawMrz || res.line1)) {
+                callback(res);
+            } else {
+                callback(null);
+            }
+        }).fail(function () {
+            launchBridgeViaProtocol();
+            callback(null);
+        });
+    }
+
     function triggerDirectOpticalScan(deviceType) {
         if (isDirectScanActive) return;
         isDirectScanActive = true;
@@ -373,68 +405,142 @@
             });
         }
 
-        // 1. Istemcide yerel Regula servisi (41101/8080) var mi kontrol et
-        tryLocalClientRegula(function (localData) {
-            if (localData) {
-                var mrz = extractMrzFromRegulaResponse(localData);
-                if (mrz && parseAndApplyPassportMrz(mrz, "Regula Yerel Okuyucu")) {
-                    finishScan();
-                    return;
-                }
+        // 1. ÖNCELİK: Masadaki EGM Donanım Köprüsü (127.0.0.1:41102 - 3M Cogent ve Regula)
+        tryLocalEgmBridge(deviceType, function (bridgeRes) {
+            if (bridgeRes) {
+                applyScanResult(bridgeRes);
+                finishScan();
+                return;
             }
 
-            // 2. Dogrudan C# backend servisine baglan (3M Cogent, Regula, Desko)
-            // Cihazin optik taramayi, isiklandirmayi ve OCR cozumlemeyi tamamlamasi icin 25 saniye tam sure verilir
-            $.ajax({
-                url: '/Calculate/ScanOpticalReader',
-                type: 'POST',
-                data: { deviceType: deviceType || 'auto' },
-                timeout: 25000,
-                success: function (res) {
-                    applyScanResult(res);
-                },
-                error: function (xhr, status, err) {
-                    var errMsg = 'Optik okuyucu servisiyle iletisim kurulamadi. (' + (err || status) + ')';
-                    showPassportAlert(errMsg, 'danger');
-                },
-                complete: function () {
-                    finishScan();
+            // 2. ÖNCELİK: İstemcide yerel Regula servisi (41101/8080/21101)
+            tryLocalClientRegula(function (localData) {
+                if (localData) {
+                    var mrz = extractMrzFromRegulaResponse(localData);
+                    if (mrz && parseAndApplyPassportMrz(mrz, "Regula Yerel Okuyucu")) {
+                        finishScan();
+                        return;
+                    }
                 }
+
+                // 3. ÖNCELİK: Sunucu üzerindeki backend SDK servisi (CalculateController)
+                $.ajax({
+                    url: '/Calculate/ScanOpticalReader',
+                    type: 'POST',
+                    data: { deviceType: deviceType || 'auto' },
+                    timeout: 25000,
+                    success: function (res) {
+                        if (res && res.success) {
+                            applyScanResult(res);
+                        } else {
+                            var errMsg = (res && res.message) ? res.message : 'Optik okuyucudan pasaport okunamadı.';
+                            showPassportAlert(
+                                errMsg + ' Masanızdaki okuyucuya bağlanmak için masaüstündeki <strong>KOPRU_KUR.bat</strong> dosyasına çift tıklayınız veya <a href="/Calculate/DownloadBridgePackage" class="badge badge-warning text-dark ml-1 p-1"><i class="fas fa-download mr-1"></i>Köprüyü İndir</a>',
+                                'warning'
+                            );
+                        }
+                    },
+                    error: function (xhr, status, err) {
+                        var errMsg = 'Optik okuyucuyla bağlantı kurulamadı. Lütfen masanızdaki <strong>EgmReaderBridge.exe</strong> veya <strong>KOPRU_KUR.bat</strong> dosyasını çalıştırınız. <a href="/Calculate/DownloadBridgePackage" class="badge badge-warning text-dark ml-1 p-1"><i class="fas fa-download mr-1"></i>Köprüyü İndir</a>';
+                        showPassportAlert(errMsg, 'danger');
+                    },
+                    complete: function () {
+                        finishScan();
+                    }
+                });
             });
         });
     }
 
     function checkOpticalReaderStatus() {
-        
-
+        // Önce masadaki yerel köprüyü (41102) sorgula
         $.ajax({
-            url: '/Calculate/GetOpticalReaderStatus',
+            url: 'http://127.0.0.1:41102/status',
             type: 'GET',
-            cache: false,
-            success: function (res) {
-                if (res && res.success && res.isRunning) {
-                    $('#btnDirectOpticalScan, #btnPanelDirectScan').attr('title', (res.deviceName || 'Optik Okuyucu') + ' Bağlı ve Hazır');
-                }
+            dataType: 'json',
+            timeout: 1000
+        }).done(function (sRes) {
+            if (sRes && (sRes.isRunning || sRes.success)) {
+                $('#btnDirectOpticalScan, #btnPanelDirectScan').attr('title', 'Optik Okuyucu Köprüsü Aktif (3M / Regula)');
+                return;
             }
+            checkServerStatus();
+        }).fail(function () {
+            checkServerStatus();
         });
+
+        function checkServerStatus() {
+            $.ajax({
+                url: '/Calculate/GetOpticalReaderStatus',
+                type: 'GET',
+                cache: false,
+                success: function (res) {
+                    if (res && res.success && res.isRunning) {
+                        $('#btnDirectOpticalScan, #btnPanelDirectScan').attr('title', (res.deviceName || 'Optik Okuyucu') + ' Bağlı ve Hazır');
+                    }
+                }
+            });
+        }
     }
 
     function connectDevice(deviceType) {
-        
-
+        // 1. Önce masadaki yerel köprüyü (41102) sorgula / başlat
         $.ajax({
-            url: '/Calculate/ConnectOpticalReader',
-            type: 'POST',
-            data: { deviceType: deviceType || 'auto' },
-            success: function (res) {
-                if (res && res.success) {
-                    showPassportAlert(res.message || 'Optik okuyucu hazır.', 'success');
-                    checkOpticalReaderStatus();
-                } else {
-                    showPassportAlert(res.message || 'Cihaza bağlanılamadı.', 'danger');
-                }
+            url: 'http://127.0.0.1:41102/status',
+            type: 'GET',
+            dataType: 'json',
+            timeout: 1200
+        }).done(function (sRes) {
+            if (sRes && (sRes.isRunning || sRes.success)) {
+                showPassportAlert('Masaüstü Optik Okuyucu Köprüsü Aktif (3M / Regula). Belgeyi okutabilirsiniz.', 'success');
+                checkOpticalReaderStatus();
+            } else {
+                tryProtocolOrServer();
             }
+        }).fail(function () {
+            tryProtocolOrServer();
         });
+
+        function tryProtocolOrServer() {
+            launchBridgeViaProtocol();
+            setTimeout(function () {
+                $.ajax({
+                    url: 'http://127.0.0.1:41102/status',
+                    type: 'GET',
+                    dataType: 'json',
+                    timeout: 1500
+                }).done(function (sRes2) {
+                    if (sRes2 && (sRes2.isRunning || sRes2.success)) {
+                        showPassportAlert('Masaüstü Optik Okuyucu Köprüsü Başlatıldı (3M / Regula).', 'success');
+                        checkOpticalReaderStatus();
+                    } else {
+                        connectViaServer();
+                    }
+                }).fail(function () {
+                    connectViaServer();
+                });
+            }, 1200);
+        }
+
+        function connectViaServer() {
+            $.ajax({
+                url: '/Calculate/ConnectOpticalReader',
+                type: 'POST',
+                data: { deviceType: deviceType || 'auto' },
+                success: function (res) {
+                    if (res && res.success) {
+                        showPassportAlert(res.message || 'Optik okuyucu hazır.', 'success');
+                        checkOpticalReaderStatus();
+                    } else {
+                        var errMsg = (res && res.message) ? res.message : 'Cihaza bağlanılamadı.';
+                        showPassportAlert(errMsg + ' Masanızdaki okuyucuya bağlanmak için masaüstündeki <strong>KOPRU_KUR.bat</strong> dosyasını çalıştırınız veya <a href="/Calculate/DownloadBridgePackage" class="badge badge-warning text-dark ml-1 p-1"><i class="fas fa-download mr-1"></i>Köprüyü İndir</a>', 'warning');
+                    }
+                },
+                error: function () {
+                    showPassportAlert('Masanızdaki okuyucuya bağlanmak için masaüstündeki <strong>KOPRU_KUR.bat</strong> dosyasını çalıştırınız veya <a href="/Calculate/DownloadBridgePackage" class="badge badge-warning text-dark ml-1 p-1"><i class="fas fa-download mr-1"></i>Köprüyü İndir</a>', 'danger');
+                }
+            });
+        }
     }
 
     /* ==========================================================================

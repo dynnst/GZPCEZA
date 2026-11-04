@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Web;
 using System.Web.Mvc;
+using System.IO;
 
 namespace gzpegm.Controllers
 {
@@ -1137,6 +1138,73 @@ namespace gzpegm.Controllers
             catch (Exception ex)
             {
                 return JsonUtf8(new { success = false, message = ex.Message }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        [AllowAnonymous]
+        public ActionResult DownloadBridgePackage()
+        {
+            try
+            {
+                var appData = Server.MapPath("~/App_Data");
+                var bridgeExe = Path.Combine(appData, "EgmReaderBridge.exe");
+                var bridgeBat = Path.Combine(appData, "KOPRU_KUR.bat");
+                if (!System.IO.File.Exists(bridgeBat)) bridgeBat = Path.Combine(appData, "Masaustu_Kopru_Kur.bat");
+
+                using (var ms = new MemoryStream())
+                {
+                    using (var archive = new System.IO.Compression.ZipArchive(ms, System.IO.Compression.ZipArchiveMode.Create, true))
+                    {
+                        if (System.IO.File.Exists(bridgeBat))
+                        {
+                            var entry = archive.CreateEntry("KOPRU_KUR.bat", System.IO.Compression.CompressionLevel.Optimal);
+                            using (var entryStream = entry.Open())
+                            using (var fileStream = System.IO.File.OpenRead(bridgeBat))
+                            {
+                                fileStream.CopyTo(entryStream);
+                            }
+                        }
+
+                        if (System.IO.File.Exists(bridgeExe))
+                        {
+                            var entry = archive.CreateEntry("EgmReaderBridge.exe", System.IO.Compression.CompressionLevel.Optimal);
+                            using (var entryStream = entry.Open())
+                            using (var fileStream = System.IO.File.OpenRead(bridgeExe))
+                            {
+                                fileStream.CopyTo(entryStream);
+                            }
+                        }
+
+                        var readmeEntry = archive.CreateEntry("KULLANIM_KILAVUZU.txt", System.IO.Compression.CompressionLevel.Optimal);
+                        using (var entryStream = readmeEntry.Open())
+                        using (var writer = new StreamWriter(entryStream, System.Text.Encoding.UTF8))
+                        {
+                            writer.WriteLine("====================================================================");
+                            writer.WriteLine("  EGM HUDUT KAPILARI SISTEMI");
+                            writer.WriteLine("  Masaustu Optik Okuyucu Donanim Koprusu (3M & Regula)");
+                            writer.WriteLine("====================================================================");
+                            writer.WriteLine();
+                            writer.WriteLine("KURULUM COK BASITTIR (YALNIZCA 1 DEFA YAPILIR):");
+                            writer.WriteLine();
+                            writer.WriteLine("1. Bu klasordeki 'KOPRU_KUR.bat' dosyasina cift tiklayiniz.");
+                            writer.WriteLine("   (Veya dogrudan EgmReaderBridge.exe dosyasina cift tiklayiniz)");
+                            writer.WriteLine("2. Kurulum 2 saniyede tamamlanir ve kopru arka planda sessizce calisir.");
+                            writer.WriteLine("3. Bilgisayar her acildiginda otomatik olarak devreye girer.");
+                            writer.WriteLine();
+                            writer.WriteLine("ONEMLI NOTLAR:");
+                            writer.WriteLine("* Kesinlikle Yonetici (Admin) yetkisi gerekmez!");
+                            writer.WriteLine("* Kurulumdan sonra web sayfasina donup 'Cihazdan Pasaport Oku'");
+                            writer.WriteLine("  butonlarini kullanabilirsiniz.");
+                            writer.WriteLine("====================================================================");
+                        }
+                    }
+
+                    return File(ms.ToArray(), "application/zip", "EgmOptikOkuyucuKoprusu.zip");
+                }
+            }
+            catch (Exception ex)
+            {
+                return Content("Köprü paketi indirilemedi: " + ex.Message);
             }
         }
 
