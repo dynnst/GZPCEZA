@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -160,7 +160,7 @@ namespace gzpegm.Models
                 return "Bulgarca";
 
             // Farsça ülkeler
-            if (ulkeNormalized.Contains("İran", StringComparison.OrdinalIgnoreCase))
+            if (ulkeNormalized.IndexOf("İran", StringComparison.OrdinalIgnoreCase) >= 0)
                 return "Farsça";
 
             // Fransızca ülkeler
@@ -169,7 +169,7 @@ namespace gzpegm.Models
                 return "Fransızca";
 
             // Gürcüce ülkeler
-            if (ulkeNormalized.Contains("Gürcistan", StringComparison.OrdinalIgnoreCase))
+            if (ulkeNormalized.IndexOf("Gürcistan", StringComparison.OrdinalIgnoreCase) >= 0)
                 return "Gürcüce";
 
             // Peştuca ülkeler
