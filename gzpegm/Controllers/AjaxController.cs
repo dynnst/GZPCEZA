@@ -136,6 +136,61 @@ namespace gzpegm.Controllers
                 trips.Add(Tuple.Create(enterdt.Date, exitdt.Date));
             }
 
+            // =========================================================================
+            // TÜRKİYE'DE DOĞAN ÇOCUKLAR HESABI (Visa == 5)
+            // Türkiye'de doğan çocukların doğum tarihi giriş tarihi olarak yazılır.
+            // Vize / muafiyet hakkı 0 gündür.
+            // Doğduğu günden çıktığı güne kadar olan tüm süre cezalıdır (cezagun = kalmagun).
+            // =========================================================================
+            if (Visa == 5)
+            {
+                DateTime birthDt = trips[0].Item1;
+                DateTime borderExitDt = trips[trips.Count - 1].Item2;
+
+                if (borderExitDt < birthDt)
+                {
+                    return Json(new { Type = "0", Message = "Çıkış tarihi doğum tarihinden önce olamaz..!" }, JsonRequestBehavior.AllowGet);
+                }
+
+                int totalViolationDays = 0;
+                int[] childSeferler = new int[trips.Count];
+                for (int i = 0; i < trips.Count; i++)
+                {
+                    int stayDays = CalculateStayDays(trips[i].Item1, trips[i].Item2);
+                    childSeferler[i] = stayDays;
+                    totalViolationDays += stayDays;
+                }
+
+                if (totalViolationDays <= 0)
+                {
+                    return Json(new { Type = "0", Message = "Cezalı Süresi Yoktur..!" }, JsonRequestBehavior.AllowGet);
+                }
+
+                cezagun = totalViolationDays;
+                if (cezagun > 30)
+                {
+                    cezaay = cezagun / 30;
+                    cezagun = cezagun % 30;
+                }
+                else
+                {
+                    cezaay = 0;
+                }
+
+                return Json(new
+                {
+                    Type = "1",
+                    Day = 0,
+                    Daylong = 0,
+                    OneTime = 0,
+                    BasDate = birthDt.ToString("dd.MM.yyyy"),
+                    ShoulExtiTime = birthDt.ToString("dd.MM.yyyy"),
+                    FarkAy = cezaay,
+                    FarkGun = cezagun,
+                    Seferler = childSeferler
+                }, JsonRequestBehavior.AllowGet);
+            }
+
             var UVRdata = contuvr.check(0, Country, Passport, Visa, Ctype);
             if (UVRdata == null && Ctype == 2)
             {
@@ -335,7 +390,7 @@ namespace gzpegm.Controllers
             else
             {
                 if (Adultmu) return Json(new { Type = "1", Code = result.fldCode, Rslt = "Tahdit kodu = <strong>" + result.fldCode + ".</strong> İdari tahdit kodu = <strong> " + result.fldIdariCode + ".</strong> Cezalı süre = <strong>" + result.fldPTime + " gün.</strong>", CZ = result.fldPTime }, JsonRequestBehavior.AllowGet);
-                else return Json(new { Type = "1", Code = result.fldCode, Rslt = "Tahdit kodu = <strong>---.</strong> İdari tahdit kodu = <strong> " + result.fldIdariCode + ".</strong> Cezalı süre = <strong>0 gün.</strong>", CZ = result.fldPTime }, JsonRequestBehavior.AllowGet);
+                else return Json(new { Type = "1", Code = "---", Rslt = "Tahdit kodu = <strong>---.</strong> İdari tahdit kodu = <strong> " + result.fldIdariCode + ".</strong> Cezalı süre = <strong>0 gün.</strong>", CZ = 0 }, JsonRequestBehavior.AllowGet);
             }
         }
         [Route("addhistory")]
@@ -368,7 +423,7 @@ namespace gzpegm.Controllers
                 if (Array.IndexOf(ulke.GGRUBU, Country) > -1)
                 {
                     Ceza = Convert.ToDouble(AUHdata.fldFirstMounth);
-                    Ceza = Ceza * 2;
+                    if (Type != 1) Ceza = Ceza * 2;
                 }
                 else
                 {
@@ -431,7 +486,10 @@ namespace gzpegm.Controllers
                 {
                     Ceza = Convert.ToDouble(AUHdata.fldFirstMounth);
                 }
-                if (Array.IndexOf(ulke.GGRUBU, Country) > -1) Ceza = Ceza * 2;
+                if (Array.IndexOf(ulke.GGRUBU, Country) > -1)
+                {
+                    if (Type != 1) Ceza = Ceza * 2;
+                }
                 else Ceza = Ceza * Convert.ToDouble(Type);
                 Ceza = Math.Round(Ceza, 2);
             }

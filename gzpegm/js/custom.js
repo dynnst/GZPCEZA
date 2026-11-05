@@ -430,6 +430,14 @@ function visachange(elem) {
         if (elem.value == 11 || elem.value == 13) {
             $('#v137SureDurumu').removeClass('hidden');
         }
+        $('#enterDateLabel').text('Giriş Tarihi');
+    }
+    else if (elem.value == 5) {
+        $('#Visaday').val('0');
+        $('#ikametli').addClass('hidden');
+        $('#ikametli').val('');
+        $('#AdultCalculate').val('1');
+        $('#enterDateLabel').text('Giriş (Doğum) Tarihi');
     }
     else {
         $('#Visaday').val('');
@@ -581,7 +589,15 @@ function _executeHesapla1() {
         }
     }
 
-    $('#AdultCalculate').val('').change();
+    if ($Visa === '5') {
+        $('#AdultCalculate').val('1');
+        if (!$('#BirthDateCalculate').val() && $Enter) {
+            $('#BirthDateCalculate').val($Enter);
+            $('#BirthdateCFORM').val($Enter);
+        }
+    } else {
+        $('#AdultCalculate').val('').change();
+    }
 
     var enter = document.getElementsByClassName("endt"),
         exit = document.getElementsByClassName("exdt"),
@@ -616,8 +632,13 @@ function _executeHesapla1() {
 
     if ($Exit == "" || $Enter == "" || $Passport == "" || $Country == "" || $Visa == "") return false;
 
-    $('#DayCalculate, #LongCalculate, #OneTimeCalculate, #BasCalculate, #BitCalculate, #CezaAyCalculate, #CezaGunCalculate, #SonucCalculate, #BirthDateCalculate').val('');
-    $('#AdultCalculate').val('0');
+    $('#DayCalculate, #LongCalculate, #OneTimeCalculate, #BasCalculate, #BitCalculate, #CezaAyCalculate, #CezaGunCalculate, #SonucCalculate').val('');
+    if ($Visa !== '5') {
+        $('#BirthDateCalculate').val('');
+        $('#AdultCalculate').val('0');
+    } else {
+        $('#AdultCalculate').val('1');
+    }
 
     $.ajax({
         url: "/Calculate1",
@@ -638,6 +659,14 @@ function _executeHesapla1() {
             // İkamet tezkeresi / tahdit hesaplarında başlangıç tarihi özel tarih alanıdır.
             if ($Visa == 4 || $Visa == 8 || $Visa == 10 || $Visa == 11 || $Visa == 12 || $Visa == 13 || $Visa == 14 || $Visa == 15) {
                 $('#BasCalculate').val($('#testarihi').val());
+            } else if ($Visa == 5) {
+                $('#BasCalculate').val(result.BasDate || $Enter);
+                $('#BitCalculate').val(result.ShoulExtiTime || $Enter);
+                if (!$('#BirthDateCalculate').val()) {
+                    $('#BirthDateCalculate').val(result.BasDate || $Enter);
+                    $('#BirthdateCFORM').val(result.BasDate || $Enter);
+                }
+                $('#AdultCalculate').val('1');
             } else {
                 $('#BasCalculate').val(result.BasDate || $Enter);
             }

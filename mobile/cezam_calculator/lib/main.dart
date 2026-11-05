@@ -1410,7 +1410,7 @@ class _CalculatorPageState extends State<CalculatorPage> {
       );
 
       if (!_isAdmin) {
-        final hasMainRule =
+        final hasMainRule = _visa == 5 ||
             _data.findUvr(_country, _passport, _visa, _calculateType) != null;
         final hasMainFeeRule = _data.findAuh(_country) != null;
         if (!hasMainRule || !hasMainFeeRule) {
@@ -2373,6 +2373,9 @@ class _CalculatorPageState extends State<CalculatorPage> {
             onChanged: (value) {
               setState(() {
                 _visa = value ?? 2;
+                if (_visa == 5) {
+                  _adultType = 1;
+                }
                 _paymentType = paymentOptionsForVisa(_visa).first.value;
                 if (_visa == 7 && _entryExitRows.length > 1) {
                   final extraRows = _entryExitRows.sublist(1);
@@ -2537,8 +2540,9 @@ class _CalculatorPageState extends State<CalculatorPage> {
         for (var index = 0; index < _entryExitRows.length; index += 1) ...[
           Builder(builder: (context) {
             final isLastRow = index == _entryExitRows.length - 1;
-            final entryLabel =
-                isLastRow ? context.tr('last_entry') : context.tr('past_entry');
+            final entryLabel = _visa == 5 && index == 0
+                ? 'Giriş (Doğum) Tarihi'
+                : (isLastRow ? context.tr('last_entry') : context.tr('past_entry'));
             final exitLabel =
                 isLastRow ? context.tr('last_exit') : context.tr('past_exit');
 
@@ -4499,12 +4503,23 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
 
 class PenaltyCalculator {
   PenaltyResult calculate(PenaltySettings settings, CezamData data) {
-    final rule = data.findUvr(
-          settings.country,
-          settings.passport,
-          settings.visa,
-          settings.calculateType,
-        ) ??
+    final rule = (settings.visa == 5
+            ? const UvrRule(
+                country: '',
+                passportType: 0,
+                calculateType: 0,
+                visaStatus: 5,
+                day: 0,
+                longStay: 0,
+                oneTime: 0,
+                visaFeeEnabled: 0,
+              )
+            : data.findUvr(
+                settings.country,
+                settings.passport,
+                settings.visa,
+                settings.calculateType,
+              )) ??
         settings.manualRule;
 
     final auh = data.findAuh(settings.country) ?? settings.manualAuh;
@@ -4525,7 +4540,11 @@ class PenaltyCalculator {
 
     var allowedStayDays = settings.calculateType == 4 ? 1 : oneTime;
 
-    if (settings.country == 'Beyaz Rusya' || settings.calculateType == 5) {
+    if (settings.visa == 5) {
+      // Türkiye'de Doğan Çocuklar: Vize hakkı 0 gündür. Doğduğu günden çıktığı güne kadar tüm süre cezalıdır.
+      allowedStayDays = 0;
+      penaltyDays = stayDays;
+    } else if (settings.country == 'Beyaz Rusya' || settings.calculateType == 5) {
       allowedStayDays = 30;
       for (final days in tripDays) {
         if (days > 30) penaltyDays += days - 30;
@@ -4591,8 +4610,9 @@ class PenaltyCalculator {
       penaltyDays: remainingDays,
       ticketText: ticketText,
       referenceExitDate: _referenceExit(ranges),
-      shouldExitDate:
-          _referenceExit(ranges).subtract(Duration(days: penaltyDays)),
+      shouldExitDate: settings.visa == 5
+          ? (ranges.isNotEmpty ? ranges.first.entry : _referenceExit(ranges))
+          : _referenceExit(ranges).subtract(Duration(days: penaltyDays)),
       penaltyAmount: penaltyAmount,
       currency: auh.currency,
       exchangeRate: exchangeRate,
@@ -4603,7 +4623,7 @@ class PenaltyCalculator {
       total: total,
       tahditCode: settings.adultType == 1 ? '---' : tahditRule.code,
       idariTahditCode: tahditRule.idariCode,
-      tahditPenaltyDays: tahditRule.penaltyTime,
+      tahditPenaltyDays: settings.adultType == 1 ? 0 : tahditRule.penaltyTime,
     );
   }
 
@@ -4662,7 +4682,7 @@ class PenaltyCalculator {
     if (ticketText.contains('Ay')) {
       final months = int.tryParse(ticketText.replaceAll(' Ay', '').trim()) ?? 0;
       if (group == CountryGroup.g) {
-        amount = auh.firstMonth * 2;
+        amount = adultType == 1 ? auh.firstMonth : auh.firstMonth * 2;
       } else {
         for (var i = 0; i < months; i++) {
           amount += i == 0 ? auh.firstMonth : auh.monthStep;
@@ -4706,7 +4726,7 @@ class PenaltyCalculator {
             break;
         }
       }
-      amount = group == CountryGroup.g ? amount * 2 : amount * adultType;
+      amount = group == CountryGroup.g ? (adultType == 1 ? amount : amount * 2) : amount * adultType;
       amount = round2(amount);
     }
 

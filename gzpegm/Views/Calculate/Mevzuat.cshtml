@@ -568,6 +568,13 @@ if (borderExitDt &lt;= permitEndDt) {
                         </thead>
                         <tbody>
                             <tr>
+                                <td><strong>Türkiye'de Doğan (Visa 5)</strong></td>
+                                <td>Hesaplanır (Doğumdan çıkışa tüm süre cezalı)</td>
+                                <td>fldHB == 1 ise tahsil edilir</td>
+                                <td><strong>Tahsil Edilir</strong></td>
+                                <td>Uygulanmaz</td>
+                            </tr>
+                            <tr>
                                 <td><strong>Vizeli / Vizesiz (Turistik)</strong></td>
                                 <td>Hesaplanır (AUH Ülke Grubu)</td>
                                 <td>fldHB == 1 ise tahsil edilir</td>
@@ -605,9 +612,12 @@ if (borderExitDt &lt;= permitEndDt) {
                         </tbody>
                     </table>
 
-                    <h5 class="font-weight-bold text-dark mt-4 mb-2">B. 18 Yaş Altı Çocuklar (Adultmu == false / Adult == 1)</h5>
+                    <h5 class="font-weight-bold text-dark mt-4 mb-2">B. 18 Yaş Altı Çocuklar ve Türkiye'de Doğanlar</h5>
+                    <p class="mb-2">
+                        <strong>18 Yaş Altı Çocuklar (AdultCalculate == 1):</strong> Harçlar Kanunu Madde 85/b gereğince çocuklar için taban harç (1 kat) uygulanır; G Grubu ülkelerde de 2 kat yerine tek kat harç uygulanır. Ayrıca çocukların iradesi dışında gerçekleşen ebeveyn kaynaklı ihlaller nedeniyle, 18 yaş altındaki yabancılara sistem tarafından tahdit kodu olarak <span class="code-pill">---</span> verilmekte ve giriş yasağı süresi tutanakta <span class="code-pill">0 gün</span> olarak tescil edilmektedir.
+                    </p>
                     <p class="mb-0">
-                        Çocukların iradesi dışında gerçekleşen ebeveyn kaynaklı ihlaller nedeniyle, 18 yaş altındaki yabancılara sistem tarafından tahdit kodu olarak <span class="code-pill">---</span> verilmekte ve cezalı süre tutanakta <span class="code-pill">0 gün</span> olarak tescil edilmektedir.
+                        <strong>Türkiye'de Doğan Çocuklar (Visa == 5):</strong> Türkiye'de doğan yabancı uyruklu çocukların doğum tarihi sisteme giriş tarihi olarak yazılır. Yasal vize / muafiyet süresi <strong>0 gün</strong> olduğundan (turistik muafiyet düşülmez), doğduğu günden hudut kapısından çıkış yaptığı güne kadar geçen tüm süre kesintisiz cezalı kalış kabul edilir.
                     </p>
                 </div>
             </div>
