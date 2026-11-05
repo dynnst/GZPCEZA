@@ -2868,4 +2868,188 @@ BEGIN
         ON [dbo].[PasswordResetRequests] ([Status] ASC, [RequestedAt] ASC);
 END
 GO
+
+-- ============================================================================
+-- ENVENTER VE CİHAZ YÖNETİMİ TABLOSU (PCInfo Modülü)
+-- ============================================================================
+IF OBJECT_ID(N'dbo.tbl_PCInfoDevices', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[tbl_PCInfoDevices] (
+        [Id] int IDENTITY(1,1) NOT NULL CONSTRAINT [PK_tbl_PCInfoDevices] PRIMARY KEY,
+        [ComputerName] nvarchar(100) NOT NULL,
+        [IpAddress] nvarchar(50) NOT NULL,
+        [MacAddress] nvarchar(50) NULL,
+        [OsVersion] nvarchar(200) NULL,
+        [CpuInfo] nvarchar(200) NULL,
+        [RamTotalGb] int NULL,
+        [DiskTotalGb] int NULL,
+        [SerialNumber] nvarchar(100) NULL,
+        [Department] nvarchar(100) NULL,
+        [BranchCode] nvarchar(50) NULL,
+        [InstalledPrinters] nvarchar(MAX) NULL,
+        [Monitors] nvarchar(MAX) NULL,
+        [UsbDevices] nvarchar(MAX) NULL,
+        [LastSeen] datetime NOT NULL CONSTRAINT [DF_tbl_PCInfoDevices_LastSeen] DEFAULT (GETDATE()),
+        [IsOnline] bit NOT NULL CONSTRAINT [DF_tbl_PCInfoDevices_IsOnline] DEFAULT (1),
+        [Note] nvarchar(500) NULL,
+        [CreatedAt] datetime NOT NULL CONSTRAINT [DF_tbl_PCInfoDevices_CreatedAt] DEFAULT (GETDATE()),
+        [CreatedBy] nvarchar(100) NULL
+    );
+END
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_tbl_PCInfoDevices_SerialNumber' AND object_id = OBJECT_ID(N'dbo.tbl_PCInfoDevices'))
+BEGIN
+    CREATE NONCLUSTERED INDEX [IX_tbl_PCInfoDevices_SerialNumber] ON [dbo].[tbl_PCInfoDevices] ([SerialNumber] ASC);
+END
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_tbl_PCInfoDevices_IpAddress' AND object_id = OBJECT_ID(N'dbo.tbl_PCInfoDevices'))
+BEGIN
+    CREATE NONCLUSTERED INDEX [IX_tbl_PCInfoDevices_IpAddress] ON [dbo].[tbl_PCInfoDevices] ([IpAddress] ASC);
+END
+GO
+
+-- ============================================================================
+-- HUDUT KAPISI İSTATİSTİK MODÜLÜ TABLOLARI (StatService)
+-- ============================================================================
+IF OBJECT_ID(N'dbo.Stat_Department', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[Stat_Department] (
+        [DepartmentId] int IDENTITY(1,1) NOT NULL CONSTRAINT [PK_Stat_Department] PRIMARY KEY,
+        [BorderId] int NULL,
+        [DepartmentName] nvarchar(150) NOT NULL,
+        [Code] nvarchar(50) NULL,
+        [DisplayOrder] int NOT NULL CONSTRAINT [DF_Stat_Department_DisplayOrder] DEFAULT (0),
+        [IsActive] bit NOT NULL CONSTRAINT [DF_Stat_Department_IsActive] DEFAULT (1)
+    );
+END
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_Stat_Department_BorderId' AND object_id = OBJECT_ID(N'dbo.Stat_Department'))
+BEGIN
+    CREATE NONCLUSTERED INDEX [IX_Stat_Department_BorderId] ON [dbo].[Stat_Department] ([BorderId] ASC, [IsActive] ASC);
+END
+GO
+
+IF OBJECT_ID(N'dbo.Stat_TableTemplate', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[Stat_TableTemplate] (
+        [TableId] int IDENTITY(1,1) NOT NULL CONSTRAINT [PK_Stat_TableTemplate] PRIMARY KEY,
+        [DepartmentId] int NOT NULL,
+        [TableTitle] nvarchar(200) NOT NULL,
+        [Description] nvarchar(500) NULL,
+        [DisplayOrder] int NOT NULL CONSTRAINT [DF_Stat_TableTemplate_DisplayOrder] DEFAULT (0),
+        [IsActive] bit NOT NULL CONSTRAINT [DF_Stat_TableTemplate_IsActive] DEFAULT (1)
+    );
+END
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_Stat_TableTemplate_DepartmentId' AND object_id = OBJECT_ID(N'dbo.Stat_TableTemplate'))
+BEGIN
+    CREATE NONCLUSTERED INDEX [IX_Stat_TableTemplate_DepartmentId] ON [dbo].[Stat_TableTemplate] ([DepartmentId] ASC, [IsActive] ASC);
+END
+GO
+
+IF OBJECT_ID(N'dbo.Stat_RowItem', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[Stat_RowItem] (
+        [RowId] int IDENTITY(1,1) NOT NULL CONSTRAINT [PK_Stat_RowItem] PRIMARY KEY,
+        [TableId] int NOT NULL,
+        [RowTitle] nvarchar(200) NOT NULL,
+        [Unit] nvarchar(50) NULL CONSTRAINT [DF_Stat_RowItem_Unit] DEFAULT ('Adet'),
+        [DisplayOrder] int NOT NULL CONSTRAINT [DF_Stat_RowItem_DisplayOrder] DEFAULT (0),
+        [IsActive] bit NOT NULL CONSTRAINT [DF_Stat_RowItem_IsActive] DEFAULT (1)
+    );
+END
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_Stat_RowItem_TableId' AND object_id = OBJECT_ID(N'dbo.Stat_RowItem'))
+BEGIN
+    CREATE NONCLUSTERED INDEX [IX_Stat_RowItem_TableId] ON [dbo].[Stat_RowItem] ([TableId] ASC, [IsActive] ASC);
+END
+GO
+
+IF OBJECT_ID(N'dbo.Stat_DailyValue', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[Stat_DailyValue] (
+        [BorderId] int NOT NULL,
+        [RowId] int NOT NULL,
+        [EntryDate] date NOT NULL,
+        [Value] decimal(18,2) NOT NULL CONSTRAINT [DF_Stat_DailyValue_Value] DEFAULT (0),
+        [Note] nvarchar(500) NULL,
+        [UpdatedByUserId] int NULL,
+        [LastUpdated] datetime NOT NULL CONSTRAINT [DF_Stat_DailyValue_LastUpdated] DEFAULT (GETDATE()),
+        CONSTRAINT [PK_Stat_DailyValue] PRIMARY KEY CLUSTERED ([BorderId] ASC, [RowId] ASC, [EntryDate] ASC)
+    );
+END
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_Stat_DailyValue_DateBorder' AND object_id = OBJECT_ID(N'dbo.Stat_DailyValue'))
+BEGIN
+    CREATE NONCLUSTERED INDEX [IX_Stat_DailyValue_DateBorder] ON [dbo].[Stat_DailyValue] ([EntryDate] ASC, [BorderId] ASC);
+END
+GO
+
+IF OBJECT_ID(N'dbo.Stat_UserPermission', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[Stat_UserPermission] (
+        [PermissionId] int IDENTITY(1,1) NOT NULL CONSTRAINT [PK_Stat_UserPermission] PRIMARY KEY,
+        [UserId] int NOT NULL,
+        [BorderId] int NOT NULL,
+        [DepartmentId] int NULL,
+        [PermissionRole] nvarchar(50) NOT NULL,
+        [AssignedDate] datetime NOT NULL CONSTRAINT [DF_Stat_UserPermission_AssignedDate] DEFAULT (GETDATE())
+    );
+END
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_Stat_UserPermission_UserBorder' AND object_id = OBJECT_ID(N'dbo.Stat_UserPermission'))
+BEGIN
+    CREATE NONCLUSTERED INDEX [IX_Stat_UserPermission_UserBorder] ON [dbo].[Stat_UserPermission] ([UserId] ASC, [BorderId] ASC);
+END
+GO
+
+-- Stat Modülü Foreign Key İlişkileri (WITH NOCHECK)
+IF OBJECT_ID(N'dbo.Stat_Department', N'U') IS NOT NULL AND OBJECT_ID(N'dbo.E_Border', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_Stat_Department_Border')
+BEGIN
+    ALTER TABLE [dbo].[Stat_Department] WITH NOCHECK ADD CONSTRAINT [FK_Stat_Department_Border]
+        FOREIGN KEY ([BorderId]) REFERENCES [dbo].[E_Border] ([fldId]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.Stat_TableTemplate', N'U') IS NOT NULL AND OBJECT_ID(N'dbo.Stat_Department', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_Stat_TableTemplate_Department')
+BEGIN
+    ALTER TABLE [dbo].[Stat_TableTemplate] WITH NOCHECK ADD CONSTRAINT [FK_Stat_TableTemplate_Department]
+        FOREIGN KEY ([DepartmentId]) REFERENCES [dbo].[Stat_Department] ([DepartmentId]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.Stat_RowItem', N'U') IS NOT NULL AND OBJECT_ID(N'dbo.Stat_TableTemplate', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_Stat_RowItem_Table')
+BEGIN
+    ALTER TABLE [dbo].[Stat_RowItem] WITH NOCHECK ADD CONSTRAINT [FK_Stat_RowItem_Table]
+        FOREIGN KEY ([TableId]) REFERENCES [dbo].[Stat_TableTemplate] ([TableId]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.Stat_DailyValue', N'U') IS NOT NULL AND OBJECT_ID(N'dbo.Stat_RowItem', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_Stat_DailyValue_RowItem')
+BEGIN
+    ALTER TABLE [dbo].[Stat_DailyValue] WITH NOCHECK ADD CONSTRAINT [FK_Stat_DailyValue_RowItem]
+        FOREIGN KEY ([RowId]) REFERENCES [dbo].[Stat_RowItem] ([RowId]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.Stat_UserPermission', N'U') IS NOT NULL AND OBJECT_ID(N'dbo.E_User', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_Stat_UserPermission_User')
+BEGIN
+    ALTER TABLE [dbo].[Stat_UserPermission] WITH NOCHECK ADD CONSTRAINT [FK_Stat_UserPermission_User]
+        FOREIGN KEY ([UserId]) REFERENCES [dbo].[E_User] ([fldId]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.Stat_UserPermission', N'U') IS NOT NULL AND OBJECT_ID(N'dbo.E_Border', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_Stat_UserPermission_Border')
+BEGIN
+    ALTER TABLE [dbo].[Stat_UserPermission] WITH NOCHECK ADD CONSTRAINT [FK_Stat_UserPermission_Border]
+        FOREIGN KEY ([BorderId]) REFERENCES [dbo].[E_Border] ([fldId]);
+END
+GO
+
 PRINT N'CEZA güvenli şema senkronizasyonu tamamlandı.';
