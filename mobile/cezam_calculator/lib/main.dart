@@ -1597,6 +1597,10 @@ class _CalculatorPageState extends State<CalculatorPage> {
 
     setState(() {
       _entryExitRows.add(EntryExitControllers());
+      // Coklu giris yapildiginda otomatik olarak 180 gun kurali (calculateType: 2) secilsin
+      if (_entryExitRows.length > 1) {
+        _calculateType = 2;
+      }
     });
   }
 
@@ -2462,6 +2466,7 @@ class _CalculatorPageState extends State<CalculatorPage> {
           _entryExitRowsWidget(),
           const SizedBox(height: 12),
           DropdownButtonFormField<int>(
+            key: ValueKey('calc-$_calculateType'),
             initialValue: _calculateType,
             decoration:
                 InputDecoration(labelText: context.tr('calculation_type')),
@@ -2742,27 +2747,33 @@ class _CalculatorPageState extends State<CalculatorPage> {
     // Arayuzde mevcut tek giris/cikis gun mantigini gostermeye devam et.
     final days = max(1, exit.difference(entry).inDays);
 
-    // 180 Gun Kurali seciliyse ve birden fazla sefer varsa pencere icindeki gunu de ek olarak yansit
-    if (_calculateType == 2 && _entryExitRows.length > 1) {
+    // Coklu giris-cikis veya 180 Gun Kurali seciliyse kayan pencere (180 veya 365 gun) icindeki gunu de web standardinda yansit
+    if (_entryExitRows.length > 1 || _calculateType == 2) {
       try {
         final allExits = _entryExitRows
             .map((r) => parseDate(r.exit.text))
             .whereType<DateTime>()
             .toList();
         if (allExits.isNotEmpty) {
-          final referenceExit = allExits.reduce((a, b) => a.isAfter(b) ? a : b);
-          final windowStart = referenceExit.subtract(const Duration(days: 180));
+          final windowDaysConfig =
+              (_country == 'Beyaz Rusya' || _calculateType == 5) ? 365 : 180;
+          final referenceExit =
+              allExits.reduce((a, b) => a.isAfter(b) ? a : b);
+          final windowStart =
+              referenceExit.subtract(Duration(days: windowDaysConfig));
+
           if (exit.isBefore(windowStart)) {
-            return '${context.trValue("day_short", days)}\n(180G: 0)';
+            return '${context.trValue("day_short", days)}\n(${windowDaysConfig}G Disi: 0 G)';
           }
-          final clippedEntry = entry.isBefore(windowStart) ? windowStart : entry;
-          final clippedExit = exit.isAfter(referenceExit) ? referenceExit : exit;
-          if (!clippedEntry.isAfter(clippedExit)) {
-            final windowDays = max(1, clippedExit.difference(clippedEntry).inDays);
-            if (windowDays != days) {
-              return '${context.trValue("day_short", days)}\n(180G: $windowDays)';
-            }
+          final clippedEntry =
+              entry.isBefore(windowStart) ? windowStart : entry;
+          final clippedExit =
+              exit.isAfter(referenceExit) ? referenceExit : exit;
+          if (clippedEntry.isAfter(clippedExit)) {
+            return '${context.trValue("day_short", days)}\n(${windowDaysConfig}G Disi: 0 G)';
           }
+          final windowStay = max(1, clippedExit.difference(clippedEntry).inDays);
+          return '${context.trValue("day_short", days)}\n(${windowDaysConfig}G: $windowStay G)';
         }
       } catch (_) {}
     }
@@ -4901,6 +4912,9 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
 
 class PenaltyCalculator {
   PenaltyResult calculate(PenaltySettings settings, CezamData data) {
+    final isPermitOrRestriction =
+        const {4, 8, 10, 11, 12, 13, 14, 15}.contains(settings.visa);
+
     final rule = (settings.visa == 5
             ? const UvrRule(
                 country: '',
@@ -4918,56 +4932,89 @@ class PenaltyCalculator {
                 settings.visa,
                 settings.calculateType,
               )) ??
+        (isPermitOrRestriction
+            ? (data.findUvr(settings.country, settings.passport, 2, 1) ??
+                data.findUvr(settings.country, settings.passport, 1, 1))
+            : null) ??
         settings.manualRule;
 
     final auh = data.findAuh(settings.country) ?? settings.manualAuh;
     final ranges = settings.entryExitPairs;
-    final countedTripDays = _countedTripDays(ranges, settings.calculateType);
+    final countedTripDays = _countedTripDays(
+      ranges,
+      settings.calculateType,
+      ruleDay: rule.day,
+      country: settings.country,
+    );
     final stayDays =
         countedTripDays.fold<int>(0, (total, days) => total + days);
     final tripDays = settings.calculateType == 4
-        ? countedTripDays.map((_) => -1).toList()
+        ? countedTripDays.map((d) => d > 0 ? 1 : 0).toList()
         : countedTripDays;
 
-    final oneTime = settings.calculateType == 4
+    var maxOneTime = settings.calculateType == 4
         ? 0
         : settings.visa == 3 && settings.consularVisaDays > 0
             ? settings.consularVisaDays
             : rule.oneTime;
-    var penaltyDays = 0;
+    if (settings.country == 'Rusya Federasyonu' && maxOneTime == 0) maxOneTime = 60;
+    if (settings.country == 'Beyaz Rusya' && maxOneTime == 0) maxOneTime = 30;
 
-    var allowedStayDays = settings.calculateType == 4 ? 1 : oneTime;
+    final maxPeriodTotal = rule.longStay > 0 ? rule.longStay : 90;
+    var penaltyDays = 0;
+    var allowedStayDays = settings.calculateType == 4 ? 1 : maxOneTime;
+    DateTime shouldExitDate;
 
     if (settings.visa == 5) {
       // Türkiye'de Doğan Çocuklar: Vize hakkı 0 gündür. Doğduğu günden çıktığı güne kadar tüm süre cezalıdır.
       allowedStayDays = 0;
       penaltyDays = stayDays;
-    } else if (settings.country == 'Beyaz Rusya' || settings.calculateType == 5) {
-      allowedStayDays = 30;
-      for (final days in tripDays) {
-        if (days > 30) penaltyDays += days - 30;
+      shouldExitDate =
+          ranges.isNotEmpty ? ranges.first.entry : _referenceExit(ranges);
+    } else if (isPermitOrRestriction) {
+      // İkamet tezkeresi, çalışma izni ve tahditli/tebliğli işlemler (AjaxController.cs:224-255)
+      // İlk tarih: Tebliğ/bitiş tarihi; Son tarih: Hudut kapısı çıkış tarihi
+      if (ranges.isEmpty) {
+        throw Exception('error_no_penalty');
       }
-      if (stayDays > 90) {
-        penaltyDays = max(penaltyDays, stayDays - 90);
-        if (!tripDays.any((days) => days > 30)) {
-          allowedStayDays = 90;
-        }
+      final permitEndDt = ranges.first.entry;
+      final borderExitDt = ranges.last.exit;
+
+      if (!borderExitDt.isAfter(permitEndDt)) {
+        throw Exception('error_no_penalty');
       }
+
+      final violationDays = borderExitDt.difference(permitEndDt).inDays;
+      if (violationDays <= 0) {
+        throw Exception('error_no_penalty');
+      }
+
+      penaltyDays = violationDays;
+      allowedStayDays = 0;
+      shouldExitDate = permitEndDt;
     } else {
-      var exceedsOneTime = false;
-      for (final days in tripDays) {
-        if (days > oneTime) {
-          exceedsOneTime = true;
-          break;
+      // Normal Vizeli / Vizesiz / 180-90 / Turistik Kalış Hesabı (AjaxController.cs:329-350)
+      var singleTripPenalty = 0;
+      if (maxOneTime > 0) {
+        for (final days in tripDays) {
+          if (days > maxOneTime) {
+            singleTripPenalty += days - maxOneTime;
+          }
         }
       }
-      if (exceedsOneTime) {
-        penaltyDays = stayDays - oneTime;
-        allowedStayDays = oneTime;
-      } else if (stayDays > rule.longStay) {
-        penaltyDays = stayDays - rule.longStay;
-        allowedStayDays = rule.longStay;
+
+      var totalPeriodPenalty = 0;
+      if (maxPeriodTotal > 0 && stayDays > maxPeriodTotal) {
+        totalPeriodPenalty = stayDays - maxPeriodTotal;
       }
+
+      penaltyDays = max(singleTripPenalty, totalPeriodPenalty);
+
+      allowedStayDays = (totalPeriodPenalty >= singleTripPenalty && totalPeriodPenalty > 0)
+          ? maxPeriodTotal
+          : (singleTripPenalty > 0 ? maxOneTime : (maxPeriodTotal > 0 ? maxPeriodTotal : maxOneTime));
+      shouldExitDate =
+          _referenceExit(ranges).subtract(Duration(days: penaltyDays));
     }
 
     if (penaltyDays <= 0) {
@@ -5008,9 +5055,7 @@ class PenaltyCalculator {
       penaltyDays: remainingDays,
       ticketText: ticketText,
       referenceExitDate: _referenceExit(ranges),
-      shouldExitDate: settings.visa == 5
-          ? (ranges.isNotEmpty ? ranges.first.entry : _referenceExit(ranges))
-          : _referenceExit(ranges).subtract(Duration(days: penaltyDays)),
+      shouldExitDate: shouldExitDate,
       penaltyAmount: penaltyAmount,
       currency: auh.currency,
       exchangeRate: exchangeRate,
@@ -5025,43 +5070,46 @@ class PenaltyCalculator {
     );
   }
 
-  List<int> _countedTripDays(List<DateRange> ranges, int calculateType) {
+  List<int> _countedTripDays(
+    List<DateRange> ranges,
+    int calculateType, {
+    int ruleDay = 0,
+    String country = '',
+  }) {
     for (final range in ranges) {
       if (range.entry.isAfter(range.exit)) {
         throw Exception('error_date_order');
       }
     }
 
-    // Tek kayitta eski hesaplama davranisi kesinlikle korunur.
-    if (ranges.length == 1) {
+    // Tek kayıtta ve 180 Gün Kuralı değilse: eski tek giriş hesaplama davranışı korunur.
+    if (ranges.length == 1 && calculateType != 2) {
       final range = ranges.single;
       if (calculateType == 4) return const [1];
       return [max(1, range.exit.difference(range.entry).inDays)];
     }
 
-    // 180 Gun Kurali (calculateType == 2): En son cikis dahil geriye donuk 180 takvim gunu penceresi uygulanir.
-    if (calculateType == 2) {
-      final referenceExit = _referenceExit(ranges);
-      final windowStart = referenceExit.subtract(const Duration(days: 180));
+    // Çoklu giriş-çıkışlarda (ranges.length > 1) veya 180 Gün Kuralında (calculateType == 2):
+    // Web sürümü (AjaxController.cs:272-300) ile birebir uyumlu geriye dönük takvim penceresi uygulanır.
+    final windowDays = (ruleDay > 0)
+        ? ruleDay
+        : ((country == 'Beyaz Rusya' || calculateType == 5) ? 365 : 180);
+    final referenceExit = _referenceExit(ranges);
+    final windowStart = referenceExit.subtract(Duration(days: windowDays));
 
-      return ranges.map((range) {
-        final clippedEntry =
-            range.entry.isBefore(windowStart) ? windowStart : range.entry;
-        final clippedExit =
-            range.exit.isAfter(referenceExit) ? referenceExit : range.exit;
-        if (clippedEntry.isAfter(clippedExit)) return 0;
-        if (calculateType == 4) return 1;
-
-        // EGM Polnet standardi: Giris gunu sayilir, cikis gunu sayilmaz (ayni gun ise 1 gun).
-        return max(1, clippedExit.difference(clippedEntry).inDays);
-      }).toList();
-    }
-
-    // Normal Hesaplama (calculateType == 1) ve diger modellerde:
-    // Her bir seferin kalis suresi eksiksiz toplanir.
     return ranges.map((range) {
+      // Pencere öncesindeki (180 gün dışındaki) kalışlar kanunen hesaba dahil edilmez (0 gün).
+      if (range.exit.isBefore(windowStart)) return 0;
+
+      final clippedEntry =
+          range.entry.isBefore(windowStart) ? windowStart : range.entry;
+      final clippedExit =
+          range.exit.isAfter(referenceExit) ? referenceExit : range.exit;
+      if (clippedEntry.isAfter(clippedExit)) return 0;
       if (calculateType == 4) return 1;
-      return max(1, range.exit.difference(range.entry).inDays);
+
+      // EGM Polnet standardı: Giriş günü sayılır, çıkış günü sayılmaz (aynı gün ise 1 gün).
+      return max(1, clippedExit.difference(clippedEntry).inDays);
     }).toList();
   }
 
@@ -5223,6 +5271,18 @@ class CezamData {
           row.visaStatus == visa &&
           row.calculateType == calculateType) {
         return row;
+      }
+    }
+    // 180 Gun Kurali (calculateType == 2) icin ozel kayit yoksa, web surumu (AjaxController.cs:195-199)
+    // ile birebir uyumlu olarak Normal Hesaplama (calculateType == 1) kuralina otomatik gecis yap
+    if (calculateType == 2) {
+      for (final row in uvr) {
+        if (row.country == country &&
+            row.passportType == passport &&
+            row.visaStatus == visa &&
+            row.calculateType == 1) {
+          return row;
+        }
       }
     }
     return null;
