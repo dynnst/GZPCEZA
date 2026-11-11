@@ -77,6 +77,14 @@ namespace Sahtecilik.RegulaScanner
                     return;
                 }
 
+                // Metin odaklı hızlı tarama (Görseller atlanır, ışıklandırma ve Base64 beklemesi olmaz)
+                bool textOnly = true;
+                foreach (var a in args)
+                {
+                    if (a == "--with-images") textOnly = false;
+                    if (a == "--text-only") textOnly = true;
+                }
+
                 // Arka plan / sessiz çalışma ayarları (Connect çağrılmadan önce mutlaka ayarlanmalı)
                 try
                 {
@@ -88,10 +96,10 @@ namespace Sahtecilik.RegulaScanner
                     rr.MinimizeOnRun = true;
                     rr.ShowTrayIcon = false;
                     rr.DoSound = false;
-                    rr.DoReceiveImages = true;
+                    rr.DoReceiveImages = !textOnly;
                     rr.DoReceiveAllScannedImages = false;
                     rr.DoMRZOCR = true;
-                    rr.DoVisualOCR = true;
+                    rr.DoVisualOCR = !textOnly;
                     rr.DoGraphics = false;
                     rr.DoAuthenticity = false;
                 }
@@ -142,80 +150,79 @@ namespace Sahtecilik.RegulaScanner
                     return;
                 }
 
-                // İşlemin tamamlanmasını bekle (maksimum 12 saniye)
+                // İşlemin tamamlanmasını bekle (Hızlı metin modunda maks 4 sn)
                 int waited = 0;
-                while (waited < 12000)
+                int maxWait = textOnly ? 4000 : 12000;
+                while (waited < maxWait)
                 {
                     bool isBusy = false;
                     try { isBusy = (bool)rr.IsBusy; } catch { }
                     if (!isBusy) break;
 
-                    System.Threading.Thread.Sleep(100);
-                    waited += 100;
+                    System.Threading.Thread.Sleep(50);
+                    waited += 50;
                 }
 
-                // 1. Görselleri Çek (Raw Image)
+                // 1. Görselleri Çek (Sadece resim istendiyse çek, metin modunda atla)
                 string visBase64 = null;
                 string uvBase64 = null;
                 string irBase64 = null;
                 string coaxVisBase64 = null;
-
-                try
-                {
-                    int totalImages = (int)rr.IsReaderResultTypeAvailable(1); // RPRM_ResultType_RawImage = 1
-                    for (int i = 0; i < totalImages; i++)
-                    {
-                        byte[] imgBytes = (byte[])rr.GetReaderFileImage(i);
-                        int light = (int)rr.CheckReaderImageLight(i);
-
-                        if (imgBytes != null && imgBytes.Length > 0)
-                        {
-                            string b64 = Convert.ToBase64String(imgBytes);
-
-                            // White / VIS: Top=2, Side=4, Full=6, Front=0x800000, Bottom=0x2000
-                            if ((light & 0x06) != 0 || (light & 0x802000) != 0)
-                            {
-                                if (visBase64 == null) visBase64 = b64;
-                            }
-                            // UV: 0x80 (128)
-                            else if ((light & 0x80) != 0)
-                            {
-                                if (uvBase64 == null) uvBase64 = b64;
-                            }
-                            // IR: Top=8, Side=16, Full=24, Front=0x1000000, Bottom=0x1000, Transmitted_IR=0x40
-                            else if ((light & 0x18) != 0 || (light & 0x1001040) != 0)
-                            {
-                                if (irBase64 == null) irBase64 = b64;
-                            }
-                            // Axial / Coaxial White: 0x400, 0x800, 0xC00
-                            else if ((light & 0x0C00) != 0)
-                            {
-                                if (coaxVisBase64 == null) coaxVisBase64 = b64;
-                            }
-                            else if (visBase64 == null)
-                            {
-                                visBase64 = b64;
-                            }
-                        }
-                    }
-                }
-                catch { }
-
-                // 2. Portre Fotoğrafını Çek (Graphics Result Type = 6, gf_Portrait = 201)
                 string photoBase64 = null;
-                try
+
+                if (!textOnly)
                 {
-                    int totalGraphics = (int)rr.IsReaderResultTypeAvailable(6);
-                    if (totalGraphics > 0)
+                    try
                     {
-                        byte[] portraitBytes = (byte[])rr.GetReaderGraphicsBitmapByFieldType(201);
-                        if (portraitBytes != null && portraitBytes.Length > 0)
+                        int totalImages = (int)rr.IsReaderResultTypeAvailable(1); // RPRM_ResultType_RawImage = 1
+                        for (int i = 0; i < totalImages; i++)
                         {
-                            photoBase64 = Convert.ToBase64String(portraitBytes);
+                            byte[] imgBytes = (byte[])rr.GetReaderFileImage(i);
+                            int light = (int)rr.CheckReaderImageLight(i);
+
+                            if (imgBytes != null && imgBytes.Length > 0)
+                            {
+                                string b64 = Convert.ToBase64String(imgBytes);
+
+                                if ((light & 0x06) != 0 || (light & 0x802000) != 0)
+                                {
+                                    if (visBase64 == null) visBase64 = b64;
+                                }
+                                else if ((light & 0x80) != 0)
+                                {
+                                    if (uvBase64 == null) uvBase64 = b64;
+                                }
+                                else if ((light & 0x18) != 0 || (light & 0x1001040) != 0)
+                                {
+                                    if (irBase64 == null) irBase64 = b64;
+                                }
+                                else if ((light & 0x0C00) != 0)
+                                {
+                                    if (coaxVisBase64 == null) coaxVisBase64 = b64;
+                                }
+                                else if (visBase64 == null)
+                                {
+                                    visBase64 = b64;
+                                }
+                            }
                         }
                     }
+                    catch { }
+
+                    try
+                    {
+                        int totalGraphics = (int)rr.IsReaderResultTypeAvailable(6);
+                        if (totalGraphics > 0)
+                        {
+                            byte[] portraitBytes = (byte[])rr.GetReaderGraphicsBitmapByFieldType(201);
+                            if (portraitBytes != null && portraitBytes.Length > 0)
+                            {
+                                photoBase64 = Convert.ToBase64String(portraitBytes);
+                            }
+                        }
+                    }
+                    catch { }
                 }
-                catch { }
 
                 // 3. Metin ve MRZ Satırlarını Çek
                 string line1 = "";

@@ -191,11 +191,18 @@ namespace Sahtecilik.ReaderScanner
                     return;
                 }
 
-                string visBase64 = GetImageBase64(MMM.Readers.FullPage.DataType.CD_IMAGEVIS);
-                string uvBase64 = GetImageBase64(MMM.Readers.FullPage.DataType.CD_IMAGEUV);
-                string irBase64 = GetImageBase64(MMM.Readers.FullPage.DataType.CD_IMAGEIR);
-                string photoBase64 = GetImageBase64(MMM.Readers.FullPage.DataType.CD_IMAGEPHOTO);
-                string coaxVisBase64 = GetImageBase64(MMM.Readers.FullPage.DataType.CD_IMAGECOAXVIS);
+                bool textOnly = true;
+                foreach (var a in args)
+                {
+                    if (a == "--with-images") textOnly = false;
+                    if (a == "--text-only") textOnly = true;
+                }
+
+                string visBase64 = textOnly ? "" : GetImageBase64(MMM.Readers.FullPage.DataType.CD_IMAGEVIS);
+                string uvBase64 = textOnly ? "" : GetImageBase64(MMM.Readers.FullPage.DataType.CD_IMAGEUV);
+                string irBase64 = textOnly ? "" : GetImageBase64(MMM.Readers.FullPage.DataType.CD_IMAGEIR);
+                string photoBase64 = textOnly ? "" : GetImageBase64(MMM.Readers.FullPage.DataType.CD_IMAGEPHOTO);
+                string coaxVisBase64 = textOnly ? "" : GetImageBase64(MMM.Readers.FullPage.DataType.CD_IMAGECOAXVIS);
 
                 string docType = "";
                 string line1 = "";

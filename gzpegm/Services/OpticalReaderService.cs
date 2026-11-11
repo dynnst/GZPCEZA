@@ -1,4 +1,6 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using System.Runtime.InteropServices;
+using System.Text;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -131,68 +133,80 @@ namespace gzpegm.Services
             return false;
         }
 
-        public static bool CheckRegulaUsbPlugged()
+        [DllImport("setupapi.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        private static extern IntPtr SetupDiGetClassDevs(IntPtr ClassGuid, string Enumerator, IntPtr hwndParent, uint Flags);
+
+        [DllImport("setupapi.dll", SetLastError = true)]
+        private static extern bool SetupDiEnumDeviceInfo(IntPtr DeviceInfoSet, uint MemberIndex, ref SP_DEVINFO_DATA DeviceInfoData);
+
+        [DllImport("setupapi.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        private static extern bool SetupDiGetDeviceInstanceId(IntPtr DeviceInfoSet, ref SP_DEVINFO_DATA DeviceInfoData, StringBuilder DeviceInstanceId, int DeviceInstanceIdSize, out int RequiredSize);
+
+        [DllImport("setupapi.dll", SetLastError = true)]
+        private static extern bool SetupDiDestroyDeviceInfoList(IntPtr DeviceInfoSet);
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct SP_DEVINFO_DATA
+        {
+            public uint cbSize;
+            public Guid ClassGuid;
+            public uint DevInst;
+            public IntPtr Reserved;
+        }
+
+        private const uint DIGCF_PRESENT = 0x00000002;
+        private const uint DIGCF_ALLCLASSES = 0x00000004;
+
+        public static bool IsUsbDevicePresent(params string[] vendorIds)
         {
             try
             {
-                using (var usbKey = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Enum\USB"))
+                IntPtr hDevInfo = SetupDiGetClassDevs(IntPtr.Zero, "USB", IntPtr.Zero, DIGCF_PRESENT | DIGCF_ALLCLASSES);
+                if (hDevInfo == (IntPtr)(-1)) return false;
+
+                try
                 {
-                    if (usbKey == null) return false;
-                    foreach (var subName in usbKey.GetSubKeyNames())
+                    SP_DEVINFO_DATA da = new SP_DEVINFO_DATA();
+                    da.cbSize = (uint)Marshal.SizeOf(da);
+                    uint index = 0;
+                    StringBuilder sb = new StringBuilder(512);
+
+                    while (SetupDiEnumDeviceInfo(hDevInfo, index++, ref da))
                     {
-                        if (subName.IndexOf("1C6A", StringComparison.OrdinalIgnoreCase) >= 0)
+                        int reqSize = 0;
+                        if (SetupDiGetDeviceInstanceId(hDevInfo, ref da, sb, sb.Capacity, out reqSize))
                         {
-                            return true;
+                            string id = sb.ToString();
+                            foreach (var vid in vendorIds)
+                            {
+                                if (id.IndexOf(vid, StringComparison.OrdinalIgnoreCase) >= 0)
+                                    return true;
+                            }
                         }
                     }
+                }
+                finally
+                {
+                    SetupDiDestroyDeviceInfoList(hDevInfo);
                 }
             }
             catch { }
             return false;
+        }
+
+        public static bool CheckRegulaUsbPlugged()
+        {
+            return IsUsbDevicePresent("1C6A");
         }
 
         public static bool Is3MOrThalesUsbPlugged()
         {
-            try
-            {
-                using (var usbKey = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Enum\USB"))
-                {
-                    if (usbKey == null) return false;
-                    foreach (var subName in usbKey.GetSubKeyNames())
-                    {
-                        // 3M Cogent: 0964, Gemalto: 08E6, Thales CS500f: 27F6 / 1BFD
-                        if (subName.IndexOf("0964", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                            subName.IndexOf("08E6", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                            subName.IndexOf("27F6", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                            subName.IndexOf("1BFD", StringComparison.OrdinalIgnoreCase) >= 0)
-                        {
-                            return true;
-                        }
-                    }
-                }
-            }
-            catch { }
-            return false;
+            return IsUsbDevicePresent("0964", "08E6", "27F6", "1BFD");
         }
 
         public static bool IsDeskoUsbPlugged()
         {
-            try
-            {
-                using (var usbKey = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Enum\USB"))
-                {
-                    if (usbKey == null) return false;
-                    foreach (var subName in usbKey.GetSubKeyNames())
-                    {
-                        if (subName.IndexOf("0E08", StringComparison.OrdinalIgnoreCase) >= 0)
-                        {
-                            return true;
-                        }
-                    }
-                }
-            }
-            catch { }
-            return false;
+            return IsUsbDevicePresent("0E08");
         }
 
         public static string CheckRegulaDriverStatus()
@@ -562,61 +576,58 @@ namespace gzpegm.Services
                     // USB Ã¼zerinde fiilen takÄ±lÄ± olan okuyucuyu anÄ±nda tespit et ve doÄŸrudan ona git!
                     bool isRegUsb = CheckRegulaUsbPlugged();
                     bool is3mUsb = Is3MOrThalesUsbPlugged();
+                    bool isDeskoUsb = IsDeskoUsbPlugged();
                     string autoMmmErr = "";
                     string autoRegErr = "";
 
+                    // Cihaz takılı değilse 4 milisaniyede anında yanıt ver, bekleme yapma!
+                    if (!isRegUsb && !is3mUsb && !isDeskoUsb)
+                    {
+                        return new
+                        {
+                            success = false,
+                            message = "Optik okuyucu cihazı (Regula / 3M) bilgisayara takılı değil. Lütfen cihazın USB kablosunu bilgisayara takınız."
+                        };
+                    }
+
                     if (isRegUsb && !is3mUsb)
                     {
-                        // Sadece Regula takÄ±lÄ±: 3M beklemeden DOÄRUDAN Regula tara (Gecikmesiz hÄ±zlÄ± devreye girme)
+                        // Sadece Regula takılı: Doğrudan Regula hızlı metin oku
                         var autoRegDirectRes = ScanRegulaDirectly(out autoRegErr);
                         if (autoRegDirectRes != null) return autoRegDirectRes;
-
-                        var autoRegFallbackRes = TryScanRegula();
-                        if (autoRegFallbackRes != null) return autoRegFallbackRes;
 
                         return new
                         {
                             success = false,
-                            message = !string.IsNullOrEmpty(autoRegErr) ? autoRegErr : "Regula okuyucu camÄ±nda pasaport tespit edilemedi. LÃ¼tfen belgeyi camÄ±n Ã¼zerine tam yerleÅŸtiriniz."
+                            message = !string.IsNullOrEmpty(autoRegErr) ? autoRegErr : "Regula okuyucu camında pasaport tespit edilemedi. Lütfen belgeyi camın üzerine tam yerleştiriniz."
                         };
                     }
                     else if (is3mUsb && !isRegUsb)
                     {
-                        // Sadece 3M veya Thales CS500f takÄ±lÄ±: DoÄŸrudan 3M/Thales SDK tara
-                        var auto3MRes = TryScan3M(out autoMmmErr, "Thales / 3M Okuyucu (MasaÃ¼stÃ¼)");
+                        // Sadece 3M veya Thales takılı: Doğrudan 3M hızlı metin oku
+                        var auto3MRes = TryScan3M(out autoMmmErr, "Thales / 3M Okuyucu (Masaüstü)");
                         if (auto3MRes != null) return auto3MRes;
 
                         return new
                         {
                             success = false,
-                            message = !string.IsNullOrEmpty(autoMmmErr) ? autoMmmErr : "Thales / 3M okuyucu camÄ±nda pasaport tespit edilemedi. LÃ¼tfen belgeyi camÄ±n Ã¼zerine tam yerleÅŸtiriniz."
+                            message = !string.IsNullOrEmpty(autoMmmErr) ? autoMmmErr : "Thales / 3M okuyucu camında pasaport tespit edilemedi. Lütfen belgeyi camın üzerine tam yerleştiriniz."
                         };
                     }
                     else
                     {
-                        // Ä°kisi de takÄ±lÄ± veya USB kontrolÃ¼ belirsiz: HÄ±zlÄ± sÄ±ralÄ± dene
-                        autoRegErr = "";
                         if (isRegUsb)
                         {
                             var autoRegDirectRes = ScanRegulaDirectly(out autoRegErr);
                             if (autoRegDirectRes != null) return autoRegDirectRes;
                         }
 
-                        autoMmmErr = "";
-                        var auto3MRes = TryScan3M(out autoMmmErr);
-                        if (auto3MRes != null) return auto3MRes;
-
-                        if (!isRegUsb)
+                        if (is3mUsb)
                         {
-                            var autoRegDirectRes = ScanRegulaDirectly(out autoRegErr);
-                            if (autoRegDirectRes != null) return autoRegDirectRes;
+                            var auto3MRes = TryScan3M(out autoMmmErr);
+                            if (auto3MRes != null) return auto3MRes;
                         }
-
-                        var autoRegFallbackRes = TryScanRegula();
-                        if (autoRegFallbackRes != null) return autoRegFallbackRes;
                     }
-
-                    // Hicbir okuyucudan belge verisi alinamadiysa durum teshisi
                     bool is3MActive = Process.GetProcessesByName("OutputWedgeSysTray").Length > 0;
                     bool isDocExpected3M = !string.IsNullOrEmpty(autoMmmErr) && (autoMmmErr.Contains("yerle\u015ftiriniz") || autoMmmErr.Contains("cam\u0131na") || autoMmmErr.Contains("tam"));
                     bool isDocExpectedReg = !string.IsNullOrEmpty(autoRegErr) && (autoRegErr.Contains("yerle\u015ftiriniz") || autoRegErr.Contains("cam\u0131na") || autoRegErr.Contains("ba\u011fland\u0131"));
@@ -676,7 +687,7 @@ namespace gzpegm.Services
                 var psi = new ProcessStartInfo
                 {
                     FileName = scannerExe,
-                    Arguments = "--scan",
+                    Arguments = "--scan --text-only",
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
@@ -798,7 +809,7 @@ namespace gzpegm.Services
                 var psi = new ProcessStartInfo
                 {
                     FileName = scannerExe,
-                    Arguments = "--scan",
+                    Arguments = "--scan --text-only",
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
