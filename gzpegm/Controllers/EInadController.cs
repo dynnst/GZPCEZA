@@ -632,6 +632,31 @@ namespace gzpegm.Controllers
             ViewBag.BeyanTurleri = InadHelpers.BeyanTurleri;
             ViewBag.YolcuDurumlari = InadHelpers.YolcuDurumlari;
             ViewBag.InadSebepleri = InadHelpers.InadSebepleri;
+
+            try
+            {
+                ViewBag.PastGelenUcusNo = db.E_Inad.Where(x => x.GelenUcusNo != null && x.GelenUcusNo != "").Select(x => x.GelenUcusNo.Trim()).Distinct().OrderBy(x => x).Take(60).ToList();
+                ViewBag.PastGelenHavayolu = db.E_Inad.Where(x => x.GelenHavayolu != null && x.GelenHavayolu != "").Select(x => x.GelenHavayolu.Trim()).Distinct().OrderBy(x => x).Take(60).ToList();
+                ViewBag.PastGeldigiYer = db.E_Inad.Where(x => x.GeldigiYer != null && x.GeldigiYer != "").Select(x => x.GeldigiYer.Trim()).Distinct().OrderBy(x => x).Take(60).ToList();
+                ViewBag.PastGidisUcusNo = db.E_Inad.Where(x => x.GidisUcusNo != null && x.GidisUcusNo != "").Select(x => x.GidisUcusNo.Trim()).Distinct().OrderBy(x => x).Take(60).ToList();
+                ViewBag.PastGidenHavayolu = db.E_Inad.Where(x => x.GidenHavayolu != null && x.GidenHavayolu != "").Select(x => x.GidenHavayolu.Trim()).Distinct().OrderBy(x => x).Take(60).ToList();
+                ViewBag.PastGidisYer = db.E_Inad.Where(x => x.GidisYer != null && x.GidisYer != "").Select(x => x.GidisYer.Trim()).Distinct().OrderBy(x => x).Take(60).ToList();
+                ViewBag.PastOzelGuvenlik = db.E_Inad.Where(x => x.OzelGuvenlik != null && x.OzelGuvenlik != "").Select(x => x.OzelGuvenlik.Trim()).Distinct().OrderBy(x => x).Take(60).ToList();
+                ViewBag.PastYerHizmetleriPers = db.E_Inad.Where(x => x.YerHizmetleriPersonel != null && x.YerHizmetleriPersonel != "").Select(x => x.YerHizmetleriPersonel.Trim()).Distinct().OrderBy(x => x).Take(60).ToList();
+                ViewBag.PastYerHizmetleriFirma = db.E_Inad.Where(x => x.YerHizmetleri != null && x.YerHizmetleri != "").Select(x => x.YerHizmetleri.Trim()).Distinct().OrderBy(x => x).Take(60).ToList();
+            }
+            catch
+            {
+                ViewBag.PastGelenUcusNo = new List<string>();
+                ViewBag.PastGelenHavayolu = new List<string>();
+                ViewBag.PastGeldigiYer = new List<string>();
+                ViewBag.PastGidisUcusNo = new List<string>();
+                ViewBag.PastGidenHavayolu = new List<string>();
+                ViewBag.PastGidisYer = new List<string>();
+                ViewBag.PastOzelGuvenlik = new List<string>();
+                ViewBag.PastYerHizmetleriPers = new List<string>();
+                ViewBag.PastYerHizmetleriFirma = new List<string>();
+            }
         }
 
         [HttpGet]
@@ -652,12 +677,16 @@ namespace gzpegm.Controllers
                 InadId = 0,
                 TarihSaat = DateTime.Now,
                 GeldigiTarihSaat = DateTime.Now,
+                GidisTarihSaat = DateTime.Now,
                 PasaportTuru = "Umuma Mahsus",
-                Durum = "Ä°nad OdasÄ±na AlÄ±ndÄ±",
+                Beyan = "Yolcu kimlik bilgileri hamili olduğu belgeye göredir.",
+                Durum = "Yolcu İnad Edildi",
                 Kapi = borderName,
                 Valilik = valilik,
-                Personel = (user.fldSicil ?? "").Trim(),
-                Sicil = (user.fldSicil ?? "").Trim()
+                Personel = "",
+                Sicil = "",
+                Refakat = "Yok",
+                UcagaNakil = "Yer Hizmetleri Nezaretinde"
             };
 
             PopulateInadDropDowns(model);
@@ -703,13 +732,19 @@ namespace gzpegm.Controllers
                     return RedirectToAction("Index");
                 }
 
-                if (!string.Equals(user.Role, "Admin", StringComparison.OrdinalIgnoreCase))
+                if (string.IsNullOrWhiteSpace(model.Sicil))
                 {
-                    model.Sicil = (user.fldSicil ?? "").Trim();
-                    model.Kapi = (user.fldBorder ?? "").Trim();
+                    TempData["msgError"] = "Tespit eden personel sicili zorunlu bir alandır.";
+                    return RedirectToAction("Index");
                 }
 
-                model.Personel = (user.fldSicil ?? "").Trim();
+                model.Sicil = model.Sicil.Trim();
+                model.Personel = model.Sicil;
+
+                if (!string.Equals(user.Role, "Admin", StringComparison.OrdinalIgnoreCase))
+                {
+                    model.Kapi = (user.fldBorder ?? "").Trim();
+                }
                 model.TarihSaat = ReadDateTimeField("TarihSaat", model.TarihSaat ?? DateTime.Now);
                 model.GeldigiTarihSaat = ReadDateTimeField("GeldigiTarihSaat", model.GeldigiTarihSaat);
                 model.GidisTarihSaat = ReadDateTimeField("GidisTarihSaat", model.GidisTarihSaat);
@@ -809,6 +844,13 @@ namespace gzpegm.Controllers
                 existing.YerHizmetleriPersonel = model.YerHizmetleriPersonel;
                 existing.YerHizmetleri = model.YerHizmetleri;
                 existing.Refakat = model.Refakat;
+                if (string.IsNullOrWhiteSpace(model.Sicil))
+                {
+                    TempData["msgError"] = "Tespit eden personel sicili zorunlu bir alandır.";
+                    return RedirectToAction("Index");
+                }
+                existing.Sicil = model.Sicil.Trim();
+                existing.Personel = model.Sicil.Trim();
 
                 var inadSecimler = Request.Form.GetValues("InadSebep");
                 if (inadSecimler == null || !inadSecimler.Any(x => !string.IsNullOrWhiteSpace(x)))

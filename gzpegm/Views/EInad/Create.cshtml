@@ -1,4 +1,4 @@
-@model gzpegm.Models.E_Inad
+﻿@model gzpegm.Models.E_Inad
 @{
     bool isEdit = Model != null && Model.InadId > 0;
     ViewBag.Title = isEdit ? "İNAD Kaydını Düzenle (#" + Model.InadId + ")" : "Yeni İNAD Kaydı Ekle";
@@ -9,6 +9,16 @@
     var beyanTurleri = ViewBag.BeyanTurleri as List<string> ?? new List<string>();
     var yolcuDurumlari = ViewBag.YolcuDurumlari as List<string> ?? new List<string>();
 
+    var pastGelenUcusNo = ViewBag.PastGelenUcusNo as List<string> ?? new List<string>();
+    var pastGelenHavayolu = ViewBag.PastGelenHavayolu as List<string> ?? new List<string>();
+    var pastGeldigiYer = ViewBag.PastGeldigiYer as List<string> ?? new List<string>();
+    var pastGidisUcusNo = ViewBag.PastGidisUcusNo as List<string> ?? new List<string>();
+    var pastGidenHavayolu = ViewBag.PastGidenHavayolu as List<string> ?? new List<string>();
+    var pastGidisYer = ViewBag.PastGidisYer as List<string> ?? new List<string>();
+    var pastOzelGuvenlik = ViewBag.PastOzelGuvenlik as List<string> ?? new List<string>();
+    var pastYerHizmetleriPers = ViewBag.PastYerHizmetleriPers as List<string> ?? new List<string>();
+    var pastYerHizmetleriFirma = ViewBag.PastYerHizmetleriFirma as List<string> ?? new List<string>();
+
     var selectedSebep = (Model?.InadSebep ?? "")
         .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
         .Select(s => s.Trim())
@@ -18,6 +28,10 @@
         .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
         .Select(s => s.Trim())
         .ToList();
+    if (!isEdit && selectedNakil.Count == 0)
+    {
+        selectedNakil.Add("Yer Hizmetleri Nezaretinde");
+    }
 
     string tarihSaatVal = Model?.TarihSaat.HasValue == true
         ? Model.TarihSaat.Value.ToString("yyyy-MM-ddTHH:mm")
@@ -29,11 +43,11 @@
 
     string geldigiTarihSaatVal = Model?.GeldigiTarihSaat.HasValue == true
         ? Model.GeldigiTarihSaat.Value.ToString("yyyy-MM-ddTHH:mm")
-        : "";
+        : DateTime.Now.ToString("yyyy-MM-ddTHH:mm");
 
     string gidisTarihSaatVal = Model?.GidisTarihSaat.HasValue == true
         ? Model.GidisTarihSaat.Value.ToString("yyyy-MM-ddTHH:mm")
-        : "";
+        : DateTime.Now.ToString("yyyy-MM-ddTHH:mm");
 }
 
 @section Styles {
@@ -340,6 +354,7 @@
                     <div class="form-group col-md-3">
                         <label class="font-weight-bold">Doğum Yeri</label>
                         <input type="text" class="form-control" id="DogumY" name="DogumY" value="@(Model?.DogumY ?? "")" placeholder="Doğum Yeri">
+                        <small class="text-muted"><i class="fas fa-magic mr-1 text-primary"></i>Uyruk seçildiğinde otomatik doldurulur</small>
                     </div>
                 </div>
             </div>
@@ -378,14 +393,23 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group col-md-6">
-                        <label class="font-weight-bold">Beyan Esası</label>
-                        <select class="form-control" id="Beyan" name="Beyan">
-                            <option value="">-- Seçiniz --</option>
-                            @foreach (var b in beyanTurleri)
-                            {
-                                <option value="@b" @(string.Equals(Model?.Beyan, b, StringComparison.OrdinalIgnoreCase) ? "selected" : "")>@b</option>
+                        <label class="font-weight-bold">Beyan Esası <span class="text-danger">*</span></label>
+                        <select class="form-control font-weight-bold" id="Beyan" name="Beyan">
+                            @{
+                                string currentBeyan = Model?.Beyan;
+                                if (string.IsNullOrWhiteSpace(currentBeyan))
+                                {
+                                    currentBeyan = "Yolcu kimlik bilgileri hamili olduğu belgeye göredir.";
+                                }
+                                foreach (var b in beyanTurleri)
+                                {
+                                    bool isSel = string.Equals(currentBeyan, b, StringComparison.OrdinalIgnoreCase) ||
+                                                 (string.IsNullOrWhiteSpace(Model?.Beyan) && b.IndexOf("hamili olduğu belgeye göredir", StringComparison.OrdinalIgnoreCase) >= 0);
+                                    <option value="@b" @(isSel ? "selected" : "")>@b</option>
+                                }
                             }
                         </select>
+                        <small class="text-muted"><i class="fas fa-check-circle mr-1 text-success"></i>Varsayılan: Hamili olduğu belgeye göredir</small>
                     </div>
                 </div>
             </div>
@@ -399,12 +423,15 @@
                 </span>
             </div>
             <div id="accInad" class="p-3 bg-white">
-                <!-- Hızlı Sebep Seçim Çipleri -->
-                <div class="mb-3 p-2 bg-light border rounded">
-                    <div class="small font-weight-bold text-muted mb-2">
-                        <i class="fas fa-bolt text-warning mr-1"></i> HIZLI SEÇİM ÇİPLERİ (Tek Tıkla Seç):
+                <!-- Hızlı Sebep Seçim Çipleri (Tek Tıkla Çoklu Seçim) -->
+                <div class="mb-3 p-3 bg-light border rounded shadow-sm">
+                    <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap">
+                        <div class="font-weight-bold text-dark" style="font-size:0.95rem;">
+                            <i class="fas fa-bolt text-warning mr-1"></i> HIZLI SEÇİM ÇİPLERİ (Tek Tıkla Seç - Çoklu Seçim Yapılabilir):
+                        </div>
+                        <span class="badge badge-info px-2 py-1"><i class="fas fa-check-double mr-1"></i>Birden fazla seçilebilir</span>
                     </div>
-                    <div class="d-flex flex-wrap einad-reason-chips">
+                    <div class="d-flex flex-wrap einad-reason-chips" style="gap: 6px;">
                         <button type="button" class="btn btn-sm btn-outline-secondary btn-chip" data-val="Hakkında Türkiye'ye giriş yasağı bulunması">
                             <i class="fas fa-ban text-danger mr-1"></i> Giriş Yasağı
                         </button>
@@ -420,14 +447,32 @@
                         <button type="button" class="btn btn-sm btn-outline-secondary btn-chip" data-val="Sahte pasaport">
                             <i class="fas fa-skull-crossbones text-danger mr-1"></i> Sahte Pasaport
                         </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary btn-chip" data-val="Pasaportta tahrifat yapılmış olması">
+                            <i class="fas fa-file-signature text-danger mr-1"></i> Pasaportta Tahrifat
+                        </button>
                         <button type="button" class="btn btn-sm btn-outline-secondary btn-chip" data-val="Sahte vize-ikamet">
-                            <i class="fas fa-file-excel text-danger mr-1"></i> Sahte Vize/İkamet
+                            <i class="fas fa-file-excel text-danger mr-1"></i> Sahte Vize / İkamet
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary btn-chip" data-val="Çalıntı belge">
+                            <i class="fas fa-mask text-dark mr-1"></i> Çalıntı Belge
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary btn-chip" data-val="Geçerli bir seyahat belgesine sahip olmaması">
+                            <i class="fas fa-id-card-alt text-warning mr-1"></i> Belgesiz / Geçersiz Belge
                         </button>
                         <button type="button" class="btn btn-sm btn-outline-secondary btn-chip" data-val="Türkiye'ye girişi sakıncalı görülmesi">
                             <i class="fas fa-user-slash text-dark mr-1"></i> Girişi Sakıncalı
                         </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary btn-chip" data-val="Kamu düzeni veya kamu güvenliği açısından sakıncalı görülmesi">
+                            <i class="fas fa-shield-alt text-danger mr-1"></i> Kamu Güvenliği
+                        </button>
                         <button type="button" class="btn btn-sm btn-outline-secondary btn-chip" data-val="Yeterli maddi imkâna sahip olmaması">
                             <i class="fas fa-coins text-warning mr-1"></i> Maddi İmkân Yetersiz
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary btn-chip" data-val="Türkiye'ye girmek istememesi">
+                            <i class="fas fa-plane-slash text-secondary mr-1"></i> Girmek İstemiyor
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary btn-chip" data-val="Diğer Sebepler / Other Reasons">
+                            <i class="fas fa-ellipsis-h text-info mr-1"></i> Diğer Sebepler
                         </button>
                     </div>
                 </div>
@@ -467,6 +512,7 @@
                                     "Pasaportta tahrifat yapılmış olması",
                                     "Sahte vize-ikamet",
                                     "Çalıntı belge",
+                                    "Geçerli bir seyahat belgesine sahip olmaması",
                                     "180 günde 90 gün uygulamasının ihlali",
                                     "Türkiye'ye girmek istememesi",
                                     "Diğer Sebepler / Other Reasons"
@@ -501,17 +547,17 @@
             <div id="accUcus" class="p-3 bg-white">
                 <div class="form-row">
                     <div class="form-group col-md-3">
-                        <label class="font-weight-bold">Gelen Uçuş No</label>
-                        <input type="text" class="form-control text-uppercase" id="GelenUcusNo" name="GelenUcusNo" value="@(Model?.GelenUcusNo ?? "")" placeholder="Örn: PC402">
-                        <small class="text-muted">İlk 2 harf IATA kodudur</small>
+                        <label class="font-weight-bold">Gelen Uçuş / Sefer No</label>
+                        <input type="text" list="pastGelenUcusNoList" class="form-control text-uppercase" id="GelenUcusNo" name="GelenUcusNo" value="@(Model?.GelenUcusNo ?? "")" placeholder="Örn: PC402, TK1821">
+                        <small class="text-muted"><i class="fas fa-keyboard mr-1 text-primary"></i>İlk 2 harfte havayolu otomatik gelir</small>
                     </div>
                     <div class="form-group col-md-3">
-                        <label class="font-weight-bold">Gelen Havayolu</label>
+                        <label class="font-weight-bold">Gelen Havayolu / Taşıyıcı</label>
                         <input list="airlineList" class="form-control" id="GelenHavayolu" name="GelenHavayolu" value="@(Model?.GelenHavayolu ?? "")" placeholder="Seçin veya yazın">
                     </div>
                     <div class="form-group col-md-3">
-                        <label class="font-weight-bold">Geldiği Yer</label>
-                        <input type="text" class="form-control" id="GeldigiYer" name="GeldigiYer" value="@(Model?.GeldigiYer ?? "")" placeholder="Kalkış Havalimanı">
+                        <label class="font-weight-bold">Geldiği Yer (Kalkış Limanı/Kapı)</label>
+                        <input list="yerList" class="form-control" id="GeldigiYer" name="GeldigiYer" value="@(Model?.GeldigiYer ?? "")" placeholder="Kalkış Havalimanı / Kapı">
                     </div>
                     <div class="form-group col-md-3">
                         <label class="font-weight-bold">Geldiği Tarih / Saat</label>
@@ -523,17 +569,17 @@
 
                 <div class="form-row">
                     <div class="form-group col-md-3">
-                        <label class="font-weight-bold">Gidiş Uçuş No</label>
-                        <input type="text" class="form-control text-uppercase" id="GidisUcusNo" name="GidisUcusNo" value="@(Model?.GidisUcusNo ?? "")" placeholder="Örn: TK1821">
-                        <small class="text-muted">İlk 2 harf IATA kodudur</small>
+                        <label class="font-weight-bold">Gidiş Uçuş / Sefer No</label>
+                        <input type="text" list="pastGidisUcusNoList" class="form-control text-uppercase" id="GidisUcusNo" name="GidisUcusNo" value="@(Model?.GidisUcusNo ?? "")" placeholder="Örn: TK1821, PC403">
+                        <small class="text-muted"><i class="fas fa-keyboard mr-1 text-primary"></i>İlk 2 harfte havayolu otomatik gelir</small>
                     </div>
                     <div class="form-group col-md-3">
-                        <label class="font-weight-bold">Giden Havayolu</label>
+                        <label class="font-weight-bold">Giden Havayolu / Taşıyıcı</label>
                         <input list="airlineList" class="form-control" id="GidenHavayolu" name="GidenHavayolu" value="@(Model?.GidenHavayolu ?? "")" placeholder="Seçin veya yazın">
                     </div>
                     <div class="form-group col-md-3">
-                        <label class="font-weight-bold">Gidiş Yeri</label>
-                        <input type="text" class="form-control" id="GidisYer" name="GidisYer" value="@(Model?.GidisYer ?? "")" placeholder="Hedef Havalimanı">
+                        <label class="font-weight-bold">Gidiş Yeri (Hedef Liman/Kapı)</label>
+                        <input list="yerList" class="form-control" id="GidisYer" name="GidisYer" value="@(Model?.GidisYer ?? "")" placeholder="Hedef Havalimanı / Kapı">
                     </div>
                     <div class="form-group col-md-3">
                         <label class="font-weight-bold">Gidiş Tarih / Saat</label>
@@ -543,32 +589,58 @@
 
                 <hr class="my-2" />
 
-                <div class="form-group mb-2">
-                    <label class="font-weight-bold d-block text-dark">Uçağa Nakil Şekli</label>
-                    <div class="d-flex flex-wrap gap-3">
+                <!-- SEVK / NAKİL ŞEKLİ (Hava, Kara ve Deniz Ortak) -->
+                <div class="form-group mb-3">
+                    <label class="font-weight-bold d-block text-dark">
+                        <i class="fas fa-truck-moving mr-1 text-primary"></i> Sevk / Nakil Şekli (Hava, Kara ve Deniz)
+                    </label>
+                    <div class="d-flex flex-wrap" style="gap: 15px;">
                         @{
                             var nakilList = new[]
                             {
+                                "Yer Hizmetleri Nezaretinde",
                                 "Polis Nezaretinde",
                                 "Özel Güvenlik Nezaretinde",
-                                "Havayolu Yetkilisi Nezaretinde",
-                                "Yer Hizmetleri Nezaretinde"
+                                "Havayolu / Taşıyıcı Yetkilisi Nezaretinde",
+                                "Gemi Acentesi / Kaptan Nezaretinde",
+                                "Otobüs / Taşıma Firması Nezaretinde"
                             };
                             foreach (var n in nakilList)
                             {
-                                bool isChk = selectedNakil.Contains(n);
-                                <div class="form-check mr-4">
+                                bool isChk = selectedNakil.Contains(n) || (!isEdit && n == "Yer Hizmetleri Nezaretinde" && selectedNakil.Count == 0);
+                                <div class="form-check mr-3 mb-1">
                                     <input class="form-check-input" type="checkbox" name="UcagaNakil" id="nakil_@n.GetHashCode()" value="@n" @(isChk ? "checked" : "")>
-                                    <label class="form-check-label" for="nakil_@n.GetHashCode()">@n</label>
+                                    <label class="form-check-label font-weight-500" for="nakil_@n.GetHashCode()">@n</label>
                                 </div>
                             }
                         }
                     </div>
                 </div>
 
+                <!-- ÜST ARAMA & TESLİM EDİLEN EŞYA (MADDELER HALİNDE SİSTEM) -->
                 <div class="form-group mb-0">
-                    <label class="font-weight-bold">Üst Arama & Teslim Edilen Eşya</label>
-                    <textarea class="form-control" id="UstAramaEsya" name="UstAramaEsya" rows="2" placeholder="Üst aramada çıkan ve emanete alınan eşyalar...">@(Model?.UstAramaEsya ?? "")</textarea>
+                    <div class="d-flex justify-content-between align-items-center mb-1 flex-wrap">
+                        <label class="font-weight-bold text-dark mb-1 mb-md-0">
+                            <i class="fas fa-clipboard-list mr-1 text-info"></i> Üst Arama & Teslim Edilen Eşya (Maddeler Halinde)
+                        </label>
+                        <div class="d-flex gap-1 flex-wrap">
+                            <button type="button" class="btn btn-xs btn-outline-primary py-0 px-2" onclick="appendItemToUstArama('Cep Telefonu');">+ Cep Telefonu</button>
+                            <button type="button" class="btn btn-xs btn-outline-primary py-0 px-2" onclick="appendItemToUstArama('Cüzdan ve Muhtelif Nakit Para');">+ Cüzdan/Para</button>
+                            <button type="button" class="btn btn-xs btn-outline-primary py-0 px-2" onclick="appendItemToUstArama('1 Adet Sırt Çantası / El Bagajı');">+ Sırt Çantası</button>
+                            <button type="button" class="btn btn-xs btn-outline-primary py-0 px-2" onclick="appendItemToUstArama('Pasaport ve Seyahat Belgeleri');">+ Pasaport/Belge</button>
+                            <button type="button" class="btn btn-xs btn-outline-primary py-0 px-2" onclick="appendItemToUstArama('Kol Saati ve Kişisel Takı');">+ Saat/Takı</button>
+                            <button type="button" class="btn btn-xs btn-outline-success py-0 px-2" onclick="appendItemToUstArama('Yapılan üst aramasında herhangi bir suç veya yasaklı maddeye rastlanılmamıştır.');">+ Temiz Tutanak</button>
+                            <button type="button" class="btn btn-xs btn-secondary py-0 px-2" onclick="loadUstAramaDefaultTemplate();"><i class="fas fa-list-ol mr-1"></i>Varsayılan Şablon</button>
+                        </div>
+                    </div>
+                    @{
+                        string defaultUstArama = Model?.UstAramaEsya;
+                        if (string.IsNullOrWhiteSpace(defaultUstArama) && !isEdit)
+                        {
+                            defaultUstArama = "1. Üzerinde ve el bagajında çıkan eşyalar: 1 Adet Cep Telefonu, Cüzdan\r\n2. Emanete alınan değerli eşya ve nakit para: -\r\n3. Teslim alınan seyahat belgeleri: Pasaport\r\n4. Yapılan üst aramasında herhangi bir suç veya yasaklı maddeye rastlanılmamıştır.";
+                        }
+                    }
+                    <textarea class="form-control font-weight-500" id="UstAramaEsya" name="UstAramaEsya" rows="4" placeholder="Üst aramada çıkan ve emanete alınan eşyaları maddeler halinde yazınız...">@defaultUstArama</textarea>
                 </div>
             </div>
         </div>
@@ -587,8 +659,9 @@
                         <input type="text" class="form-control" id="Kapi" name="Kapi" value="@(Model?.Kapi ?? "")" readonly>
                     </div>
                     <div class="form-group col-md-4">
-                        <label class="font-weight-bold">Tespit Eden Personel Sicili</label>
-                        <input type="text" class="form-control" id="Sicil" name="Sicil" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" value="@(Model?.Sicil ?? "")" placeholder="6 haneli sicil">
+                        <label class="font-weight-bold">Tespit Eden Personel Sicili <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control required font-weight-bold" id="Sicil" name="Sicil" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" value="@(isEdit ? (Model?.Sicil ?? "") : "")" placeholder="6 haneli sicil no (Zorunlu)" required>
+                        <small class="text-muted"><i class="fas fa-user-shield mr-1 text-primary"></i>İşlemi yapan personelin sicili (Zorunlu alan)</small>
                     </div>
                     <div class="form-group col-md-4">
                         <label class="font-weight-bold">Hudut Kapısının Bulunduğu İl</label>
@@ -600,31 +673,41 @@
                     <div class="form-group col-md-6">
                         <label class="font-weight-bold">Yolcunun Durumu <span class="text-danger">*</span></label>
                         <select class="form-control font-weight-bold" id="Durum" name="Durum" required>
-                            <option value="">-- Seçiniz --</option>
-                            @foreach (var d in yolcuDurumlari)
-                            {
-                                <option value="@d" @(string.Equals(Model?.Durum ?? "İnad Odasına Alındı", d, StringComparison.OrdinalIgnoreCase) ? "selected" : "")>@d</option>
+                            @{
+                                string currentDurum = Model?.Durum;
+                                if (string.IsNullOrWhiteSpace(currentDurum))
+                                {
+                                    currentDurum = "Yolcu İnad Edildi";
+                                }
+                                foreach (var d in yolcuDurumlari)
+                                {
+                                    bool isSel = string.Equals(currentDurum, d, StringComparison.OrdinalIgnoreCase) ||
+                                                 (string.IsNullOrWhiteSpace(Model?.Durum) && d == "Yolcu İnad Edildi");
+                                    <option value="@d" @(isSel ? "selected" : "")>@d</option>
+                                }
                             }
                         </select>
+                        <small class="text-muted"><i class="fas fa-check-circle mr-1 text-success"></i>Varsayılan: Yolcu İnad Edildi</small>
                     </div>
                     <div class="form-group col-md-6">
                         <label class="font-weight-bold">Refakat Durumu</label>
-                        <input type="text" class="form-control" id="Refakat" name="Refakat" value="@(Model?.Refakat ?? "")" placeholder="Var / Yok">
+                        <input type="text" class="form-control font-weight-bold" id="Refakat" name="Refakat" value="@(isEdit ? (Model?.Refakat ?? "Yok") : "Yok")" placeholder="Var / Yok">
+                        <small class="text-muted"><i class="fas fa-check-circle mr-1 text-success"></i>Varsayılan: Yok</small>
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group col-md-4">
                         <label class="font-weight-bold">Özel Güvenlik</label>
-                        <input type="text" class="form-control" id="OzelGuvenlik" name="OzelGuvenlik" value="@(Model?.OzelGuvenlik ?? "")" placeholder="Ad / Birim">
+                        <input type="text" list="pastOzelGuvenlikList" class="form-control" id="OzelGuvenlik" name="OzelGuvenlik" value="@(Model?.OzelGuvenlik ?? "")" placeholder="Ad / Birim veya listeden seçin">
                     </div>
                     <div class="form-group col-md-4">
                         <label class="font-weight-bold">Yer Hizmetleri Pers.</label>
-                        <input type="text" class="form-control" id="YerHizmetleriPersonel" name="YerHizmetleriPersonel" value="@(Model?.YerHizmetleriPersonel ?? "")" placeholder="Ad Soyad">
+                        <input type="text" list="pastYerHizmetleriPersList" class="form-control" id="YerHizmetleriPersonel" name="YerHizmetleriPersonel" value="@(Model?.YerHizmetleriPersonel ?? "")" placeholder="Ad Soyad veya listeden seçin">
                     </div>
                     <div class="form-group col-md-4">
                         <label class="font-weight-bold">Yer Hizmetleri Firma</label>
-                        <input type="text" class="form-control" id="YerHizmetleri" name="YerHizmetleri" value="@(Model?.YerHizmetleri ?? "")" placeholder="TGS, Çelebi, Havaş...">
+                        <input type="text" list="pastYerHizmetleriFirmaList" class="form-control" id="YerHizmetleri" name="YerHizmetleri" value="@(Model?.YerHizmetleri ?? "")" placeholder="TGS, Çelebi, Havaş...">
                     </div>
                 </div>
             </div>
@@ -650,8 +733,91 @@
     </form>
 </div>
 
-<!-- Havayolları Datalist -->
+<!-- Datalist Havuzları (Zaman Tasarrufu & Otomatik Tamamlama) -->
 <datalist id="airlineList"></datalist>
+
+<datalist id="pastGelenUcusNoList">
+    @foreach (var item in pastGelenUcusNo)
+    {
+        <option value="@item">@item</option>
+    }
+</datalist>
+
+<datalist id="pastGidisUcusNoList">
+    @foreach (var item in pastGidisUcusNo)
+    {
+        <option value="@item">@item</option>
+    }
+</datalist>
+
+<datalist id="yerList">
+    @foreach (var y in pastGeldigiYer.Concat(pastGidisYer).Distinct())
+    {
+        <option value="@y">@y</option>
+    }
+    <option value="İstanbul Havalimanı (IST)">İstanbul Havalimanı (IST)</option>
+    <option value="İstanbul Sabiha Gökçen (SAW)">İstanbul Sabiha Gökçen (SAW)</option>
+    <option value="Antalya Havalimanı (AYT)">Antalya Havalimanı (AYT)</option>
+    <option value="Gazipaşa-Alanya Havalimanı (GZP)">Gazipaşa-Alanya Havalimanı (GZP)</option>
+    <option value="İzmir Adnan Menderes (ADB)">İzmir Adnan Menderes (ADB)</option>
+    <option value="Ankara Esenboğa (ESB)">Ankara Esenboğa (ESB)</option>
+    <option value="Dalaman Havalimanı (DLM)">Dalaman Havalimanı (DLM)</option>
+    <option value="Bodrum Milas (BJV)">Bodrum Milas (BJV)</option>
+    <option value="Frankfurt (FRA)">Frankfurt (FRA)</option>
+    <option value="Düsseldorf (DUS)">Düsseldorf (DUS)</option>
+    <option value="Amsterdam (AMS)">Amsterdam (AMS)</option>
+    <option value="Münih (MUC)">Münih (MUC)</option>
+    <option value="Köln (CGN)">Köln (CGN)</option>
+    <option value="Tahran İmam Humeyni (IKA)">Tahran İmam Humeyni (IKA)</option>
+    <option value="Moskova Vnukovo (VKO)">Moskova Vnukovo (VKO)</option>
+    <option value="Moskova Sheremetyevo (SVO)">Moskova Sheremetyevo (SVO)</option>
+    <option value="Londra Stansted (STN)">Londra Stansted (STN)</option>
+    <option value="Londra Gatwick (LGW)">Londra Gatwick (LGW)</option>
+    <option value="Bakü Haydar Aliyev (GYD)">Bakü Haydar Aliyev (GYD)</option>
+    <option value="Tiflis (TBS)">Tiflis (TBS)</option>
+    <option value="Beyrut (BEY)">Beyrut (BEY)</option>
+    <option value="Erbil (EBL)">Erbil (EBL)</option>
+    <option value="Kara Hudut Kapısı: Kapıkule">Kara Hudut Kapısı: Kapıkule</option>
+    <option value="Kara Hudut Kapısı: Sarp">Kara Hudut Kapısı: Sarp</option>
+    <option value="Kara Hudut Kapısı: Habur">Kara Hudut Kapısı: Habur</option>
+    <option value="Kara Hudut Kapısı: İpsala">Kara Hudut Kapısı: İpsala</option>
+    <option value="Kara Hudut Kapısı: Hamzabeyli">Kara Hudut Kapısı: Hamzabeyli</option>
+    <option value="Deniz Hudut Kapısı: Mersin Limanı">Deniz Hudut Kapısı: Mersin Limanı</option>
+    <option value="Deniz Hudut Kapısı: İzmir Limanı">Deniz Hudut Kapısı: İzmir Limanı</option>
+    <option value="Deniz Hudut Kapısı: Çeşme Limanı">Deniz Hudut Kapısı: Çeşme Limanı</option>
+</datalist>
+
+<datalist id="pastOzelGuvenlikList">
+    @foreach (var item in pastOzelGuvenlik)
+    {
+        <option value="@item">@item</option>
+    }
+    <option value="TGS Özel Güvenlik">TGS Özel Güvenlik</option>
+    <option value="Gözen Güvenlik">Gözen Güvenlik</option>
+    <option value="Çelebi Güvenlik">Çelebi Güvenlik</option>
+    <option value="Havaş Güvenlik">Havaş Güvenlik</option>
+    <option value="BTA Güvenlik">BTA Güvenlik</option>
+</datalist>
+
+<datalist id="pastYerHizmetleriPersList">
+    @foreach (var item in pastYerHizmetleriPers)
+    {
+        <option value="@item">@item</option>
+    }
+</datalist>
+
+<datalist id="pastYerHizmetleriFirmaList">
+    @foreach (var item in pastYerHizmetleriFirma)
+    {
+        <option value="@item">@item</option>
+    }
+    <option value="TGS (Turkish Ground Services)">TGS (Turkish Ground Services)</option>
+    <option value="Çelebi Hava Servisi">Çelebi Hava Servisi</option>
+    <option value="HAVAŞ">HAVAŞ</option>
+    <option value="Gözen Havacılık">Gözen Havacılık</option>
+    <option value="Gümrük Muhafaza">Gümrük Muhafaza</option>
+    <option value="Liman İşletmesi">Liman İşletmesi</option>
+</datalist>
 
 @section Scripts {
     <script>
@@ -665,6 +831,7 @@
             initChips();
             initDropzone();
             initIataLookup();
+            initFormValidationAndEvents();
         });
 
         // OCR Hatalarını Otomatik Düzelt
@@ -713,7 +880,6 @@
             }
 
             // DOĞRUDAN VE SIFIR MÜDAHALE İLE DONANIM OKUMA:
-            // Personele program kurdurmadan doğrudan donanım servisi üzerinden oku
             $.ajax({
                 url: URL_SCAN_PASSPORT,
                 type: 'POST',
@@ -739,7 +905,6 @@
                     }
                 },
                 error: function (xhr, status, err) {
-                    // Sunucu bağlantısı kesilirse yerel köprüyü sessizce dene
                     $.ajax({
                         url: 'http://127.0.0.1:41102/scan?device=auto',
                         type: 'GET',
@@ -828,6 +993,11 @@
                         $('#Uyruk').val(c).addClass('highlight-flash');
                     }
                 }
+
+                // Doğum Yeri alanına otomatik uyruk gelsin (eğer boşsa)
+                if (!$('#DogumY').val() || $('#DogumY').val().trim() === '') {
+                    $('#DogumY').val($('#Uyruk').val() || c).addClass('highlight-flash');
+                }
             }
 
             if (d.documentType) {
@@ -869,8 +1039,8 @@
             if (!raw) return '';
             var parts = raw.split('.');
             if (parts.length === 3) {
-                var dd = parts[0].padStart(2, '0');
-                var mm = parts[1].padStart(2, '0');
+                var dd = parts[0].length === 1 ? '0' + parts[0] : parts[0];
+                var mm = parts[1].length === 1 ? '0' + parts[1] : parts[1];
                 var yyyy = parts[2];
                 return yyyy + '-' + mm + '-' + dd;
             }
@@ -896,23 +1066,26 @@
             var l1 = lines[0].replace(/\s+/g, '');
             var l2 = lines[1].replace(/\s+/g, '');
 
-            var docNo = l2.length >= 9 ? l2.substring(0, 9).replace(/</g, '').trim() : '';
-            var nat = l2.length >= 13 ? l2.substring(10, 13).replace(/</g, '').trim() : '';
-            var dob = l2.length >= 19 ? l2.substring(13, 19) : '';
-            var sex = l2.length >= 21 ? l2.substring(20, 21) : '';
-
-            var names = l1.substring(5).split('<<');
-            var surname = (names[0] || '').replace(/</g, ' ').trim();
-            var givenNames = (names[1] || '').replace(/</g, ' ').trim();
-            var fullName = (surname + ' ' + givenNames).trim();
-
             var data = {
-                fullName: fullName,
-                documentNumber: docNo,
-                country: nat,
-                sex: sex === 'M' ? 'Erkek' : (sex === 'F' ? 'Bayan' : ''),
-                birthDate: dob.length === 6 ? formatYymmdd(dob) : ''
+                documentType: 'Pasaport',
+                documentNumber: '',
+                country: '',
+                birthDate: '',
+                sex: '',
+                fullName: '',
+                mrz: raw
             };
+
+            if (l1.length >= 44 && l2.length >= 44) {
+                data.country = l2.substring(10, 13);
+                data.documentNumber = l2.substring(0, 9).replace(/</g, '');
+                var dob = l2.substring(13, 19);
+                data.birthDate = formatYymmdd(dob);
+                data.sex = l2.substring(20, 21);
+
+                var namePart = l1.substring(5).replace(/</g, ' ').trim();
+                data.fullName = fixOcrMisreads(namePart.replace(/\s+/g, ' '));
+            }
 
             applyPassportDataToForm(data);
             showFeedback('MRZ başarıyla ayrıştırıldı ve forma aktarıldı.', 'success');
@@ -1012,7 +1185,7 @@
             });
         }
 
-        // Hızlı Sebep Çipleri
+        // Hızlı Sebep Çipleri (Çoklu Seçim & İki Yönlü Senkronizasyon)
         function initChips() {
             $('.btn-chip').each(function () {
                 var val = $(this).attr('data-val');
@@ -1054,36 +1227,81 @@
             });
         }
 
-        // Uçuş No IATA Kodundan Otomatik Havayolu Doldurma
+        // Uçuş No IATA Kodundan Otomatik Havayolu Doldurma (2 karakter yazıldığında anında tamamlama)
         function initIataLookup() {
-            $('#GelenUcusNo').on('blur', function () {
-                var flight = $(this).val().trim().toUpperCase();
+            var lookupIata = function ($flightInput, $airlineInput) {
+                var flight = ($flightInput.val() || '').trim().toUpperCase();
                 if (flight.length >= 2) {
                     var iata = flight.substring(0, 2);
                     $.get(URL_GET_IATA, { iata: iata }, function (res) {
                         if (res && res.found && res.name) {
-                            if (!$('#GelenHavayolu').val()) {
-                                $('#GelenHavayolu').val(res.name);
+                            if (!$airlineInput.val() || $airlineInput.val().trim() === '') {
+                                $airlineInput.val(res.name);
                             }
                         }
                     });
+                }
+            };
+
+            $('#GelenUcusNo').on('input blur change', function () {
+                lookupIata($('#GelenUcusNo'), $('#GelenHavayolu'));
+            });
+
+            $('#GidisUcusNo').on('input blur change', function () {
+                lookupIata($('#GidisUcusNo'), $('#GidenHavayolu'));
+            });
+        }
+
+        // Form Doğrulama ve Etkinlikler
+        function initFormValidationAndEvents() {
+            // Uyruk seçildiğinde Doğum Yeri alanını otomatik doldur
+            $('#Uyruk').on('change', function () {
+                var uyrukVal = $(this).val();
+                if (uyrukVal && (!$('#DogumY').val() || $('#DogumY').val().trim() === '')) {
+                    $('#DogumY').val(uyrukVal);
                 }
             });
 
-            $('#GidisUcusNo').on('blur', function () {
-                var flight = $(this).val().trim().toUpperCase();
-                if (flight.length >= 2) {
-                    var iata = flight.substring(0, 2);
-                    $.get(URL_GET_IATA, { iata: iata }, function (res) {
-                        if (res && res.found && res.name) {
-                            if (!$('#GidenHavayolu').val()) {
-                                $('#GidenHavayolu').val(res.name);
-                            }
-                        }
-                    });
+            // Personel Sicil senkronizasyonu
+            $('#Sicil').on('input change blur', function () {
+                $('#Personel').val($(this).val().trim());
+            });
+
+            // Form Gönderim Doğrulaması (Sicil zorunlu kontrolü)
+            $('#inadForm').on('submit', function (e) {
+                var sicil = ($('#Sicil').val() || '').trim();
+                if (!sicil) {
+                    e.preventDefault();
+                    showFeedback('Lütfen Tespit Eden Personel Sicilini giriniz (Zorunlu Alan).', 'danger');
+                    $('html, body').animate({ scrollTop: $('#Sicil').offset().top - 120 }, 300);
+                    $('#Sicil').focus().addClass('is-invalid');
+                    return false;
                 }
+                $('#Sicil').removeClass('is-invalid');
+                $('#Personel').val(sicil);
             });
         }
+
+        // Üst Arama Maddeleri Ekleme
+        window.appendItemToUstArama = function (itemText) {
+            var $area = $('#UstAramaEsya');
+            var curVal = ($area.val() || '').trim();
+            var linePrefix = "- ";
+            if (curVal.length > 0) {
+                $area.val(curVal + "\r\n" + linePrefix + itemText);
+            } else {
+                $area.val(linePrefix + itemText);
+            }
+            $area.focus();
+        };
+
+        window.loadUstAramaDefaultTemplate = function () {
+            var template = "1. Üzerinde ve el bagajında çıkan eşyalar: 1 Adet Cep Telefonu, Cüzdan\r\n" +
+                           "2. Emanete alınan değerli eşya ve nakit para: -\r\n" +
+                           "3. Teslim alınan seyahat belgeleri: Pasaport\r\n" +
+                           "4. Yapılan üst aramasında herhangi bir suç veya yasaklı maddeye rastlanılmamıştır.";
+            $('#UstAramaEsya').val(template).focus();
+        };
 
         function showFeedback(msg, type) {
             var cssType = type || 'info';
