@@ -346,6 +346,16 @@ namespace gzpegm.Controllers
         {
             try
             {
+                if (!Request.IsLocal)
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        isRemote = true,
+                        message = "Merkezi sunucu ortamında (10.7.202.75) optik okuyucu doğrudan sunucuya takılamaz. Pasaport veya kimlik, masanızdaki yerel okuyucu (3M / Thales / Desko / Regula) üzerinden okunmalıdır."
+                    });
+                }
+
                 var result = gzpegm.Services.OpticalReaderService.ScanDevice(deviceType);
                 return Json(result);
             }
@@ -358,6 +368,17 @@ namespace gzpegm.Controllers
         [HttpGet]
         public JsonResult GetOpticalReaderStatus()
         {
+            if (!Request.IsLocal)
+            {
+                return Json(new
+                {
+                    success = true,
+                    isRemote = true,
+                    isRunning = true,
+                    deviceName = "Masaüstü Optik Okuyucu (3M/Thales/Desko/Regula)"
+                }, JsonRequestBehavior.AllowGet);
+            }
+
             var result = gzpegm.Services.OpticalReaderService.GetStatus();
             return Json(result, JsonRequestBehavior.AllowGet);
         }
@@ -365,6 +386,16 @@ namespace gzpegm.Controllers
         [HttpPost]
         public JsonResult ConnectOpticalReader(string deviceType = "auto")
         {
+            if (!Request.IsLocal)
+            {
+                return Json(new
+                {
+                    success = true,
+                    isRemote = true,
+                    message = "Masanızdaki optik okuyucu istemci tarafında hazırdır."
+                });
+            }
+
             var result = gzpegm.Services.OpticalReaderService.ConnectDevice(deviceType);
             return Json(result);
         }

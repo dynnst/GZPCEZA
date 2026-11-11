@@ -222,7 +222,8 @@ namespace Sahtecilik.ReaderBridge
                 {
                     // Scan isteği
                     string requestedDevice = req.QueryString["device"] ?? "auto";
-                    responseJson = PerformScan(requestedDevice);
+                    bool onlyText = (req.QueryString["onlyText"] == "1" || req.QueryString["noImages"] == "1");
+                    responseJson = PerformScan(requestedDevice, onlyText);
                 }
             }
             catch (Exception ex)
@@ -248,18 +249,18 @@ namespace Sahtecilik.ReaderBridge
 
         private static readonly object _scanLock = new object();
 
-        private static string PerformScan(string requestedDevice)
+        private static string PerformScan(string requestedDevice, bool onlyText = false)
         {
             lock (_scanLock)
             {
-                Console.WriteLine("\n[" + DateTime.Now.ToString("HH:mm:ss") + "] Tarama isteği alındı (Talep: " + requestedDevice + ")...");
+                Console.WriteLine("\n[" + DateTime.Now.ToString("HH:mm:ss") + "] Tarama isteği alındı (Talep: " + requestedDevice + ", MetinOdakli: " + onlyText + ")...");
 
                 // 1. Önce 3M / Gemalto / Thales donanımını dene
                 if (requestedDevice == "3m" || requestedDevice == "auto")
                 {
                     if (_resolved3mBinDir != null)
                     {
-                        string res3m = TryScan3M();
+                        string res3m = TryScan3M(null, onlyText);
                         if (!string.IsNullOrEmpty(res3m) && res3m.Contains("\"success\":true"))
                         {
                             Console.WriteLine("  -> 3M Cihazından başarıyla okundu!");
@@ -271,7 +272,7 @@ namespace Sahtecilik.ReaderBridge
                 // 2. Ardından Regula Document Reader dene
                 if (requestedDevice == "regula" || requestedDevice == "auto")
                 {
-                    string resRegula = TryScanRegula();
+                    string resRegula = TryScanRegula(onlyText);
                     if (!string.IsNullOrEmpty(resRegula) && resRegula.Contains("\"success\":true"))
                     {
                         Console.WriteLine("  -> Regula Cihazından başarıyla okundu!");
@@ -304,7 +305,7 @@ namespace Sahtecilik.ReaderBridge
             catch { }
         }
 
-        private static string TryScan3M(string customDeviceName = null)
+        private static string TryScan3M(string customDeviceName = null, bool onlyText = false)
         {
             try
             {
@@ -335,20 +336,27 @@ namespace Sahtecilik.ReaderBridge
 
                     if (!isInit) return null;
 
-                    // Cihaz veri gönderme ve görsel yakalama ayarlarını kesinleştir (VIS, UV, IR, Fotoğraf)
+                    // Cihaz veri gönderme ve görsel yakalama ayarlarını kesinleştir
                     try
                     {
                         MMM.Readers.FullPage.ReaderSettings settings;
                         if (MMM.Readers.FullPage.Reader.GetSettings(out settings) == MMM.Readers.ErrorCode.NO_ERROR_OCCURRED)
                         {
                             var dataSend = settings.puDataToSend;
-                            dataSend.send |= (0x000001 | 0x000002 | 0x000004 | 0x000008 | 0x000010 | 0x000020 | 0x002000);
+                            if (onlyText)
+                            {
+                                dataSend.send = (0x000008 | 0x000010 | 0x000020); // Yalnızca codeline / MRZ
+                            }
+                            else
+                            {
+                                dataSend.send |= (0x000001 | 0x000002 | 0x000004 | 0x000008 | 0x000010 | 0x000020 | 0x002000);
+                            }
                             dataSend.enabled = 1;
                             settings.puDataToSend = dataSend;
 
                             var imgSet = settings.puImageSettings;
-                            imgSet.faceFind = true;
-                            imgSet.faceFindPassport = true;
+                            imgSet.faceFind = !onlyText;
+                            imgSet.faceFindPassport = !onlyText;
                             settings.puImageSettings = imgSet;
 
                             MMM.Readers.FullPage.Reader.UpdateSettings(settings);
@@ -376,11 +384,20 @@ namespace Sahtecilik.ReaderBridge
                         return "{\"success\":false,\"message\":\"3M cihazı belgeyi algılayamadı. Lütfen pasaportu veya kimliği okuyucu camına tam yerleştiriniz.\"}";
                     }
 
-                    string visBase64 = Get3mImageBase64(MMM.Readers.FullPage.DataType.CD_IMAGEVIS);
-                    string uvBase64 = Get3mImageBase64(MMM.Readers.FullPage.DataType.CD_IMAGEUV);
-                    string irBase64 = Get3mImageBase64(MMM.Readers.FullPage.DataType.CD_IMAGEIR);
-                    string photoBase64 = Get3mImageBase64(MMM.Readers.FullPage.DataType.CD_IMAGEPHOTO);
-                    string coaxVisBase64 = Get3mImageBase64(MMM.Readers.FullPage.DataType.CD_IMAGECOAXVIS);
+                    string visBase64 = "";
+                    string uvBase64 = "";
+                    string irBase64 = "";
+                    string photoBase64 = "";
+                    string coaxVisBase64 = "";
+
+                    if (!onlyText)
+                    {
+                        visBase64 = Get3mImageBase64(MMM.Readers.FullPage.DataType.CD_IMAGEVIS);
+                        uvBase64 = Get3mImageBase64(MMM.Readers.FullPage.DataType.CD_IMAGEUV);
+                        irBase64 = Get3mImageBase64(MMM.Readers.FullPage.DataType.CD_IMAGEIR);
+                        photoBase64 = Get3mImageBase64(MMM.Readers.FullPage.DataType.CD_IMAGEPHOTO);
+                        coaxVisBase64 = Get3mImageBase64(MMM.Readers.FullPage.DataType.CD_IMAGECOAXVIS);
+                    }
 
                     string docType = "", line1 = "", line2 = "", line3 = "";
                     string rawMrz = "";
@@ -531,7 +548,7 @@ namespace Sahtecilik.ReaderBridge
             return "";
         }
 
-        private static string TryScanRegula()
+        private static string TryScanRegula(bool onlyText = false)
         {
             dynamic rr = null;
             try
@@ -560,12 +577,12 @@ namespace Sahtecilik.ReaderBridge
                     rr.MinimizeOnRun = true;
                     rr.ShowTrayIcon = false;
                     rr.DoSound = false;
-                    rr.DoReceiveImages = true;
-                    rr.DoReceiveAllScannedImages = true;
+                    rr.DoReceiveImages = !onlyText;
+                    rr.DoReceiveAllScannedImages = !onlyText;
                     rr.DoMRZOCR = true;
                     rr.DoVisualOCR = true;
-                    rr.DoGraphics = true;
-                    rr.DoAuthenticity = true;
+                    rr.DoGraphics = !onlyText;
+                    rr.DoAuthenticity = !onlyText;
                     rr.Connect();
                 }
                 catch { }
@@ -582,66 +599,42 @@ namespace Sahtecilik.ReaderBridge
                     bool isBusy = false;
                     try { isBusy = (bool)rr.IsBusy; } catch { }
                     if (!isBusy) break;
-                    Thread.Sleep(200);
-                    waited += 200;
+                    Thread.Sleep(150);
+                    waited += 150;
                 }
 
                 string visBase64 = "", uvBase64 = "", irBase64 = "", photoBase64 = "", coaxVisBase64 = "";
                 string line1 = "", line2 = "", line3 = "";
 
-                try
-                {
-                    int imgCount = 0;
-                    try { imgCount = (int)rr.ImagesCount; } catch { }
-                    for (int i = 0; i < imgCount; i++)
-                    {
-                        try
-                        {
-                            int light = (int)rr.ImageLight(i);
-                            int page = 0;
-                            try { page = (int)rr.ImagePage(i); } catch { }
-                            if (page != 0) continue;
-
-                            string b64 = "";
-                            try
-                            {
-                                object rawData = rr.Image(i);
-                                if (rawData is byte[] bArr) b64 = Convert.ToBase64String(bArr);
-                            }
-                            catch { }
-
-                            if (!string.IsNullOrEmpty(b64))
-                            {
-                                if ((light == 6 || (light & 0x06) != 0 || (light & 0x802000) != 0) && string.IsNullOrEmpty(visBase64)) visBase64 = b64;
-                                else if ((light == 128 || (light & 0x80) != 0) && string.IsNullOrEmpty(uvBase64)) uvBase64 = b64;
-                                else if ((light == 24 || (light & 0x18) != 0 || (light & 0x1001040) != 0) && string.IsNullOrEmpty(irBase64)) irBase64 = b64;
-                                else if ((light == 8 || (light & 0x0C00) != 0) && string.IsNullOrEmpty(coaxVisBase64)) coaxVisBase64 = b64;
-                                else if (string.IsNullOrEmpty(visBase64)) visBase64 = b64;
-                            }
-                        }
-                        catch { }
-                    }
-                }
-                catch { }
-
-                // Fallback 1: GetReaderFileImage
-                if (string.IsNullOrEmpty(visBase64))
+                if (!onlyText)
                 {
                     try
                     {
-                        for (int i = 0; i < 20; i++)
+                        int imgCount = 0;
+                        try { imgCount = (int)rr.ImagesCount; } catch { }
+                        for (int i = 0; i < imgCount; i++)
                         {
                             try
                             {
-                                byte[] imgBytes = (byte[])rr.GetReaderFileImage(i);
-                                int light = (int)rr.CheckReaderImageLight(i);
-                                if (imgBytes != null && imgBytes.Length > 0)
+                                int light = (int)rr.ImageLight(i);
+                                int page = 0;
+                                try { page = (int)rr.ImagePage(i); } catch { }
+                                if (page != 0) continue;
+
+                                string b64 = "";
+                                try
                                 {
-                                    string b64 = Convert.ToBase64String(imgBytes);
-                                    if (((light & 0x06) != 0 || (light & 0x802000) != 0) && string.IsNullOrEmpty(visBase64)) visBase64 = b64;
-                                    else if ((light & 0x80) != 0 && string.IsNullOrEmpty(uvBase64)) uvBase64 = b64;
-                                    else if (((light & 0x18) != 0 || (light & 0x1001040) != 0) && string.IsNullOrEmpty(irBase64)) irBase64 = b64;
-                                    else if ((light & 0x0C00) != 0 && string.IsNullOrEmpty(coaxVisBase64)) coaxVisBase64 = b64;
+                                    object rawData = rr.Image(i);
+                                    if (rawData is byte[] bArr) b64 = Convert.ToBase64String(bArr);
+                                }
+                                catch { }
+
+                                if (!string.IsNullOrEmpty(b64))
+                                {
+                                    if ((light == 6 || (light & 0x06) != 0 || (light & 0x802000) != 0) && string.IsNullOrEmpty(visBase64)) visBase64 = b64;
+                                    else if ((light == 128 || (light & 0x80) != 0) && string.IsNullOrEmpty(uvBase64)) uvBase64 = b64;
+                                    else if ((light == 24 || (light & 0x18) != 0 || (light & 0x1001040) != 0) && string.IsNullOrEmpty(irBase64)) irBase64 = b64;
+                                    else if ((light == 8 || (light & 0x0C00) != 0) && string.IsNullOrEmpty(coaxVisBase64)) coaxVisBase64 = b64;
                                     else if (string.IsNullOrEmpty(visBase64)) visBase64 = b64;
                                 }
                             }
@@ -649,53 +642,80 @@ namespace Sahtecilik.ReaderBridge
                         }
                     }
                     catch { }
-                }
 
-                // Fallback 2: Regula Scans Disk Klasörleri
-                if (string.IsNullOrEmpty(visBase64))
-                {
-                    try
+                    // Fallback 1: GetReaderFileImage
+                    if (string.IsNullOrEmpty(visBase64))
                     {
-                        string[] scanDirs = new string[]
+                        try
                         {
-                            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Regula\Document Reader SDK\Scans"),
-                            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Regula\Document Reader SDK\Scans"),
-                            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), @"Regula\Scans"),
-                            @"C:\Regula\Scans",
-                            @"C:\RegulaScans"
-                        };
-                        foreach (var sDir in scanDirs)
-                        {
-                            if (Directory.Exists(sDir))
+                            for (int i = 0; i < 20; i++)
                             {
-                                var files = new DirectoryInfo(sDir).GetFiles("*.*", SearchOption.AllDirectories)
-                                    .Where(f => (DateTime.UtcNow - f.LastWriteTimeUtc).TotalMinutes < 3)
-                                    .OrderByDescending(f => f.LastWriteTimeUtc)
-                                    .ToList();
-                                foreach (var f in files)
+                                try
                                 {
-                                    string name = f.Name.ToLowerInvariant();
-                                    if ((name.Contains("vis") || name.Contains("white") || name.Contains("color")) && string.IsNullOrEmpty(visBase64))
-                                        visBase64 = Convert.ToBase64String(File.ReadAllBytes(f.FullName));
-                                    else if (name.Contains("uv") && string.IsNullOrEmpty(uvBase64))
-                                        uvBase64 = Convert.ToBase64String(File.ReadAllBytes(f.FullName));
-                                    else if (name.Contains("ir") && string.IsNullOrEmpty(irBase64))
-                                        irBase64 = Convert.ToBase64String(File.ReadAllBytes(f.FullName));
+                                    byte[] imgBytes = (byte[])rr.GetReaderFileImage(i);
+                                    int light = (int)rr.CheckReaderImageLight(i);
+                                    if (imgBytes != null && imgBytes.Length > 0)
+                                    {
+                                        string b64 = Convert.ToBase64String(imgBytes);
+                                        if (((light & 0x06) != 0 || (light & 0x802000) != 0) && string.IsNullOrEmpty(visBase64)) visBase64 = b64;
+                                        else if ((light & 0x80) != 0 && string.IsNullOrEmpty(uvBase64)) uvBase64 = b64;
+                                        else if (((light & 0x18) != 0 || (light & 0x1001040) != 0) && string.IsNullOrEmpty(irBase64)) irBase64 = b64;
+                                        else if ((light & 0x0C00) != 0 && string.IsNullOrEmpty(coaxVisBase64)) coaxVisBase64 = b64;
+                                        else if (string.IsNullOrEmpty(visBase64)) visBase64 = b64;
+                                    }
                                 }
-                                if (!string.IsNullOrEmpty(visBase64)) break;
+                                catch { }
                             }
                         }
+                        catch { }
+                    }
+
+                    // Fallback 2: Regula Scans Disk Klasörleri
+                    if (string.IsNullOrEmpty(visBase64))
+                    {
+                        try
+                        {
+                            string[] scanDirs = new string[]
+                            {
+                                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Regula\Document Reader SDK\Scans"),
+                                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Regula\Document Reader SDK\Scans"),
+                                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), @"Regula\Scans"),
+                                @"C:\Regula\Scans",
+                                @"C:\RegulaScans"
+                            };
+                            foreach (var sDir in scanDirs)
+                            {
+                                if (Directory.Exists(sDir))
+                                {
+                                    var files = new DirectoryInfo(sDir).GetFiles("*.*", SearchOption.AllDirectories)
+                                        .Where(f => (DateTime.UtcNow - f.LastWriteTimeUtc).TotalMinutes < 3)
+                                        .OrderByDescending(f => f.LastWriteTimeUtc)
+                                        .ToList();
+                                    foreach (var f in files)
+                                    {
+                                        string name = f.Name.ToLowerInvariant();
+                                        if ((name.Contains("vis") || name.Contains("white") || name.Contains("color")) && string.IsNullOrEmpty(visBase64))
+                                            visBase64 = Convert.ToBase64String(File.ReadAllBytes(f.FullName));
+                                        else if (name.Contains("uv") && string.IsNullOrEmpty(uvBase64))
+                                            uvBase64 = Convert.ToBase64String(File.ReadAllBytes(f.FullName));
+                                        else if (name.Contains("ir") && string.IsNullOrEmpty(irBase64))
+                                            irBase64 = Convert.ToBase64String(File.ReadAllBytes(f.FullName));
+                                    }
+                                    if (!string.IsNullOrEmpty(visBase64)) break;
+                                }
+                            }
+                        }
+                        catch { }
+                    }
+
+                    // Fotoğraf
+                    try
+                    {
+                        object pData = rr.Photo;
+                        if (pData is byte[] pb && pb.Length > 0) photoBase64 = Convert.ToBase64String(pb);
                     }
                     catch { }
                 }
-
-                // Fotoğraf
-                try
-                {
-                    object pData = rr.Photo;
-                    if (pData is byte[] pb && pb.Length > 0) photoBase64 = Convert.ToBase64String(pb);
-                }
-                catch { }
 
                 // MRZ
                 try
@@ -713,8 +733,8 @@ namespace Sahtecilik.ReaderBridge
                 // ICAO 9303 / MRZ alanlarını ayrıştır
                 var mrzInfo = ParseMrzData(line1, line2, line3, null, null);
 
-                string watermarkBase64 = ExtractWatermark(visBase64, irBase64, coaxVisBase64);
-                string microBase64 = ExtractMicroprint(visBase64);
+                string watermarkBase64 = (!onlyText) ? ExtractWatermark(visBase64, irBase64, coaxVisBase64) : "";
+                string microBase64 = (!onlyText) ? ExtractMicroprint(visBase64) : "";
 
                 var sb = new StringBuilder();
                 sb.Append("{");

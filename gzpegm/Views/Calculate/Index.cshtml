@@ -731,63 +731,21 @@
 </div>
 
 @section Scripts {
+    <script src="@Url.Content("~/js/passport-reader.js")?v=@gzpegm.Helpers.AssetVersionHelper.GetVersion("~/js/passport-reader.js")"></script>
+    <script src="@Url.Content("~/js/calculate-index.js")?v=@gzpegm.Helpers.AssetVersionHelper.GetVersion("~/js/calculate-index.js")"></script>
     <script>
         function scanPassportDirect(deviceType) {
             if (window.PassportReader && typeof window.PassportReader.scanDevice === 'function') {
                 window.PassportReader.scanDevice(deviceType || 'auto');
+            } else if (typeof window.triggerDirectOpticalScan === 'function') {
+                window.triggerDirectOpticalScan(deviceType || 'auto');
             } else {
-                var btns = $('#btnDirectOpticalScan, #btnTopOpticalScan, #btnTutanakOpticalScan, #btnPanelDirectScan');
-                var orig = btns.first().html();
-                btns.prop('disabled', true).html('<span class="spinner-border spinner-border-sm mr-1"></span> Okunuyor...');
-                $.post('/Calculate/ScanOpticalReader', { deviceType: deviceType || 'auto' }, function (res) {
-                    btns.prop('disabled', false).html(orig);
-                    if (window.PassportReader && window.PassportReader.applyResult) {
-                        window.PassportReader.applyResult(res);
-                    } else if (res && res.success) {
-                        var given = (res.givenNames || '').trim();
-                        var surname = (res.surname || '').trim();
-                        var identName = (given || surname) ? (given + ' ' + surname).trim() : (res.fullName || '');
-                        if (identName) {
-                            $('#NameCFORM').val(identName);
-                            $('#topPassengerName').val(identName);
-                        }
-                        if (res.documentNumber) {
-                            $('#PassportCFORM').val(res.documentNumber);
-                            $('#topPassportNumber').val(res.documentNumber);
-                        }
-                        if (res.personalNumber) {
-                            $('#IDNCFORM').val(res.personalNumber);
-                            $('#topPersonalNumber').val(res.personalNumber);
-                        }
-                        if (res.country || res.countryCode) {
-                            var targetC = res.country || res.countryCode;
-                            if (window.PassportReader && window.PassportReader.setCountry) {
-                                window.PassportReader.setCountry(targetC);
-                            }
-                        }
-                        if (res.birthDate) {
-                            $('#BirthDateCalculate').val(res.birthDate).trigger('change');
-                            $('#BirthdateCFORM').val(res.birthDate);
-                            $('#topBirthDate').val(res.birthDate);
-                            if (typeof window.adultchild === 'function') {
-                                window.adultchild($('#BirthDateCalculate')[0]);
-                            }
-                        }
-                        if (res.isTurkishCitizen) {
-                            alert('ℹ️ TEST MODU (TUR): Türk vatandaşı belgesi okundu ve kimlik alanları dolduruldu.');
-                        } else {
-                            alert('✓ Pasaport okundu: ' + (identName || '') + ' (' + (res.documentNumber || '') + ')');
-                        }
-                    } else {
-                        alert((res && res.message) ? res.message : 'Optik okuyucudan pasaport okunamadı.');
+                setTimeout(function () {
+                    if (window.PassportReader && typeof window.PassportReader.scanDevice === 'function') {
+                        window.PassportReader.scanDevice(deviceType || 'auto');
                     }
-                }).fail(function () {
-                    btns.prop('disabled', false).html(orig);
-                    alert('Optik okuyucu servisiyle iletişim kurulamadı.');
-                });
+                }, 250);
             }
         }
     </script>
-    <script src="@Url.Content("~/js/calculate-index.js")?v=@gzpegm.Helpers.AssetVersionHelper.GetVersion("~/js/calculate-index.js")"></script>
-    <script src="@Url.Content("~/js/passport-reader.js")?v=@gzpegm.Helpers.AssetVersionHelper.GetVersion("~/js/passport-reader.js")"></script>
 }

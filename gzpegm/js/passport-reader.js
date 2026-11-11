@@ -525,10 +525,10 @@
     function tryLocalEgmBridge(deviceType, callback) {
         var dev = deviceType || 'auto';
         $.ajax({
-            url: 'http://127.0.0.1:41102/scan?device=' + encodeURIComponent(dev),
+            url: 'http://127.0.0.1:41102/scan?device=' + encodeURIComponent(dev) + '&onlyText=1',
             type: 'GET',
             dataType: 'json',
-            timeout: 1200
+            timeout: 12000
         }).done(function (res) {
             if (res && (res.success || res.documentNumber || res.rawMrz || res.line1 || res.fullName)) {
                 callback(res);
@@ -562,7 +562,58 @@
         var dev = deviceType || 'auto';
         var isRemoteClient = (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1');
 
-        // 1. ÖNCELİK: İstemcide yerel köprü (127.0.0.1:41102 - 3M Cogent / Gemalto / Thales / Regula)
+        // UZAK İSTEMCİ (10.7.202.75 vb.): Okuyucu memurun masasındaki istemci PC'dedir!
+        if (isRemoteClient) {
+            function startWedgeWaitMode() {
+                btns.prop('disabled', false).html('<span class="spinner-grow spinner-grow-sm text-warning mr-1"></span> Belge Bekleniyor...');
+
+                showPassportAlert(
+                    '<strong>🟢 Masanızdaki Okuyucu Dinleniyor (3M / Thales / Desko / Regula):</strong><br/>' +
+                    'Lütfen pasaport veya kimliği masanızdaki okuyucunun camına yerleştiriniz. Sistem belgeyi milisaniyeler içinde yakalayarak forma aktaracaktır.',
+                    'info'
+                );
+
+                var wedgeWaitTimer = setTimeout(function () {
+                    finishScan();
+                }, 15000);
+
+                window._onWedgeScanSuccess = function () {
+                    clearTimeout(wedgeWaitTimer);
+                    window._onWedgeScanSuccess = null;
+                    finishScan();
+                };
+            }
+
+            // 1. Önce masadaki yerel köprüye bak (127.0.0.1:41102)
+            tryLocalEgmBridge(dev, function (bridgeRes) {
+                if (bridgeRes && (bridgeRes.success || bridgeRes.documentNumber || bridgeRes.rawMrz || bridgeRes.line1 || bridgeRes.fullName)) {
+                    applyScanResult(bridgeRes);
+                    finishScan();
+                    return;
+                }
+
+                // 2. Regula ise istemcideki yerel Regula Web API'sini dene (41101 ve 8080)
+                if (dev === 'regula' || dev === 'auto') {
+                    tryLocalClientRegula(function (localData) {
+                        if (localData) {
+                            var mrz = extractMrzFromRegulaResponse(localData);
+                            if (mrz && parseAndApplyPassportMrz(mrz, "Regula Yerel Okuyucu")) {
+                                finishScan();
+                                return;
+                            }
+                        }
+                        startWedgeWaitMode();
+                    });
+                } else {
+                    startWedgeWaitMode();
+                }
+            });
+
+            // Uzak istemcide sunucu rack'ine ASLA istek gönderilmez!
+            return;
+        }
+
+        // YEREL GELİŞTİRME / TEST ORTAMI (Sadece localhost veya 127.0.0.1 ise):
         tryLocalEgmBridge(dev, function (bridgeRes) {
             if (bridgeRes && (bridgeRes.success || bridgeRes.documentNumber || bridgeRes.rawMrz || bridgeRes.line1 || bridgeRes.fullName)) {
                 applyScanResult(bridgeRes);
@@ -570,7 +621,6 @@
                 return;
             }
 
-            // 2. ÖNCELİK: İstemcide yerel Regula servisi (127.0.0.1:41101 ve 8080)
             tryLocalClientRegula(function (localData) {
                 if (localData) {
                     var mrz = extractMrzFromRegulaResponse(localData);
@@ -580,31 +630,6 @@
                     }
                 }
 
-                // 3. ÖNCELİK: EĞER UZAKTAN (10.7.202.75 VB.) BAĞLANILIYORSA:
-                // Cihaz memurun masasındaki istemci PC'ye (10.7.202.138 vb.) bağlıdır.
-                // 3M, Thales, Desko ve Regula okuyucular istemci PC'de KLAVYE WEDGE (Otomatik Tarama) modunda çalışır.
-                if (isRemoteClient) {
-                    btns.prop('disabled', false).html('<span class="spinner-grow spinner-grow-sm text-warning mr-1"></span> Belge Bekleniyor...');
-
-                    showPassportAlert(
-                        '<strong>🟢 Masanızdaki Okuyucu Dinleniyor (3M / Thales / Desko / Regula):</strong><br/>' +
-                        'Lütfen pasaport veya kimliği masanızdaki optik okuyucunun camına yerleştiriniz. Sistem belgeyi milisaniyeler içinde yakalayarak forma aktaracaktır.',
-                        'info'
-                    );
-
-                    var wedgeWaitTimer = setTimeout(function () {
-                        finishScan();
-                    }, 15000);
-
-                    window._onWedgeScanSuccess = function () {
-                        clearTimeout(wedgeWaitTimer);
-                        window._onWedgeScanSuccess = null;
-                        finishScan();
-                    };
-                    return;
-                }
-
-                // 4. ÖNCELİK: SADECE LOCALHOST / 127.0.0.1 İSE SUNUCU ÜZERİNDEN TARA (Lokal Geliştirme / Test)
                 var scanUrl = window.URL_SCAN_PASSPORT || '/Calculate/ScanOpticalReader';
                 var token = $('input[name="__RequestVerificationToken"]').val();
                 $.ajax({
@@ -636,6 +661,7 @@
     }
 
     function checkOpticalReaderStatus() {
+        var isRemoteClient = (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1');
         // Önce masadaki yerel köprüyü (41102) sorgula
         $.ajax({
             url: 'http://127.0.0.1:41102/status',
@@ -644,29 +670,35 @@
             timeout: 1000
         }).done(function (sRes) {
             if (sRes && (sRes.isRunning || sRes.success)) {
-                $('#btnDirectOpticalScan, #btnPanelDirectScan, #btnTopOpticalScan').attr('title', 'Optik Okuyucu Köprüsü Aktif (3M / Regula)');
+                $('#btnDirectOpticalScan, #btnPanelDirectScan, #btnTopOpticalScan, #btnTopScanPassport').attr('title', 'Optik Okuyucu Köprüsü Aktif (3M / Regula)');
                 return;
             }
-            checkServerStatus();
+            handleStatusFallback();
         }).fail(function () {
-            checkServerStatus();
+            handleStatusFallback();
         });
 
-        function checkServerStatus() {
-            $.ajax({
-                url: '/Calculate/GetOpticalReaderStatus',
-                type: 'GET',
-                cache: false,
-                success: function (res) {
-                    if (res && res.success && res.isRunning) {
-                        $('#btnDirectOpticalScan, #btnPanelDirectScan, #btnTopOpticalScan').attr('title', (res.deviceName || 'Optik Okuyucu') + ' Bağlı ve Hazır');
+        function handleStatusFallback() {
+            if (isRemoteClient) {
+                $('#btnDirectOpticalScan, #btnPanelDirectScan, #btnTopOpticalScan, #btnTopScanPassport').attr('title', 'Optik Okuyucu Hazır (3M / Thales / Desko / Regula)');
+            } else {
+                $.ajax({
+                    url: '/Calculate/GetOpticalReaderStatus',
+                    type: 'GET',
+                    cache: false,
+                    success: function (res) {
+                        if (res && res.success && res.isRunning) {
+                            $('#btnDirectOpticalScan, #btnPanelDirectScan, #btnTopOpticalScan, #btnTopScanPassport').attr('title', (res.deviceName || 'Optik Okuyucu') + ' Bağlı ve Hazır');
+                        }
                     }
-                }
-            });
+                });
+            }
         }
     }
 
     function connectDevice(deviceType) {
+        var isRemoteClient = (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1');
+
         // 1. Önce masadaki yerel köprüyü (41102) sorgula / başlat
         $.ajax({
             url: 'http://127.0.0.1:41102/status',
@@ -678,11 +710,21 @@
                 showPassportAlert('Masaüstü Optik Okuyucu Köprüsü Aktif (3M / Regula). Belgeyi okutabilirsiniz.', 'success');
                 checkOpticalReaderStatus();
             } else {
-                tryProtocolOrServer();
+                handleRemoteOrServerConnect();
             }
         }).fail(function () {
-            tryProtocolOrServer();
+            handleRemoteOrServerConnect();
         });
+
+        function handleRemoteOrServerConnect() {
+            if (isRemoteClient) {
+                launchBridgeViaProtocol();
+                showPassportAlert('Masaüstü okuyucunuz (3M / Thales / Desko / Regula) klavye wedge modunda hazır. Pasaport veya kimliği doğrudan cihazın camına yerleştiriniz.', 'info');
+                $('#btnDirectOpticalScan, #btnPanelDirectScan, #btnTopOpticalScan').attr('title', 'Optik Okuyucu Hazır (3M / Thales / Desko / Regula)');
+            } else {
+                tryProtocolOrServer();
+            }
+        }
 
         function tryProtocolOrServer() {
             launchBridgeViaProtocol();

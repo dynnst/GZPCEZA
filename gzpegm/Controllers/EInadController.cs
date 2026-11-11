@@ -1131,6 +1131,16 @@ namespace gzpegm.Controllers
         {
             try
             {
+                if (!Request.IsLocal)
+                {
+                    return JsonUtf8(new
+                    {
+                        success = false,
+                        isRemote = true,
+                        message = "Merkezi sunucu ortamında (10.7.202.75) optik okuyucu doğrudan sunucuya takılamaz. Pasaport veya kimlik, masanızdaki yerel okuyucu (3M / Thales / Desko / Regula) üzerinden okunmalıdır."
+                    });
+                }
+
                 var result = gzpegm.Services.OpticalReaderService.ScanDevice(deviceType);
                 return JsonUtf8(result);
             }
@@ -1139,7 +1149,7 @@ namespace gzpegm.Controllers
                 return JsonUtf8(new { success = false, message = "Tarama hatası: " + ex.Message });
             }
         }
-[HttpPost]
+        [HttpPost]
         [AllowAnonymous]
         public JsonResult Connect3MReader()
         {
@@ -1152,6 +1162,16 @@ namespace gzpegm.Controllers
         {
             try
             {
+                if (!Request.IsLocal)
+                {
+                    return JsonUtf8(new
+                    {
+                        success = true,
+                        isRemote = true,
+                        message = "Masanızdaki optik okuyucu istemci tarafında hazırdır."
+                    });
+                }
+
                 var result = gzpegm.Services.OpticalReaderService.ConnectDevice("auto");
                 return JsonUtf8(result);
             }
@@ -1174,6 +1194,17 @@ namespace gzpegm.Controllers
         {
             try
             {
+                if (!Request.IsLocal)
+                {
+                    return JsonUtf8(new
+                    {
+                        success = true,
+                        isRemote = true,
+                        isRunning = true,
+                        deviceName = "Masaüstü Optik Okuyucu (3M/Thales/Desko/Regula)"
+                    }, JsonRequestBehavior.AllowGet);
+                }
+
                 var result = gzpegm.Services.OpticalReaderService.GetStatus();
                 return JsonUtf8(result, JsonRequestBehavior.AllowGet);
             }
