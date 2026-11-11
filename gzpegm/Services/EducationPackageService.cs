@@ -2,6 +2,7 @@ using gzpegm.Helpers;
 using gzpegm.Models;
 using gzpegm.Models.ViewModels;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using System;
 using System.Collections.Generic;
@@ -174,8 +175,8 @@ namespace gzpegm.Services
                 manifest = ReadJson<EducationPackageManifest>(tempRoot, "manifest.json");
                 var courseDto = ReadJson<EducationPackageCourse>(tempRoot, "course.json");
                 var contents = ReadJson<List<EducationPackageContent>>(tempRoot, "contents.json") ?? new List<EducationPackageContent>();
-                var exams = ReadJson<List<EducationPackageExam>>(tempRoot, "exam.json") ?? new List<EducationPackageExam>();
-                var questions = ReadJson<List<EducationPackageQuestion>>(tempRoot, "questions.json") ?? new List<EducationPackageQuestion>();
+                var exams = ReadExams(tempRoot);
+                var questions = ReadQuestions(tempRoot, exams);
                 ValidatePackage(manifest, courseDto, contents, exams, questions, tempRoot);
 
                 var duplicate = HasSuccessfulImport(manifest.PackageCode, manifest.PackageVersion);
@@ -460,6 +461,164 @@ namespace gzpegm.Services
             var expectedRoot = Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
             if (!full.StartsWith(expectedRoot, StringComparison.OrdinalIgnoreCase) || !File.Exists(full)) throw new FileNotFoundException("Paket dosyası eksik: " + Path.GetFileName(packageName));
             return full;
+        }
+
+        private List<EducationPackageExam> ReadExams(string root)
+        {
+            var path = Path.Combine(root, "exam.json");
+            if (!File.Exists(path)) return new List<EducationPackageExam>();
+            var raw = File.ReadAllText(path, Encoding.UTF8);
+            if (string.IsNullOrWhiteSpace(raw)) return new List<EducationPackageExam>();
+
+            try
+            {
+                var list = JsonConvert.DeserializeObject<List<EducationPackageExam>>(raw);
+                if (list != null) return list;
+            }
+            catch (JsonException) { }
+
+            try
+            {
+                var single = JsonConvert.DeserializeObject<EducationPackageExam>(raw);
+                if (single != null) return new List<EducationPackageExam> { single };
+            }
+            catch (JsonException) { }
+
+            throw new InvalidOperationException("exam.json geçerli JSON içermiyor.");
+        }
+
+        private List<EducationPackageQuestion> ReadQuestions(string root, List<EducationPackageExam> exams)
+        {
+            var path = Path.Combine(root, "questions.json");
+            if (!File.Exists(path)) throw new InvalidOperationException("questions.json pakette bulunamadı.");
+            var raw = File.ReadAllText(path, Encoding.UTF8);
+            if (string.IsNullOrWhiteSpace(raw)) return new List<EducationPackageQuestion>();
+
+            try
+            {
+                var questions = JsonConvert.DeserializeObject<List<EducationPackageQuestion>>(raw);
+                if (questions != null && questions.Count > 0 && !string.IsNullOrWhiteSpace(questions[0].QuestionKey))
+                {
+                    return questions;
+                }
+            }
+            catch (JsonException) { }
+
+            try
+            {
+                var token = JToken.Parse(raw);
+                if (token is JArray arr)
+                {
+                    var defaultExamKey = exams?.FirstOrDefault()?.ExamKey ?? "exam-default";
+                    var result = new List<EducationPackageQuestion>();
+                    int qIdx = 1;
+                    foreach (var item in arr)
+                    {
+                        if (item is JObject qObj)
+                        {
+                            var qKey = (string)qObj["questionKey"] ?? (string)qObj["QuestionKey"] ?? ("q-" + ((string)qObj["id"] ?? qIdx.ToString()));
+                            var eKey = (string)qObj["examKey"] ?? (string)qObj["ExamKey"] ?? defaultExamKey;
+                            var text = (string)qObj["text"] ?? (string)qObj["Text"] ?? (string)qObj["question"] ?? (string)qObj["Question"] ?? "";
+                            var points = (int?)qObj["points"] ?? (int?)qObj["Points"] ?? 10;
+                            var sortOrder = (int?)qObj["sortOrder"] ?? (int?)qObj["SortOrder"] ?? qIdx;
+
+                            var q = new EducationPackageQuestion
+                            {
+                                QuestionKey = qKey,
+                                ExamKey = eKey,
+                                Text = text,
+                                QuestionType = 1,
+                                Points = points,
+                                SortOrder = sortOrder,
+                                Options = new List<EducationPackageOption>(),
+                                Media = new List<EducationPackageMedia>()
+                            };
+
+                            var rawOptions = qObj["options"] ?? qObj["Options"];
+                            if (rawOptions is JArray optArr)
+                            {
+                                int optIdx = 1;
+                                int? correctAns = (int?)qObj["correctAnswer"] ?? (int?)qObj["CorrectAnswer"];
+                                foreach (var opt in optArr)
+                                {
+                                    if (opt is JObject optObj)
+                                    {
+                                        q.Options.Add(new EducationPackageOption
+                                        {
+                                            OptionKey = (string)optObj["optionKey"] ?? (string)optObj["OptionKey"] ?? (qKey + "-opt-" + optIdx),
+                                            Text = (string)optObj["text"] ?? (string)optObj["Text"] ?? "",
+                                            IsCorrect = (bool?)optObj["isCorrect"] ?? (bool?)optObj["IsCorrect"] ?? false,
+                                            SortOrder = (int?)optObj["sortOrder"] ?? (int?)optObj["SortOrder"] ?? optIdx
+                                        });
+                                    }
+                                    else
+                                    {
+                                        bool isCorr = correctAns.HasValue ? (correctAns.Value == (optIdx - 1)) : (optIdx == 1);
+                                        q.Options.Add(new EducationPackageOption
+                                        {
+                                            OptionKey = qKey + "-opt-" + optIdx,
+                                            Text = opt.ToString(),
+                                            IsCorrect = isCorr,
+                                            SortOrder = optIdx
+                                        });
+                                    }
+                                    optIdx++;
+                                }
+                            }
+
+                            var rawMedia = qObj["media"] ?? qObj["Media"];
+                            if (rawMedia is JArray mediaArr)
+                            {
+                                int mIdx = 1;
+                                foreach (var m in mediaArr)
+                                {
+                                    if (m is JObject mObj)
+                                    {
+                                        q.Media.Add(new EducationPackageMedia
+                                        {
+                                            MediaKey = (string)mObj["mediaKey"] ?? (string)mObj["MediaKey"] ?? (qKey + "-media-" + mIdx),
+                                            FileName = (string)mObj["fileName"] ?? (string)mObj["FileName"] ?? "",
+                                            MediaType = (byte?)mObj["mediaType"] ?? (byte?)mObj["MediaType"] ?? (byte)1,
+                                            SortOrder = (int?)mObj["sortOrder"] ?? (int?)mObj["SortOrder"] ?? mIdx
+                                        });
+                                    }
+                                    else if (m != null && !string.IsNullOrWhiteSpace(m.ToString()))
+                                    {
+                                        q.Media.Add(new EducationPackageMedia
+                                        {
+                                            MediaKey = qKey + "-media-" + mIdx,
+                                            FileName = m.ToString(),
+                                            MediaType = 1,
+                                            SortOrder = mIdx
+                                        });
+                                    }
+                                    mIdx++;
+                                }
+                            }
+                            else if (rawMedia != null && !string.IsNullOrWhiteSpace(rawMedia.ToString()))
+                            {
+                                q.Media.Add(new EducationPackageMedia
+                                {
+                                    MediaKey = qKey + "-media-1",
+                                    FileName = rawMedia.ToString(),
+                                    MediaType = 1,
+                                    SortOrder = 1
+                                });
+                            }
+
+                            result.Add(q);
+                            qIdx++;
+                        }
+                    }
+                    if (result.Count > 0) return result;
+                }
+            }
+            catch (Exception)
+            {
+                throw new InvalidOperationException("questions.json geçerli JSON içermiyor.");
+            }
+
+            throw new InvalidOperationException("questions.json geçerli JSON içermiyor.");
         }
 
         private T ReadJson<T>(string root, string name)

@@ -246,7 +246,73 @@ namespace gzpegm.Controllers
             if (!System.IO.File.Exists(physicalPath))
                 throw new FileNotFoundException("HTML dosyasi bulunamadi.", physicalPath);
 
-            return System.IO.File.ReadAllText(physicalPath, Encoding.UTF8);
+            var rawHtml = System.IO.File.ReadAllText(physicalPath, Encoding.UTF8);
+            return ResolveHtmlImagePaths(rawHtml, content.CourseId);
+        }
+
+        private string ResolveHtmlImagePaths(string html, int courseId)
+        {
+            if (string.IsNullOrWhiteSpace(html)) return html;
+
+            try
+            {
+                var course = db.Courses.AsNoTracking().FirstOrDefault(c => c.CourseId == courseId);
+                var siblings = db.CourseContents.AsNoTracking()
+                    .Where(c => c.CourseId == courseId && !string.IsNullOrEmpty(c.FilePath))
+                    .ToList();
+
+                return Regex.Replace(html, "(?<tag><img[^>]+src=[\"'])(?<src>[^\"']+)(?<quote>[\"'])", m =>
+                {
+                    var src = m.Groups["src"].Value;
+                    if (string.IsNullOrWhiteSpace(src) || src.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || src.StartsWith("https://", StringComparison.OrdinalIgnoreCase) || src.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return m.Value;
+                    }
+
+                    if (src.StartsWith("/files/", StringComparison.OrdinalIgnoreCase) || src.StartsWith("~/files/", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var resolved = src.StartsWith("~") ? VirtualPathUtility.ToAbsolute(src) : src;
+                        return m.Groups["tag"].Value + resolved + m.Groups["quote"].Value;
+                    }
+
+                    var cleanFileName = Path.GetFileName(src).Trim();
+
+                    // 1. Doğrudan dosya adı eşleşmesi
+                    var matched = siblings.FirstOrDefault(s => string.Equals(Path.GetFileName(s.FilePath), cleanFileName, StringComparison.OrdinalIgnoreCase));
+
+                    // 2. Sayısal ön ek eşleşmesi (örn: "01-cover.jpg" -> "01 - Pasaport")
+                    if (matched == null)
+                    {
+                        var prefixMatch = Regex.Match(cleanFileName, @"^(\d{1,3})");
+                        if (prefixMatch.Success)
+                        {
+                            var numStr = prefixMatch.Groups[1].Value;
+                            matched = siblings.FirstOrDefault(s => (s.ContentTitle ?? "").Trim().StartsWith(numStr, StringComparison.OrdinalIgnoreCase) ||
+                                                                   (s.ContentTitle ?? "").Contains(" " + numStr + " ") ||
+                                                                   (s.ContentTitle ?? "").Contains(numStr + " -") ||
+                                                                   (s.ContentTitle ?? "").Contains(numStr + " "));
+                        }
+                    }
+
+                    // 3. Kapak resmi eşleşmesi
+                    if (matched == null && cleanFileName.IndexOf("cover", StringComparison.OrdinalIgnoreCase) >= 0 && !string.IsNullOrWhiteSpace(course?.CoverImage))
+                    {
+                        return m.Groups["tag"].Value + "/files/Egitim/" + course.CoverImage.TrimStart('/', '~') + m.Groups["quote"].Value;
+                    }
+
+                    if (matched != null && !string.IsNullOrWhiteSpace(matched.FilePath))
+                    {
+                        var finalUrl = matched.FilePath.StartsWith("http") ? matched.FilePath : "/files/Egitim/" + matched.FilePath.TrimStart('/', '~');
+                        return m.Groups["tag"].Value + finalUrl + m.Groups["quote"].Value;
+                    }
+
+                    return m.Groups["tag"].Value + "/files/Egitim/" + cleanFileName + m.Groups["quote"].Value;
+                }, RegexOptions.IgnoreCase);
+            }
+            catch
+            {
+                return html;
+            }
         }
 
         private void WriteHtmlContentFile(CourseContents content, string html)
@@ -1222,20 +1288,39 @@ namespace gzpegm.Controllers
             }
         }
 
-        public ActionResult Details(int id, bool publicView = false, bool preview = false)
+        public ActionResult Details(int? id = null, bool publicView = false, bool preview = false)
         {
             var user = GetCurrentUser();
-            // Eğer publicView true ise giriş yapmamış kullanıcıların da kurs detay sayfasını görüntülemesine izin ver
-            if (user == null && !publicView)
+
+            // Eğer id belirtilmemişse veya geçersizse en son aktif kursa yönlendir
+            if (!id.HasValue || id.Value <= 0)
             {
-                TempData["msgError"] = "Kurs Detayı İçin Lütfen Giriş Yapınız. Hesabınız yok ise kayıt olunuz.";
-                return RedirectToAction("Index", "Landing");
+                var firstCourse = db.Courses
+                    .Where(c => c.IsActive && c.IsDeleted != true)
+                    .OrderByDescending(c => c.CourseId)
+                    .FirstOrDefault();
+
+                if (firstCourse != null)
+                {
+                    return RedirectToAction("Details", new { id = firstCourse.CourseId, publicView = (user == null || publicView), preview = preview });
+                }
+
+                TempData["msgError"] = "Aktif bir eğitim bulunamadı.";
+                return RedirectToAction("StudentIndex", "Course");
+            }
+
+            int courseId = id.Value;
+
+            // Ziyaretçi ise kurs genel tanıtımı ve müfredatını incelemesine (publicView) izin ver
+            if (user == null)
+            {
+                publicView = true;
             }
 
             var courseQuery = db.Courses
                            .Include(c => c.CourseContents)
                            .Include(c => c.Categories)
-                           .Where(c => c.CourseId == id && c.IsDeleted != true);
+                           .Where(c => c.CourseId == courseId && c.IsDeleted != true);
 
             if (!preview) courseQuery = courseQuery.Where(c => c.IsActive);
 
@@ -1255,14 +1340,30 @@ namespace gzpegm.Controllers
                 return RedirectToAction("StudentIndex");
             }
 
-            bool isEnrolled = userId.HasValue && db.CourseEnrollments.Any(e => e.CourseId == id && e.UserId == userId.Value);
-            bool canAccessCourseContent = isEnrolled || canManageCourse;
-            // Eğer publicView parametresi true ise kayıtlı olmayan kullanıcılar için detay gösterilsin (sadece görüntüleme)
-            if (!isEnrolled && !canManageCourse && !publicView)
+            bool isEnrolled = userId.HasValue && db.CourseEnrollments.Any(e => e.CourseId == courseId && e.UserId == userId.Value);
+
+            // Giriş yapmış kursiyer henüz kayıtlı değilse otomatik olarak kaydet (engelsiz eğitim erişimi)
+            if (user != null && !isEnrolled && !canManageCourse)
             {
-                TempData["msgError"] = "Bu kursun detaylarını görmek için önce kayıt olmalısınız.";
-                return RedirectToAction("StudentIndex");
+                try
+                {
+                    var enrollment = new CourseEnrollments
+                    {
+                        CourseId = courseId,
+                        UserId = user.fldId,
+                        EnrollmentDate = DateTime.Now
+                    };
+                    db.CourseEnrollments.Add(enrollment);
+                    db.SaveChanges();
+                    isEnrolled = true;
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Trace.TraceWarning($"Auto-enrollment notice: {ex.Message}");
+                }
             }
+
+            bool canAccessCourseContent = isEnrolled || canManageCourse || publicView;
 
             string defaultCourseCover = Url.Content("~/files/Egitim/91a7dd7d-56dc-41d3-a9bf-296a421966e2_155.jpg");
             string coverImagePath = string.IsNullOrEmpty(course.CoverImage) || course.CoverImage.StartsWith("http", StringComparison.OrdinalIgnoreCase)
@@ -1302,6 +1403,11 @@ namespace gzpegm.Controllers
             ViewBag.ResourcePhysicalPath = physicalPath;
             ViewBag.ResourceExists = resourceExists;
 
+            // Kurs müfredatını ve içeriklerini her zaman göster (tanıtım ve inceleme için)
+            var courseContentsList = (course.CourseContents != null)
+                ? course.CourseContents.OrderBy(c => c.CreatedDate ?? DateTime.MinValue).ToList()
+                : new List<CourseContents>();
+
             var model = new CourseViewModel
             {
                 CourseId = course.CourseId,
@@ -1312,32 +1418,30 @@ namespace gzpegm.Controllers
                 CreatedBy = course.CreatedBy,
                 CreatedDate = course.CreatedDate,
                 CategoryId = course.CategoryId,
-                CategoryName = course.Categories.CategoryName,
+                CategoryName = course.Categories?.CategoryName,
                 IsActive = course.IsActive,
                 ResourceFile = course.ResourceFile,
                 ResourceFilePath = resourceFilePath,
-                Contents = canAccessCourseContent ? course.CourseContents.ToList() : new List<CourseContents>()
+                Contents = courseContentsList
             };
 
             // Kursa ait aktif sınavları getir
-            var courseExams = canAccessCourseContent
-                ? db.Exam
-                    .Where(e => e.CourseId == id && e.IsActive == true)
-                    .Select(e => new ExamViewModel
-                    {
-                        ExamId = e.ExamId,
-                        ExamTitle = e.Title,
-                        ExamDescription = e.Description,
-                        Duration = e.DurationMinutes ?? 60,
-                        PassingScore = e.PassingScore ?? 60,
-                        QuestionCount = db.Question.Count(q => q.ExamId == e.ExamId && q.IsActive != false),
-                        ExamResultId = (userId.HasValue ? db.ExamResult
-                            .Where(er => er.ExamId == e.ExamId && er.UserId == userId.Value && er.Status == 1)
-                            .Select(er => (int?)er.ExamResultId)
-                            .FirstOrDefault() : (int?)null)
-                    })
-                    .ToList()
-                : new List<ExamViewModel>();
+            var courseExams = db.Exam
+                .Where(e => e.CourseId == courseId && e.IsActive == true)
+                .Select(e => new ExamViewModel
+                {
+                    ExamId = e.ExamId,
+                    ExamTitle = e.Title,
+                    ExamDescription = e.Description,
+                    Duration = e.DurationMinutes ?? 60,
+                    PassingScore = e.PassingScore ?? 60,
+                    QuestionCount = db.Question.Count(q => q.ExamId == e.ExamId && q.IsActive != false),
+                    ExamResultId = (userId.HasValue ? db.ExamResult
+                        .Where(er => er.ExamId == e.ExamId && er.UserId == userId.Value && er.Status == 1)
+                        .Select(er => (int?)er.ExamResultId)
+                        .FirstOrDefault() : (int?)null)
+                })
+                .ToList();
 
             ViewBag.CourseExams = courseExams;
             ViewBag.CurrentUser = user;
@@ -1374,7 +1478,7 @@ ORDER BY r.CreatedDate DESC", id)
             bool allExamsDone = false;
             if (userId.HasValue)
             {
-                allExamsDone = AllExamsCompleted(userId.Value, id);
+                allExamsDone = AllExamsCompleted(userId.Value, courseId);
             }
             ViewBag.AllExamsCompleted = allExamsDone;
 
@@ -1382,7 +1486,7 @@ ORDER BY r.CreatedDate DESC", id)
             if (allExamsDone && userId.HasValue)
             {
                 var certReq = db.CertificateRequest
-                    .Where(r => r.UserId == userId.Value && r.CourseId == id)
+                    .Where(r => r.UserId == userId.Value && r.CourseId == courseId)
                     .OrderByDescending(r => r.RequestDate)
                     .FirstOrDefault();
 
@@ -1392,6 +1496,139 @@ ORDER BY r.CreatedDate DESC", id)
             ViewBag.CertificateStatus = certStatus;
 
             return View(model);
+        }
+
+        // ---------------- COURSE PRACTICE GAME (MINI-OYUN / HIZLI ISINMA) ----------------
+        [HttpGet]
+        public JsonResult GetPracticeQuestions(int id)
+        {
+            try
+            {
+                var user = GetCurrentUser();
+                var course = db.Courses.FirstOrDefault(c => c.CourseId == id && c.IsDeleted != true);
+                if (course == null)
+                {
+                    return Json(new { success = false, message = "Kurs bulunamadı." }, JsonRequestBehavior.AllowGet);
+                }
+
+                // Kursa ait aktif sınavı bul
+                var exam = db.Exam.FirstOrDefault(e => e.CourseId == id && e.IsActive == true);
+                if (exam == null)
+                {
+                    return Json(new { success = false, message = "Bu kurs için henüz aktif bir sınav veya antrenman havuzu bulunmuyor." }, JsonRequestBehavior.AllowGet);
+                }
+
+                // Sınava ait aktif soruları al (en fazla 10 adet)
+                var questions = db.Question
+                    .Where(q => q.ExamId == exam.ExamId && q.IsActive != false)
+                    .OrderBy(q => q.SortOrder)
+                    .Take(10)
+                    .ToList();
+
+                if (!questions.Any())
+                {
+                    return Json(new { success = false, message = "Bu eğitim için antrenman sorusu bulunmuyor." }, JsonRequestBehavior.AllowGet);
+                }
+
+                var qIds = questions.Select(q => q.QuestionId).ToList();
+                var allOptions = db.QuestionOption.Where(o => qIds.Contains(o.QuestionId)).OrderBy(o => o.SortOrder).ToList();
+                var allMedia = db.QuestionMedia.Where(m => qIds.Contains(m.QuestionId)).OrderBy(m => m.SortOrder).ToList();
+
+                var list = questions.Select(q =>
+                {
+                    var media = allMedia.FirstOrDefault(m => m.QuestionId == q.QuestionId);
+                    string mediaUrl = null;
+                    if (media != null && !string.IsNullOrEmpty(media.MediaPath))
+                    {
+                        var clean = media.MediaPath.Trim();
+                        if (clean.StartsWith("http", StringComparison.OrdinalIgnoreCase)) mediaUrl = clean;
+                        else if (clean.StartsWith("~/") || clean.StartsWith("/")) mediaUrl = Url.Content(clean.StartsWith("~") ? clean : "~" + clean);
+                        else mediaUrl = Url.Content("~/files/" + clean);
+                    }
+
+                    var opts = allOptions.Where(o => o.QuestionId == q.QuestionId).Select(o => new
+                    {
+                        optionId = o.OptionId,
+                        text = o.Text,
+                        isCorrect = o.IsCorrect
+                    }).ToList();
+
+                    return new
+                    {
+                        questionId = q.QuestionId,
+                        text = q.Text,
+                        mediaUrl = mediaUrl,
+                        options = opts
+                    };
+                }).ToList();
+
+                var contentsList = new List<object>();
+                if (course.CourseContents != null)
+                {
+                    foreach (var c in course.CourseContents.OrderBy(x => x.CreatedDate ?? DateTime.MinValue))
+                    {
+                        if (string.IsNullOrWhiteSpace(c.FilePath)) continue;
+                        string cleanPath = c.FilePath.Trim();
+                        string fileUrl;
+                        if (cleanPath.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                        {
+                            fileUrl = cleanPath;
+                        }
+                        else if (cleanPath.StartsWith("~/") || cleanPath.StartsWith("/"))
+                        {
+                            fileUrl = Url.Content(cleanPath.StartsWith("~") ? cleanPath : "~" + cleanPath);
+                        }
+                        else
+                        {
+                            fileUrl = Url.Content("~/files/Egitim/" + cleanPath);
+                        }
+
+                        contentsList.Add(new
+                        {
+                            contentId = c.ContentId,
+                            title = c.ContentTitle ?? "",
+                            type = c.ContentType ?? "",
+                            description = c.ContentDescription ?? "",
+                            fileUrl = fileUrl
+                        });
+                    }
+                }
+
+                string coverUrl = null;
+                if (!string.IsNullOrWhiteSpace(course.CoverImage))
+                {
+                    string cleanCover = course.CoverImage.Trim();
+                    if (cleanCover.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                    {
+                        coverUrl = cleanCover;
+                    }
+                    else if (cleanCover.StartsWith("~/") || cleanCover.StartsWith("/"))
+                    {
+                        coverUrl = Url.Content(cleanCover.StartsWith("~") ? cleanCover : "~" + cleanCover);
+                    }
+                    else
+                    {
+                        coverUrl = Url.Content("~/files/Egitim/" + cleanCover);
+                    }
+                }
+
+                return Json(new
+                {
+                    success = true,
+                    courseTitle = course.CourseTitle,
+                    coverUrl = coverUrl,
+                    examId = exam.ExamId,
+                    examTitle = exam.Title,
+                    categoryName = course.Categories != null ? course.Categories.CategoryName : "",
+                    totalQuestions = list.Count,
+                    questions = list,
+                    contents = contentsList
+                }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Antrenman soruları alınırken hata: " + ex.Message }, JsonRequestBehavior.AllowGet);
+            }
         }
 
         // ---------------- COURSE REVIEW (STUDENT) ----------------
@@ -2431,21 +2668,48 @@ ORDER BY r.CreatedDate DESC", new object[] { (object)courseId ?? DBNull.Value, u
         }
 
         // ---------------- CONTENT DETAILS ----------------
-        public ActionResult ContentDetail(int id) // ContentId
+        public ActionResult ContentDetail(int? id = null, bool publicView = false) // ContentId
         {
             try
             {
                 var user = GetCurrentUser();
+
+                // Eğer id belirtilmemişse veya geçersizse en son aktif kursun ilk içeriğine yönlendir
+                if (!id.HasValue || id.Value <= 0)
+                {
+                    var firstCourse = db.Courses
+                        .Where(c => c.IsActive && c.IsDeleted != true)
+                        .OrderByDescending(c => c.CourseId)
+                        .FirstOrDefault();
+
+                    if (firstCourse != null)
+                    {
+                        var firstContent = db.CourseContents
+                            .Where(cc => cc.CourseId == firstCourse.CourseId)
+                            .OrderBy(cc => cc.CreatedDate ?? DateTime.MinValue)
+                            .ThenBy(cc => cc.ContentId)
+                            .FirstOrDefault();
+
+                        if (firstContent != null)
+                        {
+                            return RedirectToAction("ContentDetail", new { id = firstContent.ContentId, publicView = (user == null || publicView) });
+                        }
+                        return RedirectToAction("Details", new { id = firstCourse.CourseId, publicView = (user == null || publicView) });
+                    }
+
+                    TempData["msgError"] = "Aktif bir eğitim içeriği bulunamadı.";
+                    return RedirectToAction("StudentIndex", "Course");
+                }
+
                 if (user == null)
                 {
-                    TempData["msgError"] = "İçeriği görüntülemek için giriş yapmalısınız.";
-                    return RedirectToAction("Login", "Account");
+                    publicView = true;
                 }
 
                 var content = db.CourseContents
                                .Include(c => c.Courses)
                                .Include(c => c.Courses.Categories)
-                               .FirstOrDefault(c => c.ContentId == id);
+                               .FirstOrDefault(c => c.ContentId == id.Value);
 
                 if (content == null)
                 {
@@ -2454,13 +2718,28 @@ ORDER BY r.CreatedDate DESC", new object[] { (object)courseId ?? DBNull.Value, u
                 }
 
                 // Kullanıcı bu kursa kayıtlı mı kontrol et
-                bool isEnrolled = db.CourseEnrollments
+                bool isEnrolled = user != null && db.CourseEnrollments
                                    .Any(e => e.CourseId == content.CourseId && e.UserId == user.fldId);
 
-                bool canAccess = isEnrolled ||
-                                user.Role == "Admin" ||
-                                content.Courses.CreatedBy == user.fldId;
-                bool canModifyContent = CanModifyCourse(user, content.Courses);
+                // Giriş yapmış kursiyer henüz kayıtlı değilse otomatik kaydet (engelsiz eğitim)
+                if (user != null && !isEnrolled && user.Role != "Admin")
+                {
+                    try
+                    {
+                        db.CourseEnrollments.Add(new CourseEnrollments
+                        {
+                            CourseId = content.CourseId,
+                            UserId = user.fldId,
+                            EnrollmentDate = DateTime.Now
+                        });
+                        db.SaveChanges();
+                        isEnrolled = true;
+                    }
+                    catch { }
+                }
+
+                bool canAccess = publicView || isEnrolled || (user != null && (user.Role == "Admin" || content.Courses.CreatedBy == user.fldId));
+                bool canModifyContent = user != null && CanModifyCourse(user, content.Courses);
                 string contentHtml = null;
 
                 if (!canAccess)
@@ -2530,6 +2809,8 @@ ORDER BY r.CreatedDate DESC", new object[] { (object)courseId ?? DBNull.Value, u
                 ViewBag.CanModifyContent = canModifyContent;
                 ViewBag.AllContents = db.CourseContents.Where(c => c.CourseId == content.CourseId).OrderBy(c => c.ContentId).ToList();
 
+                int? currentUserId = user?.fldId;
+
                 // İçeriğe ait sınavları getir (kursa ait aktif sınavlar)
                 var contentExams = db.Exam
                     .Where(e => e.CourseId == content.CourseId && e.IsActive == true)
@@ -2541,10 +2822,10 @@ ORDER BY r.CreatedDate DESC", new object[] { (object)courseId ?? DBNull.Value, u
                         Duration = e.DurationMinutes ?? 60,
                         PassingScore = e.PassingScore ?? 60,
                         QuestionCount = db.Question.Count(q => q.ExamId == e.ExamId),
-                        ExamResultId = db.ExamResult
-                            .Where(er => er.ExamId == e.ExamId && er.UserId == user.fldId && er.Status == 1)
+                        ExamResultId = currentUserId.HasValue ? db.ExamResult
+                            .Where(er => er.ExamId == e.ExamId && er.UserId == currentUserId.Value && er.Status == 1)
                             .Select(er => (int?)er.ExamResultId)
-                            .FirstOrDefault()
+                            .FirstOrDefault() : (int?)null
                     })
                     .ToList();
 
