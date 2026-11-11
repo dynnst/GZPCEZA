@@ -977,62 +977,79 @@ window.scanPassportDirectForEinad = function (deviceType) {
         });
     }
 
-    var scanUrl = getEinadUrl('data-url-scan-passport', '/EInad/ScanPassport');
-    var token = getAntiForgeryToken();
+    if (window.PassportReader && typeof window.PassportReader.scanDevice === 'function') {
+        restoreScanButtons();
+        window.PassportReader.scanDevice(deviceType || 'auto');
+        return;
+    }
+
+    var isRemoteClient = (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1');
     var dev = deviceType || 'auto';
 
-    // DOĞRUDAN VE SIFIR MÜDAHALE İLE DONANIM OKUMA:
-    // Personele program kurdurmadan doğrudan donanım servisi üzerinden oku
+    // 1. ÖNCELİK: İstemcide yerel köprü (127.0.0.1:41102 - 3M Cogent / Gemalto / Thales / Regula)
     $.ajax({
-        url: scanUrl,
-        type: 'POST',
-        data: { 
-            deviceType: dev,
-            __RequestVerificationToken: token
-        },
-        timeout: 25000,
-        success: function (res) {
+        url: 'http://127.0.0.1:41102/scan?device=' + encodeURIComponent(dev),
+        type: 'GET',
+        dataType: 'json',
+        timeout: 1200
+    }).done(function (bridgeRes) {
+        restoreScanButtons();
+        if (bridgeRes && (bridgeRes.success || bridgeRes.documentNumber || bridgeRes.rawMrz || bridgeRes.line1 || bridgeRes.fullName)) {
+            applyScanResultForEinad(bridgeRes);
+        } else {
+            handleRemoteOrServer();
+        }
+    }).fail(function () {
+        handleRemoteOrServer();
+    });
+
+    function handleRemoteOrServer() {
+        if (isRemoteClient) {
             restoreScanButtons();
-            var data = (res && res.data) ? res.data : res;
-            if (data && data.success) {
-                applyScanResultForEinad(data);
-            } else {
-                var msg = (data && data.message) ? data.message : 'Optik okuyucu camında pasaport veya kimlik tespit edilemedi. Lütfen belgeyi cihaz camına tam yerleştiriniz.';
-                if (typeof showEInadStatus === 'function') {
-                    showEInadStatus('<i class="fas fa-exclamation-triangle mr-1"></i> ' + msg, 'warning');
-                } else if ($('#connect3MStatusMessage').length) {
-                    $('#connect3MStatusMessage').html('<span class="text-warning">' + msg + '</span>');
-                }
+            var alertMsg = '<i class="fas fa-satellite-dish mr-1"></i> <strong>🟢 Masanızdaki Okuyucu Dinleniyor (3M / Thales / Desko / Regula):</strong> Lütfen pasaport veya kimliği masanızdaki optik okuyucunun camına yerleştiriniz. Bilgiler forma otomatik aktarılacaktır.';
+            if (typeof showEInadStatus === 'function') {
+                showEInadStatus(alertMsg, 'info');
+            } else if ($('#connect3MStatusMessage').length) {
+                $('#connect3MStatusMessage').html('<span class="text-info">' + alertMsg + '</span>');
             }
-        },
-        error: function (xhr, status, err) {
-            // Sunucu bağlantısı kesilirse yerel köprüyü sessizce dene
-            $.ajax({
-                url: 'http://127.0.0.1:41102/scan?device=' + encodeURIComponent(dev),
-                type: 'GET',
-                dataType: 'json',
-                timeout: 3000
-            }).done(function (bridgeRes) {
-                if (bridgeRes && (bridgeRes.success || bridgeRes.documentNumber || bridgeRes.rawMrz || bridgeRes.line1 || bridgeRes.fullName)) {
-                    applyScanResultForEinad(bridgeRes);
+            return;
+        }
+
+        var scanUrl = getEinadUrl('data-url-scan-passport', '/EInad/ScanPassport');
+        var token = getAntiForgeryToken();
+        $.ajax({
+            url: scanUrl,
+            type: 'POST',
+            data: { 
+                deviceType: dev,
+                __RequestVerificationToken: token
+            },
+            timeout: 25000,
+            success: function (res) {
+                restoreScanButtons();
+                var data = (res && res.data) ? res.data : res;
+                if (data && data.success) {
+                    applyScanResultForEinad(data);
                 } else {
-                    var msg = 'Optik okuyucu camında pasaport tespit edilemedi. Lütfen belgeyi cihaz camına tam yerleştiriniz.';
+                    var msg = (data && data.message) ? data.message : 'Optik okuyucu camında pasaport veya kimlik tespit edilemedi.';
                     if (typeof showEInadStatus === 'function') {
                         showEInadStatus('<i class="fas fa-exclamation-triangle mr-1"></i> ' + msg, 'warning');
+                    } else if ($('#connect3MStatusMessage').length) {
+                        $('#connect3MStatusMessage').html('<span class="text-warning">' + msg + '</span>');
                     }
                 }
-            }).fail(function () {
-                var errMsg = 'Optik okuyucuya erişilemedi. Lütfen okuyucunun USB bağlantısını kontrol ediniz.';
+            },
+            error: function () {
+                restoreScanButtons();
+                var errMsg = 'Optik okuyucu servisiyle iletişim kurulamadı.';
                 if (typeof showEInadStatus === 'function') {
                     showEInadStatus('<i class="fas fa-times-circle mr-1"></i> ' + errMsg, 'danger');
                 } else if ($('#connect3MStatusMessage').length) {
                     $('#connect3MStatusMessage').html('<span class="text-danger">' + errMsg + '</span>');
                 }
-            }).always(function () {
-                restoreScanButtons();
-            });
-        }
-    });
+            }
+        });
+    }
 };
 
 /* ==========================================================================
