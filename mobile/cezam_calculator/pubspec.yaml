@@ -1,8 +1,8 @@
-﻿name: cezam_calculator
+name: cezam_calculator
 description: EGM Polnet uyumlu Cevrimdisi CEZAM vize ve ikamet ihlali ceza hesaplayici.
 publish_to: "none"
 
-version: 0.2.0+2
+version: 0.3.2+5
 
 environment:
   sdk: ">=3.3.0 <4.0.0"
@@ -34,3 +34,4 @@ flutter:
     - assets/print_templates/violation_paid.html
     - assets/print_templates/violation_unpaid.html
     - assets/print_templates/img/goc.jpg
+    - assets/img/app_logo.png

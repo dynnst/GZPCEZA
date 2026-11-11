@@ -362,7 +362,12 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 
-# CEZAM Project Specific Ignores
+# Temporary scratch & build scripts
+batch_process_all.js
+build_country_packages.js
+countries_catalog.json
+parse_catalog.js
+
 .tools/
 .vscode/
 dynnst/

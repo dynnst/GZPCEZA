@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -1075,6 +1075,49 @@ class _CalculatorPageState extends State<CalculatorPage> {
     await _showSettingsDialog(initialTab: initialTab);
   }
 
+  IconData _getGateTypeIcon(String gate) {
+    final upper = gate.toUpperCase();
+    if (upper.contains('HAVA') || upper.contains('HAVALİMAN') || upper.contains('HAVAALAN')) {
+      return Icons.flight;
+    }
+    if (upper.contains('LİMAN') || upper.contains('DENİZ') || upper.contains('PORT') || upper.contains('GEMİ')) {
+      return Icons.directions_boat;
+    }
+    if (upper.contains('KARA') || upper.contains('KAPI') || upper.contains('SARP') || upper.contains('İPSALA') || upper.contains('HABUR')) {
+      return Icons.directions_car;
+    }
+    return Icons.security;
+  }
+
+  Widget _gateTypePill(IconData icon, String label, Color color, bool isActive) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: isActive ? color.withValues(alpha: 0.2) : Colors.transparent,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: isActive ? color : Colors.white12,
+          width: 0.8,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: isActive ? color : Colors.white38),
+          const SizedBox(width: 3),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              color: isActive ? Colors.white : Colors.white54,
+              fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildAppDrawer() {
     return Drawer(
       child: Column(
@@ -1100,17 +1143,25 @@ class _CalculatorPageState extends State<CalculatorPage> {
                 Row(
                   children: [
                     Container(
-                      width: 48,
-                      height: 48,
+                      width: 52,
+                      height: 52,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: Colors.white.withValues(alpha: 0.12),
                         border: Border.all(color: Colors.amber, width: 2),
                       ),
-                      child: const Icon(
-                        Icons.shield,
-                        color: Colors.amber,
-                        size: 28,
+                      child: ClipOval(
+                        child: Image.asset(
+                          'assets/img/app_logo.png',
+                          width: 52,
+                          height: 52,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => const Icon(
+                            Icons.shield,
+                            color: Colors.amber,
+                            size: 28,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -1141,7 +1192,42 @@ class _CalculatorPageState extends State<CalculatorPage> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.white24, width: 0.8),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _gateTypePill(
+                        Icons.flight,
+                        'Hava',
+                        Colors.lightBlueAccent,
+                        _borderGate.toUpperCase().contains('HAVA'),
+                      ),
+                      _gateTypePill(
+                        Icons.directions_boat,
+                        'Deniz',
+                        Colors.cyanAccent,
+                        _borderGate.toUpperCase().contains('LİMAN') ||
+                            _borderGate.toUpperCase().contains('DENİZ'),
+                      ),
+                      _gateTypePill(
+                        Icons.directions_car,
+                        'Kara',
+                        Colors.amberAccent,
+                        _borderGate.toUpperCase().contains('KARA') ||
+                            _borderGate.toUpperCase().contains('KAPI') ||
+                            _borderGate.toUpperCase().contains('SARP'),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
@@ -1511,6 +1597,10 @@ class _CalculatorPageState extends State<CalculatorPage> {
 
     setState(() {
       _entryExitRows.add(EntryExitControllers());
+      // Coklu giris yapildiginda otomatik olarak 180 gun kurali (calculateType: 2) secilsin
+      if (_entryExitRows.length > 1) {
+        _calculateType = 2;
+      }
     });
   }
 
@@ -2247,7 +2337,59 @@ class _CalculatorPageState extends State<CalculatorPage> {
     return Scaffold(
       drawer: _buildAppDrawer(),
       appBar: AppBar(
-        title: Text(context.tr('app_title')),
+        title: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.asset(
+                'assets/img/app_logo.png',
+                width: 32,
+                height: 32,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) =>
+                    const Icon(Icons.shield, color: Color(0xff0b69a3)),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    context.tr('app_title'),
+                    style: const TextStyle(
+                        fontSize: 15, fontWeight: FontWeight.bold),
+                  ),
+                  Row(
+                    children: [
+                      Icon(
+                        _getGateTypeIcon(_borderGate),
+                        size: 11,
+                        color: const Color(0xff0b69a3),
+                      ),
+                      const SizedBox(width: 3),
+                      Flexible(
+                        child: Text(
+                          _borderGate.isNotEmpty
+                              ? _borderGate
+                              : 'Hudut Kapıları',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.blueGrey.shade700,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
         actions: [
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
@@ -2324,6 +2466,7 @@ class _CalculatorPageState extends State<CalculatorPage> {
           _entryExitRowsWidget(),
           const SizedBox(height: 12),
           DropdownButtonFormField<int>(
+            key: ValueKey('calc-$_calculateType'),
             initialValue: _calculateType,
             decoration:
                 InputDecoration(labelText: context.tr('calculation_type')),
@@ -2604,27 +2747,33 @@ class _CalculatorPageState extends State<CalculatorPage> {
     // Arayuzde mevcut tek giris/cikis gun mantigini gostermeye devam et.
     final days = max(1, exit.difference(entry).inDays);
 
-    // 180 Gun Kurali seciliyse ve birden fazla sefer varsa pencere icindeki gunu de ek olarak yansit
-    if (_calculateType == 2 && _entryExitRows.length > 1) {
+    // Coklu giris-cikis veya 180 Gun Kurali seciliyse kayan pencere (180 veya 365 gun) icindeki gunu de web standardinda yansit
+    if (_entryExitRows.length > 1 || _calculateType == 2) {
       try {
         final allExits = _entryExitRows
             .map((r) => parseDate(r.exit.text))
             .whereType<DateTime>()
             .toList();
         if (allExits.isNotEmpty) {
-          final referenceExit = allExits.reduce((a, b) => a.isAfter(b) ? a : b);
-          final windowStart = referenceExit.subtract(const Duration(days: 180));
+          final windowDaysConfig =
+              (_country == 'Beyaz Rusya' || _calculateType == 5) ? 365 : 180;
+          final referenceExit =
+              allExits.reduce((a, b) => a.isAfter(b) ? a : b);
+          final windowStart =
+              referenceExit.subtract(Duration(days: windowDaysConfig));
+
           if (exit.isBefore(windowStart)) {
-            return '${context.trValue("day_short", days)}\n(180G: 0)';
+            return '${context.trValue("day_short", days)}\n(${windowDaysConfig}G Disi: 0 G)';
           }
-          final clippedEntry = entry.isBefore(windowStart) ? windowStart : entry;
-          final clippedExit = exit.isAfter(referenceExit) ? referenceExit : exit;
-          if (!clippedEntry.isAfter(clippedExit)) {
-            final windowDays = max(1, clippedExit.difference(clippedEntry).inDays);
-            if (windowDays != days) {
-              return '${context.trValue("day_short", days)}\n(180G: $windowDays)';
-            }
+          final clippedEntry =
+              entry.isBefore(windowStart) ? windowStart : entry;
+          final clippedExit =
+              exit.isAfter(referenceExit) ? referenceExit : exit;
+          if (clippedEntry.isAfter(clippedExit)) {
+            return '${context.trValue("day_short", days)}\n(${windowDaysConfig}G Disi: 0 G)';
           }
+          final windowStay = max(1, clippedExit.difference(clippedEntry).inDays);
+          return '${context.trValue("day_short", days)}\n(${windowDaysConfig}G: $windowStay G)';
         }
       } catch (_) {}
     }
@@ -4218,6 +4367,43 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
     );
   }
 
+  Widget _gatePresetChip({
+    required String label,
+    required String gate,
+    required String valilik,
+    String buro = 'Pasaport Kontrol Büro Amirliği',
+    String title = 'Polis Memuru',
+  }) {
+    final isSelected =
+        _borderGate.text.trim().toUpperCase() == gate.toUpperCase();
+    return ActionChip(
+      avatar: isSelected
+          ? const Icon(Icons.check, size: 14, color: Colors.white)
+          : null,
+      backgroundColor: isSelected ? const Color(0xff0b69a3) : Colors.white,
+      side: BorderSide(
+        color: isSelected ? const Color(0xff0b69a3) : Colors.grey.shade300,
+      ),
+      label: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+          color: isSelected ? Colors.white : const Color(0xff1e293b),
+        ),
+      ),
+      onPressed: () {
+        setState(() {
+          _borderGate.text = gate;
+          _valilik.text = valilik;
+          _buro.text = buro;
+          _officerTitle.text = title;
+        });
+        _message('$label başlık bilgileri uygulandı.');
+      },
+    );
+  }
+
   Widget _borderGateTab() => ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -4297,6 +4483,229 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
                     },
                     icon: const Icon(Icons.restore),
                     label: const Text('Varsayılan Başlıkları Yükle'),
+                  ),
+                  const SizedBox(height: 20),
+                  const Divider(),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Hızlı Kapı Seçimi (Uçak • Gemi • Araba)',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blueGrey.shade800,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  // 1. HAVA HUDUT KAPILARI (UÇAK)
+                  Card(
+                    color: const Color(0xfff0f9ff),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      side: BorderSide(color: Colors.lightBlue.shade200),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(10),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: const [
+                              Icon(Icons.flight, color: Color(0xff0284c7), size: 18),
+                              SizedBox(width: 6),
+                              Text(
+                                'Hava Hudut Kapıları (Uçak)',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                  color: Color(0xff0369a1),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: [
+                              _gatePresetChip(
+                                label: 'Sabiha Gökçen Havalimanı',
+                                gate: 'SABİHA GÖKÇEN HAVALİMANI ŞUBE MÜDÜRLÜĞÜ',
+                                valilik: 'İSTANBUL VALİLİĞİ',
+                              ),
+                              _gatePresetChip(
+                                label: 'İstanbul Havalimanı',
+                                gate: 'İSTANBUL HAVALİMANI ŞUBE MÜDÜRLÜĞÜ',
+                                valilik: 'İSTANBUL VALİLİĞİ',
+                              ),
+                              _gatePresetChip(
+                                label: 'Gazipaşa-Alanya Havalimanı',
+                                gate: 'GAZİPAŞA-ALANYA HAVALİMANI ŞUBE MÜDÜRLÜĞÜ',
+                                valilik: 'ANTALYA VALİLİĞİ',
+                              ),
+                              _gatePresetChip(
+                                label: 'Antalya Havalimanı',
+                                gate: 'ANTALYA HAVALİMANI ŞUBE MÜDÜRLÜĞÜ',
+                                valilik: 'ANTALYA VALİLİĞİ',
+                              ),
+                              _gatePresetChip(
+                                label: 'Esenboğa Havalimanı',
+                                gate: 'ESENBOĞA HAVALİMANI ŞUBE MÜDÜRLÜĞÜ',
+                                valilik: 'ANKARA VALİLİĞİ',
+                              ),
+                              _gatePresetChip(
+                                label: 'İzmir Adnan Menderes',
+                                gate: 'İZMİR ADNAN MENDERES HAVALİMANI ŞUBE MÜDÜRLÜĞÜ',
+                                valilik: 'İZMİR VALİLİĞİ',
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  // 2. DENİZ HUDUT KAPILARI (GEMİ)
+                  Card(
+                    color: const Color(0xffecfeff),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      side: BorderSide(color: Colors.cyan.shade200),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(10),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: const [
+                              Icon(Icons.directions_boat, color: Color(0xff0891b2), size: 18),
+                              SizedBox(width: 6),
+                              Text(
+                                'Deniz Hudut Kapıları (Gemi)',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                  color: Color(0xff0e7490),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: [
+                              _gatePresetChip(
+                                label: 'Karaköy / Galataport Limanı',
+                                gate: 'KARAKÖY DENİZ LİMANI ŞUBE MÜDÜRLÜĞÜ',
+                                valilik: 'İSTANBUL VALİLİĞİ',
+                              ),
+                              _gatePresetChip(
+                                label: 'Pendik Deniz Limanı',
+                                gate: 'PENDİK DENİZ LİMANI ŞUBE MÜDÜRLÜĞÜ',
+                                valilik: 'İSTANBUL VALİLİĞİ',
+                              ),
+                              _gatePresetChip(
+                                label: 'İzmir Deniz Limanı',
+                                gate: 'İZMİR DENİZ LİMANI ŞUBE MÜDÜRLÜĞÜ',
+                                valilik: 'İZMİR VALİLİĞİ',
+                              ),
+                              _gatePresetChip(
+                                label: 'Mersin Deniz Limanı',
+                                gate: 'MERSİN DENİZ LİMANI ŞUBE MÜDÜRLÜĞÜ',
+                                valilik: 'MERSİN VALİLİĞİ',
+                              ),
+                              _gatePresetChip(
+                                label: 'Bodrum Deniz Limanı',
+                                gate: 'BODRUM DENİZ LİMANI ŞUBE MÜDÜRLÜĞÜ',
+                                valilik: 'MUĞLA VALİLİĞİ',
+                              ),
+                              _gatePresetChip(
+                                label: 'Kuşadası Deniz Limanı',
+                                gate: 'KUŞADASI DENİZ LİMANI ŞUBE MÜDÜRLÜĞÜ',
+                                valilik: 'AYDIN VALİLİĞİ',
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  // 3. KARA HUDUT KAPILARI (ARABA)
+                  Card(
+                    color: const Color(0xfffffbeb),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      side: BorderSide(color: Colors.amber.shade200),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(10),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: const [
+                              Icon(Icons.directions_car, color: Color(0xffd97706), size: 18),
+                              SizedBox(width: 6),
+                              Text(
+                                'Kara Hudut Kapıları (Araba / Taşıt)',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                  color: Color(0xffb45309),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: [
+                              _gatePresetChip(
+                                label: 'Kapıkule Kara Hudut Kapısı',
+                                gate: 'KAPIKULE KARA HUDUT KAPISI ŞUBE MÜDÜRLÜĞÜ',
+                                valilik: 'EDİRNE VALİLİĞİ',
+                              ),
+                              _gatePresetChip(
+                                label: 'İpsala Kara Hudut Kapısı',
+                                gate: 'İPSALA KARA HUDUT KAPISI ŞUBE MÜDÜRLÜĞÜ',
+                                valilik: 'EDİRNE VALİLİĞİ',
+                              ),
+                              _gatePresetChip(
+                                label: 'Hamzabeyli Kara Hudut Kapısı',
+                                gate: 'HAMZABEYLİ KARA HUDUT KAPISI ŞUBE MÜDÜRLÜĞÜ',
+                                valilik: 'EDİRNE VALİLİĞİ',
+                              ),
+                              _gatePresetChip(
+                                label: 'Sarp Kara Hudut Kapısı',
+                                gate: 'SARP KARA HUDUT KAPISI ŞUBE MÜDÜRLÜĞÜ',
+                                valilik: 'ARTVİN VALİLİĞİ',
+                              ),
+                              _gatePresetChip(
+                                label: 'Habur Kara Hudut Kapısı',
+                                gate: 'HABUR KARA HUDUT KAPISI ŞUBE MÜDÜRLÜĞÜ',
+                                valilik: 'ŞIRNAK VALİLİĞİ',
+                              ),
+                              _gatePresetChip(
+                                label: 'Dilucu Kara Hudut Kapısı',
+                                gate: 'DİLUCU KARA HUDUT KAPISI ŞUBE MÜDÜRLÜĞÜ',
+                                valilik: 'IĞDIR VALİLİĞİ',
+                              ),
+                              _gatePresetChip(
+                                label: 'Cilvegözü Kara Hudut Kapısı',
+                                gate: 'CİLVEGÖZÜ KARA HUDUT KAPISI ŞUBE MÜDÜRLÜĞÜ',
+                                valilik: 'HATAY VALİLİĞİ',
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -4503,6 +4912,9 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
 
 class PenaltyCalculator {
   PenaltyResult calculate(PenaltySettings settings, CezamData data) {
+    final isPermitOrRestriction =
+        const {4, 8, 10, 11, 12, 13, 14, 15}.contains(settings.visa);
+
     final rule = (settings.visa == 5
             ? const UvrRule(
                 country: '',
@@ -4520,56 +4932,89 @@ class PenaltyCalculator {
                 settings.visa,
                 settings.calculateType,
               )) ??
+        (isPermitOrRestriction
+            ? (data.findUvr(settings.country, settings.passport, 2, 1) ??
+                data.findUvr(settings.country, settings.passport, 1, 1))
+            : null) ??
         settings.manualRule;
 
     final auh = data.findAuh(settings.country) ?? settings.manualAuh;
     final ranges = settings.entryExitPairs;
-    final countedTripDays = _countedTripDays(ranges, settings.calculateType);
+    final countedTripDays = _countedTripDays(
+      ranges,
+      settings.calculateType,
+      ruleDay: rule.day,
+      country: settings.country,
+    );
     final stayDays =
         countedTripDays.fold<int>(0, (total, days) => total + days);
     final tripDays = settings.calculateType == 4
-        ? countedTripDays.map((_) => -1).toList()
+        ? countedTripDays.map((d) => d > 0 ? 1 : 0).toList()
         : countedTripDays;
 
-    final oneTime = settings.calculateType == 4
+    var maxOneTime = settings.calculateType == 4
         ? 0
         : settings.visa == 3 && settings.consularVisaDays > 0
             ? settings.consularVisaDays
             : rule.oneTime;
-    var penaltyDays = 0;
+    if (settings.country == 'Rusya Federasyonu' && maxOneTime == 0) maxOneTime = 60;
+    if (settings.country == 'Beyaz Rusya' && maxOneTime == 0) maxOneTime = 30;
 
-    var allowedStayDays = settings.calculateType == 4 ? 1 : oneTime;
+    final maxPeriodTotal = rule.longStay > 0 ? rule.longStay : 90;
+    var penaltyDays = 0;
+    var allowedStayDays = settings.calculateType == 4 ? 1 : maxOneTime;
+    DateTime shouldExitDate;
 
     if (settings.visa == 5) {
       // Türkiye'de Doğan Çocuklar: Vize hakkı 0 gündür. Doğduğu günden çıktığı güne kadar tüm süre cezalıdır.
       allowedStayDays = 0;
       penaltyDays = stayDays;
-    } else if (settings.country == 'Beyaz Rusya' || settings.calculateType == 5) {
-      allowedStayDays = 30;
-      for (final days in tripDays) {
-        if (days > 30) penaltyDays += days - 30;
+      shouldExitDate =
+          ranges.isNotEmpty ? ranges.first.entry : _referenceExit(ranges);
+    } else if (isPermitOrRestriction) {
+      // İkamet tezkeresi, çalışma izni ve tahditli/tebliğli işlemler (AjaxController.cs:224-255)
+      // İlk tarih: Tebliğ/bitiş tarihi; Son tarih: Hudut kapısı çıkış tarihi
+      if (ranges.isEmpty) {
+        throw Exception('error_no_penalty');
       }
-      if (stayDays > 90) {
-        penaltyDays = max(penaltyDays, stayDays - 90);
-        if (!tripDays.any((days) => days > 30)) {
-          allowedStayDays = 90;
-        }
+      final permitEndDt = ranges.first.entry;
+      final borderExitDt = ranges.last.exit;
+
+      if (!borderExitDt.isAfter(permitEndDt)) {
+        throw Exception('error_no_penalty');
       }
+
+      final violationDays = borderExitDt.difference(permitEndDt).inDays;
+      if (violationDays <= 0) {
+        throw Exception('error_no_penalty');
+      }
+
+      penaltyDays = violationDays;
+      allowedStayDays = 0;
+      shouldExitDate = permitEndDt;
     } else {
-      var exceedsOneTime = false;
-      for (final days in tripDays) {
-        if (days > oneTime) {
-          exceedsOneTime = true;
-          break;
+      // Normal Vizeli / Vizesiz / 180-90 / Turistik Kalış Hesabı (AjaxController.cs:329-350)
+      var singleTripPenalty = 0;
+      if (maxOneTime > 0) {
+        for (final days in tripDays) {
+          if (days > maxOneTime) {
+            singleTripPenalty += days - maxOneTime;
+          }
         }
       }
-      if (exceedsOneTime) {
-        penaltyDays = stayDays - oneTime;
-        allowedStayDays = oneTime;
-      } else if (stayDays > rule.longStay) {
-        penaltyDays = stayDays - rule.longStay;
-        allowedStayDays = rule.longStay;
+
+      var totalPeriodPenalty = 0;
+      if (maxPeriodTotal > 0 && stayDays > maxPeriodTotal) {
+        totalPeriodPenalty = stayDays - maxPeriodTotal;
       }
+
+      penaltyDays = max(singleTripPenalty, totalPeriodPenalty);
+
+      allowedStayDays = (totalPeriodPenalty >= singleTripPenalty && totalPeriodPenalty > 0)
+          ? maxPeriodTotal
+          : (singleTripPenalty > 0 ? maxOneTime : (maxPeriodTotal > 0 ? maxPeriodTotal : maxOneTime));
+      shouldExitDate =
+          _referenceExit(ranges).subtract(Duration(days: penaltyDays));
     }
 
     if (penaltyDays <= 0) {
@@ -4610,9 +5055,7 @@ class PenaltyCalculator {
       penaltyDays: remainingDays,
       ticketText: ticketText,
       referenceExitDate: _referenceExit(ranges),
-      shouldExitDate: settings.visa == 5
-          ? (ranges.isNotEmpty ? ranges.first.entry : _referenceExit(ranges))
-          : _referenceExit(ranges).subtract(Duration(days: penaltyDays)),
+      shouldExitDate: shouldExitDate,
       penaltyAmount: penaltyAmount,
       currency: auh.currency,
       exchangeRate: exchangeRate,
@@ -4627,43 +5070,46 @@ class PenaltyCalculator {
     );
   }
 
-  List<int> _countedTripDays(List<DateRange> ranges, int calculateType) {
+  List<int> _countedTripDays(
+    List<DateRange> ranges,
+    int calculateType, {
+    int ruleDay = 0,
+    String country = '',
+  }) {
     for (final range in ranges) {
       if (range.entry.isAfter(range.exit)) {
         throw Exception('error_date_order');
       }
     }
 
-    // Tek kayitta eski hesaplama davranisi kesinlikle korunur.
-    if (ranges.length == 1) {
+    // Tek kayıtta ve 180 Gün Kuralı değilse: eski tek giriş hesaplama davranışı korunur.
+    if (ranges.length == 1 && calculateType != 2) {
       final range = ranges.single;
       if (calculateType == 4) return const [1];
       return [max(1, range.exit.difference(range.entry).inDays)];
     }
 
-    // 180 Gun Kurali (calculateType == 2): En son cikis dahil geriye donuk 180 takvim gunu penceresi uygulanir.
-    if (calculateType == 2) {
-      final referenceExit = _referenceExit(ranges);
-      final windowStart = referenceExit.subtract(const Duration(days: 180));
+    // Çoklu giriş-çıkışlarda (ranges.length > 1) veya 180 Gün Kuralında (calculateType == 2):
+    // Web sürümü (AjaxController.cs:272-300) ile birebir uyumlu geriye dönük takvim penceresi uygulanır.
+    final windowDays = (ruleDay > 0)
+        ? ruleDay
+        : ((country == 'Beyaz Rusya' || calculateType == 5) ? 365 : 180);
+    final referenceExit = _referenceExit(ranges);
+    final windowStart = referenceExit.subtract(Duration(days: windowDays));
 
-      return ranges.map((range) {
-        final clippedEntry =
-            range.entry.isBefore(windowStart) ? windowStart : range.entry;
-        final clippedExit =
-            range.exit.isAfter(referenceExit) ? referenceExit : range.exit;
-        if (clippedEntry.isAfter(clippedExit)) return 0;
-        if (calculateType == 4) return 1;
-
-        // EGM Polnet standardi: Giris gunu sayilir, cikis gunu sayilmaz (ayni gun ise 1 gun).
-        return max(1, clippedExit.difference(clippedEntry).inDays);
-      }).toList();
-    }
-
-    // Normal Hesaplama (calculateType == 1) ve diger modellerde:
-    // Her bir seferin kalis suresi eksiksiz toplanir.
     return ranges.map((range) {
+      // Pencere öncesindeki (180 gün dışındaki) kalışlar kanunen hesaba dahil edilmez (0 gün).
+      if (range.exit.isBefore(windowStart)) return 0;
+
+      final clippedEntry =
+          range.entry.isBefore(windowStart) ? windowStart : range.entry;
+      final clippedExit =
+          range.exit.isAfter(referenceExit) ? referenceExit : range.exit;
+      if (clippedEntry.isAfter(clippedExit)) return 0;
       if (calculateType == 4) return 1;
-      return max(1, range.exit.difference(range.entry).inDays);
+
+      // EGM Polnet standardı: Giriş günü sayılır, çıkış günü sayılmaz (aynı gün ise 1 gün).
+      return max(1, clippedExit.difference(clippedEntry).inDays);
     }).toList();
   }
 
@@ -4825,6 +5271,18 @@ class CezamData {
           row.visaStatus == visa &&
           row.calculateType == calculateType) {
         return row;
+      }
+    }
+    // 180 Gun Kurali (calculateType == 2) icin ozel kayit yoksa, web surumu (AjaxController.cs:195-199)
+    // ile birebir uyumlu olarak Normal Hesaplama (calculateType == 1) kuralina otomatik gecis yap
+    if (calculateType == 2) {
+      for (final row in uvr) {
+        if (row.country == country &&
+            row.passportType == passport &&
+            row.visaStatus == visa &&
+            row.calculateType == 1) {
+          return row;
+        }
       }
     }
     return null;
