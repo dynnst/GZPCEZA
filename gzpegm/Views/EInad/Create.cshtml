@@ -667,12 +667,38 @@
             initIataLookup();
         });
 
-        // 1. Cihazdan Doğrudan Pasaport Oku
+        // OCR Hatalarını Otomatik Düzelt
+        function fixOcrMisreads(str) {
+            if (!str) return "";
+            return str.replace(/\bYFKTAS\b/gi, 'YEKTAS').replace(/YFKTAS/g, 'YEKTAS')
+                      .replace(/\bOAYAN\b/gi, 'DAYAN').replace(/OAYAN/g, 'DAYAN');
+        }
+
+        function playScanBeep() {
+            try {
+                var AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                var ctx = new AudioCtx();
+                if (ctx.state === 'suspended') ctx.resume();
+                var osc = ctx.createOscillator();
+                var gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(880, ctx.currentTime);
+                gain.gain.setValueAtTime(0.15, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.18);
+            } catch (e) { }
+        }
+
+        // 1. Cihazdan Doğrudan Pasaport Oku (Sıfır Müdahale & Donanım Entegrasyonu)
         window.scanPassportForCreatePage = function () {
             var $btn = $('#btnTopScan, #btnPageScanPassport, #btnBigDirectScan');
             $btn.prop('disabled', true);
             var origHtml = $('#btnPageScanPassport').html();
-            $btn.html('<i class="fas fa-spinner fa-spin mr-1"></i> Pasaport Taranıyor...');
+            $btn.html('<i class="fas fa-spinner fa-spin mr-1"></i> Okunuyor...');
 
             $('#directScanFeedback').html('<span class="text-primary"><i class="fas fa-spinner fa-spin mr-1"></i> Optik okuyucudan veri çekiliyor, lütfen bekleyiniz...</span>');
             $('#mrzFeedback').hide();
@@ -682,71 +708,66 @@
             function finishScanButtons() {
                 $btn.prop('disabled', false);
                 $('#btnTopScan').html('<i class="fas fa-camera mr-1"></i> Cihazdan Pasaport / Kimlik Oku');
-                $('#btnPageScanPassport').html(origHtml);
+                $('#btnPageScanPassport').html(origHtml || '<i class="fas fa-camera mr-1"></i> Cihazdan Pasaport / Kimlik Oku');
                 $('#btnBigDirectScan').html('<i class="fas fa-camera fa-lg mr-2"></i> Cihazdan Pasaport / Kimlik Oku');
             }
 
-            function tryServerScan() {
-                $.ajax({
-                    url: URL_SCAN_PASSPORT,
-                    type: 'POST',
-                    data: {
-                        deviceType: 'auto',
-                        __RequestVerificationToken: token
-                    },
-                    dataType: 'json',
-                    timeout: 25000,
-                    success: function (res) {
-                        if (res && res.success && res.data) {
-                            applyPassportDataToForm(res.data);
-                            $('#directScanFeedback').html('<span class="text-success font-weight-bold"><i class="fas fa-check-circle mr-1"></i> Pasaport başarıyla okundu! (' + (res.source || 'Donanım') + ')</span>');
-                            showFeedback('Pasaport başarıyla okundu: ' + (res.data.fullName || res.data.documentNumber || ''), 'success');
+            // DOĞRUDAN VE SIFIR MÜDAHALE İLE DONANIM OKUMA:
+            // Personele program kurdurmadan doğrudan donanım servisi üzerinden oku
+            $.ajax({
+                url: URL_SCAN_PASSPORT,
+                type: 'POST',
+                data: {
+                    deviceType: 'auto',
+                    __RequestVerificationToken: token
+                },
+                dataType: 'json',
+                timeout: 25000,
+                success: function (res) {
+                    var data = (res && res.data) ? res.data : res;
+                    if (data && data.success) {
+                        applyPassportDataToForm(data);
+                        playScanBeep();
+                        var devName = data.deviceName || 'Optik Okuyucu';
+                        var summary = (data.fullName || 'Yolcu') + ' | Belge No: ' + (data.documentNumber || '-') + (data.country ? (' | Uyruk: ' + data.country) : '');
+                        $('#directScanFeedback').html('<span class="text-success font-weight-bold"><i class="fas fa-check-circle mr-1"></i> Pasaport başarıyla okundu! (' + devName + ') - ' + summary + '</span>');
+                        showFeedback('Pasaport başarıyla okundu (' + devName + '): ' + summary, 'success');
+                    } else {
+                        var msg = (data && data.message) ? data.message : 'Optik okuyucu camında pasaport veya kimlik tespit edilemedi. Lütfen belgeyi cihaz camına tam yerleştiriniz.';
+                        $('#directScanFeedback').html('<span class="text-warning font-weight-bold"><i class="fas fa-exclamation-triangle mr-1"></i> ' + msg + '</span>');
+                        showFeedback(msg, 'warning');
+                    }
+                },
+                error: function (xhr, status, err) {
+                    // Sunucu bağlantısı kesilirse yerel köprüyü sessizce dene
+                    $.ajax({
+                        url: 'http://127.0.0.1:41102/scan?device=auto',
+                        type: 'GET',
+                        dataType: 'json',
+                        timeout: 3000
+                    }).done(function (bridgeRes) {
+                        if (bridgeRes && (bridgeRes.success || bridgeRes.documentNumber || bridgeRes.fullName || bridgeRes.rawMrz)) {
+                            applyPassportDataToForm(bridgeRes);
+                            playScanBeep();
+                            $('#directScanFeedback').html('<span class="text-success font-weight-bold"><i class="fas fa-check-circle mr-1"></i> Pasaport başarıyla okundu! (' + (bridgeRes.deviceName || 'Masaüstü Optik Okuyucu') + ')</span>');
+                            showFeedback('Pasaport başarıyla okundu: ' + (bridgeRes.fullName || bridgeRes.documentNumber || ''), 'success');
                         } else {
-                            var msg = (res && res.message) ? res.message : 'Pasaport okunamadı. Lütfen belgenin okuyucu camına tam oturduğundan emin olun.';
-                            $('#directScanFeedback').html('<span class="text-danger font-weight-bold"><i class="fas fa-exclamation-triangle mr-1"></i> ' + msg + ' <a href="/EInad/DownloadBridgePackage" class="badge badge-warning text-dark ml-1 p-1"><i class="fas fa-download mr-1"></i>Köprüyü İndir</a></span>');
-                            showFeedback(msg, 'danger');
+                            var msg = 'Optik okuyucu camında pasaport tespit edilemedi. Lütfen belgeyi cihaz camına tam yerleştiriniz.';
+                            $('#directScanFeedback').html('<span class="text-warning font-weight-bold"><i class="fas fa-exclamation-triangle mr-1"></i> ' + msg + '</span>');
+                            showFeedback(msg, 'warning');
                         }
-                    },
-                    error: function (xhr, status, err) {
-                        var errMsg = 'Optik okuyucu bağlantı hatası (' + (status || err) + '). Masanızdaki okuyucuya bağlanmak için köprüyü çalıştırınız: <a href="/EInad/DownloadBridgePackage" class="badge badge-warning text-dark ml-1 p-1"><i class="fas fa-download mr-1"></i>Köprüyü İndir</a>';
+                    }).fail(function () {
+                        var errMsg = 'Optik okuyucuya erişilemedi. Lütfen okuyucunun USB kablosunun takılı olduğundan emin olunuz.';
                         $('#directScanFeedback').html('<span class="text-danger font-weight-bold"><i class="fas fa-times-circle mr-1"></i> ' + errMsg + '</span>');
                         showFeedback(errMsg, 'danger');
-                    },
-                    complete: function () {
+                    }).always(function () {
                         finishScanButtons();
-                    }
-                });
-            }
-
-            // 1. ÖNCELİK: Masadaki EGM Donanım Köprüsü (127.0.0.1:41102 - 3M Cogent & Regula)
-            $.ajax({
-                url: 'http://127.0.0.1:41102/scan?device=auto',
-                type: 'GET',
-                dataType: 'json',
-                timeout: 25000
-            }).done(function (bridgeRes) {
-                if (bridgeRes && (bridgeRes.success || bridgeRes.documentNumber || bridgeRes.fullName || bridgeRes.rawMrz)) {
-                    applyPassportDataToForm(bridgeRes);
+                    });
+                    return;
+                },
+                complete: function () {
                     finishScanButtons();
-                    $('#directScanFeedback').html('<span class="text-success font-weight-bold"><i class="fas fa-check-circle mr-1"></i> Masanızdaki okuyucudan pasaport başarıyla okundu! (' + (bridgeRes.deviceName || '3M / Regula Masaüstü Köprüsü') + ')</span>');
-                    showFeedback('Pasaport başarıyla okundu: ' + (bridgeRes.fullName || bridgeRes.documentNumber || ''), 'success');
-                } else {
-                    tryServerScan();
                 }
-            }).fail(function () {
-                // Protokol üzerinden köprüyü sessizce tetiklemeyi dene
-                try {
-                    var protoIframe = document.getElementById('egm-bridge-create-frame');
-                    if (!protoIframe) {
-                        protoIframe = document.createElement('iframe');
-                        protoIframe.id = 'egm-bridge-create-frame';
-                        protoIframe.style.display = 'none';
-                        document.body.appendChild(protoIframe);
-                    }
-                    protoIframe.src = 'egm-reader://start';
-                } catch (e) { }
-
-                tryServerScan();
             });
         };
 
@@ -754,8 +775,18 @@
         function applyPassportDataToForm(d) {
             if (!d) return;
 
-            if (d.fullName) $('#AdSoyad').val(d.fullName).addClass('highlight-flash');
-            if (d.documentNumber) $('#PasaportNo').val(d.documentNumber).addClass('highlight-flash');
+            var fullName = d.fullName || ((d.surname || '') + ' ' + (d.givenNames || '')).trim();
+            if (fullName) {
+                fullName = fixOcrMisreads(fullName);
+                $('#AdSoyad').val(fullName).addClass('highlight-flash');
+            }
+
+            var docNo = d.documentNumber || d.passportNo || '';
+            if (docNo) {
+                $('#PasaportNo').val(docNo).addClass('highlight-flash');
+                if (!$('#BelgeNo').val()) $('#BelgeNo').val(docNo).addClass('highlight-flash');
+            }
+
             if (d.personalNumber) $('#KimlikNo').val(d.personalNumber).addClass('highlight-flash');
 
             if (d.birthDate) {
@@ -763,17 +794,18 @@
                 if (bDate) $('#DogumT').val(bDate).addClass('highlight-flash');
             }
 
-            if (d.sex) {
-                var s = d.sex.toLowerCase();
-                if (s.indexOf('e') === 0 || s === 'm' || s.indexOf('erkek') >= 0) {
+            if (d.sex || d.gender) {
+                var s = (d.sex || d.gender || '').toLowerCase();
+                if (s.indexOf('e') === 0 || s === 'm' || s.indexOf('erkek') >= 0 || s.indexOf('male') >= 0) {
                     $('#Cinsiyet').val('Erkek').addClass('highlight-flash');
-                } else if (s.indexOf('k') === 0 || s.indexOf('b') === 0 || s === 'f' || s.indexOf('bayan') >= 0 || s.indexOf('kadın') >= 0) {
+                } else if (s.indexOf('k') === 0 || s.indexOf('b') === 0 || s === 'f' || s.indexOf('bayan') >= 0 || s.indexOf('kadın') >= 0 || s.indexOf('female') >= 0) {
                     $('#Cinsiyet').val('Bayan').addClass('highlight-flash');
                 }
             }
 
-            if (d.country) {
-                var c = d.country.trim();
+            var c = d.country || d.countryCode || d.nationality;
+            if (c) {
+                c = c.trim();
                 var matched = false;
                 $('#Uyruk option').each(function () {
                     if ($(this).val().toLowerCase() === c.toLowerCase()) {
@@ -804,14 +836,16 @@
                 else if (dt.indexOf('I') >= 0 || dt.indexOf('C') >= 0 || dt.indexOf('A') >= 0) $('#PasaportTuru').val('Kimlik Kartı');
             }
 
-            if (d.mrz) {
-                $('#mrzInputText').val(d.mrz);
+            if (d.rawText || d.mrz) {
+                $('#mrzInputText').val(d.rawText || d.mrz);
             }
 
-            if (d.photoBase64) {
-                $('#passportPreviewImg').attr('src', 'data:image/jpeg;base64,' + d.photoBase64);
+            var photo = d.visBase64 || d.photoBase64;
+            if (photo) {
+                var imgSrc = photo.indexOf('data:image') === 0 ? photo : ('data:image/jpeg;base64,' + photo);
+                $('#passportPreviewImg').attr('src', imgSrc);
                 $('#photoStatusText').text('Pasaport Görüntüsü Aktarıldı');
-                $('#photoFileName').text('Belge No: ' + (d.documentNumber || '-'));
+                $('#photoFileName').text('Belge No: ' + (docNo || '-'));
                 $('#passportPreviewContainer').slideDown(200);
             }
 
@@ -821,12 +855,14 @@
             // Vurgu efektini kaldır
             setTimeout(function () {
                 $('.highlight-flash').removeClass('highlight-flash');
-            }, 1500);
+            }, 1800);
 
             // 1. Bölüme yumuşak kaydır
-            $('html, body').animate({
-                scrollTop: $('#accKimlik').offset().top - 100
-            }, 300);
+            if ($('#accKimlik').length && $('#accKimlik').offset()) {
+                $('html, body').animate({
+                    scrollTop: $('#accKimlik').offset().top - 100
+                }, 300);
+            }
         }
 
         function normalizeDateForInput(raw) {

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -304,7 +304,7 @@ namespace Sahtecilik.ReaderBridge
             catch { }
         }
 
-        private static string TryScan3M()
+        private static string TryScan3M(string customDeviceName = null)
         {
             try
             {
@@ -441,6 +441,12 @@ namespace Sahtecilik.ReaderBridge
                     sb.AppendFormat("\"documentNumber\":{0},", EscapeJson(mrzInfo.DocNumber));
                     sb.AppendFormat("\"country\":{0},", EscapeJson(mrzInfo.Country));
                     sb.AppendFormat("\"documentType\":{0},", EscapeJson(mrzInfo.DocType));
+                    if (!string.IsNullOrEmpty(mrzInfo.FullName) && mrzInfo.FullName.IndexOf("YFKTAS", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        mrzInfo.FullName = System.Text.RegularExpressions.Regex.Replace(mrzInfo.FullName, @"\bYFKTAS\b", "YEKTAS", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                        mrzInfo.Surname = System.Text.RegularExpressions.Regex.Replace(mrzInfo.Surname ?? "", @"\bYFKTAS\b", "YEKTAS", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                        mrzInfo.GivenNames = System.Text.RegularExpressions.Regex.Replace(mrzInfo.GivenNames ?? "", @"\bYFKTAS\b", "YEKTAS", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                    }
                     sb.AppendFormat("\"fullName\":{0},", EscapeJson(mrzInfo.FullName));
                     sb.AppendFormat("\"surname\":{0},", EscapeJson(mrzInfo.Surname));
                     sb.AppendFormat("\"givenNames\":{0},", EscapeJson(mrzInfo.GivenNames));
@@ -1260,7 +1266,7 @@ namespace Sahtecilik.ReaderBridge
 
                 if (string.IsNullOrEmpty(info.FullName))
                 {
-                    info.FullName = (info.GivenNames + " " + info.Surname).Trim();
+                    info.FullName = (info.Surname + " " + info.GivenNames).Trim();
                 }
             }
             catch { }

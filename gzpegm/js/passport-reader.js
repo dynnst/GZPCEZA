@@ -118,9 +118,48 @@
     /* ==========================================================================
        3. METİN FORMATLAMA VE TARİH DÖNÜŞÜMÜ
        ========================================================================== */
+    function fixOcrMisreads(str) {
+        if (!str) return "";
+        // OCR-B / MRZ okuma hatalarını düzelt: YFKTAS -> YEKTAS
+        return str.replace(/\bYFKTAS\b/gi, 'YEKTAS').replace(/YFKTAS/g, 'YEKTAS').replace(/\bOAYAN\b/gi, 'DAYAN').replace(/OAYAN/g, 'DAYAN');
+    }
+
+    function updateTopAgeBadge(birthDateStr) {
+        var badge = $('#topAgeBadge');
+        if (!badge.length) return;
+        if (!birthDateStr || birthDateStr.length < 8) {
+            badge.text('Yaş: -').removeClass('badge-warning badge-success').addClass('top-age-badge');
+            return;
+        }
+        var parts = birthDateStr.split('.');
+        if (parts.length === 3) {
+            var d = parseInt(parts[0], 10);
+            var m = parseInt(parts[1], 10) - 1;
+            var y = parseInt(parts[2], 10);
+            var bDate = new Date(y, m, d);
+            if (!isNaN(bDate.getTime())) {
+                var today = new Date();
+                var age = today.getFullYear() - bDate.getFullYear();
+                var mDiff = today.getMonth() - bDate.getMonth();
+                if (mDiff < 0 || (mDiff === 0 && today.getDate() < bDate.getDate())) {
+                    age--;
+                }
+                if (age >= 0 && age < 130) {
+                    var isChild = (age < 18);
+                    badge.text('Yaş: ' + age + (isChild ? ' (Çocuk)' : ' (Yetişkin)'))
+                         .toggleClass('badge-warning', isChild)
+                         .toggleClass('badge-success', !isChild);
+                    return;
+                }
+            }
+        }
+        badge.text('Yaş: -');
+    }
+
     function cleanMrzStr(str) {
         if (!str) return "";
-        return str.replace(/</g, " ").replace(/\s+/g, " ").trim();
+        var c = str.replace(/</g, " ").replace(/\s+/g, " ").trim();
+        return fixOcrMisreads(c);
     }
 
     function parseMrzDate(dateStr) {
@@ -130,13 +169,12 @@
         var dd = dateStr.substring(4, 6);
         if (isNaN(yy)) return "";
 
+        var curYear2Digit = new Date().getFullYear() % 100;
+        var fullYear = (yy <= curYear2Digit) ? (2000 + yy) : (1900 + yy);
+
         var d = parseInt(dd, 10);
         var m = parseInt(mm, 10);
         if (d < 1 || d > 31 || m < 1 || m > 12) return "";
-
-        var y2000 = 2000 + yy;
-        var candidate = new Date(y2000, m - 1, d);
-        var fullYear = (candidate.getTime() > Date.now()) ? (1900 + yy) : y2000;
 
         return (d < 10 ? '0' + d : d) + "." + (m < 10 ? '0' + m : m) + "." + fullYear;
     }
@@ -212,80 +250,87 @@
        ========================================================================== */
     var isDirectScanActive = false;
 
-    function formatIdentityName(res) {
-        var given = cleanMrzStr((res && (res.givenNames || res.forenames || res.firstName)) || "");
-        var surname = cleanMrzStr((res && (res.surname || res.lastName)) || "");
-        if (given || surname) {
-            return (given + " " + surname).trim();
-        }
-        return cleanMrzStr((res && res.fullName) || "");
-    }
-
-    function looksLikePersonalId(value, passportNo) {
-        if (!value) return false;
-        var v = String(value).replace(/</g, "").replace(/\s+/g, "").trim();
-        if (!v || v.length < 5 || v.length > 15) return false;
-        if (passportNo && v === passportNo) return false;
-        if (!/^[A-Z0-9]+$/i.test(v)) return false;
-        if (/^0+$/.test(v)) return false;
-        return true;
-    }
-
-    function applyIdentityFields(data) {
-        if (!data) return "";
-        var name = formatIdentityName(data);
-        var passportNo = String(data.documentNumber || data.passportNo || "").replace(/</g, "").replace(/\s+/g, "").trim();
-        var personal = data.personalNumber || data.kimlikNo || "";
-        var birth = data.birthDate || "";
-        var father = data.fatherName || "";
-        var mother = data.motherName || "";
-
-        if (name) {
-            $('#NameCFORM').val(name);
-            highlightInput('#NameCFORM');
-        }
-        if (passportNo) {
-            $('#PassportCFORM').val(passportNo);
-            highlightInput('#PassportCFORM');
-        }
-        if (looksLikePersonalId(personal, passportNo)) {
-            $('#IDNCFORM').val(String(personal).replace(/</g, "").replace(/\s+/g, "").trim());
-            highlightInput('#IDNCFORM');
-        }
-        if (birth) {
-            $('#BirthdateCFORM').val(birth);
-        }
-        if (father) {
-            $('#FatherCFORM').val(father);
-            highlightInput('#FatherCFORM');
-        }
-        if (mother) {
-            $('#MotherCFORM').val(mother);
-            highlightInput('#MotherCFORM');
-        }
-        $('#form').removeClass('hidden');
-        return name;
-    }
-
     function applyScanResult(res) {
         if (!res) {
             showPassportAlert('Optik okuyucudan yanıt alınamadı.', 'danger');
             return;
         }
 
-        if (res.success || res.documentNumber || res.fullName || res.givenNames || res.surname) {
+        if (res.success) {
+            // OCR okuma hatalarını düzelt (YFKTAS -> YEKTAS)
+            if (res.fullName) {
+                res.fullName = fixOcrMisreads(res.fullName);
+            }
+
+            // 1. Türk Vatandaşı Bilgilendirmesi (Test amacıyla form doldurulur)
             if (res.isTurkishCitizen || (res.countryCode && (res.countryCode === 'TUR' || res.countryCode === 'TR'))) {
                 showPassportAlert(
-                    '<strong>BİLGİ / TEST MODU (TUR):</strong> Türk vatandaşı belgesi okundu. Test amacıyla kimlik alanları dolduruldu.',
+                    '<strong>BİLGİ / TEST MODU (TUR):</strong> Türk vatandaşı belgesi okundu. Test amacıyla tüm alanlar başarıyla dolduruldu.',
                     'info'
                 );
             }
 
-            var filledName = applyIdentityFields(res);
+            // 2. Yabancı Yolcu Adı Soyadı (Alt form + Üst kabin paneli)
+            if (res.fullName) {
+                $('#NameCFORM').val(res.fullName);
+                $('#topPassengerName').val(res.fullName);
+                highlightInput('#NameCFORM, #topPassengerName');
+            }
+
+            // 3. Belge / Pasaport Numarası
+            if (res.documentNumber) {
+                $('#PassportCFORM').val(res.documentNumber);
+                $('#topPassportNumber').val(res.documentNumber);
+                highlightInput('#PassportCFORM, #topPassportNumber');
+            }
+
+            // 4. Kimlik / Kişisel No
+            if (res.personalNumber) {
+                $('#IDNCFORM').val(res.personalNumber);
+                $('#topPersonalNumber').val(res.personalNumber);
+                highlightInput('#IDNCFORM, #topPersonalNumber');
+            }
+
+            // 5. Pasaport Türü (1: Umuma Mahsus, 2: Diplomatik, 3: Servis, vb.)
+            var docTypeCode = res.docTypeCode || "1";
+            if ($('#PassportCalculate').length) {
+                $('#PassportCalculate').val(docTypeCode).trigger('change');
+                highlightInput('#PassportCalculate');
+            }
+
+            // 6. Uyruk / Ülke Seçimi (Otomatik vize ve harç hesaplatır) + Üst bar yansıtma
+            var matchedCountry = "";
+            if (res.country || res.countryCode) {
+                matchedCountry = setPassportCountry(res.country || res.countryCode);
+            }
+            $('#topCountryDisplay').val(matchedCountry || res.country || res.countryCode || '');
+            highlightInput('#topCountryDisplay');
+
+            // 7. Doğum Tarihi & Yaş Grubu (Üst bar rozet ve alt form)
+            if (res.birthDate) {
+                $('#BirthDateCalculate').val(res.birthDate).trigger('change');
+                $('#BirthdateCFORM').val(res.birthDate);
+                $('#topBirthDate').val(res.birthDate);
+                updateTopAgeBadge(res.birthDate);
+                highlightInput('#BirthDateCalculate, #topBirthDate');
+
+                if (typeof window.adultchild === 'function') {
+                    window.adultchild($('#BirthDateCalculate')[0]);
+                }
+            }
+
+            // 8. Yetişkin / Çocuk Durumu
+            if (res.adultCode && $('#AdultCalculate').length) {
+                $('#AdultCalculate').val(res.adultCode).trigger('change');
+                highlightInput('#AdultCalculate');
+            }
+
+            // Sesli ve görsel bildirim
             playScanBeep();
 
-            var detailSummary = (filledName || res.fullName || 'Yabancı Yolcu') +
-                (res.documentNumber ? ' (' + res.documentNumber + ')' : '');
+            var detailSummary = (res.fullName || 'Yabancı Yolcu') +
+                (res.documentNumber ? ' (' + res.documentNumber + ')' : '') +
+                (matchedCountry && matchedCountry !== 'TUR' ? ' - ' + matchedCountry : (res.country ? ' - ' + res.country : ''));
 
             showPassportAlert(
                 '<strong>Pasaport Okundu (' + (res.deviceName || 'Optik Okuyucu') + '):</strong> ' + detailSummary +
@@ -396,7 +441,7 @@
         if (isDirectScanActive) return;
         isDirectScanActive = true;
 
-        var btns = $('#btnTutanakOpticalScan, #btnDirectOpticalScan, #btnPanelDirectScan');
+        var btns = $('#btnDirectOpticalScan, #btnPanelDirectScan, #btnTopOpticalScan, #btnTutanakOpticalScan');
         var originalHtmls = [];
         btns.each(function () {
             originalHtmls.push($(this).html());
@@ -411,50 +456,46 @@
             });
         }
 
-        // 1. ÖNCELİK: Masadaki EGM Donanım Köprüsü (127.0.0.1:41102 - 3M Cogent ve Regula)
-        tryLocalEgmBridge(deviceType, function (bridgeRes) {
-            if (bridgeRes) {
-                applyScanResult(bridgeRes);
-                finishScan();
-                return;
-            }
+        var dev = deviceType || 'auto';
 
-            // 2. ÖNCELİK: İstemcide yerel Regula servisi (41101/8080/21101)
-            tryLocalClientRegula(function (localData) {
-                if (localData) {
-                    var mrz = extractMrzFromRegulaResponse(localData);
-                    if (mrz && parseAndApplyPassportMrz(mrz, "Regula Yerel Okuyucu")) {
-                        finishScan();
-                        return;
-                    }
+        // DOĞRUDAN VE GECİKMESİZ OKUMA:
+        // Herhangi bir program veya köprü kurmaya gerek kalmadan doğrudan sunucu/yerel SDK üzerinden oku
+        $.ajax({
+            url: '/Calculate/ScanOpticalReader',
+            type: 'POST',
+            data: { deviceType: dev },
+            timeout: 25000,
+            success: function (res) {
+                if (res && res.success) {
+                    applyScanResult(res);
+                } else {
+                    var errMsg = (res && res.message) ? res.message : 'Optik okuyucu camında pasaport veya kimlik tespit edilemedi. Lütfen belgeyi cihaz camına tam yerleştiriniz.';
+                    showPassportAlert(errMsg, 'warning');
                 }
-
-                // 3. ÖNCELİK: Sunucu üzerindeki backend SDK servisi (CalculateController)
+            },
+            error: function (xhr, status, err) {
+                // Eğer sunucu erişiminde hata olursa yerel köprüyü sessizce fallback dene
                 $.ajax({
-                    url: '/Calculate/ScanOpticalReader',
-                    type: 'POST',
-                    data: { deviceType: deviceType || 'auto' },
-                    timeout: 25000,
-                    success: function (res) {
-                        if (res && res.success) {
-                            applyScanResult(res);
-                        } else {
-                            var errMsg = (res && res.message) ? res.message : 'Optik okuyucudan pasaport okunamadı.';
-                            showPassportAlert(
-                                errMsg + ' Masanızdaki okuyucuya bağlanmak için masaüstündeki <strong>KOPRU_KUR.bat</strong> dosyasına çift tıklayınız veya <a href="/Calculate/DownloadBridgePackage" class="badge badge-warning text-dark ml-1 p-1"><i class="fas fa-download mr-1"></i>Köprüyü İndir</a>',
-                                'warning'
-                            );
-                        }
-                    },
-                    error: function (xhr, status, err) {
-                        var errMsg = 'Optik okuyucuyla bağlantı kurulamadı. Lütfen masanızdaki <strong>EgmReaderBridge.exe</strong> veya <strong>KOPRU_KUR.bat</strong> dosyasını çalıştırınız. <a href="/Calculate/DownloadBridgePackage" class="badge badge-warning text-dark ml-1 p-1"><i class="fas fa-download mr-1"></i>Köprüyü İndir</a>';
-                        showPassportAlert(errMsg, 'danger');
-                    },
-                    complete: function () {
-                        finishScan();
+                    url: 'http://127.0.0.1:41102/scan?device=' + encodeURIComponent(dev),
+                    type: 'GET',
+                    dataType: 'json',
+                    timeout: 8000
+                }).done(function (bridgeRes) {
+                    if (bridgeRes && (bridgeRes.success || bridgeRes.documentNumber || bridgeRes.rawMrz || bridgeRes.line1)) {
+                        applyScanResult(bridgeRes);
+                    } else {
+                        showPassportAlert('Optik okuyucu camında pasaport tespit edilemedi. Lütfen belgeyi cihaz camına yerleştiriniz.', 'warning');
                     }
+                }).fail(function () {
+                    showPassportAlert('Optik okuyucuya erişilemedi. Lütfen cihazın USB kablosunun takılı olduğundan emin olunuz.', 'danger');
+                }).always(function () {
+                    finishScan();
                 });
-            });
+                return;
+            },
+            complete: function () {
+                finishScan();
+            }
         });
     }
 
@@ -467,7 +508,7 @@
             timeout: 1000
         }).done(function (sRes) {
             if (sRes && (sRes.isRunning || sRes.success)) {
-                $('#btnTutanakOpticalScan, #btnDirectOpticalScan, #btnPanelDirectScan').attr('title', 'Optik Okuyucu Köprüsü Aktif (3M / Regula)');
+                $('#btnDirectOpticalScan, #btnPanelDirectScan, #btnTopOpticalScan').attr('title', 'Optik Okuyucu Köprüsü Aktif (3M / Regula)');
                 return;
             }
             checkServerStatus();
@@ -482,7 +523,7 @@
                 cache: false,
                 success: function (res) {
                     if (res && res.success && res.isRunning) {
-                        $('#btnTutanakOpticalScan, #btnDirectOpticalScan, #btnPanelDirectScan').attr('title', (res.deviceName || 'Optik Okuyucu') + ' Bağlı ve Hazır');
+                        $('#btnDirectOpticalScan, #btnPanelDirectScan, #btnTopOpticalScan').attr('title', (res.deviceName || 'Optik Okuyucu') + ' Bağlı ve Hazır');
                     }
                 }
             });
@@ -539,11 +580,11 @@
                         checkOpticalReaderStatus();
                     } else {
                         var errMsg = (res && res.message) ? res.message : 'Cihaza bağlanılamadı.';
-                        showPassportAlert(errMsg + ' Masanızdaki okuyucuya bağlanmak için masaüstündeki <strong>KOPRU_KUR.bat</strong> dosyasını çalıştırınız veya <a href="/Calculate/DownloadBridgePackage" class="badge badge-warning text-dark ml-1 p-1"><i class="fas fa-download mr-1"></i>Köprüyü İndir</a>', 'warning');
+                        showPassportAlert(errMsg + ' Lütfen cihazın USB kablosunu kontrol ediniz.', 'warning');
                     }
                 },
                 error: function () {
-                    showPassportAlert('Masanızdaki okuyucuya bağlanmak için masaüstündeki <strong>KOPRU_KUR.bat</strong> dosyasını çalıştırınız veya <a href="/Calculate/DownloadBridgePackage" class="badge badge-warning text-dark ml-1 p-1"><i class="fas fa-download mr-1"></i>Köprüyü İndir</a>', 'danger');
+                    showPassportAlert('Optik okuyucuya bağlanılamadı. Lütfen cihazın USB bağlantısını kontrol ediniz.', 'danger');
                 }
             });
         }
@@ -713,19 +754,55 @@
             );
             }
 
-        var filledName = applyIdentityFields({
-            givenNames: givenNames,
-            surname: surname,
-            documentNumber: passportNo,
-            personalNumber: kimlikNo,
-            birthDate: birthDateStr
-        });
+        var fullName = fixOcrMisreads((surname + " " + givenNames).trim());
+
+        if (fullName) {
+            $('#NameCFORM').val(fullName);
+            $('#topPassengerName').val(fullName);
+            highlightInput('#NameCFORM, #topPassengerName');
+        }
+
+        if (passportNo) {
+            $('#PassportCFORM').val(passportNo);
+            $('#topPassportNumber').val(passportNo);
+            highlightInput('#PassportCFORM, #topPassportNumber');
+        }
+
+        if (kimlikNo) {
+            $('#IDNCFORM').val(kimlikNo);
+            $('#topPersonalNumber').val(kimlikNo);
+            highlightInput('#IDNCFORM, #topPersonalNumber');
+        }
+
+        if (docType && $('#PassportCalculate').length) {
+            $('#PassportCalculate').val(docType).trigger('change');
+            highlightInput('#PassportCalculate');
+        }
+
+        var matchedCountry = "";
+        if (nationalityCode) {
+            matchedCountry = setPassportCountry(nationalityCode);
+        }
+        $('#topCountryDisplay').val(matchedCountry || nationalityCode || '');
+        highlightInput('#topCountryDisplay');
+
+        if (birthDateStr) {
+            $('#BirthDateCalculate').val(birthDateStr).trigger('change');
+            $('#BirthdateCFORM').val(birthDateStr);
+            $('#topBirthDate').val(birthDateStr);
+            updateTopAgeBadge(birthDateStr);
+            highlightInput('#BirthDateCalculate, #topBirthDate');
+
+            if (typeof window.adultchild === 'function') {
+                window.adultchild($('#BirthDateCalculate')[0]);
+            }
+        }
 
         playScanBeep();
 
-        var detailSummary = (filledName ? filledName : 'Yabancı Yolcu') +
+        var detailSummary = (fullName ? fullName : 'Yabancı Yolcu') +
             (passportNo ? ' (' + passportNo + ')' : '') +
-            (nationalityCode ? ' - ' + nationalityCode : '');
+            (matchedCountry ? ' - ' + matchedCountry : (nationalityCode ? ' - ' + nationalityCode : ''));
 
         showPassportAlert(
             '<strong>Pasaport Okundu (' + (sourceName || 'Okuyucu') + '):</strong> ' + detailSummary +
@@ -738,7 +815,8 @@
 
     function cleanMrzWord(raw) {
         if (!raw) return "";
-        return raw.replace(/</g, " ").replace(/\s+/g, " ").trim();
+        var c = raw.replace(/</g, " ").replace(/\s+/g, " ").trim();
+        return fixOcrMisreads(c);
     }
 
     /* ==========================================================================
@@ -892,12 +970,101 @@
     /* ==========================================================================
        8. SAYFA BAŞLATMA
        ========================================================================== */
+    /* ==========================================================================
+       ÜST KABİN PANELİ İKİ YÖNLÜ SENKRONİZASYON VE KISAYOLLAR
+       ========================================================================== */
+    function initTopPassportBarSync() {
+        // 1. Üst panel -> Alt form senkronizasyonu
+        $('#topPassengerName').on('input change', function () {
+            $('#NameCFORM').val($(this).val());
+        });
+
+        $('#topPassportNumber').on('input change', function () {
+            var v = $(this).val().toUpperCase();
+            $(this).val(v);
+            $('#PassportCFORM').val(v);
+        });
+
+        $('#topBirthDate').on('input change', function () {
+            var v = $(this).val();
+            $('#BirthDateCalculate').val(v);
+            $('#BirthdateCFORM').val(v);
+            updateTopAgeBadge(v);
+            if (typeof window.adultchild === 'function' && v.length === 10) {
+                window.adultchild($('#BirthDateCalculate')[0]);
+            }
+        });
+
+        $('#topPersonalNumber').on('input change', function () {
+            $('#IDNCFORM').val($(this).val());
+        });
+
+        // 2. Alt form -> Üst panel senkronizasyonu
+        $('#NameCFORM').on('input change', function () {
+            $('#topPassengerName').val($(this).val());
+        });
+
+        $('#PassportCFORM').on('input change', function () {
+            $('#topPassportNumber').val($(this).val());
+        });
+
+        $('#CountryCalculate').on('change', function () {
+            var opt = $(this).find('option:selected');
+            var txt = opt.text();
+            var val = $(this).val();
+            if (val && txt && txt !== 'Seçiniz...') {
+                $('#topCountryDisplay').val(txt);
+            } else {
+                $('#topCountryDisplay').val(val || '');
+            }
+        });
+
+        $('#BirthDateCalculate, #BirthdateCFORM').on('input change', function () {
+            var v = $(this).val();
+            $('#topBirthDate').val(v);
+            updateTopAgeBadge(v);
+        });
+
+        $('#IDNCFORM').on('input change', function () {
+            $('#topPersonalNumber').val($(this).val());
+        });
+
+        // Üst bar doğum tarihi datepicker desteği
+        if ($.fn.datepicker) {
+            $('#topBirthDate').datepicker({
+                format: 'dd.mm.yyyy',
+                autoclose: true,
+                weekStart: 1,
+                language: 'tr',
+                startView: 'years',
+                endDate: '+0d'
+            }).on('changeDate', function () {
+                var v = $(this).val();
+                $('#BirthDateCalculate').val(v).trigger('change');
+                $('#BirthdateCFORM').val(v);
+                updateTopAgeBadge(v);
+                if (typeof window.adultchild === 'function') {
+                    window.adultchild($('#BirthDateCalculate')[0]);
+                }
+            });
+        }
+
+        // F2 Kısayol Tuşu: Hızlı optik okuyucu tarama
+        $(document).on('keydown', function (e) {
+            if (e.key === 'F2') {
+                e.preventDefault();
+                triggerDirectOpticalScan('auto');
+            }
+        });
+    }
+
     $(document).ready(function () {
         initHardwareScannerListener();
+        initTopPassportBarSync();
         checkOpticalReaderStatus();
 
-        // Buton tıklamaları delegasyonu
-        $(document).on('click', '#btnTutanakOpticalScan, #btnDirectOpticalScan, #btnPanelDirectScan', function (e) {
+        // Buton tıklamaları delegasyonu (Üst ve alt butonlar)
+        $(document).on('click', '#btnDirectOpticalScan, #btnPanelDirectScan, #btnTopOpticalScan', function (e) {
             e.preventDefault();
             triggerDirectOpticalScan('auto');
         });

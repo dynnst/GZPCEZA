@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
@@ -11,6 +11,10 @@ namespace Sahtecilik.ReaderScanner
     {
         static string[] possibleBinDirs = new string[]
         {
+            @"C:\Program Files (x86)\Thales\CS500f\Bin",
+            @"C:\Program Files\Thales\CS500f\Bin",
+            @"C:\Program Files (x86)\Thales\Document Reader SDK\Bin",
+            @"C:\Program Files\Thales\Document Reader SDK\Bin",
             @"C:\Program Files (x86)\Thales\Gemalto Document Reader SDK\3.7.1.18\Bin",
             @"C:\Program Files\Thales\Gemalto Document Reader SDK\3.7.1.18\Bin",
             @"C:\Program Files (x86)\3M\3M Page Reader",
@@ -170,7 +174,7 @@ namespace Sahtecilik.ReaderScanner
 
                 // Pasaport / kimlik cihaz camında değilse memurun yerleştirmesi için 3.5 saniyeye kadar bekle
                 int waitDocMs = 0;
-                while (waitDocMs < 3500)
+                while (waitDocMs < 1200)
                 {
                     bool docOnWindow = false;
                     try { docOnWindow = MMM.Readers.FullPage.Reader.IsDocumentOnWindow(); } catch { break; }

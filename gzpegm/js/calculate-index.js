@@ -242,6 +242,10 @@
         // PDF form alanlarını temizle (Memur sicili hariç)
         $('#form').find('input:not(#PoliceCFORM)').val('');
 
+        // Üst kabin pasaport barını temizle
+        $('#topPassengerName, #topPassportNumber, #topCountryDisplay, #topBirthDate, #topPersonalNumber').val('');
+        $('#topAgeBadge').text('Yaş: -').removeClass('badge-warning badge-success').addClass('top-age-badge');
+
         syncSummaryPlaceholder();
 
         // İlk girişe odaklan

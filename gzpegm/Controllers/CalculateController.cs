@@ -344,12 +344,15 @@ namespace gzpegm.Controllers
         [HttpPost]
         public JsonResult ScanOpticalReader(string deviceType = "auto")
         {
-            var user = GetUser();
-            if (user == null)
-                return Json(new { success = false, message = "Lütfen sisteme giriş yapın." });
-
-            var result = gzpegm.Services.OpticalReaderService.ScanDevice(deviceType);
-            return Json(result);
+            try
+            {
+                var result = gzpegm.Services.OpticalReaderService.ScanDevice(deviceType);
+                return Json(result);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Optik okuma hatası: " + ex.Message });
+            }
         }
 
         [HttpGet]

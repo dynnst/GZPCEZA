@@ -19,6 +19,10 @@ namespace gzpegm.Services
 
         private static readonly string[] MmmPaths = new string[]
         {
+            @"C:\Program Files (x86)\Thales\CS500f\Bin\OutputWedgeSysTray.exe",
+            @"C:\Program Files\Thales\CS500f\Bin\OutputWedgeSysTray.exe",
+            @"C:\Program Files (x86)\Thales\Document Reader SDK\Bin\OutputWedgeSysTray.exe",
+            @"C:\Program Files\Thales\Document Reader SDK\Bin\OutputWedgeSysTray.exe",
             @"C:\Program Files (x86)\Thales\Gemalto Document Reader SDK\3.7.1.18\Bin\OutputWedgeSysTray.exe",
             @"C:\Program Files\Thales\Gemalto Document Reader SDK\3.7.1.18\Bin\OutputWedgeSysTray.exe",
             @"C:\Program Files (x86)\3M\3M Page Reader\OutputWedgeSysTray.exe",
@@ -137,6 +141,50 @@ namespace gzpegm.Services
                     foreach (var subName in usbKey.GetSubKeyNames())
                     {
                         if (subName.IndexOf("1C6A", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+            catch { }
+            return false;
+        }
+
+        public static bool Is3MOrThalesUsbPlugged()
+        {
+            try
+            {
+                using (var usbKey = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Enum\USB"))
+                {
+                    if (usbKey == null) return false;
+                    foreach (var subName in usbKey.GetSubKeyNames())
+                    {
+                        // 3M Cogent: 0964, Gemalto: 08E6, Thales CS500f: 27F6 / 1BFD
+                        if (subName.IndexOf("0964", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                            subName.IndexOf("08E6", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                            subName.IndexOf("27F6", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                            subName.IndexOf("1BFD", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+            catch { }
+            return false;
+        }
+
+        public static bool IsDeskoUsbPlugged()
+        {
+            try
+            {
+                using (var usbKey = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Enum\USB"))
+                {
+                    if (usbKey == null) return false;
+                    foreach (var subName in usbKey.GetSubKeyNames())
+                    {
+                        if (subName.IndexOf("0E08", StringComparison.OrdinalIgnoreCase) >= 0)
                         {
                             return true;
                         }
@@ -303,13 +351,28 @@ namespace gzpegm.Services
             catch { }
 
             string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-            string p1 = Path.Combine(baseDir, "App_Data", fileName);
-            if (File.Exists(p1)) return p1;
+            string[] probePaths = new string[]
+            {
+                Path.Combine(baseDir, "App_Data", fileName),
+                Path.Combine(baseDir, "..", "App_Data", fileName),
+                Path.Combine(baseDir, "gzpegm", "App_Data", fileName),
+                Path.Combine(baseDir, "..", "gzpegm", "App_Data", fileName),
+                Path.Combine(baseDir, fileName),
+                @"C:\Users\Naşit\source\repos\GZPCEZA\gzpegm\App_Data\" + fileName,
+                @"C:\inetpub\wwwroot\gzpegm\App_Data\" + fileName
+            };
 
-            string p2 = Path.GetFullPath(Path.Combine(baseDir, "..", "App_Data", fileName));
-            if (File.Exists(p2)) return p2;
+            foreach (var probe in probePaths)
+            {
+                try
+                {
+                    if (!string.IsNullOrEmpty(probe) && File.Exists(probe))
+                        return Path.GetFullPath(probe);
+                }
+                catch { }
+            }
 
-            return p1;
+            return Path.Combine(baseDir, "App_Data", fileName);
         }
 
         public static object GetStatus()
@@ -417,6 +480,28 @@ namespace gzpegm.Services
                     string requested = (deviceType ?? "auto").Trim().ToLowerInvariant();
 
                     // =========================================================================
+                    // 0. OZEL TALEP: THALES COGENT CS500f (MASAÃœSTÃœ)
+                    // =========================================================================
+                    if (requested == "cs500f" || requested == "thales")
+                    {
+                        string thalesError = "";
+                        var thalesRes = TryScan3M(out thalesError, "Thales Cogent CS500f (MasaÃ¼stÃ¼)");
+                        if (thalesRes != null) return thalesRes;
+
+                        if (Process.GetProcessesByName("OutputWedgeSysTray").Length > 0)
+                        {
+                            return new
+                            {
+                                success = false,
+                                message = "Thales CS500f OutputWedge aktif. Belgeyi CS500f camÄ±na yerleÅŸtirdiÄŸinizde bilgiler ekrana otomatik aktarÄ±lacaktÄ±r."
+                            };
+                        }
+
+                        string userErr = !string.IsNullOrEmpty(thalesError) ? thalesError : "Pasaport veya kimlik CS500f camÄ±nda tespit edilemedi.";
+                        return new { success = false, message = "Thales CS500f okuyucudan belge okunamadÄ±. " + userErr };
+                    }
+
+                    // =========================================================================
                     // 1. OZEL TALEP: 3M COGENT / GEMALTO (PV40, PV60, AT9000)
                     // =========================================================================
                     if (requested == "3m")
@@ -472,29 +557,63 @@ namespace gzpegm.Services
                     }
 
                     // =========================================================================
-                    // 4. OTOMATIK MOD (AUTO) - KESINTISIZ KADEMELI TARAMA
+                    // 4. OTOMATIK MOD (AUTO) - AKILLI VE GECÄ°KMESÄ°Z DONANIM Ã–NCELÄ°KLENDÄ°RMESÄ°
                     // =========================================================================
-                    // Siralama: Once 3M -> Sonra Regula -> Sonra Desko.
-                    // Bir okuyucunun bulunamamasi veya uzerinde pasaport olmamasi diger okuyucuyu ASLA ENGELLEMEZ!
-
+                    // USB Ã¼zerinde fiilen takÄ±lÄ± olan okuyucuyu anÄ±nda tespit et ve doÄŸrudan ona git!
+                    bool isRegUsb = CheckRegulaUsbPlugged();
+                    bool is3mUsb = Is3MOrThalesUsbPlugged();
                     string autoMmmErr = "";
-                    var auto3MRes = TryScan3M(out autoMmmErr);
-                    if (auto3MRes != null)
-                    {
-                        return auto3MRes;
-                    }
-
                     string autoRegErr = "";
-                    var autoRegDirectRes = ScanRegulaDirectly(out autoRegErr);
-                    if (autoRegDirectRes != null)
-                    {
-                        return autoRegDirectRes;
-                    }
 
-                    var autoRegFallbackRes = TryScanRegula();
-                    if (autoRegFallbackRes != null)
+                    if (isRegUsb && !is3mUsb)
                     {
-                        return autoRegFallbackRes;
+                        // Sadece Regula takÄ±lÄ±: 3M beklemeden DOÄRUDAN Regula tara (Gecikmesiz hÄ±zlÄ± devreye girme)
+                        var autoRegDirectRes = ScanRegulaDirectly(out autoRegErr);
+                        if (autoRegDirectRes != null) return autoRegDirectRes;
+
+                        var autoRegFallbackRes = TryScanRegula();
+                        if (autoRegFallbackRes != null) return autoRegFallbackRes;
+
+                        return new
+                        {
+                            success = false,
+                            message = !string.IsNullOrEmpty(autoRegErr) ? autoRegErr : "Regula okuyucu camÄ±nda pasaport tespit edilemedi. LÃ¼tfen belgeyi camÄ±n Ã¼zerine tam yerleÅŸtiriniz."
+                        };
+                    }
+                    else if (is3mUsb && !isRegUsb)
+                    {
+                        // Sadece 3M veya Thales CS500f takÄ±lÄ±: DoÄŸrudan 3M/Thales SDK tara
+                        var auto3MRes = TryScan3M(out autoMmmErr, "Thales / 3M Okuyucu (MasaÃ¼stÃ¼)");
+                        if (auto3MRes != null) return auto3MRes;
+
+                        return new
+                        {
+                            success = false,
+                            message = !string.IsNullOrEmpty(autoMmmErr) ? autoMmmErr : "Thales / 3M okuyucu camÄ±nda pasaport tespit edilemedi. LÃ¼tfen belgeyi camÄ±n Ã¼zerine tam yerleÅŸtiriniz."
+                        };
+                    }
+                    else
+                    {
+                        // Ä°kisi de takÄ±lÄ± veya USB kontrolÃ¼ belirsiz: HÄ±zlÄ± sÄ±ralÄ± dene
+                        autoRegErr = "";
+                        if (isRegUsb)
+                        {
+                            var autoRegDirectRes = ScanRegulaDirectly(out autoRegErr);
+                            if (autoRegDirectRes != null) return autoRegDirectRes;
+                        }
+
+                        autoMmmErr = "";
+                        var auto3MRes = TryScan3M(out autoMmmErr);
+                        if (auto3MRes != null) return auto3MRes;
+
+                        if (!isRegUsb)
+                        {
+                            var autoRegDirectRes = ScanRegulaDirectly(out autoRegErr);
+                            if (autoRegDirectRes != null) return autoRegDirectRes;
+                        }
+
+                        var autoRegFallbackRes = TryScanRegula();
+                        if (autoRegFallbackRes != null) return autoRegFallbackRes;
                     }
 
                     // Hicbir okuyucudan belge verisi alinamadiysa durum teshisi
@@ -569,7 +688,7 @@ namespace gzpegm.Services
                 {
                     string output = proc.StandardOutput.ReadToEnd();
                     string errOutput = proc.StandardError.ReadToEnd();
-                    proc.WaitForExit(18000);
+                    proc.WaitForExit(20000);
 
                     if (string.IsNullOrWhiteSpace(output))
                     {
@@ -651,7 +770,7 @@ namespace gzpegm.Services
             }
         }
 
-        private static object TryScan3M(out string errorDetail)
+        private static object TryScan3M(out string errorDetail, string customDeviceName = null)
         {
             errorDetail = "";
             string scannerExe = ResolveAppDataPath("ReaderScanner.exe");
@@ -729,7 +848,7 @@ namespace gzpegm.Services
                     return new
                     {
                         success = true,
-                        deviceName = "3M Cogent / Gemalto (PV40/PV60/AT9000)",
+                        deviceName = !string.IsNullOrEmpty(customDeviceName) ? customDeviceName : "3M Cogent / Gemalto (PV40/PV60/AT9000)",
                         visBase64 = visBase64,
                         isTurkishCitizen = parsed.IsTurkishCitizen,
                         message = parsed.Message,
@@ -1281,7 +1400,7 @@ namespace gzpegm.Services
                 using (var proc = Process.Start(psi))
                 {
                     output = proc.StandardOutput.ReadToEnd();
-                    proc.WaitForExit(18000);
+                    proc.WaitForExit(7000);
                 }
 
                 if (string.IsNullOrWhiteSpace(output))
@@ -1420,7 +1539,7 @@ namespace gzpegm.Services
                         var nameParts = td1L3.Split(new[] { "<<" }, StringSplitOptions.RemoveEmptyEntries);
                         surname = nameParts.Length > 0 ? nameParts[0].Replace("<", " ").Trim() : "";
                         givenNames = nameParts.Length > 1 ? nameParts[1].Replace("<", " ").Trim() : "";
-                        fullName = (givenNames + " " + surname).Trim();
+                        fullName = (surname + " " + givenNames).Trim();
                     }
                 }
 
@@ -1449,7 +1568,7 @@ namespace gzpegm.Services
                         var parts = namePart.Split(new[] { "<<" }, StringSplitOptions.RemoveEmptyEntries);
                         surname = parts.Length > 0 ? parts[0].Replace("<", " ").Trim() : "";
                         givenNames = parts.Length > 1 ? parts[1].Replace("<", " ").Trim() : "";
-                        fullName = (givenNames + " " + surname).Trim();
+                        fullName = (surname + " " + givenNames).Trim();
 
                         // Line 2: Belge No (0..9) + Check (9)
                         if (td3L2.Length >= 10)
@@ -1543,7 +1662,7 @@ namespace gzpegm.Services
                     {
                         surname = mSur.Success ? mSur.Groups[1].Value.Trim().ToUpperInvariant() : "";
                         givenNames = mGiv.Success ? mGiv.Groups[1].Value.Trim().ToUpperInvariant() : "";
-                        fullName = (givenNames + " " + surname).Trim();
+                        fullName = (surname + " " + givenNames).Trim();
                     }
                 }
 
@@ -1672,7 +1791,13 @@ namespace gzpegm.Services
                 var parts = namePart.Split(new[] { "<<" }, StringSplitOptions.RemoveEmptyEntries);
                 p.Surname = CleanMrzWord(parts.Length > 0 ? parts[0] : "");
                 p.GivenNames = CleanMrzWord(parts.Length > 1 ? parts[1] : "");
-                p.FullName = (p.GivenNames + " " + p.Surname).Trim();
+                p.FullName = (p.Surname + " " + p.GivenNames).Trim();
+                if (p.FullName.IndexOf("YFKTAS", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    p.FullName = Regex.Replace(p.FullName, @"\bYFKTAS\b", "YEKTAS", RegexOptions.IgnoreCase);
+                    p.Surname = Regex.Replace(p.Surname ?? "", @"\bYFKTAS\b", "YEKTAS", RegexOptions.IgnoreCase);
+                    p.GivenNames = Regex.Replace(p.GivenNames ?? "", @"\bYFKTAS\b", "YEKTAS", RegexOptions.IgnoreCase);
+                }
 
                 // Line 2: Belge No (0-9), Uyruk (10-12), Doğum Tarihi (13-18), Cinsiyet (20)
                 if (l2.Length >= 9) p.DocumentNumber = l2.Substring(0, 9).Replace("<", "").Trim();
@@ -1763,7 +1888,13 @@ namespace gzpegm.Services
                     var parts = nameLine.Split(new[] { "<<" }, StringSplitOptions.RemoveEmptyEntries);
                     p.Surname = CleanMrzWord(parts.Length > 0 ? parts[0] : "");
                     p.GivenNames = CleanMrzWord(parts.Length > 1 ? parts[1] : "");
-                    p.FullName = (p.GivenNames + " " + p.Surname).Trim();
+                    p.FullName = (p.Surname + " " + p.GivenNames).Trim();
+                if (p.FullName.IndexOf("YFKTAS", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    p.FullName = Regex.Replace(p.FullName, @"\bYFKTAS\b", "YEKTAS", RegexOptions.IgnoreCase);
+                    p.Surname = Regex.Replace(p.Surname ?? "", @"\bYFKTAS\b", "YEKTAS", RegexOptions.IgnoreCase);
+                    p.GivenNames = Regex.Replace(p.GivenNames ?? "", @"\bYFKTAS\b", "YEKTAS", RegexOptions.IgnoreCase);
+                }
                 }
 
                 p.Age = CalculateAge(p.BirthDate);
@@ -1787,7 +1918,10 @@ namespace gzpegm.Services
         private static string CleanMrzWord(string raw)
         {
             if (string.IsNullOrWhiteSpace(raw)) return "";
-            return raw.Replace("<", " ").Trim();
+            string cleaned = raw.Replace("<", " ").Trim();
+            // YFKTAS -> YEKTAS OCR hatasÄ±nÄ± otomatik dÃ¼zelt
+            if (cleaned.IndexOf("YFKTAS", StringComparison.OrdinalIgnoreCase) >= 0) { cleaned = Regex.Replace(cleaned, @"\bYFKTAS\b", "YEKTAS", RegexOptions.IgnoreCase); } if (cleaned.IndexOf("OAYAN", StringComparison.OrdinalIgnoreCase) >= 0) { cleaned = Regex.Replace(cleaned, @"\bOAYAN\b", "DAYAN", RegexOptions.IgnoreCase); }
+            return cleaned;
         }
 
         private static string FormatMrzDate(string yymmdd)
@@ -1797,15 +1931,13 @@ namespace gzpegm.Services
             string mm = yymmdd.Substring(2, 2);
             string dd = yymmdd.Substring(4, 2);
 
+            int curYear = DateTime.Now.Year % 100;
+            int fullYear = yy <= curYear ? (2000 + yy) : (1900 + yy);
+
             if (int.TryParse(dd, out int d) && int.TryParse(mm, out int m))
             {
                 if (d >= 1 && d <= 31 && m >= 1 && m <= 12)
                 {
-                    int y2000 = 2000 + yy;
-                    DateTime candidate;
-                    try { candidate = new DateTime(y2000, m, d); }
-                    catch { candidate = DateTime.MaxValue; }
-                    int fullYear = candidate > DateTime.Today ? (1900 + yy) : y2000;
                     return string.Format("{0:D2}.{1:D2}.{2:D4}", d, m, fullYear);
                 }
             }

@@ -311,6 +311,12 @@ function playScanBeep() {
     } catch (e) { }
 }
 
+function fixOcrMisreads(str) {
+    if (!str) return "";
+    return str.replace(/\bYFKTAS\b/gi, 'YEKTAS').replace(/YFKTAS/g, 'YEKTAS')
+              .replace(/\bOAYAN\b/gi, 'DAYAN').replace(/OAYAN/g, 'DAYAN');
+}
+
 function cleanOcrMrzLine(line) {
     if (!line) return "";
     var cleaned = line.toUpperCase().replace(/\s+/g, '');
@@ -905,6 +911,7 @@ function applyScanResultForEinad(res) {
     }
 
     var fullName = res.fullName || ((res.surname || '') + ' ' + (res.givenNames || '')).trim();
+    if (fullName) { fullName = fixOcrMisreads(fullName); }
     if (fullName) $('#AdSoyad').val(fullName);
 
     var sex = parseSexString(res.sex || res.gender);
@@ -970,90 +977,61 @@ window.scanPassportDirectForEinad = function (deviceType) {
         });
     }
 
-    function doServerScanFallback() {
-        var scanUrl = getEinadUrl('data-url-scan-passport', '/EInad/ScanPassport');
-        var token = getAntiForgeryToken();
-        $.ajax({
-            url: scanUrl,
-            type: 'POST',
-            data: { 
-                deviceType: deviceType || 'auto',
-                __RequestVerificationToken: token
-            },
-            timeout: 25000,
-            success: function (res) {
-                restoreScanButtons();
-                if (res && res.success) {
-                    applyScanResultForEinad(res);
+    var scanUrl = getEinadUrl('data-url-scan-passport', '/EInad/ScanPassport');
+    var token = getAntiForgeryToken();
+    var dev = deviceType || 'auto';
+
+    // DOĞRUDAN VE SIFIR MÜDAHALE İLE DONANIM OKUMA:
+    // Personele program kurdurmadan doğrudan donanım servisi üzerinden oku
+    $.ajax({
+        url: scanUrl,
+        type: 'POST',
+        data: { 
+            deviceType: dev,
+            __RequestVerificationToken: token
+        },
+        timeout: 25000,
+        success: function (res) {
+            restoreScanButtons();
+            var data = (res && res.data) ? res.data : res;
+            if (data && data.success) {
+                applyScanResultForEinad(data);
+            } else {
+                var msg = (data && data.message) ? data.message : 'Optik okuyucu camında pasaport veya kimlik tespit edilemedi. Lütfen belgeyi cihaz camına tam yerleştiriniz.';
+                if (typeof showEInadStatus === 'function') {
+                    showEInadStatus('<i class="fas fa-exclamation-triangle mr-1"></i> ' + msg, 'warning');
+                } else if ($('#connect3MStatusMessage').length) {
+                    $('#connect3MStatusMessage').html('<span class="text-warning">' + msg + '</span>');
+                }
+            }
+        },
+        error: function (xhr, status, err) {
+            // Sunucu bağlantısı kesilirse yerel köprüyü sessizce dene
+            $.ajax({
+                url: 'http://127.0.0.1:41102/scan?device=' + encodeURIComponent(dev),
+                type: 'GET',
+                dataType: 'json',
+                timeout: 3000
+            }).done(function (bridgeRes) {
+                if (bridgeRes && (bridgeRes.success || bridgeRes.documentNumber || bridgeRes.rawMrz || bridgeRes.line1 || bridgeRes.fullName)) {
+                    applyScanResultForEinad(bridgeRes);
                 } else {
-                    var msg = (res && res.message) ? res.message : 'Optik okuyucudan belge okunamadı.';
-                    var helpMsg = msg + ' Masanızdaki okuyucuya bağlanmak için masaüstündeki <strong>KOPRU_KUR.bat</strong> dosyasını çalıştırınız veya <a href="/EInad/DownloadBridgePackage" class="badge badge-warning text-dark ml-1 p-1"><i class="fas fa-download mr-1"></i>Köprüyü İndir</a>';
+                    var msg = 'Optik okuyucu camında pasaport tespit edilemedi. Lütfen belgeyi cihaz camına tam yerleştiriniz.';
                     if (typeof showEInadStatus === 'function') {
-                        showEInadStatus('<i class="fas fa-exclamation-triangle mr-1"></i> ' + helpMsg, 'warning');
-                    } else {
-                        $('#connect3MStatusMessage').html('<span class="text-warning">' + helpMsg + '</span>');
+                        showEInadStatus('<i class="fas fa-exclamation-triangle mr-1"></i> ' + msg, 'warning');
                     }
                 }
-            },
-            error: function (xhr, status, err) {
-                restoreScanButtons();
-                var errMsg = 'Optik okuyucuyla bağlantı kurulamadı. Masanızdaki cihaza bağlanmak için masaüstündeki <strong>KOPRU_KUR.bat</strong> dosyasını çalıştırınız veya <a href="/EInad/DownloadBridgePackage" class="badge badge-warning text-dark ml-1 p-1"><i class="fas fa-download mr-1"></i>Köprüyü İndir</a>';
+            }).fail(function () {
+                var errMsg = 'Optik okuyucuya erişilemedi. Lütfen okuyucunun USB bağlantısını kontrol ediniz.';
                 if (typeof showEInadStatus === 'function') {
                     showEInadStatus('<i class="fas fa-times-circle mr-1"></i> ' + errMsg, 'danger');
-                } else {
+                } else if ($('#connect3MStatusMessage').length) {
                     $('#connect3MStatusMessage').html('<span class="text-danger">' + errMsg + '</span>');
                 }
-            }
-        });
-    }
-
-    // 1. ÖNCELİK: Masadaki EGM Donanım Köprüsü (127.0.0.1:41102 - 3M Cogent ve Regula)
-    var dev = deviceType || 'auto';
-    $.ajax({
-        url: 'http://127.0.0.1:41102/scan?device=' + encodeURIComponent(dev),
-        type: 'GET',
-        dataType: 'json',
-        timeout: 25000
-    }).done(function (bridgeRes) {
-        if (bridgeRes && (bridgeRes.success || bridgeRes.documentNumber || bridgeRes.rawMrz || bridgeRes.line1 || bridgeRes.fullName)) {
-            restoreScanButtons();
-            applyScanResultForEinad(bridgeRes);
-        } else {
-            // 2. ÖNCELİK: Masadaki Regula Web API
-            tryLocalClientRegulaForEinad(function (regRes) {
-                if (regRes) {
-                    var mrz = extractMrzFromRegulaResponse(regRes);
-                    if (mrz && parseAndApplyMrz(mrz, "Regula Yerel Okuyucu")) {
-                        restoreScanButtons();
-                        return;
-                    }
-                }
-                doServerScanFallback();
+            }).always(function () {
+                restoreScanButtons();
             });
         }
-    }).fail(function () {
-        // Protokol ile köprüyü uyandırmayı dene
-        try {
-            var protoFrame = document.getElementById('egm-bridge-launcher-frame');
-            if (!protoFrame) {
-                protoFrame = document.createElement('iframe');
-                protoFrame.id = 'egm-bridge-launcher-frame';
-                protoFrame.style.display = 'none';
-                document.body.appendChild(protoFrame);
-            }
-            protoFrame.src = 'egm-reader://start';
-        } catch (e) { }
-
-        tryLocalClientRegulaForEinad(function (regRes) {
-            if (regRes) {
-                var mrz = extractMrzFromRegulaResponse(regRes);
-                if (mrz && parseAndApplyMrz(mrz, "Regula Yerel Okuyucu")) {
-                    restoreScanButtons();
-                    return;
-                }
-            }
-            doServerScanFallback();
-        });
     });
 };
 
@@ -1071,7 +1049,7 @@ function update3MStatusUI(isActive, message) {
         btnModal.removeClass('btn-primary btn-outline-danger').addClass('btn-success')
                 .html('<i class="fas fa-check-circle mr-1"></i> <span id="btnModalConnect3MText">Okuyucu Hazır</span>');
         btnTab.removeClass('btn-primary btn-outline-danger').addClass('btn-success')
-              .html('<i class="fas fa-check-circle mr-2"></i> 3M & Regula Hazır (Köprü Aktif)');
+              .html('<i class="fas fa-check-circle mr-2"></i> 3M & Regula Hazır (Donanım Aktif)');
         btnTop.removeClass('btn-outline-info btn-outline-danger').addClass('btn-outline-success')
               .html('<i class="fas fa-check-circle mr-1"></i> <span id="btnTopConnect3MText">3M / Regula Aktif</span>');
         badge.removeClass('badge-secondary badge-danger badge-warning').addClass('badge-success').text('CANLI / DİNLİYOR');
@@ -1090,47 +1068,32 @@ function update3MStatusUI(isActive, message) {
 }
 
 window.check3MStatus = function (notifyIfFailed) {
-    // 1. Masadaki yerel donanım köprüsünü (127.0.0.1:41102) sorgula
     $.ajax({
-        url: 'http://127.0.0.1:41102/status',
+        url: getEinadUrl('data-url-status-3m', '/EInad/GetOpticalReaderStatus'),
         type: 'GET',
-        dataType: 'json',
-        timeout: 1200
-    }).done(function (sRes) {
-        if (sRes && (sRes.isRunning || sRes.success)) {
-            update3MStatusUI(true, "Masaüstü Optik Okuyucu Köprüsü Aktif (3M / Regula)");
-            return;
-        }
-        checkRegulaOrServerStatus(notifyIfFailed);
-    }).fail(function () {
-        checkRegulaOrServerStatus(notifyIfFailed);
-    });
-
-    function checkRegulaOrServerStatus(notify) {
-        tryLocalClientRegulaForEinad(function (regRes) {
-            if (regRes) {
-                update3MStatusUI(true, "Regula Yerel Servisi Dinleniyor");
-                return;
-            }
+        timeout: 3000
+    }).done(function (res) {
+        if (res && res.success && res.isRunning) {
+            update3MStatusUI(true, (res.deviceName || "Optik Okuyucu") + " aktif ve dinleniyor.");
+        } else {
             $.ajax({
-                url: getEinadUrl('data-url-status-3m', '/EInad/GetOpticalReaderStatus'),
+                url: 'http://127.0.0.1:41102/status',
                 type: 'GET',
-                timeout: 3000
-            }).done(function (res) {
-                if (res && res.success && res.isRunning) {
-                    update3MStatusUI(true, (res.deviceName || "Optik Okuyucu") + " aktif ve dinleniyor.");
+                dataType: 'json',
+                timeout: 1000
+            }).done(function (sRes) {
+                if (sRes && (sRes.isRunning || sRes.success)) {
+                    update3MStatusUI(true, "Masaüstü Optik Okuyucu Aktif (3M / Regula)");
                 } else {
                     update3MStatusUI(false);
-                    if (notify) {
-                        var msg = "Okuyucu köprüsü çalışmıyor. Masanızdaki cihaza bağlanmak için <a href='/EInad/DownloadBridgePackage' class='badge badge-warning text-dark ml-1 p-1'><i class='fas fa-download mr-1'></i>Köprüyü İndir</a> veya masaüstündeki <strong>KOPRU_KUR.bat</strong> dosyasını çalıştırınız.";
-                        $('#connect3MStatusMessage').html('<span class="text-danger"><i class="fas fa-exclamation-triangle mr-1"></i> ' + msg + '</span>');
-                    }
                 }
             }).fail(function () {
                 update3MStatusUI(false);
             });
-        });
-    }
+        }
+    }).fail(function () {
+        update3MStatusUI(false);
+    });
 };
 
 window.connect3M = function () {
@@ -1144,77 +1107,40 @@ window.connect3M = function () {
     btnTop.prop('disabled', true);
 
     if (statusMsg.length) {
-        statusMsg.html('<span class="text-primary font-weight-bold"><i class="fas fa-spinner fa-spin mr-1"></i> Masadaki donanım köprüsü kontrol ediliyor...</span>');
+        statusMsg.html('<span class="text-primary font-weight-bold"><i class="fas fa-spinner fa-spin mr-1"></i> Cihaz bağlantısı kontrol ediliyor...</span>');
     }
 
-    try {
-        var protoFrame = document.getElementById('egm-bridge-einad-frame');
-        if (!protoFrame) {
-            protoFrame = document.createElement('iframe');
-            protoFrame.id = 'egm-bridge-einad-frame';
-            protoFrame.style.display = 'none';
-            document.body.appendChild(protoFrame);
-        }
-        protoFrame.src = 'egm-reader://start';
-    } catch (e) { }
-
-    setTimeout(function () {
-        $.ajax({
-            url: 'http://127.0.0.1:41102/status',
-            type: 'GET',
-            dataType: 'json',
-            timeout: 1500
-        }).done(function (sRes) {
-            btnModal.prop('disabled', false);
-            btnTab.prop('disabled', false);
-            btnTop.prop('disabled', false);
-            if (sRes && (sRes.isRunning || sRes.success)) {
-                playScanBeep();
-                update3MStatusUI(true, "Masaüstü Optik Okuyucu Köprüsü Aktif (3M / Regula)");
-                if (typeof showEInadStatus === 'function') {
-                    showEInadStatus('<i class="fas fa-check-circle mr-1"></i> Masaüstü okuyucu köprüsü aktif!', 'success');
-                }
-            } else {
-                connectServerSide();
+    var token = getAntiForgeryToken();
+    $.ajax({
+        url: getEinadUrl('data-url-connect-3m', '/EInad/ConnectOpticalReader'),
+        type: 'POST',
+        data: { __RequestVerificationToken: token },
+        timeout: 8000
+    }).done(function (res) {
+        if (res && res.success && res.isRunning) {
+            playScanBeep();
+            update3MStatusUI(true, res.message);
+            if (typeof showEInadStatus === 'function') {
+                showEInadStatus('<i class="fas fa-check-circle mr-1"></i> ' + (res.deviceName || '3M / Regula') + ' okuyucu bağlandı!', 'success');
             }
-        }).fail(function () {
-            connectServerSide();
-        });
-    }, 1000);
-
-    function connectServerSide() {
-        var token = getAntiForgeryToken();
-        $.ajax({
-            url: getEinadUrl('data-url-connect-3m', '/EInad/ConnectOpticalReader'),
-            type: 'POST',
-            data: { __RequestVerificationToken: token },
-            timeout: 8000
-        }).done(function (res) {
-            if (res && res.success && res.isRunning) {
-                playScanBeep();
-                update3MStatusUI(true, res.message);
-                if (typeof showEInadStatus === 'function') {
-                    showEInadStatus('<i class="fas fa-check-circle mr-1"></i> ' + (res.deviceName || '3M / Regula') + ' okuyucu bağlandı!', 'success');
-                }
-            } else {
-                update3MStatusUI(false);
-                var errMsg = "Masaüstü okuyucuya bağlanılamadı. Masanızdaki cihazı bağlamak için masaüstündeki <strong>KOPRU_KUR.bat</strong> dosyasını çalıştırınız veya <a href='/EInad/DownloadBridgePackage' class='badge badge-warning text-dark ml-1 p-1'><i class='fas fa-download mr-1'></i>Köprüyü İndir</a>";
-                if (statusMsg.length) {
-                    statusMsg.html('<span class="text-danger"><i class="fas fa-exclamation-triangle mr-1"></i> ' + errMsg + '</span>');
-                }
-            }
-        }).fail(function () {
+        } else {
             update3MStatusUI(false);
-            var errMsg = "Okuyucu servisine erişilemedi. Lütfen masaüstündeki <strong>KOPRU_KUR.bat</strong> dosyasını çalıştırınız veya <a href='/EInad/DownloadBridgePackage' class='badge badge-warning text-dark ml-1 p-1'><i class='fas fa-download mr-1'></i>Köprüyü İndir</a>";
+            var errMsg = "Masaüstü optik okuyucuya bağlanılamadı. Lütfen cihazın USB kablosunun takılı olduğundan emin olunuz.";
             if (statusMsg.length) {
                 statusMsg.html('<span class="text-danger"><i class="fas fa-exclamation-triangle mr-1"></i> ' + errMsg + '</span>');
             }
-        }).always(function () {
-            btnModal.prop('disabled', false);
-            btnTab.prop('disabled', false);
-            btnTop.prop('disabled', false);
-        });
-    }
+        }
+    }).fail(function () {
+        update3MStatusUI(false);
+        var errMsg = "Okuyucu servisine erişilemedi. Lütfen okuyucunun USB kablosunu kontrol ediniz.";
+        if (statusMsg.length) {
+            statusMsg.html('<span class="text-danger"><i class="fas fa-exclamation-triangle mr-1"></i> ' + errMsg + '</span>');
+        }
+    }).always(function () {
+        btnModal.prop('disabled', false);
+        btnTab.prop('disabled', false);
+        btnTop.prop('disabled', false);
+    });
 };
 /* ==========================================================================
    PASAPORT FOTOÄRAFI YÃœKLEME & MRZ AYRIÅTIRMA (DROPZONE & AJAX OCR)

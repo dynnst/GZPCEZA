@@ -624,3 +624,73 @@
     color: #059669;
     margin-bottom: 10px;
 }
+
+/* ==========================================================================
+   HIZLI PASAPORT & OPTİK OKUYUCU KABİN ÜST PANELİ
+   ========================================================================== */
+.top-passport-bar {
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 8px;
+    background-image: linear-gradient(to right, #f8fafc 0%, #ffffff 28%, #ffffff 100%);
+    transition: all 0.2s ease;
+}
+
+.top-passport-bar:hover {
+    border-color: #94a3b8;
+}
+
+.top-bar-action-col {
+    background: #f8fafc;
+    border-radius: 7px 0 0 7px;
+}
+
+.top-mirror-field {
+    display: flex;
+    flex-direction: column;
+}
+
+.top-mirror-label {
+    font-size: 0.72rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.03em;
+    color: #475569 !important;
+    margin-bottom: 2px !important;
+    text-transform: uppercase;
+}
+
+.top-mirror-input {
+    height: 34px !important;
+    border-radius: 5px !important;
+    font-size: 0.90rem !important;
+    border: 1.5px solid #cbd5e1 !important;
+    transition: all 0.15s ease !important;
+}
+
+.top-mirror-input:focus {
+    border-color: #2563eb !important;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.18) !important;
+}
+
+.top-country-input {
+    background-color: #f0fdf4 !important;
+    color: #166534 !important;
+    border-color: #86efac !important;
+    cursor: pointer;
+}
+
+.top-birthdate-input {
+    background-color: #fff1f2 !important;
+    color: #9f1239 !important;
+    border-color: #fecdd3 !important;
+}
+
+.top-age-badge {
+    background-color: #ffe4e6 !important;
+    color: #9f1239 !important;
+    border-color: #fecdd3 !important;
+    font-size: 0.76rem !important;
+    font-weight: 700 !important;
+    padding: 0 8px !important;
+}
+

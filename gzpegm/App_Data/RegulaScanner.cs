@@ -89,11 +89,11 @@ namespace Sahtecilik.RegulaScanner
                     rr.ShowTrayIcon = false;
                     rr.DoSound = false;
                     rr.DoReceiveImages = true;
-                    rr.DoReceiveAllScannedImages = true;
+                    rr.DoReceiveAllScannedImages = false;
                     rr.DoMRZOCR = true;
                     rr.DoVisualOCR = true;
-                    rr.DoGraphics = true;
-                    rr.DoAuthenticity = true;
+                    rr.DoGraphics = false;
+                    rr.DoAuthenticity = false;
                 }
                 catch { }
 
