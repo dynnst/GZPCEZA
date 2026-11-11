@@ -624,23 +624,18 @@
                             <i class="fas fa-clipboard-list mr-1 text-info"></i> Üst Arama & Teslim Edilen Eşya (Maddeler Halinde)
                         </label>
                         <div class="d-flex gap-1 flex-wrap">
-                            <button type="button" class="btn btn-xs btn-outline-primary py-0 px-2" onclick="appendItemToUstArama('Cep Telefonu');">+ Cep Telefonu</button>
-                            <button type="button" class="btn btn-xs btn-outline-primary py-0 px-2" onclick="appendItemToUstArama('Cüzdan ve Muhtelif Nakit Para');">+ Cüzdan/Para</button>
-                            <button type="button" class="btn btn-xs btn-outline-primary py-0 px-2" onclick="appendItemToUstArama('1 Adet Sırt Çantası / El Bagajı');">+ Sırt Çantası</button>
-                            <button type="button" class="btn btn-xs btn-outline-primary py-0 px-2" onclick="appendItemToUstArama('Pasaport ve Seyahat Belgeleri');">+ Pasaport/Belge</button>
-                            <button type="button" class="btn btn-xs btn-outline-primary py-0 px-2" onclick="appendItemToUstArama('Kol Saati ve Kişisel Takı');">+ Saat/Takı</button>
-                            <button type="button" class="btn btn-xs btn-outline-success py-0 px-2" onclick="appendItemToUstArama('Yapılan üst aramasında herhangi bir suç veya yasaklı maddeye rastlanılmamıştır.');">+ Temiz Tutanak</button>
-                            <button type="button" class="btn btn-xs btn-secondary py-0 px-2" onclick="loadUstAramaDefaultTemplate();"><i class="fas fa-list-ol mr-1"></i>Varsayılan Şablon</button>
+                            <button type="button" class="btn btn-xs btn-outline-primary py-0 px-2" onclick="appendItemToUstArama('[Miktar: 1 Adet] Cep Telefonu (Marka/Model: ..., Seri No/IMEI: ..., Durum: Sağlam)');">+ Cep Telefonu (IMEI/Seri No)</button>
+                            <button type="button" class="btn btn-xs btn-outline-primary py-0 px-2" onclick="appendItemToUstArama('[Miktar/Tutar: ...] Cüzdan & Nakit Para (Birim: ..., Banknot Seri No: ...)');">+ Cüzdan/Nakit (Seri No)</button>
+                            <button type="button" class="btn btn-xs btn-outline-primary py-0 px-2" onclick="appendItemToUstArama('[Miktar: 1 Adet] Sırt Çantası / El Bagajı (Renk/Marka: ..., Seri/Etiket No: ...)');">+ Çanta / Bagaj</button>
+                            <button type="button" class="btn btn-xs btn-outline-primary py-0 px-2" onclick="appendItemToUstArama('[Miktar: 1 Adet] Seyahat Belgesi (Cinsi: Pasaport, Seri No: ..., Veren Ülke: ...)');">+ Pasaport/Belge (Seri No)</button>
+                            <button type="button" class="btn btn-xs btn-outline-primary py-0 px-2" onclick="appendItemToUstArama('[Miktar: 1 Adet] Kol Saati / Değerli Eşya (Marka: ..., Seri No: ...)');">+ Saat/Takı (Seri No)</button>
+                            <button type="button" class="btn btn-xs btn-outline-success py-0 px-2" onclick="appendItemToUstArama('Yapılan üst ve bagaj aramasında suç unsuru veya emanete alınacak eşyaya rastlanılmamıştır.');">+ Temiz Tutanak</button>
+                            <button type="button" class="btn btn-xs btn-secondary py-0 px-2" onclick="loadUstAramaDefaultTemplate();"><i class="fas fa-list-ol mr-1"></i>Şablon Ekle</button>
+                            <button type="button" class="btn btn-xs btn-outline-danger py-0 px-2" onclick="clearUstArama();"><i class="fas fa-trash-alt mr-1"></i>Temizle</button>
                         </div>
                     </div>
-                    @{
-                        string defaultUstArama = Model?.UstAramaEsya;
-                        if (string.IsNullOrWhiteSpace(defaultUstArama) && !isEdit)
-                        {
-                            defaultUstArama = "1. Üzerinde ve el bagajında çıkan eşyalar: 1 Adet Cep Telefonu, Cüzdan\r\n2. Emanete alınan değerli eşya ve nakit para: -\r\n3. Teslim alınan seyahat belgeleri: Pasaport\r\n4. Yapılan üst aramasında herhangi bir suç veya yasaklı maddeye rastlanılmamıştır.";
-                        }
-                    }
-                    <textarea class="form-control font-weight-500" id="UstAramaEsya" name="UstAramaEsya" rows="4" placeholder="Üst aramada çıkan ve emanete alınan eşyaları maddeler halinde yazınız...">@defaultUstArama</textarea>
+                    <textarea class="form-control font-weight-500" id="UstAramaEsya" name="UstAramaEsya" rows="4" placeholder="Üzerinde çıkan ve teslim alınan eşyaları miktar, marka/model, seri numarası ve durum bilgileriyle birlikte maddeler halinde yazınız... (Örn: - [Miktar: 1 Adet] Cep Telefonu (Marka/Model: iPhone 13, Seri No/IMEI: 3568..., Durum: Sağlam))">@(Model?.UstAramaEsya ?? "")</textarea>
+                    <small class="text-muted"><i class="fas fa-info-circle mr-1 text-primary"></i>Textbox varsayılan olarak boş gelir. Malzemeler yazılacaksa miktarı, cinsi ve seri numaraları/IMEI bilgileri mutlaka belirtilmelidir.</small>
                 </div>
             </div>
         </div>
@@ -1296,11 +1291,16 @@
         };
 
         window.loadUstAramaDefaultTemplate = function () {
-            var template = "1. Üzerinde ve el bagajında çıkan eşyalar: 1 Adet Cep Telefonu, Cüzdan\r\n" +
-                           "2. Emanete alınan değerli eşya ve nakit para: -\r\n" +
-                           "3. Teslim alınan seyahat belgeleri: Pasaport\r\n" +
-                           "4. Yapılan üst aramasında herhangi bir suç veya yasaklı maddeye rastlanılmamıştır.";
+            var template = "1. [Miktar: 1 Adet] Cep Telefonu (Marka/Model: ..., Seri No/IMEI: ..., Durum: Sağlam)\r\n" +
+                           "2. [Miktar/Tutar: ...] Cüzdan & Nakit Para (Birim: ..., Banknot Seri No: ...)\r\n" +
+                           "3. [Miktar: 1 Adet] Seyahat Belgesi (Cinsi: Pasaport, Seri No: ..., Veren Ülke: ...)\r\n" +
+                           "4. [Miktar: 1 Adet] Sırt Çantası / El Bagajı (Renk/Marka: ..., Seri/Etiket No: ...)\r\n" +
+                           "5. Yapılan üst aramasında herhangi bir suç unsuru veya yasaklı maddeye rastlanılmamıştır.";
             $('#UstAramaEsya').val(template).focus();
+        };
+
+        window.clearUstArama = function () {
+            $('#UstAramaEsya').val('').focus();
         };
 
         function showFeedback(msg, type) {
