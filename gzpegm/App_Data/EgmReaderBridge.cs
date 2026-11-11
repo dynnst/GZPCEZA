@@ -1260,7 +1260,7 @@ namespace Sahtecilik.ReaderBridge
 
                 if (string.IsNullOrEmpty(info.FullName))
                 {
-                    info.FullName = (info.Surname + " " + info.GivenNames).Trim();
+                    info.FullName = (info.GivenNames + " " + info.Surname).Trim();
                 }
             }
             catch { }

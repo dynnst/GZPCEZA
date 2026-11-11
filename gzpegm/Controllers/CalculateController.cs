@@ -10,10 +10,12 @@ using System.Text.RegularExpressions;
 using System.Web;
 using System.Web.Mvc;
 using ClosedXML.Excel;
+using System.Web.SessionState;
 
 namespace gzpegm.Controllers
 {
     [UserAuthorize(Users = "2,3")] // Admin = 2, Ceza Islemleri = 3
+    [SessionState(SessionStateBehavior.ReadOnly)]
     public class CalculateController : Controller
     {
         [Route("Hesaplama")]

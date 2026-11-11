@@ -36,28 +36,7 @@ namespace gzpegm.Cont
             {
                 using (GZPEGM1 _db = new GZPEGM1())
                 {
-                    // Mükerrer Kayıt Önleme: Son 30 saniye içinde aynı parametrelerle eklenmiş kayıt varsa tekrar ekleme
-                    var cutoff = DateTime.Now.AddSeconds(-30);
                     var userValue = (User ?? string.Empty).Trim();
-                    var userGroupKey = gzpegm.Helpers.HistoryUserHelper.GetGroupingKey(userValue);
-
-                    var recentRecords = _db.E_History
-                        .Where(h => h.fldDatetime >= cutoff &&
-                                    h.fldCountry == Country &&
-                                    h.fldPenalty == csure &&
-                                    h.fldPMoney == ttutar &&
-                                    h.fldStart == bas &&
-                                    h.fldShouldExit == sexit &&
-                                    h.fldBirthDate == bdate &&
-                                    h.fldBorder == Border)
-                        .Select(h => new { h.fldId, h.fldUser })
-                        .ToList();
-
-                    if (recentRecords.Any(h => h.fldUser == userValue ||
-                                               gzpegm.Helpers.HistoryUserHelper.GetGroupingKey(h.fldUser) == userGroupKey))
-                    {
-                        return; // Mükerrer istek engellendi
-                    }
 
                     E_History data = new E_History();
                     data.fldStart = bas;
@@ -66,12 +45,9 @@ namespace gzpegm.Cont
                     data.fldCountry = Country;
                     data.fldPenalty = csure;
                     data.fldPMoney = ttutar;
-                    // store stable identifier with display name to avoid name-change issues
-                    // prefer format: "{fldSicil}|{DisplayName}". If caller passed only display name,
-                    // try to resolve sicil from E_User table (by name + border) and store combined key.
+
                     if (!userValue.Contains("|"))
                     {
-                        // try to find matching user by name and border
                         var found = _db.E_User
                             .Where(u => (u.fldName + " " + u.fldLastName).Trim() == userValue && u.fldBorder == Border)
                             .Select(u => new { u.fldSicil })
@@ -82,23 +58,23 @@ namespace gzpegm.Cont
                         }
                         else
                         {
-                            data.fldUser = userValue; // fallback: keep as-is
+                            data.fldUser = userValue;
                         }
                     }
                     else
                     {
                         data.fldUser = userValue;
                     }
+
                     data.fldBorder = Border;
                     data.fldDatetime = DateTime.Now;
                     _db.E_History.Add(data);
                     _db.SaveChanges();
                 }
             }
-            catch (Exception)
+            catch
             {
-
-                throw;
+                // Geçmiş kaydı ekleme hatası hesaplamayı veya kullanıcı deneyimini engellememelidir
             }
         }
         public E_IsK GetdatabyId(int fldId)

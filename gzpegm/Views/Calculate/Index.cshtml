@@ -21,30 +21,6 @@
             </div>
             <div class="d-flex align-items-center mt-2 mt-md-0">
                 <a href="@Url.Action("Mevzuat", "Calculate")" target="_blank" class="btn btn-outline-info mr-2 shadow-sm font-weight-bold" id="btnMevzuat" style="border-radius:6px; font-size:0.86rem; padding:6px 14px; border:1.5px solid #0284c7; background-color:#f0f9ff; color:#0369a1;" title="Hesaplama Algoritmaları ve Yasal Dayanaklar Rehberi"><i class="fas fa-balance-scale mr-1 text-primary"></i> İlgili Mevzuat & Algoritmalar</a>
-                <div class="btn-group mr-2 shadow-sm" role="group">
-                    <button type="button" id="btnDirectOpticalScan" onclick="scanPassportDirect('auto');" class="btn btn-success font-weight-bold" style="border-radius:6px 0 0 6px; font-size:0.86rem; padding:6px 14px; background:linear-gradient(135deg, #059669 0%, #047857 100%); border:none;" title="Optik Okuyucudan Pasaport Oku (Otomatik Alg&#305;la)">
-                        <span class="passport-pulse-dot"></span> <i class="fas fa-camera mr-1"></i> Cihazdan Pasaport Oku
-                    </button>
-                    <button type="button" class="btn btn-success dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="border-radius:0 6px 6px 0; background:#047857; border:none; border-left:1px solid rgba(255,255,255,0.25);" title="Okuyucu Cihaz&#305;n&#305; Se&#231;">
-                        <span class="sr-only">Cihaz Se&#231;imi</span>
-                    </button>
-                    <div class="dropdown-menu dropdown-menu-right shadow-lg" style="font-size:0.85rem; min-width:260px; z-index:1050;">
-                        <h6 class="dropdown-header text-uppercase font-weight-bold text-muted py-1" style="font-size:0.75rem;"><i class="fas fa-microchip mr-1"></i> Okuyucu Donan&#305;m&#305;</h6>
-                        <a class="dropdown-item py-2 font-weight-bold text-success" href="javascript:void(0);" onclick="scanPassportDirect('auto');">
-                            <i class="fas fa-magic mr-2"></i> Otomatik Alg&#305;la <span class="badge badge-success ml-1">&#214;nerilen</span>
-                        </a>
-                        <div class="dropdown-divider my-1"></div>
-                        <a class="dropdown-item py-2" href="javascript:void(0);" onclick="scanPassportDirect('3m');">
-                            <i class="fas fa-id-card mr-2 text-primary"></i> 3M Cogent / Gemalto (PV40/AT9000)
-                        </a>
-                        <a class="dropdown-item py-2" href="javascript:void(0);" onclick="scanPassportDirect('regula');">
-                            <i class="fas fa-camera-retro mr-2 text-info"></i> Regula Document Reader (70X4)
-                        </a>
-                        <a class="dropdown-item py-2" href="javascript:void(0);" onclick="scanPassportDirect('desko');">
-                            <i class="fas fa-barcode mr-2 text-warning"></i> Desko PENTA Scanner
-                        </a>
-                    </div>
-                </div>
                 <button type="button" onclick="resetCalculateForm()" class="btn btn-reset-calc" title="Tüm alanları sıfırlar ve yeni yolcu için hazırlar">
                     <i class="fas fa-redo-alt mr-1"></i> Yeni Yolcu
                 </button>
@@ -119,36 +95,11 @@
                         </div>
 
                         <!-- 2. Yolcu ve Vize Parametreleri -->
-                        <div class="calc-panel-header mt-2 d-flex align-items-center justify-content-between">
-                            <h5 class="panel-title mb-0">
+                        <div class="calc-panel-header mt-2">
+                            <h5 class="panel-title">
                                 <i class="fas fa-id-card"></i> Yolcu ve Vize Parametreleri
                             </h5>
-                            <div class="btn-group shadow-sm" role="group">
-                                <button type="button" id="btnPanelDirectScan" onclick="scanPassportDirect('auto');" class="btn btn-sm btn-success font-weight-bold py-1 px-3" style="font-size:0.84rem; background:linear-gradient(135deg, #059669 0%, #047857 100%); border:none; border-radius:6px 0 0 6px;" title="3M / Regula / Desko Optik Okuyucudan Pasaport Oku">
-                                    <span class="passport-pulse-dot mr-1"></span> <i class="fas fa-camera mr-1"></i> Cihazdan Pasaport Oku
-                                </button>
-                                <button type="button" class="btn btn-sm btn-success dropdown-toggle dropdown-toggle-split py-1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="border-radius:0 6px 6px 0; background:#047857; border:none; border-left:1px solid rgba(255,255,255,0.25);" title="Okuyucu Cihaz&#305;n&#305; Se&#231;">
-                                    <span class="sr-only">Cihaz Se&#231;imi</span>
-                                </button>
-                                <div class="dropdown-menu dropdown-menu-right shadow-lg" style="font-size:0.84rem; min-width:260px; z-index:1050;">
-                                    <h6 class="dropdown-header text-uppercase font-weight-bold text-muted py-1" style="font-size:0.75rem;"><i class="fas fa-microchip mr-1"></i> Okuyucu Donan&#305;m&#305;</h6>
-                                    <a class="dropdown-item py-2 font-weight-bold text-success" href="javascript:void(0);" onclick="scanPassportDirect('auto');">
-                                        <i class="fas fa-magic mr-2"></i> Otomatik Alg&#305;la <span class="badge badge-success ml-1">&#214;nerilen</span>
-                                    </a>
-                                    <div class="dropdown-divider my-1"></div>
-                                    <a class="dropdown-item py-2" href="javascript:void(0);" onclick="scanPassportDirect('3m');">
-                                        <i class="fas fa-id-card mr-2 text-primary"></i> 3M Cogent / Gemalto (PV40/AT9000)
-                                    </a>
-                                    <a class="dropdown-item py-2" href="javascript:void(0);" onclick="scanPassportDirect('regula');">
-                                        <i class="fas fa-camera-retro mr-2 text-info"></i> Regula Document Reader (70X4)
-                                    </a>
-                                    <a class="dropdown-item py-2" href="javascript:void(0);" onclick="scanPassportDirect('desko');">
-                                        <i class="fas fa-barcode mr-2 text-warning"></i> Desko PENTA Scanner
-                                    </a>
-                                </div>
-                            </div>
                         </div>
-                        <div id="opticalScanAlert" class="mt-2" style="display:none;"></div>
 
                         <div class="form-row">
                             <div class="form-group col-xl-6 col-lg-6 col-md-6 mb-2">
@@ -663,13 +614,40 @@
         </form>
 
         <!-- ALT PANEL: RESMİ TUTANAK VE TEBLİĞ FORMU YAZDIR (#form) -->
-        <form id="form" class="calc-panel tutanak-panel mt-3 hidden" method="post" target="_blank" action="/Formolustur">
-            <div class="calc-panel-header">
-                <h5 class="panel-title">
-                    <i class="fas fa-print"></i> Resmi Tebliğ Formu ve Tutanak Bilgileri
-                </h5>
-                <span class="text-muted small">Yazdırılacak resmi evrak üst bilgileri</span>
+        <form id="form" class="calc-panel tutanak-panel mt-3" method="post" target="_blank" action="/Formolustur">
+            <div class="calc-panel-header d-flex flex-wrap align-items-center justify-content-between">
+                <div>
+                    <h5 class="panel-title mb-0">
+                        <i class="fas fa-print"></i> Resmi Tebliğ Formu ve Tutanak Bilgileri
+                    </h5>
+                    <span class="text-muted small">Yazdırılacak resmi evrak üst bilgileri — kimlik alanlarını optik okuyucu ile doldurabilirsiniz</span>
+                </div>
+                <div class="btn-group shadow-sm mt-2 mt-md-0" role="group">
+                    <button type="button" id="btnTutanakOpticalScan" onclick="scanPassportDirect('auto');" class="btn btn-sm btn-success font-weight-bold py-1 px-3" style="font-size:0.84rem; background:linear-gradient(135deg, #059669 0%, #047857 100%); border:none; border-radius:6px 0 0 6px;" title="Optik okuyucudan yolcu kimlik bilgilerini doldur">
+                        <span class="passport-pulse-dot mr-1"></span> <i class="fas fa-camera mr-1"></i> Optik Okuyucudan Doldur
+                    </button>
+                    <button type="button" class="btn btn-sm btn-success dropdown-toggle dropdown-toggle-split py-1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="border-radius:0 6px 6px 0; background:#047857; border:none; border-left:1px solid rgba(255,255,255,0.25);" title="Okuyucu cihazını seç">
+                        <span class="sr-only">Cihaz Seçimi</span>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-right shadow-lg" style="font-size:0.84rem; min-width:260px; z-index:1050;">
+                        <h6 class="dropdown-header text-uppercase font-weight-bold text-muted py-1" style="font-size:0.75rem;"><i class="fas fa-microchip mr-1"></i> Okuyucu Donanımı</h6>
+                        <a class="dropdown-item py-2 font-weight-bold text-success" href="javascript:void(0);" onclick="scanPassportDirect('auto');">
+                            <i class="fas fa-magic mr-2"></i> Otomatik Algıla <span class="badge badge-success ml-1">Önerilen</span>
+                        </a>
+                        <div class="dropdown-divider my-1"></div>
+                        <a class="dropdown-item py-2" href="javascript:void(0);" onclick="scanPassportDirect('3m');">
+                            <i class="fas fa-id-card mr-2 text-primary"></i> 3M Cogent / Gemalto (PV40/AT9000)
+                        </a>
+                        <a class="dropdown-item py-2" href="javascript:void(0);" onclick="scanPassportDirect('regula');">
+                            <i class="fas fa-camera-retro mr-2 text-info"></i> Regula Document Reader (70X4)
+                        </a>
+                        <a class="dropdown-item py-2" href="javascript:void(0);" onclick="scanPassportDirect('desko');">
+                            <i class="fas fa-barcode mr-2 text-warning"></i> Desko PENTA Scanner
+                        </a>
+                    </div>
+                </div>
             </div>
+            <div id="opticalScanAlert" class="mt-2 mb-2" style="display:none;"></div>
 
             <!-- Hidden Fields required by /Formolustur -->
             <input name="OrginCFORM" id="OrginCFORM" type="text" class="form-control hidden" required>
@@ -730,7 +708,7 @@
             if (window.PassportReader && typeof window.PassportReader.scanDevice === 'function') {
                 window.PassportReader.scanDevice(deviceType || 'auto');
             } else {
-                var btns = $('#btnDirectOpticalScan, #btnPanelDirectScan');
+                var btns = $('#btnTutanakOpticalScan');
                 var orig = btns.first().html();
                 btns.prop('disabled', true).html('<span class="spinner-border spinner-border-sm mr-1"></span> Okunuyor...');
                 $.post('/Calculate/ScanOpticalReader', { deviceType: deviceType || 'auto' }, function (res) {
@@ -738,19 +716,17 @@
                     if (window.PassportReader && window.PassportReader.applyResult) {
                         window.PassportReader.applyResult(res);
                     } else if (res && res.success) {
-                        if (res.fullName) $('#NameCFORM').val(res.fullName);
+                        var given = (res.givenNames || '').trim();
+                        var surname = (res.surname || '').trim();
+                        var identName = (given || surname) ? (given + ' ' + surname).trim() : (res.fullName || '');
+                        if (identName) $('#NameCFORM').val(identName);
                         if (res.documentNumber) $('#PassportCFORM').val(res.documentNumber);
-                        if (res.country) {
-                            if ($('#CountryCalculate option[value="' + res.country + '"]').length === 0) {
-                                $('#CountryCalculate').append(new Option(res.country + ' (Test Modu)', res.country, true, true));
-                            }
-                            $('#CountryCalculate').val(res.country).trigger('change');
-                        }
-                        if (res.birthDate) $('#BirthDateCalculate').val(res.birthDate).trigger('change');
+                        if (res.personalNumber) $('#IDNCFORM').val(res.personalNumber);
+                        if (res.birthDate) $('#BirthdateCFORM').val(res.birthDate);
                         if (res.isTurkishCitizen) {
-                            alert('ℹ️ TEST MODU (TUR): Türk vatandaşı belgesi okundu ve form alanları dolduruldu.');
+                            alert('ℹ️ TEST MODU (TUR): Türk vatandaşı belgesi okundu ve kimlik alanları dolduruldu.');
                         } else {
-                            alert('✓ Pasaport okundu: ' + (res.fullName || '') + ' (' + (res.documentNumber || '') + ')');
+                            alert('✓ Pasaport okundu: ' + (identName || '') + ' (' + (res.documentNumber || '') + ')');
                         }
                     } else {
                         alert((res && res.message) ? res.message : 'Optik okuyucudan pasaport okunamadı.');

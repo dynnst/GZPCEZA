@@ -1420,7 +1420,7 @@ namespace gzpegm.Services
                         var nameParts = td1L3.Split(new[] { "<<" }, StringSplitOptions.RemoveEmptyEntries);
                         surname = nameParts.Length > 0 ? nameParts[0].Replace("<", " ").Trim() : "";
                         givenNames = nameParts.Length > 1 ? nameParts[1].Replace("<", " ").Trim() : "";
-                        fullName = (surname + " " + givenNames).Trim();
+                        fullName = (givenNames + " " + surname).Trim();
                     }
                 }
 
@@ -1449,7 +1449,7 @@ namespace gzpegm.Services
                         var parts = namePart.Split(new[] { "<<" }, StringSplitOptions.RemoveEmptyEntries);
                         surname = parts.Length > 0 ? parts[0].Replace("<", " ").Trim() : "";
                         givenNames = parts.Length > 1 ? parts[1].Replace("<", " ").Trim() : "";
-                        fullName = (surname + " " + givenNames).Trim();
+                        fullName = (givenNames + " " + surname).Trim();
 
                         // Line 2: Belge No (0..9) + Check (9)
                         if (td3L2.Length >= 10)
@@ -1543,7 +1543,7 @@ namespace gzpegm.Services
                     {
                         surname = mSur.Success ? mSur.Groups[1].Value.Trim().ToUpperInvariant() : "";
                         givenNames = mGiv.Success ? mGiv.Groups[1].Value.Trim().ToUpperInvariant() : "";
-                        fullName = (surname + " " + givenNames).Trim();
+                        fullName = (givenNames + " " + surname).Trim();
                     }
                 }
 
@@ -1672,7 +1672,7 @@ namespace gzpegm.Services
                 var parts = namePart.Split(new[] { "<<" }, StringSplitOptions.RemoveEmptyEntries);
                 p.Surname = CleanMrzWord(parts.Length > 0 ? parts[0] : "");
                 p.GivenNames = CleanMrzWord(parts.Length > 1 ? parts[1] : "");
-                p.FullName = (p.Surname + " " + p.GivenNames).Trim();
+                p.FullName = (p.GivenNames + " " + p.Surname).Trim();
 
                 // Line 2: Belge No (0-9), Uyruk (10-12), Doğum Tarihi (13-18), Cinsiyet (20)
                 if (l2.Length >= 9) p.DocumentNumber = l2.Substring(0, 9).Replace("<", "").Trim();
@@ -1707,7 +1707,7 @@ namespace gzpegm.Services
                 if (p.Age.HasValue)
                 {
                     p.IsAdult = p.Age.Value >= 18;
-                    p.AdultCode = p.IsAdult ? "1" : "2";
+                    p.AdultCode = p.IsAdult ? "2" : "1";
                 }
 
                 return p;
@@ -1763,14 +1763,14 @@ namespace gzpegm.Services
                     var parts = nameLine.Split(new[] { "<<" }, StringSplitOptions.RemoveEmptyEntries);
                     p.Surname = CleanMrzWord(parts.Length > 0 ? parts[0] : "");
                     p.GivenNames = CleanMrzWord(parts.Length > 1 ? parts[1] : "");
-                    p.FullName = (p.Surname + " " + p.GivenNames).Trim();
+                    p.FullName = (p.GivenNames + " " + p.Surname).Trim();
                 }
 
                 p.Age = CalculateAge(p.BirthDate);
                 if (p.Age.HasValue)
                 {
                     p.IsAdult = p.Age.Value >= 18;
-                    p.AdultCode = p.IsAdult ? "1" : "2";
+                    p.AdultCode = p.IsAdult ? "2" : "1";
                 }
 
                 return p;
@@ -1797,13 +1797,15 @@ namespace gzpegm.Services
             string mm = yymmdd.Substring(2, 2);
             string dd = yymmdd.Substring(4, 2);
 
-            int curYear = DateTime.Now.Year % 100;
-            int fullYear = yy <= curYear ? (2000 + yy) : (1900 + yy);
-
             if (int.TryParse(dd, out int d) && int.TryParse(mm, out int m))
             {
                 if (d >= 1 && d <= 31 && m >= 1 && m <= 12)
                 {
+                    int y2000 = 2000 + yy;
+                    DateTime candidate;
+                    try { candidate = new DateTime(y2000, m, d); }
+                    catch { candidate = DateTime.MaxValue; }
+                    int fullYear = candidate > DateTime.Today ? (1900 + yy) : y2000;
                     return string.Format("{0:D2}.{1:D2}.{2:D4}", d, m, fullYear);
                 }
             }

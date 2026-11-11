@@ -232,7 +232,7 @@
         $('#V137ExpiredCalculate').val('0');
 
         // Sonuç bölümlerini gizle ve temizle
-        $('#veri, #hes2, #hes3, #hes4, #hes5, #form, #ikametli, #v137SureDurumu').addClass('hidden');
+        $('#veri, #hes2, #hes3, #hes4, #hes5, #ikametli, #v137SureDurumu').addClass('hidden');
         $('#DayCalculate, #LongCalculate, #OneTimeCalculate, #BasCalculate, #BitCalculate').val('');
         $('#CezaAyCalculate, #CezaGunCalculate, #SonucCalculate, #ReEntryCalculate').val('');
         $('#CezaCalculate, #KurCalculate, #CezaTLCalculate, #VisaHarcCalculate, #DefterCalculate, #IdariCalculate, #ToplamCalculate').val('');

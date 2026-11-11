@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
@@ -37,29 +37,6 @@ namespace gzpegm.Cont
                 return false;
             }
 
-            // Kayan aktivite yenileme (Sliding Activity): Kullanici aktif islem yaptikca token zaman damgasi 10 dakikada bir guncellenir
-            if (check.fldDateTime.Value < DateTime.Now.AddMinutes(-10))
-            {
-                check.fldDateTime = DateTime.Now;
-                var currentTokenId = check.fldId;
-                System.Web.Hosting.HostingEnvironment.QueueBackgroundWorkItem(ct =>
-                {
-                    try
-                    {
-                        using (var _db = new gzpegm.Models.GZPEGM1())
-                        {
-                            var tRec = _db.E_Token.FirstOrDefault(t => t.fldId == currentTokenId);
-                            if (tRec != null)
-                            {
-                                tRec.fldDateTime = DateTime.Now;
-                                _db.SaveChanges();
-                            }
-                        }
-                    }
-                    catch { }
-                });
-            }
-
             User userCont = new User();
             var userData = userCont.GetUserById(Convert.ToInt32(check.fldUserId));
             if (userData == null ||
@@ -70,7 +47,7 @@ namespace gzpegm.Cont
                 return false;
             }
 
-            // Kayan aktivite yenileme (Sliding Activity): Kullanici aktif islem yaptikca token zaman damgasi 10 dakikada bir guncellenir
+            // Kayan aktivite yenileme (Sliding Activity): Kullanıcı aktif işlem yaptıkça token zaman damgası 10 dakikada bir güncellenir
             if (check.fldDateTime.Value < DateTime.Now.AddMinutes(-10))
             {
                 check.fldDateTime = DateTime.Now;

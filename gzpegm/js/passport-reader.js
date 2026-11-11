@@ -130,12 +130,13 @@
         var dd = dateStr.substring(4, 6);
         if (isNaN(yy)) return "";
 
-        var curYear2Digit = new Date().getFullYear() % 100;
-        var fullYear = (yy <= curYear2Digit) ? (2000 + yy) : (1900 + yy);
-
         var d = parseInt(dd, 10);
         var m = parseInt(mm, 10);
         if (d < 1 || d > 31 || m < 1 || m > 12) return "";
+
+        var y2000 = 2000 + yy;
+        var candidate = new Date(y2000, m - 1, d);
+        var fullYear = (candidate.getTime() > Date.now()) ? (1900 + yy) : y2000;
 
         return (d < 10 ? '0' + d : d) + "." + (m < 10 ? '0' + m : m) + "." + fullYear;
     }
@@ -211,75 +212,80 @@
        ========================================================================== */
     var isDirectScanActive = false;
 
+    function formatIdentityName(res) {
+        var given = cleanMrzStr((res && (res.givenNames || res.forenames || res.firstName)) || "");
+        var surname = cleanMrzStr((res && (res.surname || res.lastName)) || "");
+        if (given || surname) {
+            return (given + " " + surname).trim();
+        }
+        return cleanMrzStr((res && res.fullName) || "");
+    }
+
+    function looksLikePersonalId(value, passportNo) {
+        if (!value) return false;
+        var v = String(value).replace(/</g, "").replace(/\s+/g, "").trim();
+        if (!v || v.length < 5 || v.length > 15) return false;
+        if (passportNo && v === passportNo) return false;
+        if (!/^[A-Z0-9]+$/i.test(v)) return false;
+        if (/^0+$/.test(v)) return false;
+        return true;
+    }
+
+    function applyIdentityFields(data) {
+        if (!data) return "";
+        var name = formatIdentityName(data);
+        var passportNo = String(data.documentNumber || data.passportNo || "").replace(/</g, "").replace(/\s+/g, "").trim();
+        var personal = data.personalNumber || data.kimlikNo || "";
+        var birth = data.birthDate || "";
+        var father = data.fatherName || "";
+        var mother = data.motherName || "";
+
+        if (name) {
+            $('#NameCFORM').val(name);
+            highlightInput('#NameCFORM');
+        }
+        if (passportNo) {
+            $('#PassportCFORM').val(passportNo);
+            highlightInput('#PassportCFORM');
+        }
+        if (looksLikePersonalId(personal, passportNo)) {
+            $('#IDNCFORM').val(String(personal).replace(/</g, "").replace(/\s+/g, "").trim());
+            highlightInput('#IDNCFORM');
+        }
+        if (birth) {
+            $('#BirthdateCFORM').val(birth);
+        }
+        if (father) {
+            $('#FatherCFORM').val(father);
+            highlightInput('#FatherCFORM');
+        }
+        if (mother) {
+            $('#MotherCFORM').val(mother);
+            highlightInput('#MotherCFORM');
+        }
+        $('#form').removeClass('hidden');
+        return name;
+    }
+
     function applyScanResult(res) {
         if (!res) {
             showPassportAlert('Optik okuyucudan yanıt alınamadı.', 'danger');
             return;
         }
 
-        if (res.success) {
-            // 1. Türk Vatandaşı Bilgilendirmesi (Test amacıyla form doldurulur)
+        if (res.success || res.documentNumber || res.fullName || res.givenNames || res.surname) {
             if (res.isTurkishCitizen || (res.countryCode && (res.countryCode === 'TUR' || res.countryCode === 'TR'))) {
                 showPassportAlert(
-                    '<strong>BİLGİ / TEST MODU (TUR):</strong> Türk vatandaşı belgesi okundu. Test amacıyla tüm alanlar başarıyla dolduruldu.',
+                    '<strong>BİLGİ / TEST MODU (TUR):</strong> Türk vatandaşı belgesi okundu. Test amacıyla kimlik alanları dolduruldu.',
                     'info'
                 );
             }
 
-            // 2. Yabancı Yolcu Adı Soyadı
-            if (res.fullName) {
-                $('#NameCFORM').val(res.fullName);
-                highlightInput('#NameCFORM');
-            }
-
-            // 3. Belge / Pasaport Numarası
-            if (res.documentNumber) {
-                $('#PassportCFORM').val(res.documentNumber);
-                highlightInput('#PassportCFORM');
-            }
-
-            // 4. Kimlik / Kişisel No
-            if (res.personalNumber) {
-                $('#IDNCFORM').val(res.personalNumber);
-                highlightInput('#IDNCFORM');
-            }
-
-            // 5. Pasaport Türü (1: Umuma Mahsus, 2: Diplomatik, 3: Servis, vb.)
-            var docTypeCode = res.docTypeCode || "1";
-            if ($('#PassportCalculate').length) {
-                $('#PassportCalculate').val(docTypeCode).trigger('change');
-                highlightInput('#PassportCalculate');
-            }
-
-            // 6. Uyruk / Ülke Seçimi (Otomatik vize ve harç hesaplatır)
-            var matchedCountry = "";
-            if (res.country || res.countryCode) {
-                matchedCountry = setPassportCountry(res.country || res.countryCode);
-            }
-
-            // 7. Doğum Tarihi & Yaş Grubu
-            if (res.birthDate) {
-                $('#BirthDateCalculate').val(res.birthDate).trigger('change');
-                $('#BirthdateCFORM').val(res.birthDate);
-                highlightInput('#BirthDateCalculate');
-
-                if (typeof window.adultchild === 'function') {
-                    window.adultchild($('#BirthDateCalculate')[0]);
-                }
-            }
-
-            // 8. Yetişkin / Çocuk Durumu
-            if (res.adultCode && $('#AdultCalculate').length) {
-                $('#AdultCalculate').val(res.adultCode).trigger('change');
-                highlightInput('#AdultCalculate');
-            }
-
-            // Sesli ve görsel bildirim
+            var filledName = applyIdentityFields(res);
             playScanBeep();
 
-            var detailSummary = (res.fullName || 'Yabancı Yolcu') +
-                (res.documentNumber ? ' (' + res.documentNumber + ')' : '') +
-                (matchedCountry && matchedCountry !== 'TUR' ? ' - ' + matchedCountry : (res.country ? ' - ' + res.country : ''));
+            var detailSummary = (filledName || res.fullName || 'Yabancı Yolcu') +
+                (res.documentNumber ? ' (' + res.documentNumber + ')' : '');
 
             showPassportAlert(
                 '<strong>Pasaport Okundu (' + (res.deviceName || 'Optik Okuyucu') + '):</strong> ' + detailSummary +
@@ -390,7 +396,7 @@
         if (isDirectScanActive) return;
         isDirectScanActive = true;
 
-        var btns = $('#btnDirectOpticalScan, #btnPanelDirectScan');
+        var btns = $('#btnTutanakOpticalScan, #btnDirectOpticalScan, #btnPanelDirectScan');
         var originalHtmls = [];
         btns.each(function () {
             originalHtmls.push($(this).html());
@@ -461,7 +467,7 @@
             timeout: 1000
         }).done(function (sRes) {
             if (sRes && (sRes.isRunning || sRes.success)) {
-                $('#btnDirectOpticalScan, #btnPanelDirectScan').attr('title', 'Optik Okuyucu Köprüsü Aktif (3M / Regula)');
+                $('#btnTutanakOpticalScan, #btnDirectOpticalScan, #btnPanelDirectScan').attr('title', 'Optik Okuyucu Köprüsü Aktif (3M / Regula)');
                 return;
             }
             checkServerStatus();
@@ -476,7 +482,7 @@
                 cache: false,
                 success: function (res) {
                     if (res && res.success && res.isRunning) {
-                        $('#btnDirectOpticalScan, #btnPanelDirectScan').attr('title', (res.deviceName || 'Optik Okuyucu') + ' Bağlı ve Hazır');
+                        $('#btnTutanakOpticalScan, #btnDirectOpticalScan, #btnPanelDirectScan').attr('title', (res.deviceName || 'Optik Okuyucu') + ' Bağlı ve Hazır');
                     }
                 }
             });
@@ -707,48 +713,19 @@
             );
             }
 
-        var fullName = (surname + " " + givenNames).trim();
-
-        if (fullName) {
-            $('#NameCFORM').val(fullName);
-            highlightInput('#NameCFORM');
-        }
-
-        if (passportNo) {
-            $('#PassportCFORM').val(passportNo);
-            highlightInput('#PassportCFORM');
-        }
-
-        if (kimlikNo) {
-            $('#IDNCFORM').val(kimlikNo);
-            highlightInput('#IDNCFORM');
-        }
-
-        if (docType && $('#PassportCalculate').length) {
-            $('#PassportCalculate').val(docType).trigger('change');
-            highlightInput('#PassportCalculate');
-        }
-
-        var matchedCountry = "";
-        if (nationalityCode) {
-            matchedCountry = setPassportCountry(nationalityCode);
-        }
-
-        if (birthDateStr) {
-            $('#BirthDateCalculate').val(birthDateStr).trigger('change');
-            $('#BirthdateCFORM').val(birthDateStr);
-            highlightInput('#BirthDateCalculate');
-
-            if (typeof window.adultchild === 'function') {
-                window.adultchild($('#BirthDateCalculate')[0]);
-            }
-        }
+        var filledName = applyIdentityFields({
+            givenNames: givenNames,
+            surname: surname,
+            documentNumber: passportNo,
+            personalNumber: kimlikNo,
+            birthDate: birthDateStr
+        });
 
         playScanBeep();
 
-        var detailSummary = (fullName ? fullName : 'Yabancı Yolcu') +
+        var detailSummary = (filledName ? filledName : 'Yabancı Yolcu') +
             (passportNo ? ' (' + passportNo + ')' : '') +
-            (matchedCountry ? ' - ' + matchedCountry : (nationalityCode ? ' - ' + nationalityCode : ''));
+            (nationalityCode ? ' - ' + nationalityCode : '');
 
         showPassportAlert(
             '<strong>Pasaport Okundu (' + (sourceName || 'Okuyucu') + '):</strong> ' + detailSummary +
@@ -920,7 +897,7 @@
         checkOpticalReaderStatus();
 
         // Buton tıklamaları delegasyonu
-        $(document).on('click', '#btnDirectOpticalScan, #btnPanelDirectScan', function (e) {
+        $(document).on('click', '#btnTutanakOpticalScan, #btnDirectOpticalScan, #btnPanelDirectScan', function (e) {
             e.preventDefault();
             triggerDirectOpticalScan('auto');
         });

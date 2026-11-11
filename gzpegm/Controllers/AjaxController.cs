@@ -6,10 +6,12 @@ using System.Globalization;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
+using System.Web.SessionState;
 
 namespace gzpegm.Controllers
 {
     [UserAuthorize]
+    [SessionState(SessionStateBehavior.ReadOnly)]
     public class AjaxController : Controller
     {
         private static bool TryParseCalculationDate(string value, out DateTime date)
@@ -393,140 +395,170 @@ namespace gzpegm.Controllers
                 else return Json(new { Type = "1", Code = "---", Rslt = "Tahdit kodu = <strong>---.</strong> İdari tahdit kodu = <strong> " + result.fldIdariCode + ".</strong> Cezalı süre = <strong>0 gün.</strong>", CZ = 0 }, JsonRequestBehavior.AllowGet);
             }
         }
+
         [Route("addhistory")]
         public JsonResult addhistory(string bas, string sexit, string bdate, string csure, string ttutar, string country)
         {
-            var userdata = GetUser();
-            Isk isk = new Isk();
-            DateTime dtbas = Convert.ToDateTime(bas),
-                dtsexit = Convert.ToDateTime(sexit),
-                dtbdate = Convert.ToDateTime(bdate);
-            // Store stable identifier (fldSicil) together with display name so name changes won't break stats
-            var fullname = (userdata.fldName + " " + userdata.fldLastName).Trim();
-            var userKey = (userdata.fldSicil ?? "") + "|" + fullname;
-            isk.Addhistory(dtbas, dtsexit, dtbdate, csure, ttutar, userKey, userdata.fldBorder, country);
-            return Json(new { }, JsonRequestBehavior.AllowGet);
+            try
+            {
+                var userdata = GetUser();
+                Isk isk = new Isk();
+                DateTime dtbas, dtsexit, dtbdate;
+                if (!TryParseCalculationDate(bas, out dtbas)) dtbas = DateTime.Now;
+                if (!TryParseCalculationDate(sexit, out dtsexit)) dtsexit = DateTime.Now;
+                if (!TryParseCalculationDate(bdate, out dtbdate)) dtbdate = new DateTime(1900, 1, 1);
+
+                var fullname = userdata != null ? (userdata.fldName + " " + userdata.fldLastName).Trim() : "";
+                var border = userdata != null ? userdata.fldBorder : "";
+                var sicil = userdata != null ? (userdata.fldSicil ?? "") : "";
+                var userKey = sicil + "|" + fullname;
+                isk.Addhistory(dtbas, dtsexit, dtbdate, csure, ttutar, userKey, border, country);
+                return Json(new { success = true }, JsonRequestBehavior.AllowGet);
+            }
+            catch
+            {
+                return Json(new { success = false }, JsonRequestBehavior.AllowGet);
+            }
         }
+
         [Route("Calculate2")]
         public JsonResult Calculate2(string Country, string Ticket, int Type, int Passport, int Visa, int CTtype, string Enter, bool V137Expired = false)
         {
-            UlkeModel ulke = new UlkeModel();
-            contauh contauh = new contauh();
-            ContExchange exchange = new ContExchange();
-            var AUHdata = contauh.Check(0, Country);
-            double Ceza = 0;
-            int Gun = 0, Ay = 0;
-            if (Ticket.Contains("Ay"))
+            try
             {
-                Ticket = Ticket.Remove(Ticket.Length - 3);
-                int.TryParse(Ticket, out Ay);
-                if (Array.IndexOf(ulke.GGRUBU, Country) > -1)
+                if (string.IsNullOrWhiteSpace(Country) || string.IsNullOrWhiteSpace(Ticket))
                 {
-                    Ceza = Convert.ToDouble(AUHdata.fldFirstMounth);
-                    if (Type != 1) Ceza = Ceza * 2;
+                    return Json(new { toplam = "0", ID = "0", VH = "0", DFTR = "0", CTL = 0, Fine = 0, ToM = "", KurPrice = "1", Kur = "" }, JsonRequestBehavior.AllowGet);
+                }
+
+                UlkeModel ulke = new UlkeModel();
+                contauh contauh = new contauh();
+                ContExchange exchange = new ContExchange();
+                var AUHdata = contauh.Check(0, Country);
+                if (AUHdata == null)
+                {
+                    return Json(new { toplam = "0", ID = "0", VH = "0", DFTR = "0", CTL = 0, Fine = 0, ToM = "", KurPrice = "1", Kur = "" }, JsonRequestBehavior.AllowGet);
+                }
+
+                double Ceza = 0;
+                int Gun = 0, Ay = 0;
+                string t = Ticket.Trim();
+
+                if (t.IndexOf("Ay", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    var match = System.Text.RegularExpressions.Regex.Match(t, @"\d+");
+                    if (match.Success) int.TryParse(match.Value, out Ay);
+                    if (Array.IndexOf(ulke.GGRUBU, Country) > -1)
+                    {
+                        Ceza = Convert.ToDouble(AUHdata.fldFirstMounth);
+                        if (Type != 1) Ceza = Ceza * 2;
+                    }
+                    else
+                    {
+                        for (int i = 0; i < Ay; i++)
+                        {
+                            if (i == 0) Ceza = Convert.ToDouble(AUHdata.fldFirstMounth);
+                            else Ceza += Convert.ToDouble(AUHdata.fldKat);
+                        }
+                        Ceza = Ceza * Convert.ToDouble(Type);
+                    }
                 }
                 else
                 {
-                    for (int i = 0; i < Ay; i++)
+                    var match = System.Text.RegularExpressions.Regex.Match(t, @"\d+");
+                    if (match.Success) int.TryParse(match.Value, out Gun);
+                    Ceza = Convert.ToDouble(AUHdata.fldDayStart);
+                    if (Array.IndexOf(ulke.AGRUBU, Country) > -1 || Array.IndexOf(ulke.EGRUBU, Country) > -1)
                     {
-                        if (i == 0) Ceza = Convert.ToDouble(AUHdata.fldFirstMounth);
-                        else Ceza += Convert.ToDouble(AUHdata.fldKat);
+                        for (int i = 1; i < Gun + 1; i++)
+                        {
+                            if (i > 10 && i < 26) Ceza += Convert.ToDouble(AUHdata.fldDayKat);
+                            if (i == 26) Ceza = Math.Ceiling(Ceza);
+                        }
                     }
-                    Ceza = Ceza * Convert.ToDouble(Type);
+                    else if (Array.IndexOf(ulke.BGRUBU, Country) > -1)
+                    {
+                        for (int i = 1; i < Gun + 1; i++)
+                        {
+                            if (i > 10 && i < 29) Ceza += Convert.ToDouble(AUHdata.fldDayKat);
+                            if (i == 29) Ceza = Math.Ceiling(Ceza);
+                        }
+                    }
+                    else if (Array.IndexOf(ulke.CGRUBU, Country) > -1)
+                    {
+                        for (int i = 1; i < Gun + 1; i++)
+                        {
+                            if (i > 10 && i < 24) Ceza += Convert.ToDouble(AUHdata.fldDayKat);
+                            if (i == 24) Ceza = Math.Ceiling(Ceza);
+                        }
+                    }
+                    else if (Array.IndexOf(ulke.DGRUBU, Country) > -1)
+                    {
+                        for (int i = 1; i < Gun + 1; i++)
+                        {
+                            if (i > 10 && i < 25) Ceza += Convert.ToDouble(AUHdata.fldDayKat);
+                            if (i == 25) Ceza = Math.Ceiling(Ceza);
+                        }
+                    }
+                    else if (Array.IndexOf(ulke.FGRUBU, Country) > -1)
+                    {
+                        for (int i = 1; i < Gun + 1; i++)
+                        {
+                            if (i > 1 && i < 9) Ceza += Convert.ToDouble(AUHdata.fldDayKat);
+                            else if (i == 9) Ceza += Convert.ToDouble(467.6);
+                            if (i == 10) Ceza = Math.Ceiling(Ceza);
+                        }
+                    }
+                    else if (Array.IndexOf(ulke.GGRUBU, Country) > -1)
+                    {
+                        Ceza = Convert.ToDouble(AUHdata.fldFirstMounth);
+                    }
+                    if (Array.IndexOf(ulke.GGRUBU, Country) > -1)
+                    {
+                        if (Type != 1) Ceza = Ceza * 2;
+                    }
+                    else Ceza = Ceza * Convert.ToDouble(Type);
+                    Ceza = Math.Round(Ceza, 2);
                 }
 
+                var ExchangeData = exchange.GetAllExchange();
+
+                double cezatl = 0;
+                string Kurr = "",
+                     KurP = "",
+                     VizeHarc = "0",
+                     Idari = "0",
+                     Defter = "0";
+                Kurr = AUHdata.fldToM;
+                if (AUHdata.fldToM == "EUR") { KurP = ExchangeData.fldEuro; }
+                else if (AUHdata.fldToM == "USD") { KurP = ExchangeData.fldDollar; }
+                else if (AUHdata.fldToM == "GBP") { KurP = ExchangeData.fldPaund; }
+                else if (AUHdata.fldToM == "TRY") { KurP = "1"; }
+
+                cezatl = Math.Round(Convert.ToDouble(Ceza) * Convert.ToDouble(KurP), 2);
+                Contuvr contuvr = new Contuvr();
+                tgvh tgvh = new tgvh();
+                var uvrRecord = contuvr.check(0, Country, Passport, Visa, CTtype);
+                if (uvrRecord != null && uvrRecord.fldHB == 1)
+                {
+                    DateTime parsedEnter;
+                    string enterYear = TryParseCalculationDate(Enter, out parsedEnter)
+                        ? parsedEnter.ToString("yyyy")
+                        : DateTime.Now.ToString("yyyy");
+                    var harcdata = tgvh.checkTGVH(enterYear);
+                    if (harcdata == null) harcdata = tgvh.GetTGVH().OrderByDescending(c => c.fldYear).Take(1).SingleOrDefault();
+                    VizeHarc = (harcdata != null) ? harcdata.fldPrice.ToString() : "0";
+                }
+                if (Visa != 4 && Visa != 8 && Visa != 10 && Visa != 12 && Visa != 14 && Visa != 15) Defter = tgvh.GetDefter().fldPrice.ToString();
+                double Toplam = Convert.ToDouble(cezatl) + Convert.ToDouble(Defter) + Convert.ToDouble(VizeHarc);
+                if ((Visa == 11 || Visa == 13) && V137Expired) Idari = "20605";
+                Toplam += Convert.ToDouble(Idari);
+                return Json(new { toplam = Toplam.ToString(), ID = Idari, VH = VizeHarc, DFTR = Defter, CTL = cezatl, Fine = Ceza, ToM = AUHdata.fldToM, KurPrice = KurP, Kur = Kurr }, JsonRequestBehavior.AllowGet);
             }
-            else
+            catch
             {
-                Ticket = Ticket.Remove(Ticket.Length - 4);
-                int.TryParse(Ticket, out Gun);
-                Ceza = Convert.ToDouble(AUHdata.fldDayStart);
-                if (Array.IndexOf(ulke.AGRUBU, Country) > -1 || Array.IndexOf(ulke.EGRUBU, Country) > -1)
-                {
-                    for (int i = 1; i < Gun + 1; i++)
-                    {
-                        if (i > 10 && i < 26) Ceza += Convert.ToDouble(AUHdata.fldDayKat);
-                        if (i == 26) Ceza = Math.Ceiling(Ceza);
-                    }
-                }
-                else if (Array.IndexOf(ulke.BGRUBU, Country) > -1)
-                {
-                    for (int i = 1; i < Gun + 1; i++)
-                    {
-                        if (i > 10 && i < 29) Ceza += Convert.ToDouble(AUHdata.fldDayKat);
-                        if (i == 29) Ceza = Math.Ceiling(Ceza);
-                    }
-                }
-                else if (Array.IndexOf(ulke.CGRUBU, Country) > -1)
-                {
-                    for (int i = 1; i < Gun + 1; i++)
-                    {
-                        if (i > 10 && i < 24) Ceza += Convert.ToDouble(AUHdata.fldDayKat);
-                        if (i == 24) Ceza = Math.Ceiling(Ceza);
-                    }
-                }
-                else if (Array.IndexOf(ulke.DGRUBU, Country) > -1)
-                {
-                    for (int i = 1; i < Gun + 1; i++)
-                    {
-                        if (i > 10 && i < 25) Ceza += Convert.ToDouble(AUHdata.fldDayKat);
-                        if (i == 25) Ceza = Math.Ceiling(Ceza);
-                    }
-                }
-                else if (Array.IndexOf(ulke.FGRUBU, Country) > -1)
-                {
-                    for (int i = 1; i < Gun + 1; i++)
-                    {
-                        if (i > 1 && i < 9) Ceza += Convert.ToDouble(AUHdata.fldDayKat);
-                        else if (i == 9) Ceza += Convert.ToDouble(467.6);
-                        if (i == 10) Ceza = Math.Ceiling(Ceza);
-                    }
-                }
-                else if (Array.IndexOf(ulke.GGRUBU, Country) > -1)
-                {
-                    Ceza = Convert.ToDouble(AUHdata.fldFirstMounth);
-                }
-                if (Array.IndexOf(ulke.GGRUBU, Country) > -1)
-                {
-                    if (Type != 1) Ceza = Ceza * 2;
-                }
-                else Ceza = Ceza * Convert.ToDouble(Type);
-                Ceza = Math.Round(Ceza, 2);
+                return Json(new { toplam = "0", ID = "0", VH = "0", DFTR = "0", CTL = 0, Fine = 0, ToM = "", KurPrice = "1", Kur = "" }, JsonRequestBehavior.AllowGet);
             }
-            var ExchangeData = exchange.GetAllExchange();
-
-            double cezatl = 0;
-            string Kurr = "",
-                 KurP = "",
-                 VizeHarc = "0",
-                 Idari = "0",
-                 Defter = "0";
-            Kurr = AUHdata.fldToM;
-            if (AUHdata.fldToM == "EUR") { KurP = ExchangeData.fldEuro; }
-            else if (AUHdata.fldToM == "USD") { KurP = ExchangeData.fldDollar; }
-            else if (AUHdata.fldToM == "GBP") { KurP = ExchangeData.fldPaund; }
-            else if (AUHdata.fldToM == "TRY") { KurP = "1"; }
-
-            cezatl = Math.Round(Convert.ToDouble(Ceza) * Convert.ToDouble(KurP), 2);
-            Contuvr contuvr = new Contuvr();
-            tgvh tgvh = new tgvh();
-            var uvrRecord = contuvr.check(0, Country, Passport, Visa, CTtype);
-            if (uvrRecord != null && uvrRecord.fldHB == 1)
-            {
-                DateTime parsedEnter;
-                string enterYear = TryParseCalculationDate(Enter, out parsedEnter)
-                    ? parsedEnter.ToString("yyyy")
-                    : DateTime.Now.ToString("yyyy");
-                var harcdata = tgvh.checkTGVH(enterYear);
-                if (harcdata == null) harcdata = tgvh.GetTGVH().OrderByDescending(c => c.fldYear).Take(1).SingleOrDefault();
-                VizeHarc = (harcdata != null) ? harcdata.fldPrice.ToString() : "0";
-            }
-            if (Visa != 4 && Visa != 8 && Visa != 10 && Visa != 12 && Visa != 14 && Visa != 15) Defter = tgvh.GetDefter().fldPrice.ToString();
-            double Toplam = Convert.ToDouble(cezatl) + Convert.ToDouble(Defter) + Convert.ToDouble(VizeHarc);
-            if ((Visa == 11 || Visa == 13) && V137Expired) Idari = "20605";
-            Toplam += Convert.ToDouble(Idari);
-            return Json(new { toplam = Toplam.ToString(), ID = Idari, VH = VizeHarc, DFTR = Defter, CTL = cezatl, Fine = Ceza, ToM = AUHdata.fldToM, KurPrice = KurP, Kur = Kurr }, JsonRequestBehavior.AllowGet);
-
         }
     }
 }

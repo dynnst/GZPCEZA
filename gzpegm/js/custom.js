@@ -569,7 +569,7 @@ function _executeHesapla1() {
         }
     } catch (e) { }
     var form = $('#calculate-form');
-    $('#veri, #hes2, #hes3, #hes4, #form, #hes5').addClass('hidden');
+    $('#veri, #hes2, #hes3, #hes4, #hes5').addClass('hidden');
     $('#PayCalculate').val('').change();
 
     var $Exit = $('#ExitDateCalculate').val(),
@@ -684,10 +684,13 @@ function _executeHesapla1() {
             // 180/90 kuralına göre tekrar giriş tarihini formdaki geçmiş giriş-çıkışlara göre hesapla ve göster
             try {
                 computeReEntryFromForm();
-            if (result.Seferler && typeof window.computeAllDiffs === 'function') { try { window.computeAllDiffs(result.Seferler); } catch (e) { } }
+                if (result.Seferler && typeof window.computeAllDiffs === 'function') { try { window.computeAllDiffs(result.Seferler); } catch (e) { } }
             } catch (e) {
                 console.warn('Re-entry hesaplama hatası', e);
             }
+
+            // Calculate1 tamamlandığında hesapla2'yi otomatik tetikle
+            hesapla2();
         }
     });
 }
@@ -729,9 +732,26 @@ function _executeHesapla2() {
         $Visa = $('#VisaCalculate').val(),
         $Ctype = $('#CTypeCalculate').val(),
         $Country = $('#CountryCalculate').val();
+
+    if (!$Type || $Type === '0') {
+        $Type = '2';
+        $('#AdultCalculate').val('2');
+    }
+
+    if (!$Country) {
+        return false;
+    }
+
+    // Sonuç boşsa ama tarihler ve ülke girilmişse önce hesapla1'i tetikle
+    if (!$Tckt || $Tckt.trim() === '') {
+        if ($('#EnterDateCalculate').val() && $('#ExitDateCalculate').val() && $Country) {
+            hesapla1(true);
+        }
+        return false;
+    }
+
     $('#hes2').addClass('hidden');
     $('#hes3').removeClass('hidden');
-    $('#form').addClass('hidden');
 
     $('#PayCalculate').val('').change();
     $.ajax({
@@ -791,6 +811,10 @@ function _executeHesapla2() {
                     $(document).trigger('historyCountChanged');
                 }
             });
+        },
+        error: function () {
+            $('#hes2').removeClass('hidden');
+            $('#hes3').addClass('hidden');
         }
     });
 
@@ -1005,7 +1029,6 @@ function tahdit1(elem) {
                 alert(result.Rslt);
             }
             else {
-                $('#form').addClass('hidden');
                 $('#hes5').removeClass('hidden');
                 $('#lastalert').html(result.Rslt);
                 $('#DDayCFORM').val(result.CZ);
