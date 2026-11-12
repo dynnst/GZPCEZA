@@ -179,6 +179,9 @@
             <a href="@Url.Action("Index", "EInad")" class="btn btn-outline-light mr-2">
                 <i class="fas fa-list mr-1"></i> Listeye Dön
             </a>
+            <a href="@Url.Action("DownloadBridgeExe", "Calculate")" onclick="handleStartBridgeClick(event)" class="btn btn-warning font-weight-bold shadow mr-2 px-3 text-dark btn-launch-bridge" style="background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:#1f2937 !important; border:none;" title="Masanızdaki Optik Okuyucu Donanım Köprüsünü Başlat veya İndir">
+                <i class="fas fa-bolt text-danger mr-1"></i> <span class="lblBridgeStatusText">Okuyucuyu Başlat</span>
+            </a>
             <button type="button" class="btn btn-success font-weight-bold shadow mr-2 px-3" onclick="scanPassportForCreatePage();" id="btnTopScan">
                 <i class="fas fa-camera mr-1"></i> Cihazdan Pasaport / Kimlik Oku
             </button>
@@ -605,6 +608,9 @@
                     <i class="fas fa-times mr-1"></i> Vazgeç / Listeye Dön
                 </a>
                 <div class="d-flex align-items-center">
+                    <a href="@Url.Action("DownloadBridgeExe", "Calculate")" onclick="handleStartBridgeClick(event)" class="btn btn-warning font-weight-bold shadow-sm mr-2 px-3 text-dark btn-launch-bridge" style="background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:#1f2937 !important; border:none;" title="Masanızdaki Optik Okuyucu Donanım Köprüsünü Başlat veya İndir">
+                        <i class="fas fa-bolt text-danger mr-1"></i> <span class="lblBridgeStatusText">Okuyucuyu Başlat</span>
+                    </a>
                     <button type="button" class="btn btn-outline-success font-weight-bold mr-2" onclick="scanPassportForCreatePage();">
                         <i class="fas fa-camera mr-1"></i> Cihazdan Pasaport Oku
                     </button>
