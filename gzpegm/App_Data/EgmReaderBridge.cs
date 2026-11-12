@@ -20,14 +20,39 @@ namespace Sahtecilik.ReaderBridge
         private static bool _isRunning = true;
         private static string _resolved3mBinDir = null;
 
+        private static void Log(string message)
+        {
+            try
+            {
+                string logDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "EgmReaderBridge");
+                if (!Directory.Exists(logDir)) Directory.CreateDirectory(logDir);
+                File.AppendAllText(Path.Combine(logDir, "bridge.log"), DateTime.Now.ToString("HH:mm:ss.fff") + " " + message + Environment.NewLine);
+                Console.WriteLine(message);
+            }
+            catch { }
+        }
+
         static void Main(string[] args)
         {
+            Log("Bridge Main started. Args: " + string.Join(" ", args ?? new string[0]));
+            AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+            {
+                try
+                {
+                    string logDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "EgmReaderBridge");
+                    if (!Directory.Exists(logDir)) Directory.CreateDirectory(logDir);
+                    File.AppendAllText(Path.Combine(logDir, "bridge_error.log"), DateTime.Now.ToString("s") + " [FATAL] " + e.ExceptionObject + Environment.NewLine);
+                }
+                catch { }
+            };
+
             EnsureAutoStartInstalled();
             RegisterProtocolInHkcu();
             KillConflictingWedges();
 
             if (!Environment.UserInteractive)
             {
+                Log("Running as Windows Service...");
                 ServiceBase.Run(new EgmBridgeService());
                 return;
             }
@@ -37,65 +62,66 @@ namespace Sahtecilik.ReaderBridge
             {
                 if (!createdNew)
                 {
-                    // Başka bir EgmReaderBridge örneği zaten arka planda çalışıyor!
+                    Log("Another instance already running (Mutex exists). Exiting.");
                     return;
                 }
-            try { Console.OutputEncoding = Encoding.UTF8; } catch { }
-            try { Console.Title = "EGM Optik Okuyucu Köprüsü (3M / Regula) - Port " + Port; } catch { }
+                try { Console.OutputEncoding = Encoding.UTF8; } catch { }
+                try { Console.Title = "EGM Optik Okuyucu Köprüsü (3M / Regula) - Port " + Port; } catch { }
 
-            Console.WriteLine("====================================================================");
-            Console.WriteLine("  EGM ADLİ BELGE VE PASAPORT İNCELEME SİSTEMİ");
-            Console.WriteLine("  Masaüstü Optik Okuyucu Donanım Köprüsü (3M & Regula)");
-            Console.WriteLine("====================================================================");
+                Log("====================================================================");
+                Log("  EGM ADLİ BELGE VE PASAPORT İNCELEME SİSTEMİ");
+                Log("  Masaüstü Optik Okuyucu Donanım Köprüsü (3M & Regula)");
+                Log("====================================================================");
 
-            _resolved3mBinDir = Find3mSdkBinDir();
-            if (_resolved3mBinDir != null)
-            {
-                Console.WriteLine("  [✓] 3M / Gemalto / Thales SDK Dizini: " + _resolved3mBinDir);
-                AppDomain.CurrentDomain.AssemblyResolve += (s, e) =>
+                _resolved3mBinDir = Find3mSdkBinDir();
+                if (_resolved3mBinDir != null)
                 {
-                    try
+                    Log("  [✓] 3M / Gemalto / Thales SDK Dizini: " + _resolved3mBinDir);
+                    AppDomain.CurrentDomain.AssemblyResolve += (s, e) =>
                     {
-                        var name = new AssemblyName(e.Name).Name;
-                        var p = Path.Combine(_resolved3mBinDir, name + ".dll");
-                        if (File.Exists(p)) return Assembly.LoadFrom(p);
-                    }
-                    catch { }
-                    return null;
-                };
+                        try
+                        {
+                            var name = new AssemblyName(e.Name).Name;
+                            var p = Path.Combine(_resolved3mBinDir, name + ".dll");
+                            if (File.Exists(p)) return Assembly.LoadFrom(p);
+                        }
+                        catch { }
+                        return null;
+                    };
+                }
+                else
+                {
+                    Log("  [!] 3M SDK bu bilgisayarda bulunamadı.");
+                }
+
+                // Regula kontrolü
+                bool hasRegula = false;
+                try
+                {
+                    Type t = Type.GetTypeFromProgID("READERDEMO.RegulaReader");
+                    if (t == null) t = Type.GetTypeFromCLSID(new Guid("F4E2014F-3E2A-4FCF-BA56-EB86B73F30FB"));
+                    hasRegula = (t != null);
+                }
+                catch { }
+                Log(hasRegula ? "  [✓] Regula SDK (COM): Kurulu ve Hazır" : "  [!] Regula SDK bulunamadı.");
+
+                Log("--------------------------------------------------------------------");
+
+                StartHttpServer();
+
+                Log("  [🟢 AKTİF] Köprü http://127.0.0.1:" + Port + "/ adresinde dinleniyor.");
+                Log("  Merkezi sunucudaki web sayfası (76 vb.) masanızdaki okuyucuya doğrudan erişebilir.");
+                Log("====================================================================");
+
+                while (_isRunning)
+                {
+                    Thread.Sleep(2000);
+                }
+
+                Log("Main while loop ended, _isRunning=" + _isRunning);
+                StopHttpServer();
             }
-            else
-            {
-                Console.WriteLine("  [!] 3M SDK bu bilgisayarda bulunamadı.");
-            }
-
-            // Regula kontrolü
-            bool hasRegula = false;
-            try
-            {
-                Type t = Type.GetTypeFromProgID("READERDEMO.RegulaReader");
-                if (t == null) t = Type.GetTypeFromCLSID(new Guid("F4E2014F-3E2A-4FCF-BA56-EB86B73F30FB"));
-                hasRegula = (t != null);
-            }
-            catch { }
-            Console.WriteLine(hasRegula ? "  [✓] Regula SDK (COM): Kurulu ve Hazır" : "  [!] Regula SDK bulunamadı.");
-
-            Console.WriteLine("--------------------------------------------------------------------");
-
-            StartHttpServer();
-
-            Console.WriteLine("  [🟢 AKTİF] Köprü http://127.0.0.1:" + Port + "/ adresinde dinleniyor.");
-            Console.WriteLine("  Merkezi sunucudaki web sayfası (76 vb.) masanızdaki okuyucuya doğrudan erişebilir.");
-            Console.WriteLine("  (Bu pencereyi simge durumuna küçültebilirsiniz. Çıkmak için 'Q' veya Ctrl+C basınız.)");
-            Console.WriteLine("====================================================================");
-
-            while (_isRunning)
-            {
-                Thread.Sleep(2000);
-            }
-
-            StopHttpServer();
-            }
+            Log("Main exiting normally.");
         }
 
         private static void StartHttpServer()
@@ -112,7 +138,7 @@ namespace Sahtecilik.ReaderBridge
             }
             catch (Exception ex)
             {
-                Console.WriteLine("  [X] HTTP Dinleyici başlatılamadı: " + ex.Message);
+                Log("  [X] HTTP Dinleyici başlatılamadı: " + ex.Message);
             }
         }
 
@@ -256,7 +282,7 @@ namespace Sahtecilik.ReaderBridge
         {
             lock (_scanLock)
             {
-                Console.WriteLine("\n[" + DateTime.Now.ToString("HH:mm:ss") + "] Tarama isteği alındı (Talep: " + requestedDevice + ")...");
+                Log("\n[" + DateTime.Now.ToString("HH:mm:ss") + "] Tarama isteği alındı (Talep: " + requestedDevice + ")...");
 
                 bool regulaPlugged = CheckIfRegulaUsbPlugged();
 
@@ -266,7 +292,7 @@ namespace Sahtecilik.ReaderBridge
                     string resRegula = TryScanRegula();
                     if (!string.IsNullOrEmpty(resRegula) && resRegula.Contains("\"success\":true"))
                     {
-                        Console.WriteLine("  -> Regula Cihazından başarıyla okundu!");
+                        Log("  -> Regula Cihazından başarıyla okundu!");
                         return resRegula;
                     }
 
@@ -275,7 +301,7 @@ namespace Sahtecilik.ReaderBridge
                         string res3m = TryScan3M();
                         if (!string.IsNullOrEmpty(res3m) && res3m.Contains("\"success\":true"))
                         {
-                            Console.WriteLine("  -> 3M / Thales Cihazından başarıyla okundu!");
+                            Log("  -> 3M / Thales Cihazından başarıyla okundu!");
                             return res3m;
                         }
                     }
@@ -290,7 +316,7 @@ namespace Sahtecilik.ReaderBridge
                             string res3m = TryScan3M();
                             if (!string.IsNullOrEmpty(res3m) && res3m.Contains("\"success\":true"))
                             {
-                                Console.WriteLine("  -> 3M / Thales Cihazından başarıyla okundu!");
+                                Log("  -> 3M / Thales Cihazından başarıyla okundu!");
                                 return res3m;
                             }
                         }
@@ -299,12 +325,12 @@ namespace Sahtecilik.ReaderBridge
                     string resRegula = TryScanRegula();
                     if (!string.IsNullOrEmpty(resRegula) && resRegula.Contains("\"success\":true"))
                     {
-                        Console.WriteLine("  -> Regula Cihazından başarıyla okundu!");
+                        Log("  -> Regula Cihazından başarıyla okundu!");
                         return resRegula;
                     }
                 }
 
-                Console.WriteLine("  -> Cihazdan görüntü/veri alınamadı.");
+                Log("  -> Cihazdan görüntü/veri alınamadı.");
                 return "{\"success\":false,\"message\":\"Masanızdaki 3M veya Regula optik okuyucudan pasaport veya kimlik okunamadı. Lütfen belgenin okuyucu camına tam yerleştirildiğinden ve cihazın açık olduğundan emin olunuz.\"}";
             }
         }
@@ -1005,7 +1031,7 @@ namespace Sahtecilik.ReaderBridge
                 string targetDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "EgmReaderBridge");
                 string targetExe = Path.Combine(targetDir, "EgmReaderBridge.exe");
                 string startupDir = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
-                string vbsPath = Path.Combine(targetDir, "Kopru_Arka_Planda_Baslat.vbs");
+                string startupLnk = Path.Combine(startupDir, "EgmReaderBridge.lnk");
                 string startupVbs = Path.Combine(startupDir, "EgmReaderBridge.vbs");
 
                 if (!Directory.Exists(targetDir)) Directory.CreateDirectory(targetDir);
@@ -1015,9 +1041,25 @@ namespace Sahtecilik.ReaderBridge
                     try { File.Copy(currentExe, targetExe, true); } catch { }
                 }
 
-                string vbsContent = "Set WshShell = CreateObject(\"WScript.Shell\")\r\nWshShell.Run \"\"\"" + targetExe + "\"\"\", 0, False\r\n";
-                File.WriteAllText(vbsPath, vbsContent, Encoding.Default);
-                File.WriteAllText(startupVbs, vbsContent, Encoding.Default);
+                // Eski VBS dosyası varsa temizle (Windows VBScript uyarısı vermesin)
+                try { if (File.Exists(startupVbs)) File.Delete(startupVbs); } catch { }
+
+                // Windows Başlangıç klasörüne doğrudan .lnk kısayolu oluştur (Admin istemez, %100 yerel ve sessiz)
+                try
+                {
+                    Type shellType = Type.GetTypeFromProgID("WScript.Shell");
+                    if (shellType != null)
+                    {
+                        dynamic shell = Activator.CreateInstance(shellType);
+                        dynamic shortcut = shell.CreateShortcut(startupLnk);
+                        shortcut.TargetPath = targetExe;
+                        shortcut.WorkingDirectory = targetDir;
+                        shortcut.WindowStyle = 7; // Minimized
+                        shortcut.Description = "EGM Optik Okuyucu Arka Plan Servis Köprüsü";
+                        shortcut.Save();
+                    }
+                }
+                catch { }
 
                 // HKCU Run anahtarına da ekle (Çift katmanlı otomatik başlangıç garantisi - Admin istemez)
                 using (var runKey = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", true))
