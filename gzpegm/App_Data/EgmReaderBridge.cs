@@ -40,8 +40,8 @@ namespace Sahtecilik.ReaderBridge
                     // Başka bir EgmReaderBridge örneği zaten arka planda çalışıyor!
                     return;
                 }
-            Console.OutputEncoding = Encoding.UTF8;
-            Console.Title = "EGM Optik Okuyucu Köprüsü (3M / Regula) - Port " + Port;
+            try { Console.OutputEncoding = Encoding.UTF8; } catch { }
+            try { Console.Title = "EGM Optik Okuyucu Köprüsü (3M / Regula) - Port " + Port; } catch { }
 
             Console.WriteLine("====================================================================");
             Console.WriteLine("  EGM ADLİ BELGE VE PASAPORT İNCELEME SİSTEMİ");
@@ -91,25 +91,7 @@ namespace Sahtecilik.ReaderBridge
 
             while (_isRunning)
             {
-                try
-                {
-                    if (Console.IsInputRedirected)
-                    {
-                        Thread.Sleep(2000);
-                        continue;
-                    }
-                    var key = Console.ReadKey(true);
-                    if (key.Key == ConsoleKey.Q)
-                    {
-                        _isRunning = false;
-                        break;
-                    }
-                }
-                catch
-                {
-                    // Arka planda konsolsuz (silent background daemon) çalışırken
-                    Thread.Sleep(2000);
-                }
+                Thread.Sleep(2000);
             }
 
             StopHttpServer();
@@ -1036,6 +1018,12 @@ namespace Sahtecilik.ReaderBridge
                 string vbsContent = "Set WshShell = CreateObject(\"WScript.Shell\")\r\nWshShell.Run \"\"\"" + targetExe + "\"\"\", 0, False\r\n";
                 File.WriteAllText(vbsPath, vbsContent, Encoding.Default);
                 File.WriteAllText(startupVbs, vbsContent, Encoding.Default);
+
+                // HKCU Run anahtarına da ekle (Çift katmanlı otomatik başlangıç garantisi - Admin istemez)
+                using (var runKey = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", true))
+                {
+                    runKey?.SetValue("EgmReaderBridge", "\"" + targetExe + "\"");
+                }
             }
             catch { }
         }
