@@ -147,29 +147,34 @@ namespace Sahtecilik.RegulaScanner
                     try { rr.Process(); } catch { }
                 }
 
-                // Donanımın ışıkları (VIS, UV, IR) yakıp taramaya başlaması için başlangıç payı ver
-                System.Threading.Thread.Sleep(800);
-
-                // İşlemin tamamlanmasını bekle (maksimum 18 saniye)
-                int waited = 800;
-                while (waited < 18000)
+                // MRZ hazır olur olmaz devam et; gerçek süreyi ölç ve form verisini önceliklendir.
+                var regulaScanClock = System.Diagnostics.Stopwatch.StartNew();
+                int idlePolls = 0;
+                while (regulaScanClock.ElapsedMilliseconds < 3000)
                 {
-                    bool isBusy = false;
+                    try
+                    {
+                        string mrzProbe = (string)rr.GetMRZLines();
+                        if (!string.IsNullOrWhiteSpace(mrzProbe))
+                        {
+                            var probeLines = mrzProbe.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                            if (probeLines.Length >= 2 || mrzProbe.Length >= 70) break;
+                        }
+                    }
+                    catch { }
+
+                    bool isBusy = true;
                     try { isBusy = (bool)rr.IsBusy; } catch { }
                     if (!isBusy)
                     {
-                        // Işık geçişleri arasında anlık false olmasını filtrele
-                        System.Threading.Thread.Sleep(400);
-                        try { isBusy = (bool)rr.IsBusy; } catch { }
-                        if (!isBusy) break; // Tarama kesinlikle tamamlandı
+                        if (++idlePolls >= 2) break;
                     }
-
-                    System.Threading.Thread.Sleep(200);
-                    waited += 600;
+                    else
+                    {
+                        idlePolls = 0;
+                    }
+                    System.Threading.Thread.Sleep(100);
                 }
-
-                // Görsellerin bellek havuzuna aktarılması için kısa bir bekleme
-                System.Threading.Thread.Sleep(300);
 
                 // 1. Görselleri Çek (Önce rr.ImagesCount ve rr.Image(i) standart COM metodu)
                 string visBase64 = null;
@@ -425,16 +430,10 @@ namespace Sahtecilik.RegulaScanner
                 }
                 catch { }
 
-                if (string.IsNullOrEmpty(visBase64))
+                // Form aktarımı için MRZ gerekir; görüntü aktarımı tek başına başarı değildir.
+                if (string.IsNullOrWhiteSpace(line1))
                 {
-                    if (string.IsNullOrEmpty(line1))
-                    {
-                        Console.WriteLine("{\"success\":false,\"message\":\"Regula optik okuyucu camında belge algılanamadı. Lütfen pasaportu camın üzerine tam yerleştiriniz.\"}");
-                    }
-                    else
-                    {
-                        Console.WriteLine("{\"success\":false,\"message\":\"Regula okuyucudan MRZ okundu ancak optik spektral görüntüler (VIS, UV, IR) donanım tamponundan aktarılamadı. Lütfen pasaportu okuyucu camına tam oturtup tekrar deneyiniz.\"}");
-                    }
+                    Console.WriteLine("{\"success\":false,\"message\":\"Regula taradı ancak MRZ bilgilerini okuyamadı. Belgeyi düz yerleştirip yeniden deneyiniz.\"}");
                     return;
                 }
 

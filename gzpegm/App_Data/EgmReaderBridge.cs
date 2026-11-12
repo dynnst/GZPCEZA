@@ -1,8 +1,5 @@
 using System;
 using System.Diagnostics;
-using System.Drawing;
-using System.Drawing.Drawing2D;
-using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -48,8 +45,6 @@ namespace Sahtecilik.ReaderBridge
 
             EnsureAutoStartInstalled();
             RegisterProtocolInHkcu();
-            KillConflictingWedges();
-
             if (!Environment.UserInteractive)
             {
                 Log("Running as Windows Service...");
@@ -66,11 +61,11 @@ namespace Sahtecilik.ReaderBridge
                     return;
                 }
                 try { Console.OutputEncoding = Encoding.UTF8; } catch { }
-                try { Console.Title = "EGM Optik Okuyucu Köprüsü (3M / Regula) - Port " + Port; } catch { }
+                try { Console.Title = "EGM Optik Okuyucu Köprüsü (3M / Thales / DESKO / Regula) - Port " + Port; } catch { }
 
                 Log("====================================================================");
                 Log("  EGM ADLİ BELGE VE PASAPORT İNCELEME SİSTEMİ");
-                Log("  Masaüstü Optik Okuyucu Donanım Köprüsü (3M & Regula)");
+                Log("  Masaüstü Optik Okuyucu Donanım Köprüsü (3M / Thales / DESKO / Regula)");
                 Log("====================================================================");
 
                 _resolved3mBinDir = Find3mSdkBinDir();
@@ -104,6 +99,7 @@ namespace Sahtecilik.ReaderBridge
                 }
                 catch { }
                 Log(hasRegula ? "  [✓] Regula SDK (COM): Kurulu ve Hazır" : "  [!] Regula SDK bulunamadı.");
+                Log("  [i] DESKO PENTA, SDK veya HID keyboard-wedge çıkışı üzerinden kullanılır.");
 
                 Log("--------------------------------------------------------------------");
 
@@ -256,20 +252,19 @@ namespace Sahtecilik.ReaderBridge
 
         private static readonly object _scanLock = new object();
 
-        private static bool CheckIfRegulaUsbPlugged()
+        private static bool IsUsbVendorPresent(params string[] vendorIds)
         {
             try
             {
                 using (var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Enum\USB"))
                 {
-                    if (key != null)
+                    if (key == null) return false;
+                    foreach (var subName in key.GetSubKeyNames())
                     {
-                        foreach (var subName in key.GetSubKeyNames())
+                        foreach (var vendorId in vendorIds)
                         {
-                            if (subName.IndexOf("VID_1C6A", StringComparison.OrdinalIgnoreCase) >= 0)
-                            {
+                            if (subName.IndexOf("VID_" + vendorId, StringComparison.OrdinalIgnoreCase) >= 0)
                                 return true;
-                            }
                         }
                     }
                 }
@@ -278,89 +273,147 @@ namespace Sahtecilik.ReaderBridge
             return false;
         }
 
-        private static string PerformScan(string requestedDevice)
-        {
-            lock (_scanLock)
-            {
-                Log("\n[" + DateTime.Now.ToString("HH:mm:ss") + "] Tarama isteği alındı (Talep: " + requestedDevice + ")...");
+        private static bool IsRegulaUsbPlugged() { return IsUsbVendorPresent("1C6A"); }
+        private static bool Is3MOrThalesUsbPlugged() { return IsUsbVendorPresent("0964", "08E6", "27F6", "1BFD"); }
+        private static bool IsDeskoUsbPlugged() { return IsUsbVendorPresent("0E08"); }
 
-                bool regulaPlugged = CheckIfRegulaUsbPlugged();
-
-                // 1. Eğer Regula takılıysa veya talep regula ise önce Regula'yı dene
-                if (requestedDevice == "regula" || (requestedDevice == "auto" && regulaPlugged))
-                {
-                    string resRegula = TryScanRegula();
-                    if (!string.IsNullOrEmpty(resRegula) && resRegula.Contains("\"success\":true"))
-                    {
-                        Log("  -> Regula Cihazından başarıyla okundu!");
-                        return resRegula;
-                    }
-
-                    if (requestedDevice == "auto" && _resolved3mBinDir != null)
-                    {
-                        string res3m = TryScan3M();
-                        if (!string.IsNullOrEmpty(res3m) && res3m.Contains("\"success\":true"))
-                        {
-                            Log("  -> 3M / Thales Cihazından başarıyla okundu!");
-                            return res3m;
-                        }
-                    }
-                }
-                else
-                {
-                    // 3M / Thales takılı veya talep edilmişse önce 3M'i dene
-                    if (requestedDevice == "3m" || requestedDevice == "thales" || requestedDevice == "auto")
-                    {
-                        if (_resolved3mBinDir != null)
-                        {
-                            string res3m = TryScan3M();
-                            if (!string.IsNullOrEmpty(res3m) && res3m.Contains("\"success\":true"))
-                            {
-                                Log("  -> 3M / Thales Cihazından başarıyla okundu!");
-                                return res3m;
-                            }
-                        }
-                    }
-
-                    string resRegula = TryScanRegula();
-                    if (!string.IsNullOrEmpty(resRegula) && resRegula.Contains("\"success\":true"))
-                    {
-                        Log("  -> Regula Cihazından başarıyla okundu!");
-                        return resRegula;
-                    }
-                }
-
-                Log("  -> Cihazdan görüntü/veri alınamadı.");
-                return "{\"success\":false,\"message\":\"Masanızdaki 3M veya Regula optik okuyucudan pasaport veya kimlik okunamadı. Lütfen belgenin okuyucu camına tam yerleştirildiğinden ve cihazın açık olduğundan emin olunuz.\"}";
-            }
-        }
-
-        private static void KillConflictingWedges()
+        private static bool IsDeskoWedgeRunning()
         {
             try
             {
-                foreach (var p in Process.GetProcesses())
+                return Process.GetProcessesByName("PentaScanner").Length > 0
+                    || Process.GetProcessesByName("DeskoService").Length > 0
+                    || Process.GetProcessesByName("DESKO").Length > 0;
+            }
+            catch { return false; }
+        }
+
+        private static string PrepareDeskoWedgeScan(bool explicitlySelected)
+        {
+            bool running = IsDeskoWedgeRunning();
+            if (!running)
+            {
+                string[] paths = new string[]
                 {
+                    @"C:\Program Files\DESKO\PENTA Scanner\PentaScanner.exe",
+                    @"C:\Program Files (x86)\DESKO\PENTA Scanner\PentaScanner.exe",
+                    @"C:\Program Files\DESKO\DeskoService.exe",
+                    @"C:\Program Files (x86)\DESKO\DeskoService.exe",
+                    @"C:\Program Files\DESKO\PENTA Scanner SDK\Bin\PentaScanner.exe"
+                };
+                foreach (var path in paths)
+                {
+                    if (!File.Exists(path)) continue;
                     try
                     {
-                        string name = p.ProcessName.ToLowerInvariant();
-                        if (name.Contains("outputwedge") || (name.Contains("wedge") && !name.Contains("bridge")))
+                        Process.Start(new ProcessStartInfo
                         {
-                            p.Kill();
-                        }
+                            FileName = path,
+                            WorkingDirectory = Path.GetDirectoryName(path),
+                            UseShellExecute = true,
+                            WindowStyle = ProcessWindowStyle.Minimized
+                        });
+                        running = true;
+                        break;
                     }
                     catch { }
                 }
             }
-            catch { }
+
+            // Explicit DESKO selection is authoritative: Windows may expose PENTA/BRS
+            // as a keyboard wedge without a stable vendor ID or a named process.
+            // In that case the browser listener receives the reader's keystrokes.
+            if (!running && !IsDeskoUsbPlugged())
+                Log("  [i] DESKO otomatik algılanamadı; açıkça seçildiği için wedge modu hazırlanıyor.");
+
+            if (!running && !IsDeskoUsbPlugged() && !explicitlySelected)
+                return "{\"success\":false,\"message\":\"DESKO PENTA yazılımı veya USB okuyucusu algılanamadı.\"}";
+
+            return "{\"success\":true,\"wedgeMode\":true,\"deviceName\":\"DESKO PENTA\",\"message\":\"DESKO PENTA hazır. Belgeyi okuyucuya yerleştirin; klavye-wedge verisi forma otomatik aktarılacaktır.\"}";
         }
 
-        private static string TryScan3M()
+        private static string PerformScan(string requestedDevice)
+        {
+            lock (_scanLock)
+            {
+                string requested = (requestedDevice ?? "auto").Trim().ToLowerInvariant();
+                if (requested == "penta" || requested == "brs") requested = "desko";
+                if (requested == "cs500f" || requested == "gemalto") requested = "thales";
+
+                bool regulaPlugged = IsRegulaUsbPlugged();
+                bool mmmPlugged = Is3MOrThalesUsbPlugged();
+                bool deskoPlugged = IsDeskoUsbPlugged() || IsDeskoWedgeRunning();
+                Log("\n[" + DateTime.Now.ToString("HH:mm:ss") + "] Tarama isteği alındı (Talep: " + requested + ")...");
+
+                // DESKO PENTA/BRS bu uygulamada klavye-wedge akışıyla çalışır.
+                if (requested == "desko" || (requested == "auto" && deskoPlugged && !regulaPlugged && !mmmPlugged))
+                    return PrepareDeskoWedgeScan(requested == "desko");
+
+                if (requested == "regula" || (requested == "auto" && regulaPlugged))
+                {
+                    string regulaResult = TryScanRegula();
+                    if (!string.IsNullOrEmpty(regulaResult) && regulaResult.Contains("\"success\":true"))
+                    {
+                        Log("  -> Regula cihazından başarıyla okundu!");
+                        return regulaResult;
+                    }
+                    if (requested == "regula")
+                        return !string.IsNullOrEmpty(regulaResult) ? regulaResult : "{\"success\":false,\"message\":\"Regula okuyucudan MRZ alınamadı.\"}";
+                }
+
+                if (requested == "3m" || requested == "thales" || (requested == "auto" && (mmmPlugged || (!regulaPlugged && !deskoPlugged && _resolved3mBinDir != null))))
+                {
+                    if (_resolved3mBinDir != null)
+                    {
+                        string label = requested == "thales" ? "Thales Cogent CS500f" : (requested == "3m" ? "3M Cogent / Gemalto" : "3M / Thales okuyucu");
+                        string mmmResult = TryScan3M(label);
+                        if (!string.IsNullOrEmpty(mmmResult) && mmmResult.Contains("\"success\":true"))
+                        {
+                            Log("  -> " + label + " cihazından başarıyla okundu!");
+                            return mmmResult;
+                        }
+                        if (requested == "3m" || requested == "thales")
+                            return !string.IsNullOrEmpty(mmmResult) ? mmmResult : "{\"success\":false,\"message\":\"3M / Thales okuyucudan MRZ alınamadı.\"}";
+                    }
+                    else if (requested == "3m" || requested == "thales")
+                    {
+                        return "{\"success\":false,\"message\":\"3M / Thales SDK bulunamadı. Cihaz sürücüsü ve SDK kurulumunu kontrol edin.\"}";
+                    }
+                }
+
+                if (requested == "auto" && deskoPlugged)
+                    return PrepareDeskoWedgeScan(false);
+
+                if (requested == "auto" && !regulaPlugged && _resolved3mBinDir == null)
+                    return "{\"success\":false,\"message\":\"Desteklenen bir optik okuyucu algılanamadı. 3M / Thales SDK, Regula SDK veya DESKO PENTA bağlantısını kontrol edin.\"}";
+
+                Log("  -> Cihazdan MRZ verisi alınamadı.");
+                return "{\"success\":false,\"message\":\"Okuyucu verisi alınamadı. Belgeyi cihaza tam yerleştirip tekrar deneyin.\"}";
+            }
+        }
+
+        private static void Stop3MOutputWedge()
+        {
+            string[] processNames = new string[] { "OutputWedgeSysTray", "OutputWedge" };
+            foreach (var processName in processNames)
+            {
+                try
+                {
+                    foreach (var process in Process.GetProcessesByName(processName))
+                    {
+                        try { process.Kill(); process.WaitForExit(1000); } catch { }
+                        finally { process.Dispose(); }
+                    }
+                }
+                catch { }
+            }
+        }
+        private static string TryScan3M(string customDeviceName = null)
         {
             try
             {
                 // 3M OutputWedge donanım portunu meşgul ediyorsa veya hata popup'ı verdiyse kapat
-                KillConflictingWedges();
+                Stop3MOutputWedge();
                 Thread.Sleep(350);
 
                 try
@@ -386,20 +439,20 @@ namespace Sahtecilik.ReaderBridge
 
                     if (!isInit) return null;
 
-                    // Cihaz veri gönderme ve görsel yakalama ayarlarını kesinleştir (VIS, UV, IR, Fotoğraf)
+                    // Yalnızca MRZ/codeline bilgisini iste; görsel ve fotoğraf verilerini kapat.
                     try
                     {
                         MMM.Readers.FullPage.ReaderSettings settings;
                         if (MMM.Readers.FullPage.Reader.GetSettings(out settings) == MMM.Readers.ErrorCode.NO_ERROR_OCCURRED)
                         {
                             var dataSend = settings.puDataToSend;
-                            dataSend.send |= (0x000001 | 0x000002 | 0x000004 | 0x000008 | 0x000010 | 0x000020 | 0x002000);
+                            dataSend.send = MMM.Readers.FullPage.DataSendSet.Flags.CODELINE;
                             dataSend.enabled = 1;
                             settings.puDataToSend = dataSend;
 
                             var imgSet = settings.puImageSettings;
-                            imgSet.faceFind = true;
-                            imgSet.faceFindPassport = true;
+                            imgSet.faceFind = false;
+                            imgSet.faceFindPassport = false;
                             settings.puImageSettings = imgSet;
 
                             MMM.Readers.FullPage.Reader.UpdateSettings(settings);
@@ -420,12 +473,6 @@ namespace Sahtecilik.ReaderBridge
                         Thread.Sleep(300);
                         readRes = MMM.Readers.FullPage.Reader.ReadDocument();
                     }
-
-                    string visBase64 = Get3mImageBase64(MMM.Readers.FullPage.DataType.CD_IMAGEVIS);
-                    string uvBase64 = Get3mImageBase64(MMM.Readers.FullPage.DataType.CD_IMAGEUV);
-                    string irBase64 = Get3mImageBase64(MMM.Readers.FullPage.DataType.CD_IMAGEIR);
-                    string photoBase64 = Get3mImageBase64(MMM.Readers.FullPage.DataType.CD_IMAGEPHOTO);
-                    string coaxVisBase64 = Get3mImageBase64(MMM.Readers.FullPage.DataType.CD_IMAGECOAXVIS);
 
                     string docType = "", line1 = "", line2 = "", line3 = "";
                     string rawMrz = "";
@@ -474,7 +521,7 @@ namespace Sahtecilik.ReaderBridge
 
                     MMM.Readers.FullPage.Reader.Shutdown();
 
-                    if (string.IsNullOrEmpty(line1) && string.IsNullOrEmpty(rawMrz) && string.IsNullOrEmpty(visBase64))
+                    if (string.IsNullOrEmpty(line1) && string.IsNullOrEmpty(rawMrz))
                     {
                         return "{\"success\":false,\"message\":\"3M cihazı belgeyi algılayamadı. Lütfen pasaportu veya kimliği okuyucu camına tam yerleştiriniz.\"}";
                     }
@@ -482,14 +529,10 @@ namespace Sahtecilik.ReaderBridge
                     // ICAO 9303 / MRZ alanlarını ayrıştır
                     var mrzInfo = ParseMrzData(line1, line2, line3, rawMrz, clData);
 
-                    // Filigran ve Mikrobaskı katmanlarını türet
-                    string watermarkBase64 = ExtractWatermark(visBase64, irBase64, coaxVisBase64);
-                    string microBase64 = ExtractMicroprint(visBase64);
-
                     var sb = new StringBuilder();
                     sb.Append("{");
                     sb.Append("\"success\":true,");
-                    sb.Append("\"deviceName\":\"3M Cogent / Gemalto (Masaüstü)\",");
+                    sb.AppendFormat("\"deviceName\":{0},", EscapeJson(customDeviceName ?? "3M Cogent / Gemalto (Masaüstü)"));
                     sb.AppendFormat("\"docType\":{0},", EscapeJson(mrzInfo.DocType));
                     sb.AppendFormat("\"line1\":{0},", EscapeJson(line1));
                     sb.AppendFormat("\"line2\":{0},", EscapeJson(line2));
@@ -505,14 +548,7 @@ namespace Sahtecilik.ReaderBridge
                     sb.AppendFormat("\"expiryDate\":{0},", EscapeJson(mrzInfo.ExpiryDate));
                     sb.AppendFormat("\"personalNumber\":{0},", EscapeJson(mrzInfo.PersonalNumber));
                     sb.AppendFormat("\"sex\":{0},", EscapeJson(mrzInfo.Sex));
-                    sb.AppendFormat("\"allChecksPassed\":{0},", mrzInfo.AllChecksPassed ? "true" : "false");
-                    sb.AppendFormat("\"visBase64\":{0},", EscapeJson(visBase64));
-                    sb.AppendFormat("\"uvBase64\":{0},", EscapeJson(uvBase64));
-                    sb.AppendFormat("\"irBase64\":{0},", EscapeJson(irBase64));
-                    sb.AppendFormat("\"watermarkBase64\":{0},", EscapeJson(watermarkBase64));
-                    sb.AppendFormat("\"microBase64\":{0},", EscapeJson(microBase64));
-                    sb.AppendFormat("\"photoBase64\":{0},", EscapeJson(photoBase64));
-                    sb.AppendFormat("\"coaxVisBase64\":{0}", EscapeJson(coaxVisBase64));
+                    sb.AppendFormat("\"allChecksPassed\":{0}", mrzInfo.AllChecksPassed ? "true" : "false");
                     sb.Append("}");
 
                     return sb.ToString();
@@ -529,57 +565,6 @@ namespace Sahtecilik.ReaderBridge
                 try { MMM.Readers.FullPage.Reader.Shutdown(); } catch { }
                 return null;
             }
-        }
-
-        private static string Get3mImageBase64(MMM.Readers.FullPage.DataType dt)
-        {
-            try
-            {
-                object data = null;
-                var res = MMM.Readers.FullPage.Reader.GetData(dt, ref data);
-                if (res != MMM.Readers.ErrorCode.NO_ERROR_OCCURRED || data == null)
-                {
-                    return "";
-                }
-
-                if (data is Bitmap bmp)
-                {
-                    using (var ms = new MemoryStream())
-                    {
-                        var encoder = GetEncoder(ImageFormat.Jpeg);
-                        if (encoder != null)
-                        {
-                            var encParams = new EncoderParameters(1);
-                            encParams.Param[0] = new EncoderParameter(System.Drawing.Imaging.Encoder.Quality, 88L);
-                            bmp.Save(ms, encoder, encParams);
-                        }
-                        else
-                        {
-                            bmp.Save(ms, ImageFormat.Jpeg);
-                        }
-                        return Convert.ToBase64String(ms.ToArray());
-                    }
-                }
-                else if (data is byte[] bArr && bArr.Length > 0)
-                {
-                    try
-                    {
-                        using (var inMs = new MemoryStream(bArr))
-                        using (var b = new Bitmap(inMs))
-                        using (var outMs = new MemoryStream())
-                        {
-                            b.Save(outMs, ImageFormat.Jpeg);
-                            return Convert.ToBase64String(outMs.ToArray());
-                        }
-                    }
-                    catch
-                    {
-                        return Convert.ToBase64String(bArr);
-                    }
-                }
-            }
-            catch { }
-            return "";
         }
 
         private static string TryScanRegula()
@@ -611,12 +596,12 @@ namespace Sahtecilik.ReaderBridge
                     rr.MinimizeOnRun = true;
                     rr.ShowTrayIcon = false;
                     rr.DoSound = false;
-                    rr.DoReceiveImages = true;
-                    rr.DoReceiveAllScannedImages = true;
+                    rr.DoReceiveImages = false;
+                    rr.DoReceiveAllScannedImages = false;
                     rr.DoMRZOCR = true;
-                    rr.DoVisualOCR = true;
-                    rr.DoGraphics = true;
-                    rr.DoAuthenticity = true;
+                    rr.DoVisualOCR = false;
+                    rr.DoGraphics = false;
+                    rr.DoAuthenticity = false;
                     rr.Connect();
                 }
                 catch { }
@@ -634,139 +619,37 @@ namespace Sahtecilik.ReaderBridge
                     try { rr.Process(); } catch { }
                 }
 
-                // Donanımın ışıkları yakıp taramaya başlaması için pay ver
-                Thread.Sleep(800);
-
-                int waited = 800;
-                while (waited < 18000)
+                // MRZ hazır olur olmaz devam et. Stopwatch gerçek süreyi ölçer;
+                // önceki sayaç 200 ms bekleyip 600 ms artırdığı için süreyi yanlış hesaplıyordu.
+                var regulaScanClock = Stopwatch.StartNew();
+                int idlePolls = 0;
+                while (regulaScanClock.ElapsedMilliseconds < 3000)
                 {
-                    bool isBusy = false;
+                    try
+                    {
+                        string mrzProbe = (string)rr.GetMRZLines();
+                        if (!string.IsNullOrWhiteSpace(mrzProbe))
+                        {
+                            var probeLines = mrzProbe.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                            if (probeLines.Length >= 2 || mrzProbe.Length >= 70) break;
+                        }
+                    }
+                    catch { }
+
+                    bool isBusy = true;
                     try { isBusy = (bool)rr.IsBusy; } catch { }
                     if (!isBusy)
                     {
-                        // Işık geçişleri (VIS -> UV -> IR) arasında anlık false olmasını filtrele
-                        Thread.Sleep(400);
-                        try { isBusy = (bool)rr.IsBusy; } catch { }
-                        if (!isBusy) break; // Tarama kesinlikle tamamlandı
+                        if (++idlePolls >= 2) break;
                     }
-                    Thread.Sleep(200);
-                    waited += 600;
+                    else
+                    {
+                        idlePolls = 0;
+                    }
+                    Thread.Sleep(100);
                 }
 
-                // Bellek havuzunun hazırlanması için kısa bekleme
-                Thread.Sleep(300);
-
-                string visBase64 = "", uvBase64 = "", irBase64 = "", photoBase64 = "", coaxVisBase64 = "";
                 string line1 = "", line2 = "", line3 = "";
-
-                try
-                {
-                    int imgCount = 0;
-                    try { imgCount = (int)rr.ImagesCount; } catch { }
-                    for (int i = 0; i < imgCount; i++)
-                    {
-                        try
-                        {
-                            int light = (int)rr.ImageLight(i);
-                            int page = 0;
-                            try { page = (int)rr.ImagePage(i); } catch { }
-                            if (page != 0) continue;
-
-                            string b64 = "";
-                            try
-                            {
-                                object rawData = rr.Image(i);
-                                if (rawData is byte[] bArr) b64 = Convert.ToBase64String(bArr);
-                            }
-                            catch { }
-
-                            if (!string.IsNullOrEmpty(b64))
-                            {
-                                if ((light == 6 || (light & 0x06) != 0 || (light & 0x802000) != 0) && string.IsNullOrEmpty(visBase64)) visBase64 = b64;
-                                else if ((light == 128 || (light & 0x80) != 0) && string.IsNullOrEmpty(uvBase64)) uvBase64 = b64;
-                                else if ((light == 24 || (light & 0x18) != 0 || (light & 0x1001040) != 0) && string.IsNullOrEmpty(irBase64)) irBase64 = b64;
-                                else if ((light == 8 || (light & 0x0C00) != 0) && string.IsNullOrEmpty(coaxVisBase64)) coaxVisBase64 = b64;
-                                else if (string.IsNullOrEmpty(visBase64)) visBase64 = b64;
-                            }
-                        }
-                        catch { }
-                    }
-                }
-                catch { }
-
-                // Fallback 1: GetReaderFileImage
-                if (string.IsNullOrEmpty(visBase64))
-                {
-                    try
-                    {
-                        for (int i = 0; i < 20; i++)
-                        {
-                            try
-                            {
-                                byte[] imgBytes = (byte[])rr.GetReaderFileImage(i);
-                                int light = (int)rr.CheckReaderImageLight(i);
-                                if (imgBytes != null && imgBytes.Length > 0)
-                                {
-                                    string b64 = Convert.ToBase64String(imgBytes);
-                                    if (((light & 0x06) != 0 || (light & 0x802000) != 0) && string.IsNullOrEmpty(visBase64)) visBase64 = b64;
-                                    else if ((light & 0x80) != 0 && string.IsNullOrEmpty(uvBase64)) uvBase64 = b64;
-                                    else if (((light & 0x18) != 0 || (light & 0x1001040) != 0) && string.IsNullOrEmpty(irBase64)) irBase64 = b64;
-                                    else if ((light & 0x0C00) != 0 && string.IsNullOrEmpty(coaxVisBase64)) coaxVisBase64 = b64;
-                                    else if (string.IsNullOrEmpty(visBase64)) visBase64 = b64;
-                                }
-                            }
-                            catch { }
-                        }
-                    }
-                    catch { }
-                }
-
-                // Fallback 2: Regula Scans Disk Klasörleri
-                if (string.IsNullOrEmpty(visBase64))
-                {
-                    try
-                    {
-                        string[] scanDirs = new string[]
-                        {
-                            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Regula\Document Reader SDK\Scans"),
-                            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Regula\Document Reader SDK\Scans"),
-                            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), @"Regula\Scans"),
-                            @"C:\Regula\Scans",
-                            @"C:\RegulaScans"
-                        };
-                        foreach (var sDir in scanDirs)
-                        {
-                            if (Directory.Exists(sDir))
-                            {
-                                var files = new DirectoryInfo(sDir).GetFiles("*.*", SearchOption.AllDirectories)
-                                    .Where(f => (DateTime.UtcNow - f.LastWriteTimeUtc).TotalMinutes < 3)
-                                    .OrderByDescending(f => f.LastWriteTimeUtc)
-                                    .ToList();
-                                foreach (var f in files)
-                                {
-                                    string name = f.Name.ToLowerInvariant();
-                                    if ((name.Contains("vis") || name.Contains("white") || name.Contains("color")) && string.IsNullOrEmpty(visBase64))
-                                        visBase64 = Convert.ToBase64String(File.ReadAllBytes(f.FullName));
-                                    else if (name.Contains("uv") && string.IsNullOrEmpty(uvBase64))
-                                        uvBase64 = Convert.ToBase64String(File.ReadAllBytes(f.FullName));
-                                    else if (name.Contains("ir") && string.IsNullOrEmpty(irBase64))
-                                        irBase64 = Convert.ToBase64String(File.ReadAllBytes(f.FullName));
-                                }
-                                if (!string.IsNullOrEmpty(visBase64)) break;
-                            }
-                        }
-                    }
-                    catch { }
-                }
-
-                // Fotoğraf
-                try
-                {
-                    object pData = rr.Photo;
-                    if (pData is byte[] pb && pb.Length > 0) photoBase64 = Convert.ToBase64String(pb);
-                }
-                catch { }
-
                 // MRZ Çek
                 // 1. Önce doğrudan GetMRZLines çağrısını dene
                 try
@@ -899,13 +782,15 @@ namespace Sahtecilik.ReaderBridge
 
                 try { rr.Disconnect(); } catch { }
 
-                if (string.IsNullOrEmpty(visBase64) && string.IsNullOrEmpty(line1)) return null;
+                // Görüntü tek başına form verisi değildir; MRZ yokken başarı döndürme.
+                if (string.IsNullOrWhiteSpace(line1))
+                {
+                    Log("  Regula tarama yaptı ancak MRZ metni üretmedi.");
+                    return "{\"success\":false,\"message\":\"Regula belgeyi taradı ancak MRZ bilgilerini okuyamadı. Belgeyi düz yerleştirip yeniden deneyiniz.\"}";
+                }
 
                 // ICAO 9303 / MRZ alanlarını ayrıştır
                 var mrzInfo = ParseMrzData(line1, line2, line3, null, null);
-
-                string watermarkBase64 = ExtractWatermark(visBase64, irBase64, coaxVisBase64);
-                string microBase64 = ExtractMicroprint(visBase64);
 
                 var sb = new StringBuilder();
                 sb.Append("{");
@@ -926,14 +811,7 @@ namespace Sahtecilik.ReaderBridge
                 sb.AppendFormat("\"expiryDate\":{0},", EscapeJson(mrzInfo.ExpiryDate));
                 sb.AppendFormat("\"personalNumber\":{0},", EscapeJson(mrzInfo.PersonalNumber));
                 sb.AppendFormat("\"sex\":{0},", EscapeJson(mrzInfo.Sex));
-                sb.AppendFormat("\"allChecksPassed\":{0},", mrzInfo.AllChecksPassed ? "true" : "false");
-                sb.AppendFormat("\"visBase64\":{0},", EscapeJson(visBase64));
-                sb.AppendFormat("\"uvBase64\":{0},", EscapeJson(uvBase64));
-                sb.AppendFormat("\"irBase64\":{0},", EscapeJson(irBase64));
-                sb.AppendFormat("\"watermarkBase64\":{0},", EscapeJson(watermarkBase64));
-                sb.AppendFormat("\"microBase64\":{0},", EscapeJson(microBase64));
-                sb.AppendFormat("\"photoBase64\":{0},", EscapeJson(photoBase64));
-                sb.AppendFormat("\"coaxVisBase64\":{0}", EscapeJson(coaxVisBase64));
+                sb.AppendFormat("\"allChecksPassed\":{0}", mrzInfo.AllChecksPassed ? "true" : "false");
                 sb.Append("}");
 
                 return sb.ToString();
@@ -943,84 +821,6 @@ namespace Sahtecilik.ReaderBridge
                 try { if (rr != null) rr.Disconnect(); } catch { }
                 return null;
             }
-        }
-
-        private static string ExtractWatermark(string visBase64, string irBase64, string coaxBase64)
-        {
-            try
-            {
-                string src = !string.IsNullOrEmpty(coaxBase64) ? coaxBase64 : (!string.IsNullOrEmpty(irBase64) ? irBase64 : visBase64);
-                if (string.IsNullOrEmpty(src)) return null;
-
-                using (var ms = new MemoryStream(Convert.FromBase64String(src)))
-                using (var bmp = new Bitmap(ms))
-                {
-                    using (var result = new Bitmap(bmp.Width, bmp.Height, PixelFormat.Format24bppRgb))
-                    using (var g = Graphics.FromImage(result))
-                    {
-                        var cm = new ColorMatrix(new float[][]
-                        {
-                            new float[] { 1.6f, 0, 0, 0, 0 },
-                            new float[] { 0, 1.6f, 0, 0, 0 },
-                            new float[] { 0, 0, 1.6f, 0, 0 },
-                            new float[] { 0, 0, 0, 1, 0 },
-                            new float[] { -0.3f, -0.3f, -0.3f, 0, 1 }
-                        });
-                        var ia = new ImageAttributes();
-                        ia.SetColorMatrix(cm);
-                        g.DrawImage(bmp, new Rectangle(0, 0, bmp.Width, bmp.Height), 0, 0, bmp.Width, bmp.Height, GraphicsUnit.Pixel, ia);
-
-                        using (var outMs = new MemoryStream())
-                        {
-                            result.Save(outMs, ImageFormat.Jpeg);
-                            return Convert.ToBase64String(outMs.ToArray());
-                        }
-                    }
-                }
-            }
-            catch { }
-            return null;
-        }
-
-        private static string ExtractMicroprint(string visBase64)
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(visBase64)) return null;
-                using (var ms = new MemoryStream(Convert.FromBase64String(visBase64)))
-                using (var bmp = new Bitmap(ms))
-                {
-                    // Orta alt kısımdaki mikrobaskı bandını 4x büyüt
-                    int cw = Math.Max(50, (int)(bmp.Width * 0.35));
-                    int ch = Math.Max(30, (int)(bmp.Height * 0.12));
-                    int cx = (int)(bmp.Width * 0.45);
-                    int cy = (int)(bmp.Height * 0.60);
-
-                    using (var cropped = new Bitmap(cw, ch, PixelFormat.Format24bppRgb))
-                    {
-                        using (var g = Graphics.FromImage(cropped))
-                        {
-                            g.DrawImage(bmp, new Rectangle(0, 0, cw, ch), cx, cy, cw, ch, GraphicsUnit.Pixel);
-                        }
-
-                        // 4x Büyüt
-                        using (var scaled = new Bitmap(cw * 4, ch * 4, PixelFormat.Format24bppRgb))
-                        using (var g2 = Graphics.FromImage(scaled))
-                        {
-                            g2.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                            g2.DrawImage(cropped, 0, 0, scaled.Width, scaled.Height);
-
-                            using (var outMs = new MemoryStream())
-                            {
-                                scaled.Save(outMs, ImageFormat.Jpeg);
-                                return Convert.ToBase64String(outMs.ToArray());
-                            }
-                        }
-                    }
-                }
-            }
-            catch { }
-            return null;
         }
 
         private static void EnsureAutoStartInstalled()
@@ -1038,7 +838,25 @@ namespace Sahtecilik.ReaderBridge
 
                 if (!string.Equals(currentExe, targetExe, StringComparison.OrdinalIgnoreCase))
                 {
-                    try { File.Copy(currentExe, targetExe, true); } catch { }
+                    // Yeni indirilen EXE, çalışan eski kullanıcı kopyasını güvenle yeniler.
+                    int currentProcessId = Process.GetCurrentProcess().Id;
+                    foreach (var running in Process.GetProcessesByName(Path.GetFileNameWithoutExtension(targetExe)))
+                    {
+                        try
+                        {
+                            if (running.Id == currentProcessId) continue;
+                            string runningPath = running.MainModule.FileName;
+                            if (string.Equals(runningPath, targetExe, StringComparison.OrdinalIgnoreCase))
+                            {
+                                running.Kill();
+                                running.WaitForExit(3000);
+                            }
+                        }
+                        catch { }
+                        finally { running.Dispose(); }
+                    }
+
+                    File.Copy(currentExe, targetExe, true);
                 }
 
                 // Eski VBS dosyası varsa temizle (Windows VBScript uyarısı vermesin)
@@ -1098,6 +916,10 @@ namespace Sahtecilik.ReaderBridge
         {
             string[] possibleBinDirs = new string[]
             {
+                @"C:\Program Files (x86)\Thales\CS500f\Bin",
+                @"C:\Program Files\Thales\CS500f\Bin",
+                @"C:\Program Files (x86)\Thales\Document Reader SDK\Bin",
+                @"C:\Program Files\Thales\Document Reader SDK\Bin",
                 @"C:\Program Files (x86)\Thales\Gemalto Document Reader SDK\3.7.1.18\Bin",
                 @"C:\Program Files\Thales\Gemalto Document Reader SDK\3.7.1.18\Bin",
                 @"C:\Program Files (x86)\3M\3M Page Reader",
@@ -1144,19 +966,6 @@ namespace Sahtecilik.ReaderBridge
                     catch { }
                 }
             }
-            return null;
-        }
-
-        private static ImageCodecInfo GetEncoder(ImageFormat format)
-        {
-            try
-            {
-                foreach (var codec in ImageCodecInfo.GetImageEncoders())
-                {
-                    if (codec.FormatID == format.Guid) return codec;
-                }
-            }
-            catch { }
             return null;
         }
 
@@ -1527,3 +1336,7 @@ namespace Sahtecilik.ReaderBridge
         }
     }
 }
+
+
+
+

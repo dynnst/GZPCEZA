@@ -1,4 +1,4 @@
-﻿/**
+/**
  * CEZAM - Pasaport & Optik Okuyucu Entegrasyon Modülü
  * Desteklenen Donanımlar: 3M Cogent / Gemalto (PV40, PV60, AT9000), Regula (70X4, 7024), Desko (Penta, BRS)
  * Not: Bu sistemde yalnızca yabancı yolculara ihlal cezası uygulanır. Türk vatandaşlarına ceza işlemi uygulanmaz.
@@ -329,17 +329,17 @@
                 '        <div class="mb-3"><i class="fas fa-shield-alt text-success" style="font-size:3.5rem;"></i></div>' +
                 '        <h5 class="font-weight-bold text-dark mb-2">Yönetici Şifresi / Admin İzni GEREKTİRMEZ</h5>' +
                 '        <p class="text-muted" style="font-size:0.92rem;">' +
-                '          3M Cogent, Thales, Desko ve Regula okuyucularınızın canlı sunucuyla (10.7.202.75) kesintisiz çalışabilmesi için masanızdaki hafif köprü programını <strong>1 tıkla</strong> başlatın.' +
+                '          3M Cogent, Thales, Desko ve Regula okuyucularınızın canlı sunucuyla (10.7.202.75) kesintisiz çalışabilmesi için masanızdaki hafif köprüyü ilk kullanımda bir kez indirip açın. Kurulum sadece kendi Windows hesabınıza yapılır.' +
                 '        </p>' +
                 '        <div class="alert alert-info py-2 px-3 text-left font-weight-bold mb-3" style="font-size:0.86rem; border-radius:8px;">' +
-                '          <i class="fas fa-check-circle mr-1 text-success"></i> Bilgisayarınıza kurulum yapmaz, direkt çalışır.<br/>' +
-                '          <i class="fas fa-check-circle mr-1 text-success"></i> Bir defa çalıştırıldığında Windows başlangıcına eklenir.<br/>' +
-                '          <i class="fas fa-check-circle mr-1 text-success"></i> Pasaport veya kimliği okuyucuya koyup butona bastığınızda bilgiler anında forma aktarılır.' +
+                '          <i class="fas fa-check-circle mr-1 text-success"></i> Yönetici izni olmadan kendi kullanıcı profilinize kurulur.<br/>' +
+                '          <i class="fas fa-check-circle mr-1 text-success"></i> Bilgisayar açıldığında arka planda otomatik başlar; tekrar kurulum gerekmez.<br/>' +
+                '          <i class="fas fa-check-circle mr-1 text-success"></i> Kurulumdan sonra her taramada yalnızca Oku butonuna basmanız yeterlidir.' +
                 '        </div>' +
                 '        <a href="/Calculate/DownloadBridgeExe" id="btnDownloadBridgeNow" class="btn btn-success btn-lg btn-block shadow font-weight-bold py-2 mb-2" style="font-size:1.05rem; border-radius:8px;">' +
-                '          <i class="fas fa-download mr-2"></i> Okuyucu Köprüsünü Başlat (1 Tıkla)' +
+                '          <i class="fas fa-download mr-2"></i> Köprüyü İndir / Güncelle' +
                 '        </a>' +
-                '        <small class="text-muted">İndirilen dosyayı bir defa tıklatmanız yeterlidir. Açıldıktan sonra bu pencere kendiliğinden kapanır ve sistem hazır hale gelir.</small>' +
+                '        <small class="text-muted">İlk kullanımda indirilen EgmReaderBridge.exe dosyasını bir kez açın. Yönetici şifresi gerekmez; köprü arka planda kurulur ve sonraki Windows açılışlarında otomatik başlar.</small>' +
                 '      </div>' +
                 '    </div>' +
                 '  </div>' +
@@ -359,14 +359,14 @@
             launchBtns
                 .removeClass('btn-warning text-dark')
                 .addClass('btn-success text-white')
-                .attr('title', 'Optik Okuyucu Köprüsü Aktif ve Dinleniyor (3M / Thales / Regula)')
+                .attr('title', 'Optik Okuyucu Köprüsü Aktif ve Dinleniyor (3M / Thales / DESKO / Regula)')
                 .attr('data-online', 'true')
                 .html('<i class="fas fa-check-circle mr-1 text-white"></i> <span class="lblBridgeStatusText">Okuyucu Hazır</span>');
 
             if (badgeContainer.length) {
                 badgeContainer.html(
                     '<span class="badge badge-success px-3 py-2 shadow-sm font-weight-bold" style="font-size:0.86rem; border-radius:20px; animation:fadeIn 0.3s ease;">' +
-                    '<i class="fas fa-check-circle mr-1"></i> Okuyucu Hazır (3M / Thales / Regula)' +
+                    '<i class="fas fa-check-circle mr-1"></i> Okuyucu Hazır (3M / Thales / DESKO / Regula)' +
                     '</span>'
                 );
             }
@@ -379,7 +379,7 @@
             launchBtns
                 .removeClass('btn-success text-white')
                 .addClass('btn-warning text-dark')
-                .attr('title', 'Masanızdaki optik okuyucu donanım köprüsünü başlatın (Yönetici yetkisi gerekmez)')
+                .attr('title', 'Köprüyü bir kez kurun veya güncelleyin (yönetici izni gerekmez)')
                 .attr('data-online', 'false')
                 .html('<i class="fas fa-bolt text-danger mr-1"></i> <span class="lblBridgeStatusText">Okuyucuyu Başlat</span>');
 
@@ -694,7 +694,7 @@
         showPassportAlert(
             '<strong>⚡ Optik Okuyucu Köprüsü Başlatılıyor...</strong><br/>' +
             '• Köprü daha önce bilgisayarınızda açıldıysa 1-2 saniye içinde otomatik hazır olacaktır.<br/>' +
-            '• İlk kullanım ise indirilen <strong>EgmReaderBridge.exe</strong> dosyasına 1 kez tıklayınız (Yönetici yetkisi gerekmez).<br/>' +
+            '• İlk kullanımda indirilen <strong>EgmReaderBridge.exe</strong> dosyasını bir kez açın. Kendi hesabınıza kurulur; yönetici izni gerekmez.<br/>' +
             '• Açıldığında bu buton otomatik olarak yeşil <strong>"🟢 Okuyucu Hazır"</strong> rozetine dönecektir.',
             'info'
         );
@@ -772,7 +772,9 @@
                     dataType: 'json',
                     timeout: 30000
                 }).done(function (scanRes) {
-                    if (scanRes && scanRes.success) {
+                    if (scanRes && scanRes.wedgeMode) {
+                        showPassportAlert(scanRes.message || 'DESKO okuyucu hazır. Belgeyi okuyucuya yerleştirin; veriler otomatik aktarılacaktır.', 'info');
+                    } else if (scanRes && scanRes.success) {
                         applyScanResult(scanRes);
                     } else {
                         var msg = (scanRes && scanRes.message) ? scanRes.message : 'Masanızdaki optik okuyucudan veri alınamadı. Pasaportun okuyucu camına tam yerleştirildiğinden emin olunuz.';
@@ -816,7 +818,7 @@
         }).done(function (sRes) {
             if (sRes && (sRes.isRunning || sRes.success)) {
                 updateBridgeStatusUI(true, sRes);
-                $('#btnDirectOpticalScan, #btnPanelDirectScan, #btnTopOpticalScan, #btnTopScanPassport').attr('title', 'Optik Okuyucu Köprüsü Aktif (3M / Thales / Regula)');
+                $('#btnDirectOpticalScan, #btnPanelDirectScan, #btnTopOpticalScan, #btnTopScanPassport').attr('title', 'Optik Okuyucu Köprüsü Aktif (3M / Thales / DESKO / Regula)');
             } else {
                 updateBridgeStatusUI(false);
             }
@@ -1497,3 +1499,4 @@
     });
 
 })(jQuery);
+
