@@ -20,6 +20,14 @@ namespace Sahtecilik.ReaderBridge
         private static bool _isRunning = true;
         private static string _resolved3mBinDir = null;
 
+        // Otomatik Sürekli Tarama Durumu
+        private static bool _is3mInitialised = false;
+        private static int _scanSeq = 0;
+        private static string _latestScanJson = null;
+        private static bool _docCurrentlyOnWindow = false;
+        private static bool _hasScannedCurrentDoc = false;
+        private static readonly object _scanLock = new object();
+
         static void Main(string[] args)
         {
             EnsureAutoStartInstalled();
@@ -41,11 +49,11 @@ namespace Sahtecilik.ReaderBridge
                     return;
                 }
             Console.OutputEncoding = Encoding.UTF8;
-            Console.Title = "EGM Optik Okuyucu Köprüsü (3M / Regula) - Port " + Port;
+            Console.Title = "EGM Optik Okuyucu Köprüsü (3M / Thales / Regula / Desko) - Port " + Port;
 
             Console.WriteLine("====================================================================");
             Console.WriteLine("  EGM ADLİ BELGE VE PASAPORT İNCELEME SİSTEMİ");
-            Console.WriteLine("  Masaüstü Optik Okuyucu Donanım Köprüsü (3M & Regula)");
+            Console.WriteLine("  Masaüstü Optik Okuyucu Donanım Köprüsü (3M, Thales & Regula)");
             Console.WriteLine("====================================================================");
 
             _resolved3mBinDir = Find3mSdkBinDir();
@@ -63,6 +71,9 @@ namespace Sahtecilik.ReaderBridge
                     catch { }
                     return null;
                 };
+
+                // 3M Donanımını hemen başlat
+                Ensure3MInitialised();
             }
             else
             {
@@ -83,10 +94,11 @@ namespace Sahtecilik.ReaderBridge
             Console.WriteLine("--------------------------------------------------------------------");
 
             StartHttpServer();
+            StartBackgroundScannerWorker();
 
             Console.WriteLine("  [🟢 AKTİF] Köprü http://127.0.0.1:" + Port + "/ adresinde dinleniyor.");
-            Console.WriteLine("  Merkezi sunucudaki web sayfası (76 vb.) masanızdaki okuyucuya doğrudan erişebilir.");
-            Console.WriteLine("  (Bu pencereyi simge durumuna küçültebilirsiniz. Çıkmak için 'Q' veya Ctrl+C basınız.)");
+            Console.WriteLine("  [⚡ OTOMATİK DİNLEME AKTİF] Belgeyi okuyucu camına koyduğunuzda otomatik okunacaktır.");
+            Console.WriteLine("  (Bu pencereyi simge durumuna küçültebilirsiniz. Çıkmak için 'Q' basınız.)");
             Console.WriteLine("====================================================================");
 
             while (_isRunning)
@@ -195,7 +207,7 @@ namespace Sahtecilik.ReaderBridge
             var req = ctx.Request;
             var resp = ctx.Response;
 
-            // CORS Başlıkları (Merkezi sunucu 10.7.202.76 vb. tarayıcıdan yerel köprüye erişebilsin)
+            // CORS Başlıkları (Merkezi sunucu 10.7.202.75 vb. tarayıcıdan yerel köprüye erişebilsin)
             resp.AddHeader("Access-Control-Allow-Origin", "*");
             resp.AddHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
             resp.AddHeader("Access-Control-Allow-Headers", "Content-Type, Accept, Authorization");
@@ -216,13 +228,28 @@ namespace Sahtecilik.ReaderBridge
             {
                 if (rawPath.Contains("status"))
                 {
-                    responseJson = "{\"success\":true,\"isRunning\":true,\"message\":\"EGM Optik Okuyucu Köprüsü Aktif\",\"port\":" + Port + "}";
+                    responseJson = "{\"success\":true,\"isRunning\":true,\"isAutoScan\":true,\"seq\":" + _scanSeq + ",\"message\":\"EGM Optik Okuyucu Köprüsü Aktif (Otomatik Dinleme Devrede)\",\"port\":" + Port + "}";
+                }
+                else if (rawPath.Contains("poll"))
+                {
+                    int clientSeq = 0;
+                    int.TryParse(req.QueryString["seq"] ?? "0", out clientSeq);
+
+                    // Eğer yeni bir tarama gerçekleşmişse hemen döndür
+                    if (_scanSeq > clientSeq && !string.IsNullOrEmpty(_latestScanJson))
+                    {
+                        responseJson = _latestScanJson;
+                    }
+                    else
+                    {
+                        responseJson = "{\"success\":true,\"noNewScan\":true,\"seq\":" + _scanSeq + "}";
+                    }
                 }
                 else
                 {
-                    // Scan isteği
+                    // /scan isteği (manuel tetikleme fallback)
                     string requestedDevice = req.QueryString["device"] ?? "auto";
-                    bool onlyText = (req.QueryString["onlyText"] == "1" || req.QueryString["noImages"] == "1");
+                    bool onlyText = (req.QueryString["onlyText"] == "1" || req.QueryString["noImages"] == "1" || string.IsNullOrEmpty(req.QueryString["onlyText"]));
                     responseJson = PerformScan(requestedDevice, onlyText);
                 }
             }
@@ -246,8 +273,6 @@ namespace Sahtecilik.ReaderBridge
                 try { resp.Close(); } catch { }
             }
         }
-
-        private static readonly object _scanLock = new object();
 
         private static string PerformScan(string requestedDevice, bool onlyText = false)
         {
@@ -305,194 +330,283 @@ namespace Sahtecilik.ReaderBridge
             catch { }
         }
 
-        private static string TryScan3M(string customDeviceName = null, bool onlyText = false)
+        private static bool Ensure3MInitialised()
         {
-            try
+            if (_is3mInitialised)
             {
-                // 3M OutputWedge donanım portunu meşgul ediyorsa veya hata popup'ı verdiyse kapat
-                KillConflictingWedges();
-                Thread.Sleep(350);
-
                 try
                 {
-                    MMM.Readers.FullPage.Reader.EnableLogging(false, 0, 0, "ReaderBridge.log");
-                    var initRes = MMM.Readers.FullPage.Reader.Initialise(null, null, null, null, false, false);
-                    if (initRes != MMM.Readers.ErrorCode.NO_ERROR_OCCURRED)
+                    if (MMM.Readers.FullPage.Reader.IsInitialised()) return true;
+                }
+                catch { }
+                _is3mInitialised = false;
+            }
+
+            if (_resolved3mBinDir == null) return false;
+
+            try
+            {
+                KillConflictingWedges();
+                MMM.Readers.FullPage.Reader.EnableLogging(false, 0, 0, "ReaderBridge.log");
+                // aProcessMessages = true (Windows mesaj döngüsünün ve donanım tetikleyicilerinin çalışması için şarttır)
+                var initRes = MMM.Readers.FullPage.Reader.Initialise(null, null, null, null, true, false);
+                if (initRes != MMM.Readers.ErrorCode.NO_ERROR_OCCURRED)
+                {
+                    return false;
+                }
+
+                // USB donanım el sıkışması ve hazır olma kontrolü (maks 3 saniye)
+                for (int i = 0; i < 15; i++)
+                {
+                    if (MMM.Readers.FullPage.Reader.IsInitialised())
                     {
-                        return null;
+                        _is3mInitialised = true;
+                        break;
                     }
+                    Thread.Sleep(200);
+                }
 
-                    // USB donanım el sıkışması ve hazır olma kontrolü (maks 3 saniye)
-                    bool isInit = false;
-                    for (int i = 0; i < 15; i++)
-                    {
-                        if (MMM.Readers.FullPage.Reader.IsInitialised())
-                        {
-                            isInit = true;
-                            break;
-                        }
-                        Thread.Sleep(200);
-                    }
-
-                    if (!isInit) return null;
-
-                    // Cihaz veri gönderme ve görsel yakalama ayarlarını kesinleştir
+                if (_is3mInitialised)
+                {
                     try
                     {
                         MMM.Readers.FullPage.ReaderSettings settings;
                         if (MMM.Readers.FullPage.Reader.GetSettings(out settings) == MMM.Readers.ErrorCode.NO_ERROR_OCCURRED)
                         {
                             var dataSend = settings.puDataToSend;
-                            // 0x000001 = VIS (Beyaz Işık), 0x000004 = IR (Kızılötesi) - Donanım OCR okuması için ışıklandırma ŞARTTIR!
-                            // 0x000008 = CD_CODELINE_DATA, 0x000010 = CD_CODELINE, 0x000020 = CD_OCR
+                            // 0x000001 = VIS, 0x000004 = IR, 0x000008 = CD_CODELINE_DATA, 0x000010 = CD_CODELINE, 0x000020 = CD_OCR
                             dataSend.send |= (0x000001 | 0x000004 | 0x000008 | 0x000010 | 0x000020);
-                            if (!onlyText)
-                            {
-                                dataSend.send |= (0x000002 | 0x002000); // UV ve koaksiyel
-                            }
                             dataSend.enabled = 1;
                             settings.puDataToSend = dataSend;
 
                             var imgSet = settings.puImageSettings;
-                            imgSet.faceFind = !onlyText;
-                            imgSet.faceFindPassport = !onlyText;
+                            imgSet.faceFind = false;
+                            imgSet.faceFindPassport = false;
                             settings.puImageSettings = imgSet;
 
                             MMM.Readers.FullPage.Reader.UpdateSettings(settings);
                         }
                     }
                     catch { }
-
-                    // Belgenin okuyucu camına yerleştirilmesini bekle (maksimum 4 saniye payı)
-                    for (int waitDoc = 0; waitDoc < 16; waitDoc++)
-                    {
-                        if (MMM.Readers.FullPage.Reader.IsDocumentOnWindow()) break;
-                        Thread.Sleep(250);
-                    }
-
-                    var readRes = MMM.Readers.FullPage.Reader.ReadDocument();
-                    if (readRes != MMM.Readers.ErrorCode.NO_ERROR_OCCURRED)
-                    {
-                        Thread.Sleep(400);
-                        readRes = MMM.Readers.FullPage.Reader.ReadDocument();
-                    }
-
-                    if (readRes != MMM.Readers.ErrorCode.NO_ERROR_OCCURRED)
-                    {
-                        MMM.Readers.FullPage.Reader.Shutdown();
-                        return "{\"success\":false,\"message\":\"3M cihazı belgeyi algılayamadı. Lütfen pasaportu veya kimliği okuyucu camına tam yerleştiriniz.\"}";
-                    }
-
-                    string visBase64 = "";
-                    string uvBase64 = "";
-                    string irBase64 = "";
-                    string photoBase64 = "";
-                    string coaxVisBase64 = "";
-
-                    if (!onlyText)
-                    {
-                        visBase64 = Get3mImageBase64(MMM.Readers.FullPage.DataType.CD_IMAGEVIS);
-                        uvBase64 = Get3mImageBase64(MMM.Readers.FullPage.DataType.CD_IMAGEUV);
-                        irBase64 = Get3mImageBase64(MMM.Readers.FullPage.DataType.CD_IMAGEIR);
-                        photoBase64 = Get3mImageBase64(MMM.Readers.FullPage.DataType.CD_IMAGEPHOTO);
-                        coaxVisBase64 = Get3mImageBase64(MMM.Readers.FullPage.DataType.CD_IMAGECOAXVIS);
-                    }
-
-                    string docType = "", line1 = "", line2 = "", line3 = "";
-                    string rawMrz = "";
-                    MMM.Readers.CodelineData? clData = null;
-                    object codelineObj = null;
-                    if (MMM.Readers.FullPage.Reader.GetData(MMM.Readers.FullPage.DataType.CD_CODELINE_DATA, ref codelineObj) == MMM.Readers.ErrorCode.NO_ERROR_OCCURRED && codelineObj != null)
-                    {
-                        try
-                        {
-                            var parsedCl = (MMM.Readers.CodelineData)codelineObj;
-                            clData = parsedCl;
-                            docType = parsedCl.DocType ?? "";
-                            line1 = parsedCl.Line1 ?? "";
-                            line2 = parsedCl.Line2 ?? "";
-                            line3 = parsedCl.Line3 ?? "";
-                            rawMrz = parsedCl.Data ?? "";
-                        }
-                        catch { }
-                    }
-
-                    // Fallback to CD_CODELINE if line1 is empty
-                    if (string.IsNullOrEmpty(line1) && string.IsNullOrEmpty(rawMrz))
-                    {
-                        try
-                        {
-                            object rawCl = null;
-                            if (MMM.Readers.FullPage.Reader.GetData(MMM.Readers.FullPage.DataType.CD_CODELINE, ref rawCl) == MMM.Readers.ErrorCode.NO_ERROR_OCCURRED && rawCl != null)
-                            {
-                                string str = rawCl.ToString() ?? "";
-                                rawMrz = str;
-                                var spl = str.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-                                if (spl.Length > 0) line1 = spl[0].Trim();
-                                if (spl.Length > 1) line2 = spl[1].Trim();
-                                if (spl.Length > 2) line3 = spl[2].Trim();
-                            }
-                        }
-                        catch { }
-                    }
-
-                    MMM.Readers.FullPage.Reader.Shutdown();
-
-                    // ICAO 9303 / MRZ alanlarını ayrıştır
-                    var mrzInfo = ParseMrzData(line1, line2, line3, rawMrz, clData);
-
-                    // Filigran ve Mikrobaskı katmanlarını türet
-                    string watermarkBase64 = ExtractWatermark(visBase64, irBase64, coaxVisBase64);
-                    string microBase64 = ExtractMicroprint(visBase64);
-
-                    var sb = new StringBuilder();
-                    sb.Append("{");
-                    sb.Append("\"success\":true,");
-                    sb.Append("\"deviceName\":\"3M Cogent / Gemalto (Masaüstü)\",");
-                    sb.AppendFormat("\"docType\":{0},", EscapeJson(mrzInfo.DocType));
-                    sb.AppendFormat("\"line1\":{0},", EscapeJson(line1));
-                    sb.AppendFormat("\"line2\":{0},", EscapeJson(line2));
-                    sb.AppendFormat("\"line3\":{0},", EscapeJson(line3));
-                    sb.AppendFormat("\"rawMrz\":{0},", EscapeJson(mrzInfo.RawMrz));
-                    sb.AppendFormat("\"documentNumber\":{0},", EscapeJson(mrzInfo.DocNumber));
-                    sb.AppendFormat("\"country\":{0},", EscapeJson(mrzInfo.Country));
-                    sb.AppendFormat("\"documentType\":{0},", EscapeJson(mrzInfo.DocType));
-                    if (!string.IsNullOrEmpty(mrzInfo.FullName) && mrzInfo.FullName.IndexOf("YFKTAS", StringComparison.OrdinalIgnoreCase) >= 0)
-                    {
-                        mrzInfo.FullName = System.Text.RegularExpressions.Regex.Replace(mrzInfo.FullName, @"\bYFKTAS\b", "YEKTAS", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-                        mrzInfo.Surname = System.Text.RegularExpressions.Regex.Replace(mrzInfo.Surname ?? "", @"\bYFKTAS\b", "YEKTAS", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-                        mrzInfo.GivenNames = System.Text.RegularExpressions.Regex.Replace(mrzInfo.GivenNames ?? "", @"\bYFKTAS\b", "YEKTAS", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-                    }
-                    sb.AppendFormat("\"fullName\":{0},", EscapeJson(mrzInfo.FullName));
-                    sb.AppendFormat("\"surname\":{0},", EscapeJson(mrzInfo.Surname));
-                    sb.AppendFormat("\"givenNames\":{0},", EscapeJson(mrzInfo.GivenNames));
-                    sb.AppendFormat("\"birthDate\":{0},", EscapeJson(mrzInfo.BirthDate));
-                    sb.AppendFormat("\"expiryDate\":{0},", EscapeJson(mrzInfo.ExpiryDate));
-                    sb.AppendFormat("\"personalNumber\":{0},", EscapeJson(mrzInfo.PersonalNumber));
-                    sb.AppendFormat("\"sex\":{0},", EscapeJson(mrzInfo.Sex));
-                    sb.AppendFormat("\"allChecksPassed\":{0},", mrzInfo.AllChecksPassed ? "true" : "false");
-                    sb.AppendFormat("\"visBase64\":{0},", EscapeJson(visBase64));
-                    sb.AppendFormat("\"uvBase64\":{0},", EscapeJson(uvBase64));
-                    sb.AppendFormat("\"irBase64\":{0},", EscapeJson(irBase64));
-                    sb.AppendFormat("\"watermarkBase64\":{0},", EscapeJson(watermarkBase64));
-                    sb.AppendFormat("\"microBase64\":{0},", EscapeJson(microBase64));
-                    sb.AppendFormat("\"photoBase64\":{0},", EscapeJson(photoBase64));
-                    sb.AppendFormat("\"coaxVisBase64\":{0}", EscapeJson(coaxVisBase64));
-                    sb.Append("}");
-
-                    return sb.ToString();
-                }
-                finally
-                {
-                    // OutputWedge'i ASLA yeniden başlatmıyoruz.
-                    // OutputWedgeSysTray kamerayı ele geçirmeye çalıştığında 536870916 ("Camera driver returned an error code")
-                    // hatasını verip ekrana popup açar ve sonraki taramaları kilitler.
+                    Console.WriteLine("  [✓] 3M / Gemalto / Thales Optik Okuyucu Hazır!");
+                    return true;
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                try { MMM.Readers.FullPage.Reader.Shutdown(); } catch { }
-                return null;
+                Console.WriteLine("  [!] 3M Başlatma Hatası: " + ex.Message);
+            }
+            return false;
+        }
+
+        private static void StartBackgroundScannerWorker()
+        {
+            var thread = new Thread(BackgroundScannerLoop)
+            {
+                IsBackground = true,
+                Name = "EgmReaderAutoScanWorker"
+            };
+            thread.Start();
+        }
+
+        private static void BackgroundScannerLoop()
+        {
+            Console.WriteLine("  [⚡] Otomatik Belge Algılama Hizmeti Devreye Alındı.");
+            int checkCounter = 0;
+
+            while (_isRunning)
+            {
+                try
+                {
+                    checkCounter++;
+                    if (!_is3mInitialised && (_resolved3mBinDir != null) && (checkCounter % 15 == 0))
+                    {
+                        // USB sonradan takılmışsa periyodik olarak donanımı başlatmayı dene
+                        Ensure3MInitialised();
+                    }
+
+                    if (_is3mInitialised)
+                    {
+                        bool isDoc = false;
+                        try
+                        {
+                            isDoc = MMM.Readers.FullPage.Reader.IsDocumentOnWindow();
+                        }
+                        catch
+                        {
+                            _is3mInitialised = false;
+                        }
+
+                        if (isDoc)
+                        {
+                            if (!_hasScannedCurrentDoc)
+                            {
+                                Console.WriteLine("\n[" + DateTime.Now.ToString("HH:mm:ss") + "] [⚡] Belge algılandı, otomatik okunuyor...");
+                                string resultJson = ReadCurrentDocument3M(true);
+                                if (!string.IsNullOrEmpty(resultJson) && resultJson.Contains("\"success\":true"))
+                                {
+                                    lock (_scanLock)
+                                    {
+                                        _latestScanJson = resultJson;
+                                        _scanSeq++;
+                                    }
+                                    _hasScannedCurrentDoc = true;
+                                    Console.WriteLine("  -> [✓ OTOMATİK OKUMA BAŞARILI] Sıra: " + _scanSeq);
+                                }
+                                else
+                                {
+                                    // 300 ms sonra 2. deneme
+                                    Thread.Sleep(300);
+                                    resultJson = ReadCurrentDocument3M(true);
+                                    if (!string.IsNullOrEmpty(resultJson) && resultJson.Contains("\"success\":true"))
+                                    {
+                                        lock (_scanLock)
+                                        {
+                                            _latestScanJson = resultJson;
+                                            _scanSeq++;
+                                        }
+                                        _hasScannedCurrentDoc = true;
+                                        Console.WriteLine("  -> [✓ OTOMATİK OKUMA BAŞARILI (2. Deneme)] Sıra: " + _scanSeq);
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // Belge okuyucu camından alındı
+                            if (_hasScannedCurrentDoc)
+                            {
+                                _hasScannedCurrentDoc = false;
+                                Console.WriteLine("[" + DateTime.Now.ToString("HH:mm:ss") + "] Belge okuyucu camından alındı. Yeni belge bekleniyor...");
+                            }
+                        }
+                    }
+                }
+                catch
+                {
+                    // Arka plan iş parçacığı sessizce devam eder
+                }
+
+                Thread.Sleep(200);
+            }
+        }
+
+        private static string ReadCurrentDocument3M(bool onlyText = true)
+        {
+            try
+            {
+                if (!Ensure3MInitialised())
+                {
+                    return "{\"success\":false,\"message\":\"3M / Thales okuyucu cihazı başlatılamadı.\"}";
+                }
+
+                // Belgeyi oku
+                MMM.Readers.FullPage.Reader.ReadDocument();
+
+                string docType = "", line1 = "", line2 = "", line3 = "";
+                string rawMrz = "";
+                MMM.Readers.CodelineData? clData = null;
+                object codelineObj = null;
+
+                // 1. CD_CODELINE_DATA dene
+                if (MMM.Readers.FullPage.Reader.GetData(MMM.Readers.FullPage.DataType.CD_CODELINE_DATA, ref codelineObj) == MMM.Readers.ErrorCode.NO_ERROR_OCCURRED && codelineObj != null)
+                {
+                    try
+                    {
+                        var parsedCl = (MMM.Readers.CodelineData)codelineObj;
+                        clData = parsedCl;
+                        docType = parsedCl.DocType ?? "";
+                        line1 = parsedCl.Line1 ?? "";
+                        line2 = parsedCl.Line2 ?? "";
+                        line3 = parsedCl.Line3 ?? "";
+                        rawMrz = parsedCl.Data ?? "";
+                    }
+                    catch { }
+                }
+
+                // 2. CD_CODELINE fallback
+                if (string.IsNullOrEmpty(line1) && string.IsNullOrEmpty(rawMrz))
+                {
+                    try
+                    {
+                        object rawCl = null;
+                        if (MMM.Readers.FullPage.Reader.GetData(MMM.Readers.FullPage.DataType.CD_CODELINE, ref rawCl) == MMM.Readers.ErrorCode.NO_ERROR_OCCURRED && rawCl != null)
+                        {
+                            string str = rawCl.ToString() ?? "";
+                            rawMrz = str;
+                            var spl = str.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                            if (spl.Length > 0) line1 = spl[0].Trim();
+                            if (spl.Length > 1) line2 = spl[1].Trim();
+                            if (spl.Length > 2) line3 = spl[2].Trim();
+                        }
+                    }
+                    catch { }
+                }
+
+                if (string.IsNullOrEmpty(line1) && string.IsNullOrEmpty(rawMrz))
+                {
+                    return "{\"success\":false,\"message\":\"Pasaport veya kimlik okuyucu camına tam yerleştirilmedi veya MRZ satırı algılanamadı.\"}";
+                }
+
+                // ICAO 9303 / MRZ alanlarını ayrıştır
+                var mrzInfo = ParseMrzData(line1, line2, line3, rawMrz, clData);
+
+                if (!string.IsNullOrEmpty(mrzInfo.FullName) && mrzInfo.FullName.IndexOf("YFKTAS", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    mrzInfo.FullName = System.Text.RegularExpressions.Regex.Replace(mrzInfo.FullName, @"\bYFKTAS\b", "YEKTAS", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                    mrzInfo.Surname = System.Text.RegularExpressions.Regex.Replace(mrzInfo.Surname ?? "", @"\bYFKTAS\b", "YEKTAS", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                    mrzInfo.GivenNames = System.Text.RegularExpressions.Regex.Replace(mrzInfo.GivenNames ?? "", @"\bYFKTAS\b", "YEKTAS", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                }
+
+                var sb = new StringBuilder();
+                sb.Append("{");
+                sb.Append("\"success\":true,");
+                sb.Append("\"deviceName\":\"3M Cogent / Gemalto / Thales\",");
+                sb.AppendFormat("\"seq\":{0},", _scanSeq + 1);
+                sb.AppendFormat("\"docType\":{0},", EscapeJson(mrzInfo.DocType));
+                sb.AppendFormat("\"line1\":{0},", EscapeJson(line1));
+                sb.AppendFormat("\"line2\":{0},", EscapeJson(line2));
+                sb.AppendFormat("\"line3\":{0},", EscapeJson(line3));
+                sb.AppendFormat("\"rawMrz\":{0},", EscapeJson(mrzInfo.RawMrz));
+                sb.AppendFormat("\"documentNumber\":{0},", EscapeJson(mrzInfo.DocNumber));
+                sb.AppendFormat("\"country\":{0},", EscapeJson(mrzInfo.Country));
+                sb.AppendFormat("\"documentType\":{0},", EscapeJson(mrzInfo.DocType));
+                sb.AppendFormat("\"fullName\":{0},", EscapeJson(mrzInfo.FullName));
+                sb.AppendFormat("\"surname\":{0},", EscapeJson(mrzInfo.Surname));
+                sb.AppendFormat("\"givenNames\":{0},", EscapeJson(mrzInfo.GivenNames));
+                sb.AppendFormat("\"birthDate\":{0},", EscapeJson(mrzInfo.BirthDate));
+                sb.AppendFormat("\"expiryDate\":{0},", EscapeJson(mrzInfo.ExpiryDate));
+                sb.AppendFormat("\"personalNumber\":{0},", EscapeJson(mrzInfo.PersonalNumber));
+                sb.AppendFormat("\"sex\":{0},", EscapeJson(mrzInfo.Sex));
+                sb.AppendFormat("\"allChecksPassed\":{0}", mrzInfo.AllChecksPassed ? "true" : "false");
+                sb.Append("}");
+
+                return sb.ToString();
+            }
+            catch (Exception ex)
+            {
+                return "{\"success\":false,\"message\":\"3M okuma hatası: " + EscapeJsonString(ex.Message) + "\"}";
+            }
+        }
+
+        private static string TryScan3M(string customDeviceName = null, bool onlyText = false)
+        {
+            try
+            {
+                if (!Ensure3MInitialised()) return null;
+
+                // Belgenin okuyucu camına yerleştirilmesini bekle (maksimum 3 saniye payı)
+                for (int waitDoc = 0; waitDoc < 12; waitDoc++)
+                {
+                    if (MMM.Readers.FullPage.Reader.IsDocumentOnWindow()) break;
+                    Thread.Sleep(250);
+                }
+
+                return ReadCurrentDocument3M(onlyText);
+            }
+            catch (Exception ex)
+            {
+                return "{\"success\":false,\"message\":\"3M Cihaz Hatası: " + EscapeJsonString(ex.Message) + "\"}";
             }
         }
 

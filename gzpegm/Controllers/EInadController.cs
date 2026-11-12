@@ -1215,6 +1215,25 @@ namespace gzpegm.Controllers
         }
 
         [AllowAnonymous]
+        public ActionResult DownloadBridgeExe()
+        {
+            try
+            {
+                var appData = Server.MapPath("~/App_Data");
+                var bridgeExe = Path.Combine(appData, "EgmReaderBridge.exe");
+                if (!System.IO.File.Exists(bridgeExe))
+                {
+                    return Content("EgmReaderBridge.exe bulunamadı.", "text/plain");
+                }
+                return File(bridgeExe, "application/vnd.microsoft.portable-executable", "EgmReaderBridge.exe");
+            }
+            catch (Exception ex)
+            {
+                return Content("İndirme hatası: " + ex.Message, "text/plain");
+            }
+        }
+
+        [AllowAnonymous]
         public ActionResult DownloadBridgePackage()
         {
             try

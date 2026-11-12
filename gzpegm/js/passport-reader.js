@@ -308,9 +308,114 @@
     }
 
     /* ==========================================================================
-       4. DOĞRUDAN DONANIM TARAMASI (3M COGENT, REGULA, DESKO)
+       4. DOĞRUDAN DONANIM TARAMASI VE SÜREKLİ OTOMATİK DİNLEME (3M, THALES, REGULA, DESKO)
        ========================================================================== */
     var isDirectScanActive = false;
+    var _lastBridgeSeq = 0;
+    var _isPollingBridge = false;
+    var _bridgePollTimer = null;
+    var _isBridgeOnline = false;
+
+    function openBridgeSetupModal() {
+        launchBridgeViaProtocol();
+        if (!$('#modalBridgeSetup').length) {
+            var modalHtml = 
+                '<div class="modal fade" id="modalBridgeSetup" tabindex="-1" role="dialog" style="z-index:99999;">' +
+                '  <div class="modal-dialog modal-dialog-centered" role="document">' +
+                '    <div class="modal-content border-0 shadow-lg" style="border-radius:14px; overflow:hidden;">' +
+                '      <div class="modal-header bg-primary text-white py-3">' +
+                '        <h5 class="modal-title font-weight-bold"><i class="fas fa-id-card mr-2"></i>Optik Okuyucuyu Masanızda Başlatın</h5>' +
+                '        <button type="button" class="close text-white" data-dismiss="modal">&times;</button>' +
+                '      </div>' +
+                '      <div class="modal-body p-4 text-center">' +
+                '        <div class="mb-3"><i class="fas fa-shield-alt text-success" style="font-size:3.5rem;"></i></div>' +
+                '        <h5 class="font-weight-bold text-dark mb-2">Yönetici Şifresi / Admin İzni GEREKTİRMEZ</h5>' +
+                '        <p class="text-muted" style="font-size:0.92rem;">' +
+                '          3M Cogent, Thales, Desko ve Regula okuyucularınızın canlı sunucuyla (10.7.202.75) <strong>otomatik</strong> çalışabilmesi için masanızdaki hafif köprü programını <strong>1 tıkla</strong> başlatın.' +
+                '        </p>' +
+                '        <div class="alert alert-info py-2 px-3 text-left font-weight-bold mb-3" style="font-size:0.86rem; border-radius:8px;">' +
+                '          <i class="fas fa-check-circle mr-1 text-success"></i> Bilgisayarınıza kurulum yapmaz, direkt çalışır.<br/>' +
+                '          <i class="fas fa-check-circle mr-1 text-success"></i> Bir defa çalıştırıldığında Windows başlangıcına eklenir.<br/>' +
+                '          <i class="fas fa-check-circle mr-1 text-success"></i> Belgeyi okuyucu camına koyduğunuz an bilgiler ekrana kendiliğinden akar.' +
+                '        </div>' +
+                '        <a href="/Calculate/DownloadBridgeExe" id="btnDownloadBridgeNow" class="btn btn-success btn-lg btn-block shadow font-weight-bold py-2 mb-2" style="font-size:1.05rem; border-radius:8px;">' +
+                '          <i class="fas fa-download mr-2"></i> Okuyucu Köprüsünü Başlat (1 Tıkla)' +
+                '        </a>' +
+                '        <small class="text-muted">İndirilen dosyayı bir defa tıklatmanız yeterlidir. Açıldıktan sonra bu pencere kendiliğinden kapanır ve sistem otomatik okumaya geçer.</small>' +
+                '      </div>' +
+                '    </div>' +
+                '  </div>' +
+                '</div>';
+            $('body').append(modalHtml);
+        }
+        $('#modalBridgeSetup').modal('show');
+    }
+    window.openBridgeSetupModal = openBridgeSetupModal;
+
+    function updateBridgeStatusUI(isOnline, res) {
+        _isBridgeOnline = isOnline;
+        var badgeContainer = $('#bridgeStatusContainer');
+        if (!badgeContainer.length) {
+            var topBtn = $('#btnDirectOpticalScan, #btnTopScanPassport, #btnTopOpticalScan').first();
+            if (topBtn.length) {
+                topBtn.parent().append('<span id="bridgeStatusContainer" class="ml-2"></span>');
+                badgeContainer = $('#bridgeStatusContainer');
+            }
+        }
+
+        if (badgeContainer.length) {
+            if (isOnline) {
+                badgeContainer.html(
+                    '<span class="badge badge-success px-3 py-2 shadow-sm font-weight-bold" style="font-size:0.86rem; border-radius:20px; animation:fadeIn 0.3s ease;">' +
+                    '<i class="fas fa-circle text-light mr-1" style="font-size:0.65rem;"></i> Optik Okuyucu Aktif (Otomatik Dinleme)' +
+                    '</span>'
+                );
+                if ($('#modalBridgeSetup').hasClass('show')) {
+                    $('#modalBridgeSetup').modal('hide');
+                    showPassportToast('🟢 Optik Okuyucu Köprüsü Aktif! Belgeyi okuyucuya koyduğunuzda bilgiler otomatik dolacaktır.', 'success');
+                }
+            } else {
+                badgeContainer.html(
+                    '<a href="javascript:void(0)" onclick="window.openBridgeSetupModal()" class="badge badge-warning px-3 py-2 shadow-sm text-dark font-weight-bold" style="font-size:0.86rem; border-radius:20px; text-decoration:none; border:1px solid #d97706;">' +
+                    '<i class="fas fa-bolt text-danger mr-1"></i> Okuyucuyu Başlat (Yönetici İzni Gerekmez)' +
+                    '</a>'
+                );
+            }
+        }
+    }
+
+    function startAutoScannerPolling() {
+        if (_bridgePollTimer) clearInterval(_bridgePollTimer);
+
+        _bridgePollTimer = setInterval(function () {
+            if (_isPollingBridge) return;
+            _isPollingBridge = true;
+
+            $.ajax({
+                url: 'http://127.0.0.1:41102/poll?seq=' + _lastBridgeSeq,
+                type: 'GET',
+                dataType: 'json',
+                timeout: 2200
+            }).done(function (res) {
+                _isPollingBridge = false;
+                updateBridgeStatusUI(true, res);
+
+                if (res && res.success) {
+                    if (res.seq && res.seq > _lastBridgeSeq) {
+                        _lastBridgeSeq = res.seq;
+                    }
+
+                    // Belge okundu bilgisi geldiyse forma uygula
+                    if (res.documentNumber || res.fullName || res.line1 || res.rawMrz) {
+                        applyScanResult(res);
+                    }
+                }
+            }).fail(function () {
+                _isPollingBridge = false;
+                updateBridgeStatusUI(false);
+            });
+        }, 750);
+    }
 
     function applyScanResult(res) {
         if (!res) {
@@ -424,6 +529,10 @@
                 }
                 $('#accKimlik').show();
             }
+
+            // Kimlik ve Ceza Alanları ASLA Gizlenmez - Kalıcı Açık Tutulur
+            $('#form').show().attr('style', 'display: block !important;');
+            $('#accKimlik, #accBelge').show().attr('style', 'display: block !important;');
 
             if (typeof window._onWedgeScanSuccess === 'function') {
                 try { window._onWedgeScanSuccess(); } catch (e) { }
@@ -602,14 +711,16 @@
                                 return;
                             }
                         }
-                        startWedgeWaitMode();
+                        openBridgeSetupModal();
+                        finishScan();
                     });
                 } else {
-                    startWedgeWaitMode();
+                    openBridgeSetupModal();
+                    finishScan();
                 }
             });
 
-            // Uzak istemcide sunucu rack'ine ASLA istek gönderilmez!
+            // Uzak istemcide sunucu rack'ine ASLA donanım isteği gönderilmez!
             return;
         }
 
@@ -621,85 +732,12 @@
                 return;
             }
 
-            tryLocalClientRegula(function (localData) {
-                if (localData) {
-                    var mrz = extractMrzFromRegulaResponse(localData);
-                    if (mrz && parseAndApplyPassportMrz(mrz, "Regula Yerel Okuyucu")) {
-                        finishScan();
-                        return;
-                    }
-                }
-
-                var scanUrl = window.URL_SCAN_PASSPORT || '/Calculate/ScanOpticalReader';
-                var token = $('input[name="__RequestVerificationToken"]').val();
-                $.ajax({
-                    url: scanUrl,
-                    type: 'POST',
-                    data: {
-                        deviceType: dev,
-                        __RequestVerificationToken: token
-                    },
-                    timeout: 25000,
-                    success: function (res) {
-                        var data = (res && res.data) ? res.data : res;
-                        if (data && data.success) {
-                            applyScanResult(data);
-                        } else {
-                            var errMsg = (data && data.message) ? data.message : 'Optik okuyucu camında pasaport veya kimlik tespit edilemedi. Lütfen belgeyi cihaz camına tam yerleştiriniz.';
-                            showPassportAlert(errMsg, 'warning');
-                        }
-                    },
-                    error: function (xhr, status, err) {
-                        showPassportAlert('Optik okuyucu servisiyle iletişim kurulamadı.', 'danger');
-                    },
-                    complete: function () {
-                        finishScan();
-                    }
-                });
-            });
+            openBridgeSetupModal();
+            finishScan();
         });
     }
 
     function checkOpticalReaderStatus() {
-        var isRemoteClient = (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1');
-        // Önce masadaki yerel köprüyü (41102) sorgula
-        $.ajax({
-            url: 'http://127.0.0.1:41102/status',
-            type: 'GET',
-            dataType: 'json',
-            timeout: 1000
-        }).done(function (sRes) {
-            if (sRes && (sRes.isRunning || sRes.success)) {
-                $('#btnDirectOpticalScan, #btnPanelDirectScan, #btnTopOpticalScan, #btnTopScanPassport').attr('title', 'Optik Okuyucu Köprüsü Aktif (3M / Regula)');
-                return;
-            }
-            handleStatusFallback();
-        }).fail(function () {
-            handleStatusFallback();
-        });
-
-        function handleStatusFallback() {
-            if (isRemoteClient) {
-                $('#btnDirectOpticalScan, #btnPanelDirectScan, #btnTopOpticalScan, #btnTopScanPassport').attr('title', 'Optik Okuyucu Hazır (3M / Thales / Desko / Regula)');
-            } else {
-                $.ajax({
-                    url: '/Calculate/GetOpticalReaderStatus',
-                    type: 'GET',
-                    cache: false,
-                    success: function (res) {
-                        if (res && res.success && res.isRunning) {
-                            $('#btnDirectOpticalScan, #btnPanelDirectScan, #btnTopOpticalScan, #btnTopScanPassport').attr('title', (res.deviceName || 'Optik Okuyucu') + ' Bağlı ve Hazır');
-                        }
-                    }
-                });
-            }
-        }
-    }
-
-    function connectDevice(deviceType) {
-        var isRemoteClient = (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1');
-
-        // 1. Önce masadaki yerel köprüyü (41102) sorgula / başlat
         $.ajax({
             url: 'http://127.0.0.1:41102/status',
             type: 'GET',
@@ -707,57 +745,33 @@
             timeout: 1200
         }).done(function (sRes) {
             if (sRes && (sRes.isRunning || sRes.success)) {
-                showPassportAlert('Masaüstü Optik Okuyucu Köprüsü Aktif (3M / Regula). Belgeyi okutabilirsiniz.', 'success');
-                checkOpticalReaderStatus();
+                updateBridgeStatusUI(true, sRes);
+                $('#btnDirectOpticalScan, #btnPanelDirectScan, #btnTopOpticalScan, #btnTopScanPassport').attr('title', 'Optik Okuyucu Köprüsü Aktif (Otomatik Dinleme)');
             } else {
-                handleRemoteOrServerConnect();
+                updateBridgeStatusUI(false);
             }
         }).fail(function () {
-            handleRemoteOrServerConnect();
+            updateBridgeStatusUI(false);
         });
+    }
 
-        function handleRemoteOrServerConnect() {
-            if (isRemoteClient) {
-                launchBridgeViaProtocol();
-                showPassportAlert('Masaüstü okuyucunuz (3M / Thales / Desko / Regula) klavye wedge modunda hazır. Pasaport veya kimliği doğrudan cihazın camına yerleştiriniz.', 'info');
-                $('#btnDirectOpticalScan, #btnPanelDirectScan, #btnTopOpticalScan').attr('title', 'Optik Okuyucu Hazır (3M / Thales / Desko / Regula)');
+    function connectDevice(deviceType) {
+        $.ajax({
+            url: 'http://127.0.0.1:41102/status',
+            type: 'GET',
+            dataType: 'json',
+            timeout: 1200
+        }).done(function (sRes) {
+            if (sRes && (sRes.isRunning || sRes.success)) {
+                showPassportAlert('Masaüstü Optik Okuyucu Köprüsü Aktif. Belgeyi okutabilirsiniz.', 'success');
+                updateBridgeStatusUI(true, sRes);
             } else {
-                tryProtocolOrServer();
+                openBridgeSetupModal();
             }
-        }
-
-        function tryProtocolOrServer() {
-            launchBridgeViaProtocol();
-            setTimeout(function () {
-                $.ajax({
-                    url: 'http://127.0.0.1:41102/status',
-                    type: 'GET',
-                    dataType: 'json',
-                    timeout: 1500
-                }).done(function (sRes2) {
-                    if (sRes2 && (sRes2.isRunning || sRes2.success)) {
-                        showPassportAlert('Masaüstü Optik Okuyucu Köprüsü Başlatıldı (3M / Regula).', 'success');
-                        checkOpticalReaderStatus();
-                    } else {
-                        connectViaServer();
-                    }
-                }).fail(function () {
-                    connectViaServer();
-                });
-            }, 1200);
-        }
-
-        function connectViaServer() {
-            $.ajax({
-                url: '/Calculate/ConnectOpticalReader',
-                type: 'POST',
-                data: { deviceType: deviceType || 'auto' },
-                success: function (res) {
-                    if (res && res.success) {
-                        showPassportAlert(res.message || 'Optik okuyucu hazır.', 'success');
-                        checkOpticalReaderStatus();
-                    } else {
-                        var errMsg = (res && res.message) ? res.message : 'Cihaza bağlanılamadı.';
+        }).fail(function () {
+            openBridgeSetupModal();
+        });
+    }
                         showPassportAlert(errMsg + ' Lütfen cihazın USB kablosunu kontrol ediniz.', 'warning');
                     }
                 },
@@ -1415,7 +1429,12 @@
     $(document).ready(function () {
         initHardwareScannerListener();
         initTopPassportBarSync();
+        startAutoScannerPolling();
         checkOpticalReaderStatus();
+
+        // Kimlik Alanını Her Zaman Görünür Tut (Kullanıcı Talebi)
+        $('#form').show().attr('style', 'display: block !important;');
+        $('#accKimlik, #accBelge').show().attr('style', 'display: block !important;');
 
         // Buton tıklamaları delegasyonu (Üst ve alt butonlar)
         $(document).on('click', '#btnDirectOpticalScan, #btnPanelDirectScan, #btnTopOpticalScan, #btnTutanakOpticalScan, #btnTopScan, #btnPageScanPassport, #btnBigDirectScan', function (e) {
