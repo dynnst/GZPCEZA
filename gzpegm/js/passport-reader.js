@@ -406,31 +406,36 @@
             }
 
             // 1. Türk Vatandaşı Bilgilendirmesi (Test amacıyla form doldurulur)
-            if (res.isTurkishCitizen || (res.countryCode && (res.countryCode === 'TUR' || res.countryCode === 'TR'))) {
+            var cCode = res.countryCode || res.country || '';
+            if (res.isTurkishCitizen || cCode === 'TUR' || cCode === 'TR' || cCode.toLowerCase() === 'türkiye') {
                 showPassportAlert(
                     '<strong>BİLGİ / TEST MODU (TUR):</strong> Türk vatandaşı belgesi okundu. Test amacıyla tüm alanlar başarıyla dolduruldu.',
                     'info'
                 );
             }
 
-            // 2. Yabancı Yolcu Adı Soyadı (Alt form + Üst kabin paneli)
-            if (res.fullName) {
-                $('#NameCFORM').val(res.fullName);
-                $('#topPassengerName').val(res.fullName);
+            // 2. Yabancı Yolcu Adı Soyadı (res.fullName veya line1/rawMrz)
+            var fullName = res.fullName || res.FullName || res.name || (res.surname && res.givenNames ? res.surname + ' ' + res.givenNames : '');
+            if (fullName) {
+                fullName = fixOcrMisreads(fullName);
+                $('#NameCFORM').val(fullName);
+                $('#topPassengerName').val(fullName);
                 highlightInput('#NameCFORM, #topPassengerName');
             }
 
             // 3. Belge / Pasaport Numarası
-            if (res.documentNumber) {
-                $('#PassportCFORM').val(res.documentNumber);
-                $('#topPassportNumber').val(res.documentNumber);
+            var docNum = res.documentNumber || res.DocNumber || res.passportNo || res.docNumber || res.PassportNo;
+            if (docNum) {
+                $('#PassportCFORM').val(docNum);
+                $('#topPassportNumber').val(docNum);
                 highlightInput('#PassportCFORM, #topPassportNumber');
             }
 
             // 4. Kimlik / Kişisel No
-            if (res.personalNumber) {
-                $('#IDNCFORM').val(res.personalNumber);
-                $('#topPersonalNumber').val(res.personalNumber);
+            var persNum = res.personalNumber || res.PersonalNumber || res.idNo || res.kimlikNo || res.IdNo;
+            if (persNum) {
+                $('#IDNCFORM').val(persNum);
+                $('#topPersonalNumber').val(persNum);
                 highlightInput('#IDNCFORM, #topPersonalNumber');
             }
 
@@ -442,24 +447,33 @@
             }
 
             // 6. Uyruk / Ülke Seçimi (Otomatik vize ve harç hesaplatır) + Üst bar yansıtma
+            var countryVal = res.country || res.Country || res.nationality || res.countryCode;
             var matchedCountry = "";
-            if (res.country || res.countryCode) {
-                matchedCountry = setPassportCountry(res.country || res.countryCode);
+            if (countryVal) {
+                matchedCountry = setPassportCountry(countryVal);
+                $('#OrginCFORM').val(matchedCountry || countryVal);
             }
-            $('#topCountryDisplay').val(matchedCountry || res.country || res.countryCode || '');
+            $('#topCountryDisplay').val(matchedCountry || countryVal || '');
             highlightInput('#topCountryDisplay');
 
             // 7. Doğum Tarihi & Yaş Grubu (Üst bar rozet ve alt form)
-            if (res.birthDate) {
-                $('#BirthDateCalculate').val(res.birthDate).trigger('change');
-                $('#BirthdateCFORM').val(res.birthDate);
-                $('#topBirthDate').val(res.birthDate);
-                updateTopAgeBadge(res.birthDate);
+            var bDate = res.birthDate || res.BirthDate || res.dateOfBirth || res.dob;
+            if (bDate) {
+                $('#BirthDateCalculate').val(bDate).trigger('change');
+                $('#BirthdateCFORM').val(bDate);
+                $('#topBirthDate').val(bDate);
+                updateTopAgeBadge(bDate);
                 highlightInput('#BirthDateCalculate, #topBirthDate');
 
                 if (typeof window.adultchild === 'function') {
                     window.adultchild($('#BirthDateCalculate')[0]);
                 }
+            }
+
+            // Eğer ana alanlardan biri boş kaldıysa ama raw MRZ satırları varsa, JS MRZ ayrıştırıcısını devreye sok
+            if ((!fullName || !docNum) && (res.rawMrz || res.line1)) {
+                var mrzCombo = res.rawMrz || (res.line1 + '\n' + (res.line2 || '') + '\n' + (res.line3 || ''));
+                parseAndApplyPassportMrz(mrzCombo, res.deviceName || "Optik Okuyucu");
             }
 
             // 8. Yetişkin / Çocuk Durumu

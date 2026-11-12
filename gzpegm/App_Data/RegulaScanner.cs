@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Xml;
@@ -77,14 +78,6 @@ namespace Sahtecilik.RegulaScanner
                     return;
                 }
 
-                // Metin odaklı hızlı tarama (Görseller atlanır, ışıklandırma ve Base64 beklemesi olmaz)
-                bool textOnly = true;
-                foreach (var a in args)
-                {
-                    if (a == "--with-images") textOnly = false;
-                    if (a == "--text-only") textOnly = true;
-                }
-
                 // Arka plan / sessiz çalışma ayarları (Connect çağrılmadan önce mutlaka ayarlanmalı)
                 try
                 {
@@ -96,12 +89,12 @@ namespace Sahtecilik.RegulaScanner
                     rr.MinimizeOnRun = true;
                     rr.ShowTrayIcon = false;
                     rr.DoSound = false;
-                    rr.DoReceiveImages = !textOnly;
-                    rr.DoReceiveAllScannedImages = false;
+                    rr.DoReceiveImages = true;
+                    rr.DoReceiveAllScannedImages = true;
                     rr.DoMRZOCR = true;
-                    rr.DoVisualOCR = !textOnly;
-                    rr.DoGraphics = false;
-                    rr.DoAuthenticity = false;
+                    rr.DoVisualOCR = true;
+                    rr.DoGraphics = true;
+                    rr.DoAuthenticity = true;
                 }
                 catch { }
 
@@ -129,8 +122,14 @@ namespace Sahtecilik.RegulaScanner
                 }
                 catch { }
 
+                // Donanımın USB el sıkışması ve hazır hale gelmesi için 8 saniyeye kadar bekle
                 bool connected = false;
-                try { connected = (bool)rr.Connected; } catch { }
+                for (int i = 0; i < 40; i++)
+                {
+                    try { connected = (bool)rr.Connected; } catch { }
+                    if (connected) break;
+                    System.Threading.Thread.Sleep(200);
+                }
 
                 if (!connected)
                 {
@@ -143,82 +142,176 @@ namespace Sahtecilik.RegulaScanner
                 {
                     rr.GetImages();
                 }
-                catch (Exception ex)
+                catch
                 {
-                    try { rr.Disconnect(); } catch { }
-                    Console.WriteLine(string.Format("{{\"success\":false,\"message\":\"Regula tarama komutu verilemedi: {0}\"}}", EscapeJson(ex.Message)));
-                    return;
+                    try { rr.Process(); } catch { }
                 }
 
-                // İşlemin tamamlanmasını bekle (Hızlı metin modunda maks 4 sn)
-                int waited = 0;
-                int maxWait = textOnly ? 4000 : 12000;
-                while (waited < maxWait)
+                // Donanımın ışıkları (VIS, UV, IR) yakıp taramaya başlaması için başlangıç payı ver
+                System.Threading.Thread.Sleep(800);
+
+                // İşlemin tamamlanmasını bekle (maksimum 18 saniye)
+                int waited = 800;
+                while (waited < 18000)
                 {
                     bool isBusy = false;
                     try { isBusy = (bool)rr.IsBusy; } catch { }
-                    if (!isBusy) break;
+                    if (!isBusy)
+                    {
+                        // Işık geçişleri arasında anlık false olmasını filtrele
+                        System.Threading.Thread.Sleep(400);
+                        try { isBusy = (bool)rr.IsBusy; } catch { }
+                        if (!isBusy) break; // Tarama kesinlikle tamamlandı
+                    }
 
-                    System.Threading.Thread.Sleep(50);
-                    waited += 50;
+                    System.Threading.Thread.Sleep(200);
+                    waited += 600;
                 }
 
-                // 1. Görselleri Çek (Sadece resim istendiyse çek, metin modunda atla)
+                // Görsellerin bellek havuzuna aktarılması için kısa bir bekleme
+                System.Threading.Thread.Sleep(300);
+
+                // 1. Görselleri Çek (Önce rr.ImagesCount ve rr.Image(i) standart COM metodu)
                 string visBase64 = null;
                 string uvBase64 = null;
                 string irBase64 = null;
                 string coaxVisBase64 = null;
-                string photoBase64 = null;
 
-                if (!textOnly)
+                try
+                {
+                    int imgCount = 0;
+                    try { imgCount = (int)rr.ImagesCount; } catch { }
+                    for (int i = 0; i < imgCount; i++)
+                    {
+                        try
+                        {
+                            int light = 0;
+                            try { light = (int)rr.ImageLight(i); } catch { }
+                            int page = 0;
+                            try { page = (int)rr.ImagePage(i); } catch { }
+                            if (page != 0) continue;
+
+                            string b64 = null;
+                            try
+                            {
+                                object raw = rr.Image(i);
+                                if (raw is byte[] bArr && bArr.Length > 0)
+                                {
+                                    b64 = Convert.ToBase64String(bArr);
+                                }
+                            }
+                            catch { }
+
+                            if (!string.IsNullOrEmpty(b64))
+                            {
+                                // White / VIS: 6, 2, 4 veya bitmask 0x06
+                                if ((light == 6 || (light & 0x06) != 0 || (light & 0x802000) != 0) && visBase64 == null)
+                                    visBase64 = b64;
+                                // UV: 128 veya bitmask 0x80
+                                else if ((light == 128 || (light & 0x80) != 0) && uvBase64 == null)
+                                    uvBase64 = b64;
+                                // IR: 24, 8, 16 veya bitmask 0x18
+                                else if ((light == 24 || (light & 0x18) != 0 || (light & 0x1001040) != 0) && irBase64 == null)
+                                    irBase64 = b64;
+                                // Coaxial: 8 veya bitmask 0x0C00
+                                else if ((light == 8 || (light & 0x0C00) != 0) && coaxVisBase64 == null)
+                                    coaxVisBase64 = b64;
+                                else if (visBase64 == null)
+                                    visBase64 = b64;
+                            }
+                        }
+                        catch { }
+                    }
+                }
+                catch { }
+
+                // 2. Fallback: GetReaderFileImage ve CheckReaderImageLight
+                if (string.IsNullOrEmpty(visBase64))
                 {
                     try
                     {
-                        int totalImages = (int)rr.IsReaderResultTypeAvailable(1); // RPRM_ResultType_RawImage = 1
-                        for (int i = 0; i < totalImages; i++)
+                        for (int i = 0; i < 20; i++)
                         {
-                            byte[] imgBytes = (byte[])rr.GetReaderFileImage(i);
-                            int light = (int)rr.CheckReaderImageLight(i);
-
-                            if (imgBytes != null && imgBytes.Length > 0)
+                            try
                             {
-                                string b64 = Convert.ToBase64String(imgBytes);
+                                byte[] imgBytes = (byte[])rr.GetReaderFileImage(i);
+                                int light = (int)rr.CheckReaderImageLight(i);
+                                if (imgBytes != null && imgBytes.Length > 0)
+                                {
+                                    string b64 = Convert.ToBase64String(imgBytes);
+                                    if (((light & 0x06) != 0 || (light & 0x802000) != 0) && visBase64 == null)
+                                        visBase64 = b64;
+                                    else if ((light & 0x80) != 0 && uvBase64 == null)
+                                        uvBase64 = b64;
+                                    else if (((light & 0x18) != 0 || (light & 0x1001040) != 0) && irBase64 == null)
+                                        irBase64 = b64;
+                                    else if ((light & 0x0C00) != 0 && coaxVisBase64 == null)
+                                        coaxVisBase64 = b64;
+                                    else if (visBase64 == null)
+                                        visBase64 = b64;
+                                }
+                            }
+                            catch { }
+                        }
+                    }
+                    catch { }
+                }
 
-                                if ((light & 0x06) != 0 || (light & 0x802000) != 0)
+                // 3. Fallback: Regula Scans Klasörleri (Disk Fallback)
+                if (string.IsNullOrEmpty(visBase64))
+                {
+                    try
+                    {
+                        string[] scanDirs = new string[]
+                        {
+                            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Regula\Document Reader SDK\Scans"),
+                            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Regula\Document Reader SDK\Scans"),
+                            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), @"Regula\Scans"),
+                            @"C:\Regula\Scans",
+                            @"C:\RegulaScans"
+                        };
+                        foreach (var sDir in scanDirs)
+                        {
+                            if (Directory.Exists(sDir))
+                            {
+                                var files = new DirectoryInfo(sDir).GetFiles("*.*", SearchOption.AllDirectories)
+                                    .Where(f => (DateTime.UtcNow - f.LastWriteTimeUtc).TotalMinutes < 3)
+                                    .OrderByDescending(f => f.LastWriteTimeUtc)
+                                    .ToList();
+                                foreach (var f in files)
                                 {
-                                    if (visBase64 == null) visBase64 = b64;
+                                    string name = f.Name.ToLowerInvariant();
+                                    if ((name.Contains("vis") || name.Contains("white") || name.Contains("color")) && visBase64 == null)
+                                        visBase64 = Convert.ToBase64String(File.ReadAllBytes(f.FullName));
+                                    else if (name.Contains("uv") && uvBase64 == null)
+                                        uvBase64 = Convert.ToBase64String(File.ReadAllBytes(f.FullName));
+                                    else if (name.Contains("ir") && irBase64 == null)
+                                        irBase64 = Convert.ToBase64String(File.ReadAllBytes(f.FullName));
                                 }
-                                else if ((light & 0x80) != 0)
-                                {
-                                    if (uvBase64 == null) uvBase64 = b64;
-                                }
-                                else if ((light & 0x18) != 0 || (light & 0x1001040) != 0)
-                                {
-                                    if (irBase64 == null) irBase64 = b64;
-                                }
-                                else if ((light & 0x0C00) != 0)
-                                {
-                                    if (coaxVisBase64 == null) coaxVisBase64 = b64;
-                                }
-                                else if (visBase64 == null)
-                                {
-                                    visBase64 = b64;
-                                }
+                                if (!string.IsNullOrEmpty(visBase64)) break;
                             }
                         }
                     }
                     catch { }
+                }
 
+                // 4. Portre Fotoğrafını Çek
+                string photoBase64 = null;
+                try
+                {
+                    object pData = rr.Photo;
+                    if (pData is byte[] pb && pb.Length > 0) photoBase64 = Convert.ToBase64String(pb);
+                }
+                catch { }
+
+                if (string.IsNullOrEmpty(photoBase64))
+                {
                     try
                     {
-                        int totalGraphics = (int)rr.IsReaderResultTypeAvailable(6);
-                        if (totalGraphics > 0)
+                        byte[] portraitBytes = (byte[])rr.GetReaderGraphicsBitmapByFieldType(201);
+                        if (portraitBytes != null && portraitBytes.Length > 0)
                         {
-                            byte[] portraitBytes = (byte[])rr.GetReaderGraphicsBitmapByFieldType(201);
-                            if (portraitBytes != null && portraitBytes.Length > 0)
-                            {
-                                photoBase64 = Convert.ToBase64String(portraitBytes);
-                            }
+                            photoBase64 = Convert.ToBase64String(portraitBytes);
                         }
                     }
                     catch { }
@@ -332,9 +425,16 @@ namespace Sahtecilik.RegulaScanner
                 }
                 catch { }
 
-                if (string.IsNullOrEmpty(visBase64) && string.IsNullOrEmpty(line1))
+                if (string.IsNullOrEmpty(visBase64))
                 {
-                    Console.WriteLine("{\"success\":false,\"message\":\"Regula optik okuyucu camında belge algılanamadı. Lütfen pasaportu camın üzerine tam yerleştiriniz.\"}");
+                    if (string.IsNullOrEmpty(line1))
+                    {
+                        Console.WriteLine("{\"success\":false,\"message\":\"Regula optik okuyucu camında belge algılanamadı. Lütfen pasaportu camın üzerine tam yerleştiriniz.\"}");
+                    }
+                    else
+                    {
+                        Console.WriteLine("{\"success\":false,\"message\":\"Regula okuyucudan MRZ okundu ancak optik spektral görüntüler (VIS, UV, IR) donanım tamponundan aktarılamadı. Lütfen pasaportu okuyucu camına tam oturtup tekrar deneyiniz.\"}");
+                    }
                     return;
                 }
 
@@ -375,9 +475,6 @@ namespace Sahtecilik.RegulaScanner
                     }
                 }
                 catch { }
-
-                // Arka planda kilitli kalmaması için READERDEMO sürecini temizle
-                KillZombieReaderDemo();
             }
         }
 

@@ -248,16 +248,47 @@ namespace Sahtecilik.ReaderBridge
 
         private static readonly object _scanLock = new object();
 
+        private static bool CheckIfRegulaUsbPlugged()
+        {
+            try
+            {
+                using (var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Enum\USB"))
+                {
+                    if (key != null)
+                    {
+                        foreach (var subName in key.GetSubKeyNames())
+                        {
+                            if (subName.IndexOf("VID_1C6A", StringComparison.OrdinalIgnoreCase) >= 0)
+                            {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+            return false;
+        }
+
         private static string PerformScan(string requestedDevice)
         {
             lock (_scanLock)
             {
                 Console.WriteLine("\n[" + DateTime.Now.ToString("HH:mm:ss") + "] Tarama isteği alındı (Talep: " + requestedDevice + ")...");
 
-                // 1. Önce 3M / Gemalto / Thales donanımını dene
-                if (requestedDevice == "3m" || requestedDevice == "thales" || requestedDevice == "auto")
+                bool regulaPlugged = CheckIfRegulaUsbPlugged();
+
+                // 1. Eğer Regula takılıysa veya talep regula ise önce Regula'yı dene
+                if (requestedDevice == "regula" || (requestedDevice == "auto" && regulaPlugged))
                 {
-                    if (_resolved3mBinDir != null)
+                    string resRegula = TryScanRegula();
+                    if (!string.IsNullOrEmpty(resRegula) && resRegula.Contains("\"success\":true"))
+                    {
+                        Console.WriteLine("  -> Regula Cihazından başarıyla okundu!");
+                        return resRegula;
+                    }
+
+                    if (requestedDevice == "auto" && _resolved3mBinDir != null)
                     {
                         string res3m = TryScan3M();
                         if (!string.IsNullOrEmpty(res3m) && res3m.Contains("\"success\":true"))
@@ -267,10 +298,22 @@ namespace Sahtecilik.ReaderBridge
                         }
                     }
                 }
-
-                // 2. Ardından Regula Document Reader dene
-                if (requestedDevice == "regula" || requestedDevice == "auto")
+                else
                 {
+                    // 3M / Thales takılı veya talep edilmişse önce 3M'i dene
+                    if (requestedDevice == "3m" || requestedDevice == "thales" || requestedDevice == "auto")
+                    {
+                        if (_resolved3mBinDir != null)
+                        {
+                            string res3m = TryScan3M();
+                            if (!string.IsNullOrEmpty(res3m) && res3m.Contains("\"success\":true"))
+                            {
+                                Console.WriteLine("  -> 3M / Thales Cihazından başarıyla okundu!");
+                                return res3m;
+                            }
+                        }
+                    }
+
                     string resRegula = TryScanRegula();
                     if (!string.IsNullOrEmpty(resRegula) && resRegula.Contains("\"success\":true"))
                     {
@@ -279,8 +322,8 @@ namespace Sahtecilik.ReaderBridge
                     }
                 }
 
-                Console.WriteLine("  -> Cihazdan görüntü alınamadı.");
-                return "{\"success\":false,\"message\":\"Masanızdaki 3M veya Regula optik okuyucudan veri alınamadı. Lütfen belgenin okuyucu camına düzgün yerleştirildiğinden ve cihazın açık olduğundan emin olunuz.\"}";
+                Console.WriteLine("  -> Cihazdan görüntü/veri alınamadı.");
+                return "{\"success\":false,\"message\":\"Masanızdaki 3M veya Regula optik okuyucudan pasaport veya kimlik okunamadı. Lütfen belgenin okuyucu camına tam yerleştirildiğinden ve cihazın açık olduğundan emin olunuz.\"}";
             }
         }
 
@@ -380,19 +423,26 @@ namespace Sahtecilik.ReaderBridge
                     string rawMrz = "";
                     MMM.Readers.CodelineData? clData = null;
                     object codelineObj = null;
-                    if (MMM.Readers.FullPage.Reader.GetData(MMM.Readers.FullPage.DataType.CD_CODELINE_DATA, ref codelineObj) == MMM.Readers.ErrorCode.NO_ERROR_OCCURRED && codelineObj != null)
+
+                    // Codeline / MRZ datasının işlenmesi için kısa pay ve döngü
+                    for (int retry = 0; retry < 5; retry++)
                     {
-                        try
+                        if (MMM.Readers.FullPage.Reader.GetData(MMM.Readers.FullPage.DataType.CD_CODELINE_DATA, ref codelineObj) == MMM.Readers.ErrorCode.NO_ERROR_OCCURRED && codelineObj != null)
                         {
-                            var parsedCl = (MMM.Readers.CodelineData)codelineObj;
-                            clData = parsedCl;
-                            docType = parsedCl.DocType ?? "";
-                            line1 = parsedCl.Line1 ?? "";
-                            line2 = parsedCl.Line2 ?? "";
-                            line3 = parsedCl.Line3 ?? "";
-                            rawMrz = parsedCl.Data ?? "";
+                            try
+                            {
+                                var parsedCl = (MMM.Readers.CodelineData)codelineObj;
+                                clData = parsedCl;
+                                docType = parsedCl.DocType ?? "";
+                                line1 = parsedCl.Line1 ?? "";
+                                line2 = parsedCl.Line2 ?? "";
+                                line3 = parsedCl.Line3 ?? "";
+                                rawMrz = parsedCl.Data ?? "";
+                                if (!string.IsNullOrEmpty(line1) || !string.IsNullOrEmpty(rawMrz)) break;
+                            }
+                            catch { }
                         }
-                        catch { }
+                        Thread.Sleep(150);
                     }
 
                     // Fallback to CD_CODELINE if line1 is empty
@@ -567,17 +617,36 @@ namespace Sahtecilik.ReaderBridge
                 try { connected = (bool)rr.Connected; } catch { }
                 if (!connected) return null;
 
-                rr.GetImages();
+                try
+                {
+                    rr.GetImages();
+                }
+                catch
+                {
+                    try { rr.Process(); } catch { }
+                }
 
-                int waited = 0;
-                while (waited < 12000)
+                // Donanımın ışıkları yakıp taramaya başlaması için pay ver
+                Thread.Sleep(800);
+
+                int waited = 800;
+                while (waited < 18000)
                 {
                     bool isBusy = false;
                     try { isBusy = (bool)rr.IsBusy; } catch { }
-                    if (!isBusy) break;
+                    if (!isBusy)
+                    {
+                        // Işık geçişleri (VIS -> UV -> IR) arasında anlık false olmasını filtrele
+                        Thread.Sleep(400);
+                        try { isBusy = (bool)rr.IsBusy; } catch { }
+                        if (!isBusy) break; // Tarama kesinlikle tamamlandı
+                    }
                     Thread.Sleep(200);
-                    waited += 200;
+                    waited += 600;
                 }
+
+                // Bellek havuzunun hazırlanması için kısa bekleme
+                Thread.Sleep(300);
 
                 string visBase64 = "", uvBase64 = "", irBase64 = "", photoBase64 = "", coaxVisBase64 = "";
                 string line1 = "", line2 = "", line3 = "";
@@ -690,14 +759,135 @@ namespace Sahtecilik.ReaderBridge
                 }
                 catch { }
 
-                // MRZ
+                // MRZ Çek
+                // 1. Önce doğrudan GetMRZLines çağrısını dene
                 try
                 {
-                    line1 = (string)rr.MRZLine1 ?? "";
-                    line2 = (string)rr.MRZLine2 ?? "";
-                    line3 = (string)rr.MRZLine3 ?? "";
+                    string mrzText = (string)rr.GetMRZLines();
+                    if (!string.IsNullOrEmpty(mrzText))
+                    {
+                        var lines = mrzText.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                        if (lines.Length >= 2)
+                        {
+                            line1 = lines[0].Trim();
+                            line2 = lines[1].Trim();
+                            if (lines.Length >= 3) line3 = lines[2].Trim();
+                        }
+                    }
                 }
                 catch { }
+
+                // 2. MRZ bulunamadıysa XML sonuçlarını kontrol et (OCRLexicalAnalyze = 15)
+                if (string.IsNullOrEmpty(line1))
+                {
+                    try
+                    {
+                        int totalLex = 0;
+                        try { totalLex = (int)rr.IsReaderResultTypeAvailable(15); } catch { }
+                        if (totalLex > 0)
+                        {
+                            string xml = (string)rr.CheckReaderResultXML(15, 0, 0);
+                            if (!string.IsNullOrEmpty(xml))
+                            {
+                                var doc = new System.Xml.XmlDocument();
+                                doc.LoadXml(xml);
+                                var mrzNodes = doc.GetElementsByTagName("Field_MRZ");
+                                var mrzLines = new System.Collections.Generic.List<string>();
+                                foreach (System.Xml.XmlNode n in mrzNodes)
+                                {
+                                    string t = (n.InnerText ?? "").Trim();
+                                    if (t.Length >= 28) mrzLines.Add(t);
+                                }
+                                if (mrzLines.Count >= 2)
+                                {
+                                    line1 = mrzLines[0];
+                                    line2 = mrzLines[1];
+                                    if (mrzLines.Count >= 3) line3 = mrzLines[2];
+                                }
+                            }
+                        }
+                    }
+                    catch { }
+                }
+
+                // 3. XML sonuçlarını kontrol et (MRZ_OCR = 3)
+                if (string.IsNullOrEmpty(line1))
+                {
+                    try
+                    {
+                        int totalMrz = 0;
+                        try { totalMrz = (int)rr.IsReaderResultTypeAvailable(3); } catch { }
+                        if (totalMrz > 0)
+                        {
+                            string xml3 = (string)rr.CheckReaderResultXML(3, 0, 0);
+                            if (!string.IsNullOrEmpty(xml3))
+                            {
+                                var doc3 = new System.Xml.XmlDocument();
+                                doc3.LoadXml(xml3);
+                                var strNodes = doc3.GetElementsByTagName("String");
+                                var list3 = new System.Collections.Generic.List<string>();
+                                foreach (System.Xml.XmlNode sn in strNodes)
+                                {
+                                    string t = (sn.InnerText ?? "").Trim();
+                                    if (t.Length >= 28) list3.Add(t);
+                                }
+                                if (list3.Count >= 2)
+                                {
+                                    line1 = list3[0];
+                                    line2 = list3[1];
+                                    if (list3.Count >= 3) line3 = list3[2];
+                                }
+                            }
+                        }
+                    }
+                    catch { }
+                }
+
+                // 4. Regula Scans klasöründen en son taranan dosyaları oku (MRZ fallback)
+                if (string.IsNullOrEmpty(line1))
+                {
+                    try
+                    {
+                        string[] scanDirs = new string[]
+                        {
+                            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Regula\Document Reader SDK\Scans"),
+                            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Regula\Document Reader SDK\Scans"),
+                            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), @"Regula\Scans"),
+                            @"C:\Regula\Scans",
+                            @"C:\RegulaScans"
+                        };
+                        foreach (var sDir in scanDirs)
+                        {
+                            if (Directory.Exists(sDir))
+                            {
+                                var txtFiles = new DirectoryInfo(sDir).GetFiles("*.txt", SearchOption.AllDirectories)
+                                    .Concat(new DirectoryInfo(sDir).GetFiles("*.xml", SearchOption.AllDirectories))
+                                    .Where(f => (DateTime.UtcNow - f.LastWriteTimeUtc).TotalMinutes < 3)
+                                    .OrderByDescending(f => f.LastWriteTimeUtc)
+                                    .ToList();
+
+                                foreach (var tf in txtFiles)
+                                {
+                                    try
+                                    {
+                                        string content = File.ReadAllText(tf.FullName, Encoding.UTF8);
+                                        var mrzMatch = System.Text.RegularExpressions.Regex.Matches(content, @"[A-Z0-9<]{30,44}");
+                                        if (mrzMatch.Count >= 2)
+                                        {
+                                            line1 = mrzMatch[0].Value;
+                                            line2 = mrzMatch[1].Value;
+                                            if (mrzMatch.Count >= 3) line3 = mrzMatch[2].Value;
+                                            break;
+                                        }
+                                    }
+                                    catch { }
+                                }
+                                if (!string.IsNullOrEmpty(line1)) break;
+                            }
+                        }
+                    }
+                    catch { }
+                }
 
                 try { rr.Disconnect(); } catch { }
 
