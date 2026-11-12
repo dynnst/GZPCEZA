@@ -783,27 +783,39 @@
         var docType = "1";
         var parsedSuccessfully = false;
 
-        // A. 3M, Regula veya Desko Key-Value Wedge Formatı
-        var hasWedgeKeys = /(?:Surname|Last\s*Name|Family\s*Name|Forenames?|Given\s*Names?|First\s*Names?|Doc\.?\s*(?:Number|No)|Passport\s*(?:Number|No)?|Date\s*of\s*Birth|Birth\s*Date|DOB|Nationality|Country|Personal\s*No)/i.test(rawText);
+        // A. 3M, Regula veya Desko Key-Value Wedge Formatı (Türkçe ve İngilizce Etiketler)
+        var hasWedgeKeys = /(?:Surname|Last\s*Name|Family\s*Name|Forenames?|Given\s*Names?|First\s*Names?|Doc\.?\s*(?:Number|No)|Passport\s*(?:Number|No)?|Date\s*of\s*Birth|Birth\s*Date|DOB|Nationality|Country|Personal\s*No|Soyad[ıi]?|Ad[ıi]?|İsim|Belge\s*No|Pasaport\s*No|Kimlik\s*No|TC\s*No|YKN|Do[gğ]um\s*Tarihi|D\.?\s*Tarihi|Uyruk|Vatanda[sş]l[ıi]k)/i.test(rawText);
         if (hasWedgeKeys) {
             var lines = rawText.split(/[\r\n]+/);
             for (var i = 0; i < lines.length; i++) {
                 var l = lines[i].trim();
                 if (!l) continue;
 
-                var mSurname = /^(?:Surname|Last\s*Name|Family\s*Name)\s*[:=]\s*(.+)$/i.exec(l);
+                var mSurname = /^(?:Surname|Last\s*Name|Family\s*Name|Soyad[ıi]?)\s*[:=]\s*(.+)$/i.exec(l);
                 if (mSurname) surname = mSurname[1].trim();
 
-                var mGiven = /^(?:Forenames?|Given\s*Names?|First\s*Names?|Name)\s*[:=]\s*(.+)$/i.exec(l);
+                var mGiven = /^(?:Forenames?|Given\s*Names?|First\s*Names?|Name|Ad[ıi]?|İsim)\s*[:=]\s*(.+)$/i.exec(l);
                 if (mGiven && !mSurname) givenNames = mGiven[1].trim();
 
-                var mDoc = /^(?:Doc\.?\s*(?:Number|No)|Document\s*(?:Number|No)?|Passport\s*(?:Number|No)?)\s*[:=]\s*(.+)$/i.exec(l);
+                var mFullName = /^(?:Ad[ıi]?\s*Soyad[ıi]?|Full\s*Name)\s*[:=]\s*(.+)$/i.exec(l);
+                if (mFullName) {
+                    var fn = mFullName[1].trim();
+                    var fnParts = fn.split(/\s+/);
+                    if (fnParts.length >= 2) {
+                        surname = fnParts[fnParts.length - 1];
+                        givenNames = fnParts.slice(0, fnParts.length - 1).join(' ');
+                    } else {
+                        surname = fn;
+                    }
+                }
+
+                var mDoc = /^(?:Doc\.?\s*(?:Number|No)|Document\s*(?:Number|No)?|Passport\s*(?:Number|No)?|Pasaport\s*No|Belge\s*No)\s*[:=]\s*(.+)$/i.exec(l);
                 if (mDoc) passportNo = mDoc[1].trim().replace(/\s+/g, '');
 
-                var mNat = /^(?:Nationality|Country|Issuing\s*State)\s*[:=]\s*(.+)$/i.exec(l);
+                var mNat = /^(?:Nationality|Country|Issuing\s*State|Uyruk|Vatanda[sş]l[ıi]k|[UÜ]lke)\s*[:=]\s*(.+)$/i.exec(l);
                 if (mNat) nationalityCode = mNat[1].trim();
 
-                var mDob = /^(?:Date\s*of\s*Birth|Birth\s*Date|DOB)\s*[:=]\s*(.+)$/i.exec(l);
+                var mDob = /^(?:Date\s*of\s*Birth|Birth\s*Date|DOB|Do[gğ]um\s*Tarihi|D\.?\s*Tarihi)\s*[:=]\s*(.+)$/i.exec(l);
                 if (mDob) {
                     var rawDob = mDob[1].trim();
                     if (/^\d{2}[./-]\d{2}[./-]\d{4}$/.test(rawDob)) {
@@ -816,7 +828,7 @@
                     }
                 }
 
-                var mPid = /^(?:Personal\s*No|National\s*ID|ID\s*No|Personal\s*Number)\s*[:=]\s*(.+)$/i.exec(l);
+                var mPid = /^(?:Personal\s*No|National\s*ID|ID\s*No|Personal\s*Number|Kimlik\s*No|TC\s*No|YKN)\s*[:=]\s*(.+)$/i.exec(l);
                 if (mPid) kimlikNo = mPid[1].trim().replace(/</g, '').trim();
             }
 
@@ -825,14 +837,16 @@
             }
         }
 
-        // B. Standart ICAO 9303 MRZ
+        // B. Standart ICAO 9303 MRZ (Türkçe Klavye normalizasyonlu)
         if (!parsedSuccessfully) {
             var rawLines = rawText.split(/[\r\n]+/);
             var mrzLines = [];
 
             for (var j = 0; j < rawLines.length; j++) {
                 var lineClean = rawLines[j].toUpperCase().replace(/\s+/g, '');
-                lineClean = lineClean.replace(/[«»‹›]/g, '<');
+                // Türkçe Q klavye harita dönüştürmesi:
+                // USB wedge donanımının ABD klavye kodlamasında '<' göndermesi Türkçe klavyede ';', ':', ',', 'ç', 'ö', '|' olarak düşer
+                lineClean = lineClean.replace(/[;:,çöşığü|«»‹›]/g, '<');
                 lineClean = lineClean.replace(/[{}[\]()]/g, '<');
                 lineClean = lineClean.replace(/[^A-Z0-9<]/g, '<');
 
@@ -841,15 +855,22 @@
                 }
             }
 
-            // Tek parca 80+ karakter geldiyse (satir basi olmadan 88 karakterlik TD3 veya 90 karakterlik TD1)
+            // Tek parça 80+ karakter geldiyse (satır başı olmadan 88 karakterlik TD3 veya 90 karakterlik TD1)
             if (mrzLines.length === 1 && mrzLines[0].length >= 80) {
                 var single = mrzLines[0];
-                if (single.indexOf('P<') >= 0 || single.indexOf('P') === 0 || single.indexOf('V<') >= 0) {
-                    var pIdx = Math.max(0, single.indexOf('P<'));
-                    mrzLines = [single.substr(pIdx, 44), single.substr(pIdx + 44, 44)];
-                } else if (single.indexOf('I<') >= 0 || single.indexOf('I') === 0 || single.indexOf('A<') >= 0) {
-                    var iIdx = Math.max(0, single.indexOf('I<'));
-                    mrzLines = [single.substr(iIdx, 30), single.substr(iIdx + 30, 30), single.substr(iIdx + 60, 30)];
+                var pIdxSingle = single.indexOf('P<');
+                if (pIdxSingle < 0 && single.indexOf('P') === 0) pIdxSingle = 0;
+                if (pIdxSingle < 0 && single.indexOf('V<') >= 0) pIdxSingle = single.indexOf('V<');
+
+                if (pIdxSingle >= 0 && single.length >= pIdxSingle + 88) {
+                    mrzLines = [single.substr(pIdxSingle, 44), single.substr(pIdxSingle + 44, 44)];
+                } else {
+                    var iIdxSingle = single.indexOf('I<');
+                    if (iIdxSingle < 0 && single.indexOf('I') === 0) iIdxSingle = 0;
+                    if (iIdxSingle < 0 && single.indexOf('A<') >= 0) iIdxSingle = single.indexOf('A<');
+                    if (iIdxSingle >= 0 && single.length >= iIdxSingle + 90) {
+                        mrzLines = [single.substr(iIdxSingle, 30), single.substr(iIdxSingle + 30, 30), single.substr(iIdxSingle + 60, 30)];
+                    }
                 }
             }
 
@@ -859,7 +880,16 @@
                     var l1 = mrzLines[k];
                     var l2 = mrzLines[k + 1];
 
-                    if (l1.length >= 40 && l2.length >= 40 && (l1.charAt(0) === 'P' || l1.charAt(0) === 'V')) {
+                    var pIdx = l1.indexOf('P<');
+                    if (pIdx < 0 && l1.charAt(0) === 'P') pIdx = 0;
+                    if (pIdx < 0) {
+                        pIdx = l1.indexOf('V<');
+                        if (pIdx < 0 && l1.charAt(0) === 'V') pIdx = 0;
+                    }
+
+                    if (pIdx >= 0 && l1.length >= 40 && l2.length >= 40) {
+                        if (pIdx > 0) l1 = l1.substring(pIdx);
+
                         var subType = l1.substring(0, 2);
                         if (subType === 'PD' || subType === 'D<') docType = "2";
                         else if (subType === 'PS' || subType === 'S<') docType = "3";
@@ -898,7 +928,12 @@
                     var t2 = mrzLines[m + 1];
                     var t3 = mrzLines[m + 2];
 
-                    if (t1.length >= 28 && t2.length >= 28 && t3.length >= 28 && (t1.charAt(0) === 'I' || t1.charAt(0) === 'A' || t1.charAt(0) === 'C')) {
+                    var iIdx = t1.indexOf('I<');
+                    if (iIdx < 0 && (t1.charAt(0) === 'I' || t1.charAt(0) === 'A' || t1.charAt(0) === 'C')) iIdx = 0;
+
+                    if (iIdx >= 0 && t1.length >= 28 && t2.length >= 28 && t3.length >= 28) {
+                        if (iIdx > 0) t1 = t1.substring(iIdx);
+
                         nationalityCode = t1.substring(2, 5).replace(/</g, '');
                         passportNo = t1.substring(5, 14).replace(/</g, '');
 
@@ -924,7 +959,12 @@
                     var u1 = mrzLines[n];
                     var u2 = mrzLines[n + 1];
 
-                    if (u1.length >= 35 && u2.length >= 35 && (u1.charAt(0) === 'I' || u1.charAt(0) === 'A' || u1.charAt(0) === 'C' || u1.charAt(0) === 'V')) {
+                    var uIdx = u1.indexOf('I<');
+                    if (uIdx < 0 && (u1.charAt(0) === 'I' || u1.charAt(0) === 'A' || u1.charAt(0) === 'C' || u1.charAt(0) === 'V')) uIdx = 0;
+
+                    if (uIdx >= 0 && u1.length >= 34 && u2.length >= 34) {
+                        if (uIdx > 0) u1 = u1.substring(uIdx);
+
                         nationalityCode = u1.substring(2, 5).replace(/</g, '');
                         var namePart2 = u1.substring(5);
                         var nameSplit2 = namePart2.split('<<');
@@ -960,15 +1000,6 @@
             try { window._onWedgeScanSuccess(); } catch (e) { }
         }
 
-        // TÜRK VATANDAŞI KONTROLÜ
-        var natUpper = (nationalityCode || '').trim().toUpperCase();
-        if (natUpper === 'TUR' || natUpper === 'TR') {
-            showPassportAlert(
-                '<strong>BİLGİ / TEST MODU (TUR):</strong> Türk vatandaşı belgesi okundu. Test amacıyla alanlar dolduruldu.',
-                'info'
-            );
-        }
-
         var fullName = fixOcrMisreads((surname + " " + givenNames).trim());
 
         // 1. Calculate Form Alanları (Ceza Hesaplama)
@@ -1000,8 +1031,9 @@
             if (nationalityCode) {
                 matchedCountry = setPassportCountry(nationalityCode);
             }
-            $('#topCountryDisplay').val(matchedCountry || nationalityCode || '');
-            highlightInput('#topCountryDisplay');
+            if ($('#topCountryDisplay').length) {
+                $('#topCountryDisplay').val(matchedCountry || nationalityCode || '');
+            }
 
             if (birthDateStr) {
                 $('#BirthDateCalculate').val(birthDateStr).trigger('change');
@@ -1013,6 +1045,16 @@
                 if (typeof window.adultchild === 'function') {
                     window.adultchild($('#BirthDateCalculate')[0]);
                 }
+            }
+
+            // KİMLİK BİLGİLERİ FORMUNU AÇIK TUT VE KESİNLİKLE GİZLEME!
+            $('#form').show().removeClass('hidden').css('display', 'block');
+
+            // Kullanıcının gözü önüne getir (akıcı yumuşak kaydırma)
+            if ($('#form').length && $('#form').offset()) {
+                $('html, body').animate({
+                    scrollTop: $('#form').offset().top - 80
+                }, 350);
             }
         }
 
@@ -1038,7 +1080,13 @@
             if (rawText) {
                 $('#mrzInputText').val(rawText);
             }
-            $('#accKimlik').show();
+            // E-Inad 1. ve 2. Bölümlerini her zaman açık tut
+            $('#accKimlik, #accBelge').show();
+            if ($('#accKimlik').length && $('#accKimlik').offset()) {
+                $('html, body').animate({
+                    scrollTop: $('#accKimlik').offset().top - 100
+                }, 300);
+            }
         }
 
         playScanBeep();
@@ -1048,7 +1096,7 @@
             (matchedCountry ? ' - ' + matchedCountry : (nationalityCode ? ' - ' + nationalityCode : ''));
 
         showPassportAlert(
-            '<strong>Pasaport Okundu (' + (sourceName || 'Okuyucu') + '):</strong> ' + detailSummary +
+            '<strong>✓ Belge Başarıyla Okundu (' + (sourceName || 'Optik Okuyucu') + '):</strong> ' + detailSummary +
             (birthDateStr ? ' | Doğum: ' + birthDateStr : ''),
             'success'
         );
@@ -1063,7 +1111,7 @@
     }
 
     /* ==========================================================================
-       6. DONANIM OKUYUCU DİNLEYİCİSİ (KEYBOARD WEDGE LISTENER)
+       6. DONANIM OKUYUCU DİNLEYİCİSİ (KEYBOARD WEDGE & PANO LISTENER)
        ========================================================================== */
     function initHardwareScannerListener() {
         var scannerBuffer = "";
@@ -1071,8 +1119,39 @@
         var scannerTimer = null;
         var burstCount = 0;
 
+        // 1) PANO / CTRL+V DİNLEYİCİSİ (3M, Thales, Desko Pano Modu)
+        $(window).on('paste', function (e) {
+            var clip = (e.originalEvent || e).clipboardData;
+            if (!clip) return;
+            var text = clip.getData('text');
+            if (text && text.trim().length >= 20) {
+                var isMrzOrWedge = (
+                    text.indexOf('P<') >= 0 || text.indexOf('I<') >= 0 || text.indexOf('P;') >= 0 || text.indexOf('I;') >= 0 ||
+                    text.indexOf('START') >= 0 ||
+                    /(?:Surname|Soyad|Doc\.?\s*Number|Pasaport\s*No)/i.test(text) ||
+                    text.split(/[\r\n]+/).filter(function (l) { return l.trim().length >= 28; }).length >= 2
+                );
+                if (isMrzOrWedge) {
+                    e.preventDefault();
+                    parseAndApplyPassportMrz(text, "Masaüstü Okuyucu (Pano Modu)");
+                }
+            }
+        });
+
+        // 2) INPUT ALANI ENGELLEYİCİSİ: Eğer kullanıcı bir alandayken okuyucu basarsa
+        $(document).on('input', 'input[type="text"]', function () {
+            var val = $(this).val();
+            if (val && val.length >= 28) {
+                if (val.indexOf('P<') >= 0 || val.indexOf('I<') >= 0 || val.indexOf('P;') >= 0 || val.indexOf('I;') >= 0 || val.indexOf('START') >= 0) {
+                    var capturedVal = val;
+                    $(this).val('');
+                    parseAndApplyPassportMrz(capturedVal, "Donanımsal Okuyucu (Wedge Alanı)");
+                }
+            }
+        });
+
+        // 3) KEYBOARD WEDGE DİNLEYİCİSİ
         $(document).on('keydown', function (e) {
-            // Kontrol tuşlarını atla
             if (e.key === 'Shift' || e.key === 'Control' || e.key === 'Alt' || e.key === 'Meta' || e.key === 'CapsLock') {
                 return;
             }
@@ -1081,13 +1160,12 @@
             var delta = now - lastKeystrokeTime;
             lastKeystrokeTime = now;
 
-            // Donanımsal okuyucular harfleri 5ms - 50ms aralığında yüksek hızda gönderir
-            var isFastBurst = (delta <= 90);
+            // Donanımsal okuyucularda harf basma süresi 5ms-60ms, satır geçişi 160ms'ye kadar sürebilir
+            var isFastBurst = (delta <= 160);
             if (isFastBurst) {
                 burstCount++;
             } else {
-                // Normal manuel klavye yazımı araya girdiyse (800ms'den uzun boşluk) buffer'ı sıfırla
-                if (delta > 1200 && !hasScannerSignature) {
+                if (delta > 1200) {
                     scannerBuffer = "";
                     burstCount = 0;
                 }
@@ -1096,11 +1174,13 @@
             var key = e.key;
             if (key === 'Enter') {
                 scannerBuffer += '\n';
+            } else if (key === 'Tab') {
+                scannerBuffer += ' ';
             } else if (key && key.length === 1) {
                 scannerBuffer += key;
             }
 
-            // Donanım tarama imzası algılama (3M, Thales, Desko, Regula)
+            // Donanım tarama imzası algılama
             var hasScannerSignature = (
                 scannerBuffer.indexOf('START') >= 0 ||
                 scannerBuffer.indexOf('Surname:') >= 0 ||
@@ -1112,9 +1192,10 @@
                 scannerBuffer.indexOf('Doc. Number:') >= 0 ||
                 scannerBuffer.indexOf('Document Number:') >= 0 ||
                 scannerBuffer.indexOf('Passport Number:') >= 0 ||
-                scannerBuffer.indexOf('Soyadı:') >= 0 ||
+                scannerBuffer.indexOf('Soyad') >= 0 ||
                 scannerBuffer.indexOf('Adı:') >= 0 ||
-                scannerBuffer.indexOf('Belge No:') >= 0 ||
+                scannerBuffer.indexOf('Belge No') >= 0 ||
+                scannerBuffer.indexOf('Pasaport No') >= 0 ||
                 scannerBuffer.indexOf('REGULA') >= 0 ||
                 scannerBuffer.indexOf('DESKO') >= 0 ||
                 scannerBuffer.indexOf('THALES') >= 0 ||
@@ -1123,7 +1204,9 @@
                 scannerBuffer.indexOf('I<') >= 0 ||
                 scannerBuffer.indexOf('A<') >= 0 ||
                 scannerBuffer.indexOf('C<') >= 0 ||
-                scannerBuffer.indexOf('V<') >= 0
+                scannerBuffer.indexOf('V<') >= 0 ||
+                scannerBuffer.indexOf('P;') >= 0 ||
+                scannerBuffer.indexOf('I;') >= 0
             );
 
             // Odaktaki input alanını donanım verisiyle kirletmemek için varsayılan yazmayı engelle
@@ -1146,33 +1229,40 @@
             }
 
             // 2) TD3 Pasaport tamamlandığında (2 satır x 44 karakter)
-            var td3Lines = scannerBuffer.split(/[\r\n]+/).filter(function (l) { return l.trim().length >= 40; });
-            if (td3Lines.length >= 2 && (td3Lines[0].indexOf('P<') >= 0 || td3Lines[0].indexOf('P') === 0 || td3Lines[0].indexOf('V<') >= 0)) {
-                if (td3Lines[1].length >= 44) {
-                    clearTimeout(scannerTimer);
-                    var td3Data = scannerBuffer;
-                    scannerBuffer = "";
-                    burstCount = 0;
-                    parseAndApplyPassportMrz(td3Data, "3M / Thales / Desko / Regula Pasaport Okuyucu");
-                    return;
+            var td3Lines = scannerBuffer.split(/[\r\n]+/).filter(function (l) { return l.trim().length >= 38; });
+            if (td3Lines.length >= 2) {
+                var firstL = td3Lines[0].replace(/[;:,çöşığü|]/g, '<');
+                if (firstL.indexOf('P<') >= 0 || firstL.indexOf('P') === 0 || firstL.indexOf('V<') >= 0) {
+                    if (td3Lines[1].trim().length >= 38) {
+                        clearTimeout(scannerTimer);
+                        var td3Data = scannerBuffer;
+                        scannerBuffer = "";
+                        burstCount = 0;
+                        parseAndApplyPassportMrz(td3Data, "3M / Thales / Desko / Regula Pasaport Okuyucu");
+                        return;
+                    }
                 }
             }
 
             // 3) TD1 Kimlik tamamlandığında (3 satır x 30 karakter)
-            var td1Lines = scannerBuffer.split(/[\r\n]+/).filter(function (l) { return l.trim().length >= 28; });
-            if (td1Lines.length >= 3 && (td1Lines[0].indexOf('I<') >= 0 || td1Lines[0].indexOf('I') === 0 || td1Lines[0].indexOf('A<') >= 0 || td1Lines[0].indexOf('C<') >= 0)) {
-                clearTimeout(scannerTimer);
-                var td1Data = scannerBuffer;
-                scannerBuffer = "";
-                burstCount = 0;
-                parseAndApplyPassportMrz(td1Data, "3M / Thales / Desko / Regula Kimlik Okuyucu");
-                return;
+            var td1Lines = scannerBuffer.split(/[\r\n]+/).filter(function (l) { return l.trim().length >= 26; });
+            if (td1Lines.length >= 3) {
+                var firstT = td1Lines[0].replace(/[;:,çöşığü|]/g, '<');
+                if (firstT.indexOf('I<') >= 0 || firstT.indexOf('I') === 0 || firstT.indexOf('A<') >= 0 || firstT.indexOf('C<') >= 0) {
+                    clearTimeout(scannerTimer);
+                    var td1Data = scannerBuffer;
+                    scannerBuffer = "";
+                    burstCount = 0;
+                    parseAndApplyPassportMrz(td1Data, "3M / Thales / Desko / Regula Kimlik Okuyucu");
+                    return;
+                }
             }
 
             // 4) TD2 Kimlik / Seyahat Belgesi tamamlandığında (2 satır x 36 karakter)
-            var td2Lines = scannerBuffer.split(/[\r\n]+/).filter(function (l) { return l.trim().length >= 35; });
-            if (td2Lines.length >= 2 && (td2Lines[0].indexOf('I<') >= 0 || td2Lines[0].indexOf('A<') >= 0 || td2Lines[0].indexOf('C<') >= 0 || td2Lines[0].indexOf('V<') >= 0)) {
-                if (td2Lines[1].length >= 35) {
+            var td2Lines = scannerBuffer.split(/[\r\n]+/).filter(function (l) { return l.trim().length >= 34; });
+            if (td2Lines.length >= 2) {
+                var firstU = td2Lines[0].replace(/[;:,çöşığü|]/g, '<');
+                if (firstU.indexOf('I<') >= 0 || firstU.indexOf('A<') >= 0 || firstU.indexOf('C<') >= 0 || firstU.indexOf('V<') >= 0) {
                     clearTimeout(scannerTimer);
                     var td2Data = scannerBuffer;
                     scannerBuffer = "";
@@ -1182,7 +1272,7 @@
                 }
             }
 
-            // Debounce zamanlayıcısı (450ms): tüm satırların ve tuş serilerinin tamamlanmasını bekler
+            // Debounce zamanlayıcısı (400ms): tüm satırların ve tuş serilerinin tamamlanmasını bekler
             clearTimeout(scannerTimer);
             scannerTimer = setTimeout(function () {
                 if (scannerBuffer.trim().length >= 22) {
@@ -1194,7 +1284,7 @@
                     scannerBuffer = "";
                     burstCount = 0;
                 }
-            }, 450);
+            }, 400);
         });
     }
 

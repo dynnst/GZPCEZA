@@ -641,14 +641,14 @@
             </div>
         </form>
 
-        <!-- ALT PANEL: RESMİ TUTANAK VE TEBLİĞ FORMU YAZDIR (#form) -->
-        <form id="form" class="calc-panel tutanak-panel mt-3" method="post" target="_blank" action="/Formolustur">
+        <!-- ALT PANEL: RESMİ TUTANAK VE TEBLİĞ FORMU YAZDIR (#form) (HER ZAMAN AÇIK VE GÖRÜNÜR) -->
+        <form id="form" class="calc-panel tutanak-panel mt-3" method="post" target="_blank" action="/Formolustur" style="display: block !important;">
             <div class="calc-panel-header d-flex flex-wrap align-items-center justify-content-between">
                 <div>
                     <h5 class="panel-title mb-0">
-                        <i class="fas fa-print"></i> Resmi Tebliğ Formu ve Tutanak Bilgileri
+                        <i class="fas fa-id-card-alt text-primary mr-1"></i> Resmi Tebliğ Formu ve Yolcu Kimlik Bilgileri
                     </h5>
-                    <span class="text-muted small">Yazdırılacak resmi evrak üst bilgileri — kimlik alanlarını optik okuyucu ile doldurabilirsiniz</span>
+                    <span class="text-muted small">Yolcu kimlik alanları — masanızdaki optik okuyucu (3M, Thales, Desko, Regula) ile otomatik dolar</span>
                 </div>
                 <div class="btn-group shadow-sm mt-2 mt-md-0" role="group">
                     <button type="button" id="btnTutanakOpticalScan" onclick="scanPassportDirect('auto');" class="btn btn-sm btn-success font-weight-bold py-1 px-3" style="font-size:0.84rem; background:linear-gradient(135deg, #059669 0%, #047857 100%); border:none; border-radius:6px 0 0 6px;" title="Optik okuyucudan yolcu kimlik bilgilerini doldur">
@@ -675,7 +675,7 @@
                     </div>
                 </div>
             </div>
-            <div id="opticalScanAlert" class="mt-2 mb-2" style="display:none;"></div>
+            <div id="opticalScanAlertBottom" class="mt-2 mb-2" style="display:none;"></div>
 
             <!-- Hidden Fields required by /Formolustur -->
             <input name="OrginCFORM" id="OrginCFORM" type="text" class="form-control hidden" required>
@@ -747,5 +747,10 @@
                 }, 250);
             }
         }
+
+        $(document).ready(function () {
+            // Kimlik bilgileri tutanak formu (#form) her zaman açık ve görünür
+            $('#form').show().removeClass('hidden').css('display', 'block');
+        });
     </script>
 }

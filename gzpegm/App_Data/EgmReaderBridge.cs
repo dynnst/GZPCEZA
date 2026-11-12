@@ -343,13 +343,12 @@ namespace Sahtecilik.ReaderBridge
                         if (MMM.Readers.FullPage.Reader.GetSettings(out settings) == MMM.Readers.ErrorCode.NO_ERROR_OCCURRED)
                         {
                             var dataSend = settings.puDataToSend;
-                            if (onlyText)
+                            // 0x000001 = VIS (Beyaz Işık), 0x000004 = IR (Kızılötesi) - Donanım OCR okuması için ışıklandırma ŞARTTIR!
+                            // 0x000008 = CD_CODELINE_DATA, 0x000010 = CD_CODELINE, 0x000020 = CD_OCR
+                            dataSend.send |= (0x000001 | 0x000004 | 0x000008 | 0x000010 | 0x000020);
+                            if (!onlyText)
                             {
-                                dataSend.send = (0x000008 | 0x000010 | 0x000020); // Yalnızca codeline / MRZ
-                            }
-                            else
-                            {
-                                dataSend.send |= (0x000001 | 0x000002 | 0x000004 | 0x000008 | 0x000010 | 0x000020 | 0x002000);
+                                dataSend.send |= (0x000002 | 0x002000); // UV ve koaksiyel
                             }
                             dataSend.enabled = 1;
                             settings.puDataToSend = dataSend;

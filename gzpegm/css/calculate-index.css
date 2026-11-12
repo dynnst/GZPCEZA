@@ -418,14 +418,16 @@
     margin-bottom: 0.5rem;
 }
 
-/* ALT PANEL: RESMİ TUTANAK FORMU */
-.tutanak-panel {
+/* ALT PANEL: RESMİ TUTANAK FORMU (HER ZAMAN AÇIK) */
+.tutanak-panel,
+#form {
     background: #ffffff;
     border: 1px solid #cbd5e1;
     border-top: 2px solid #0284c7;
     border-radius: 6px;
     padding: 0.85rem 1rem;
     margin-top: 0.75rem;
+    display: block !important;
 }
 
 .btn-print-action {
