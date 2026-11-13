@@ -29,6 +29,15 @@ namespace gzpegm.Controllers
             return tokenData.fldUserId;
         }
 
+        private IQueryable<E_IsK> GetIskRowsForUser(E_User user)
+        {
+            string fullname = ((user.fldName ?? "").Trim() + " " + (user.fldLastName ?? "").Trim()).Trim();
+            if (string.IsNullOrWhiteSpace(fullname))
+                return Enumerable.Empty<E_IsK>().AsQueryable();
+
+            return db.E_IsK.Where(x => x.fldApproval != null && x.fldApproval.Trim() == fullname);
+        }
+
         [HttpGet]
         [Route("Profil")]
         public ActionResult Index()
@@ -173,9 +182,17 @@ namespace gzpegm.Controllers
                     ViewBag.InadTopCount = inadTop.Count;
                 }
 
+                // Per-border activity is recorded in E_IsK with the approving user's name.
+                var iskRows = GetIskRowsForUser(user).ToList();
+                var iskByBorder = iskRows
+                    .GroupBy(x => x.fldBorder ?? "-")
+                    .Select(g => new { Border = g.Key, Count = g.Count(), Items = g.ToList() })
+                    .OrderByDescending(x => x.Count)
+                    .ToList();
+
                 // Provide per-border stats for this user so view can show previous borders
                 var borderStats = new List<ProfileBorderStat>();
-                foreach (var g in groupedByBorder)
+                foreach (var g in iskByBorder)
                 {
                     // sum of fldPMoney for this border
                     decimal sum = 0;
@@ -197,9 +214,10 @@ namespace gzpegm.Controllers
                         .Select(h => new ProfileSample {
                             Id = h.fldId,
                             Date = h.fldDatetime,
-                            Country = h.fldCountry,
-                            Penalty = h.fldPMoney,
-                            User = h.fldUser
+                            Name = h.fldName,
+                            Nationality = h.fldOrgin,
+                            Visa = h.fldVisa,
+                            Penalty = h.fldPMoney
                         }).ToList();
 
                     borderStats.Add(new ProfileBorderStat { Border = g.Border, Count = g.Count, Sum = sum, MostActiveDay = mostDay, Samples = samples });
@@ -376,41 +394,28 @@ namespace gzpegm.Controllers
 
             try
             {
-                // build matched records as in Index
-                string fullname = (user.fldName ?? "").Trim() + " " + (user.fldLastName ?? "").Trim();
-                string sicil = (user.fldSicil ?? "").Trim();
-
-                var allWithUser = db.E_History.Where(h => h.fldUser != null).ToList();
-                var matched = allWithUser.Where(h =>
-                {
-                    var fu = (h.fldUser ?? "").Trim();
-                    if (string.IsNullOrEmpty(fu)) return false;
-                    var ns = fu.ToLowerInvariant();
-                    if (!string.IsNullOrEmpty(sicil))
-                    {
-                        var nsicil = sicil.ToLowerInvariant();
-                        if (ns.StartsWith(nsicil + "|")) return true;
-                        if (ns == nsicil) return true;
-                        var idx = ns.IndexOf('|');
-                        if (idx > 0)
-                        {
-                            var first = ns.Substring(0, idx).Trim();
-                            if (first == nsicil) return true;
-                        }
-                    }
-                    if (!string.IsNullOrEmpty(fullname) && ns == fullname.ToLowerInvariant()) return true;
-                    return false;
-                }).ToList();
-
-                var filtered = matched.Where(h => string.Equals(h.fldBorder ?? "", border ?? "", StringComparison.OrdinalIgnoreCase)).OrderByDescending(h => h.fldDatetime).ToList();
-                var total = filtered.Count;
-                var items = filtered.Skip((page - 1) * pageSize).Take(pageSize).Select(h => new
+                var query = GetIskRowsForUser(user)
+                    .Where(h => h.fldBorder == border)
+                    .OrderByDescending(h => h.fldDatetime);
+                var total = query.Count();
+                var items = query.Skip((page - 1) * pageSize).Take(pageSize).Select(h => new
                 {
                     fldId = h.fldId,
-                    date = h.fldDatetime.HasValue ? h.fldDatetime.Value.ToString("o") : null,
-                    country = h.fldCountry,
-                    penalty = h.fldPMoney,
-                    user = h.fldUser
+                    date = h.fldDatetime,
+                    name = h.fldName,
+                    nationality = h.fldOrgin,
+                    visa = h.fldVisa,
+                    hasForm = h.fldForm != null && h.fldForm != "",
+                    penalty = h.fldPMoney
+                }).ToList().Select(h => new
+                {
+                    h.fldId,
+                    date = h.date.HasValue ? h.date.Value.ToString("o") : null,
+                    h.name,
+                    h.nationality,
+                    h.visa,
+                    formUrl = h.hasForm ? "/formyazdir/" + h.fldId : null,
+                    h.penalty
                 }).ToList();
 
                 var csvUrl = Url.Action("ExportBorderCsv", new { border = border });
@@ -431,40 +436,17 @@ namespace gzpegm.Controllers
             var user = db.E_User.FirstOrDefault(x => x.fldId == userId);
             if (user == null) return new HttpStatusCodeResult(401);
 
-            // build matched as before
-            string fullname = (user.fldName ?? "").Trim() + " " + (user.fldLastName ?? "").Trim();
-            string sicil = (user.fldSicil ?? "").Trim();
-
-            var allWithUser = db.E_History.Where(h => h.fldUser != null).ToList();
-            var matched = allWithUser.Where(h =>
-            {
-                var fu = (h.fldUser ?? "").Trim();
-                if (string.IsNullOrEmpty(fu)) return false;
-                var ns = fu.ToLowerInvariant();
-                if (!string.IsNullOrEmpty(sicil))
-                {
-                    var nsicil = sicil.ToLowerInvariant();
-                    if (ns.StartsWith(nsicil + "|")) return true;
-                    if (ns == nsicil) return true;
-                    var idx = ns.IndexOf('|');
-                    if (idx > 0)
-                    {
-                        var first = ns.Substring(0, idx).Trim();
-                        if (first == nsicil) return true;
-                    }
-                }
-                if (!string.IsNullOrEmpty(fullname) && ns == fullname.ToLowerInvariant()) return true;
-                return false;
-            }).ToList();
-
-            var filtered = matched.Where(h => string.Equals(h.fldBorder ?? "", border ?? "", StringComparison.OrdinalIgnoreCase)).OrderByDescending(h => h.fldDatetime).ToList();
+            var filtered = GetIskRowsForUser(user)
+                .Where(h => h.fldBorder == border)
+                .OrderByDescending(h => h.fldDatetime)
+                .ToList();
 
             var sb = new System.Text.StringBuilder();
-            sb.AppendLine("Id;Tarih;Ülke;Ceza;Kullanıcı");
+            sb.AppendLine("Id;Tarih;Ad Soyad;Uyruk;Vize/Tahdit;Ceza");
             foreach (var h in filtered)
             {
                 var date = h.fldDatetime.HasValue ? h.fldDatetime.Value.ToString("dd.MM.yyyy HH:mm") : "";
-                var line = string.Format("{0};{1};{2};{3};{4}", h.fldId, date, (h.fldCountry ?? ""), (h.fldPMoney ?? ""), (h.fldUser ?? ""));
+                var line = string.Format("{0};{1};{2};{3};{4};{5}", h.fldId, date, (h.fldName ?? ""), (h.fldOrgin ?? ""), (h.fldVisa ?? ""), (h.fldPMoney ?? ""));
                 sb.AppendLine(line);
             }
 

@@ -280,9 +280,10 @@
 
             <div class="ibox mt-3">
                 <div class="ibox-title">
-                    <h5>🌐 Diğer Hudut Kapıları</h5>
+                    <h5>🌐 İşlem Yaptığın Diğer Hudut Kapıları</h5>
                 </div>
                 <div class="ibox-content">
+                    <p class="text-muted small">Detaylarda E_IsK kayıtlarındaki ad-soyad, uyruk ve vize/tahdit bilgileri gösterilir.</p>
                     @{
                         var list = (IEnumerable<gzpegm.Models.ViewModels.ProfileBorderStat>)(ViewBag.BorderHistory ?? new List<gzpegm.Models.ViewModels.ProfileBorderStat>());
                         var top5 = list.OrderByDescending(x => x.Count).Take(5).ToList();

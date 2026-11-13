@@ -71,15 +71,18 @@ $(function () {
             }
             var html = '<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap"><h5 class="mb-2">' + escapeHtml(border) + ' - KayÄ±tlar</h5>';
             html += '<a class="btn btn-sm btn-outline-secondary rounded-pill" href="' + res.csv + '">ğŸ“¥ CSV Ä°ndir</a></div>';
-            html += '<div class="table-responsive"><table class="table table-hover table-sm"><thead class="bg-light"><tr><th>Tarih</th><th>Ãœlke</th><th>Ceza (TL)</th><th>KullanÄ±cÄ±</th></tr></thead><tbody>';
+            html += '<div class="table-responsive"><table class="table table-hover table-sm"><thead class="bg-light"><tr><th>Tarih</th><th>Ad Soyad</th><th>Uyruk</th><th>Vize / Tahdit</th><th>Ceza (TL)</th><th>Form</th></tr></thead><tbody>';
             for (var i = 0; i < res.items.length; i++) {
                 var s = res.items[i];
                 var dt = s.date ? new Date(s.date) : null;
+                var formLink = s.formUrl ? '<a href="' + escapeHtml(s.formUrl) + '" target="_blank" rel="noopener">Goruntule</a>' : '-';
                 html += '<tr>' +
                     '<td>' + (dt ? dt.toLocaleString('tr-TR') : '-') + '</td>' +
-                    '<td>' + (s.country || '-') + '</td>' +
-                    '<td class="text-danger">â‚º ' + (s.penalty || 0) + '</td>' +
-                    '<td>' + (s.user || '-') + '</td>' +
+                    '<td>' + escapeHtml(s.name || '-') + '</td>' +
+                    '<td>' + escapeHtml(s.nationality || '-') + '</td>' +
+                    '<td>' + escapeHtml(s.visa || '-') + '</td>' +
+                    '<td class="text-danger">' + escapeHtml(s.penalty || '0') + '</td>' +
+                    '<td>' + formLink + '</td>' +
                     '</tr>';
             }
             html += '</tbody></table></div>';

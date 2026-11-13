@@ -7,9 +7,10 @@ namespace gzpegm.Models.ViewModels
     {
         public int Id { get; set; }
         public DateTime? Date { get; set; }
-        public string Country { get; set; }
+        public string Name { get; set; }
+        public string Nationality { get; set; }
+        public string Visa { get; set; }
         public string Penalty { get; set; }
-        public string User { get; set; }
     }
 
     public class ProfileBorderStat
