@@ -1,47 +1,58 @@
 @echo off
 chcp 65001 >nul
-title EGM Optik Okuyucu Koprusu Kurulumu
+title EGM Optik Okuyucu Ortak Köprü Kurulumu
+setlocal
+
+set "SCRIPT_DIR=%~dp0"
+set "TARGET_DIR=%LOCALAPPDATA%\EgmReaderBridge"
+set "TARGET_EXE=%TARGET_DIR%\EgmReaderBridge.exe"
+set "STARTUP_DIR=%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup"
+
 echo ================================================================
-echo   EGM PASAPORT VE ADLI BELGE INCELEME SISTEMI
-echo   Masaustu Optik Okuyucu Koprusu Kurulumu (3M & Regula)
+echo   EGM OPTIK OKUYUCU ORTAK KOPRUSU
+echo   3M / Gemalto / Thales / Regula / Desko
 echo ================================================================
-echo.
 
-set SCRIPT_DIR=%~dp0
-set TARGET_DIR=%LOCALAPPDATA%\EgmReaderBridge
-set STARTUP_DIR=%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup
-set TARGET_EXE=%TARGET_DIR%\EgmReaderBridge.exe
-
-echo [1/3] Mevcut kopru ve eski servisler temizleniyor...
-taskkill /F /IM EgmReaderBridge.exe >nul 2>&1
-taskkill /F /IM OutputWedgeSysTray.exe >nul 2>&1
-taskkill /F /IM OutputWedge.exe >nul 2>&1
-del /F /Q "%STARTUP_DIR%\EgmReaderBridge.vbs" >nul 2>&1
-timeout /t 1 >nul
-
-echo [2/3] Kopru dosyalari yerel sisteme yukleniyor (Yonetici yetkisi gerekmez)...
 if not exist "%TARGET_DIR%" mkdir "%TARGET_DIR%"
-copy /Y "%SCRIPT_DIR%EgmReaderBridge.exe" "%TARGET_DIR%\" >nul
-if exist "%SCRIPT_DIR%MMMReaderDotNet20.dll" copy /Y "%SCRIPT_DIR%MMMReaderDotNet20.dll" "%TARGET_DIR%\" >nul
 
-:: Registry Otomatik Baslangic (HKCU - Admin istemez)
+rem Sahtecilik ve GZPCEZA ayni yerel kopruyu ve portu paylasir.
+rem Calisan kopru varsa onu kapatma veya baska projeden gelen dosyayla ezme.
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "try { $r=Invoke-RestMethod -Uri 'http://127.0.0.1:41102/status' -TimeoutSec 2; if ($r.isRunning -eq $true) { exit 0 } else { exit 1 } } catch { exit 1 }"
+if not errorlevel 1 goto bridge_active
+
+echo [1/3] Ortak optik okuyucu koprusu bu bilgisayarda baslatiliyor...
+if not exist "%SCRIPT_DIR%EgmReaderBridge.exe" (
+  echo [HATA] EgmReaderBridge.exe bulunamadi: %SCRIPT_DIR%
+  pause
+  exit /b 1
+)
+
+copy /Y "%SCRIPT_DIR%EgmReaderBridge.exe" "%TARGET_EXE%" >nul
+if not exist "%TARGET_EXE%" (
+  echo [HATA] Kopru dosyasi yerel bilgisayara kopyalanamadi.
+  pause
+  exit /b 1
+)
+if exist "%SCRIPT_DIR%MMMReaderDotNet20.dll" if not exist "%TARGET_DIR%\MMMReaderDotNet20.dll" copy /Y "%SCRIPT_DIR%MMMReaderDotNet20.dll" "%TARGET_DIR%\" >nul
+del /F /Q "%STARTUP_DIR%\EgmReaderBridge.vbs" >nul 2>&1
+
+rem Otomatik baslangic ve URI protokolu tum uygulamalar icin ortak.
 reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Run" /v "EgmReaderBridge" /t REG_SZ /d "\"%TARGET_EXE%\"" /f >nul 2>&1
-
-:: egm-reader:// Ozel Protokol Kaydi
 reg add "HKCU\Software\Classes\egm-reader" /ve /d "URL:EgmReaderBridge Protocol" /f >nul 2>&1
 reg add "HKCU\Software\Classes\egm-reader" /v "URL Protocol" /d "" /f >nul 2>&1
 reg add "HKCU\Software\Classes\egm-reader\shell\open\command" /ve /d "\"%TARGET_EXE%\" \"%%1\"" /f >nul 2>&1
 
-echo [3/3] Optik okuyucu koprusu arka planda baslatiliyor...
 start "" "%TARGET_EXE%"
+timeout /t 2 >nul
+echo [TAMAM] Ortak optik okuyucu koprusu baslatildi.
+echo Bu kopru Sahtecilik ve GZPCEZA sayfalarinda ortak kullanilir.
+goto finish
 
-echo.
+:bridge_active
+echo [TAMAM] Ortak optik okuyucu koprusu zaten calisiyor.
+echo Calisan kopru durdurulmadi; Sahtecilik ve GZPCEZA ayni kopruyu kullanabilir.
+
+:finish
 echo ================================================================
-echo  [BASARILI] Optik okuyucu koprusu kuruldu ve arka planda calisiyor!
-echo.
-echo  * Siyah komut penceresi KESINLIKLE acilmaz; tamamen sessiz calisir.
-echo  * Bilgisayariniz her acildiginda otomatik olarak sessizce calisacaktir.
-echo  * Bu islemi yalnizca 1 defa yapmaniz yeterlidir!
-echo  * Artik web sayfasina donup "Belgeyi Oku & Tara" butonuna basabilirsiniz.
-echo ================================================================
-timeout /t 5 >nul
+endlocal
+timeout /t 4 >nul
