@@ -1,4 +1,4 @@
-/**
+﻿/**
  * CEZAM - Pasaport & Optik Okuyucu Entegrasyon Modülü
  * Desteklenen Donanımlar: 3M Cogent / Gemalto (PV40, PV60, AT9000), Regula (70X4, 7024), Desko (Penta, BRS)
  * Not: Bu sistemde yalnızca yabancı yolculara ihlal cezası uygulanır. Türk vatandaşlarına ceza işlemi uygulanmaz.
@@ -11,6 +11,7 @@
        1. ISO 3166-1 ÜLKE KODU EŞLEŞTİRME TABLOSU (TÜRKÇE SEÇENEK UYUMLU)
        ========================================================================== */
     var _isoCountryMap = {
+        'TUR': 'Türkiye', 'TR': 'Türkiye', 'TLR': 'Türkiye',
         'DEU': 'Almanya', 'D': 'Almanya',
         'GBR': 'Birleşik Krallık', 'UK': 'Birleşik Krallık',
         'RUS': 'Rusya Federasyonu', 'RU': 'Rusya Federasyonu',
@@ -199,7 +200,7 @@
         var target = countryCodeOrName.trim().toUpperCase();
 
         // Türk vatandaşı kontrolü
-        if (target === 'TUR' || target === 'TR' || target === 'TÜRKİYE' || target === 'TURKEY') {
+        if (target === 'TUR' || target === 'TR' || target === 'TLR' || target === 'TÜRKİYE' || target === 'TURKEY') {
             if ($('#CountryCalculate').length && $('#CountryCalculate option[value="Türkiye"]').length === 0) {
                 $('#CountryCalculate').append(new Option('Türkiye (Test Modu)', 'Türkiye', true, true));
             }
@@ -329,17 +330,17 @@
                 '        <div class="mb-3"><i class="fas fa-shield-alt text-success" style="font-size:3.5rem;"></i></div>' +
                 '        <h5 class="font-weight-bold text-dark mb-2">Yönetici Şifresi / Admin İzni GEREKTİRMEZ</h5>' +
                 '        <p class="text-muted" style="font-size:0.92rem;">' +
-                '          3M Cogent, Thales, Desko ve Regula okuyucularınızın canlı sunucuyla (10.7.202.75) kesintisiz çalışabilmesi için masanızdaki hafif köprüyü ilk kullanımda bir kez indirip açın. Kurulum sadece kendi Windows hesabınıza yapılır.' +
+                '          3M Cogent, Thales, Desko ve Regula okuyucularınızın canlı sunucuyla (10.7.202.75) kesintisiz çalışabilmesi için masanızdaki hafif köprü programını <strong>1 tıkla</strong> başlatın.' +
                 '        </p>' +
                 '        <div class="alert alert-info py-2 px-3 text-left font-weight-bold mb-3" style="font-size:0.86rem; border-radius:8px;">' +
-                '          <i class="fas fa-check-circle mr-1 text-success"></i> Yönetici izni olmadan kendi kullanıcı profilinize kurulur.<br/>' +
-                '          <i class="fas fa-check-circle mr-1 text-success"></i> Bilgisayar açıldığında arka planda otomatik başlar; tekrar kurulum gerekmez.<br/>' +
-                '          <i class="fas fa-check-circle mr-1 text-success"></i> Kurulumdan sonra her taramada yalnızca Oku butonuna basmanız yeterlidir.' +
+                '          <i class="fas fa-check-circle mr-1 text-success"></i> Bilgisayarınıza kurulum yapmaz, direkt çalışır.<br/>' +
+                '          <i class="fas fa-check-circle mr-1 text-success"></i> Bir defa çalıştırıldığında Windows başlangıcına eklenir.<br/>' +
+                '          <i class="fas fa-check-circle mr-1 text-success"></i> Pasaport veya kimliği okuyucuya koyup butona bastığınızda bilgiler anında forma aktarılır.' +
                 '        </div>' +
                 '        <a href="/Calculate/DownloadBridgeExe" id="btnDownloadBridgeNow" class="btn btn-success btn-lg btn-block shadow font-weight-bold py-2 mb-2" style="font-size:1.05rem; border-radius:8px;">' +
-                '          <i class="fas fa-download mr-2"></i> Köprüyü İndir / Güncelle' +
+                '          <i class="fas fa-download mr-2"></i> Okuyucu Köprüsünü Başlat (1 Tıkla)' +
                 '        </a>' +
-                '        <small class="text-muted">İlk kullanımda indirilen EgmReaderBridge.exe dosyasını bir kez açın. Yönetici şifresi gerekmez; köprü arka planda kurulur ve sonraki Windows açılışlarında otomatik başlar.</small>' +
+                '        <small class="text-muted">İndirilen dosyayı bir defa tıklatmanız yeterlidir. Açıldıktan sonra bu pencere kendiliğinden kapanır ve sistem hazır hale gelir.</small>' +
                 '      </div>' +
                 '    </div>' +
                 '  </div>' +
@@ -359,14 +360,14 @@
             launchBtns
                 .removeClass('btn-warning text-dark')
                 .addClass('btn-success text-white')
-                .attr('title', 'Optik Okuyucu Köprüsü Aktif ve Dinleniyor (3M / Thales / DESKO / Regula)')
+                .attr('title', 'Optik Okuyucu Köprüsü Aktif ve Dinleniyor (3M / Thales / Regula)')
                 .attr('data-online', 'true')
                 .html('<i class="fas fa-check-circle mr-1 text-white"></i> <span class="lblBridgeStatusText">Okuyucu Hazır</span>');
 
             if (badgeContainer.length) {
                 badgeContainer.html(
                     '<span class="badge badge-success px-3 py-2 shadow-sm font-weight-bold" style="font-size:0.86rem; border-radius:20px; animation:fadeIn 0.3s ease;">' +
-                    '<i class="fas fa-check-circle mr-1"></i> Okuyucu Hazır (3M / Thales / DESKO / Regula)' +
+                    '<i class="fas fa-check-circle mr-1"></i> Okuyucu Hazır (3M / Thales / Regula)' +
                     '</span>'
                 );
             }
@@ -379,7 +380,7 @@
             launchBtns
                 .removeClass('btn-success text-white')
                 .addClass('btn-warning text-dark')
-                .attr('title', 'Köprüyü bir kez kurun veya güncelleyin (yönetici izni gerekmez)')
+                .attr('title', 'Masanızdaki optik okuyucu donanım köprüsünü başlatın (Yönetici yetkisi gerekmez)')
                 .attr('data-online', 'false')
                 .html('<i class="fas fa-bolt text-danger mr-1"></i> <span class="lblBridgeStatusText">Okuyucuyu Başlat</span>');
 
@@ -456,9 +457,9 @@
             $('#topCountryDisplay').val(matchedCountry || countryVal || '');
             highlightInput('#topCountryDisplay');
 
-            // 7. Doğum Tarihi & Yaş Grubu (Üst bar rozet ve alt form)
+            // 7. Doğum Tarihi & Yaş Grubu (Üst bar rozet ve alt form - Calculate sayfası)
             var bDate = res.birthDate || res.BirthDate || res.dateOfBirth || res.dob;
-            if (bDate) {
+            if (bDate && $('#BirthDateCalculate').length) {
                 $('#BirthDateCalculate').val(bDate).trigger('change');
                 $('#BirthdateCFORM').val(bDate);
                 $('#topBirthDate').val(bDate);
@@ -466,7 +467,11 @@
                 highlightInput('#BirthDateCalculate, #topBirthDate');
 
                 if (typeof window.adultchild === 'function') {
-                    window.adultchild($('#BirthDateCalculate')[0]);
+                    try {
+                        window.adultchild($('#BirthDateCalculate')[0]);
+                    } catch (eAdult) {
+                        console.error('adultchild error:', eAdult);
+                    }
                 }
             }
 
@@ -484,14 +489,19 @@
 
             // 9. E-Inad Form Alanları Entegrasyonu (EInad Create & Edit Sayfaları)
             if ($('#AdSoyad').length) {
-                if (res.fullName) $('#AdSoyad').val(res.fullName).addClass('highlight-flash');
-                if (res.documentNumber) {
-                    $('#PasaportNo').val(res.documentNumber).addClass('highlight-flash');
-                    if (!$('#BelgeNo').val()) $('#BelgeNo').val(res.documentNumber).addClass('highlight-flash');
+                var fName = res.fullName || ((res.surname || '') + ' ' + (res.givenNames || '')).trim();
+                if (fName) $('#AdSoyad').val(fixOcrMisreads(fName)).addClass('highlight-flash');
+
+                var dNumber = res.documentNumber || res.passportNo || res.DocNumber || res.PassportNo;
+                if (dNumber) {
+                    $('#PasaportNo').val(dNumber).addClass('highlight-flash');
+                    if (!$('#BelgeNo').val()) $('#BelgeNo').val(dNumber).addClass('highlight-flash');
                 }
-                if (res.personalNumber) $('#KimlikNo').val(res.personalNumber).addClass('highlight-flash');
-                if (res.birthDate) {
-                    var bDateNormalized = normalizeDateForInput(res.birthDate);
+                var pNumber = res.personalNumber || res.PersonalNumber || res.idNo || res.kimlikNo || res.IdNo;
+                if (pNumber) $('#KimlikNo').val(pNumber).addClass('highlight-flash');
+                var bDateVal = res.birthDate || res.BirthDate || res.dateOfBirth || res.dob;
+                if (bDateVal) {
+                    var bDateNormalized = normalizeDateForInput(bDateVal);
                     if (bDateNormalized) $('#DogumT').val(bDateNormalized).addClass('highlight-flash');
                 }
                 if (res.sex || res.gender) {
@@ -506,9 +516,9 @@
                 if (cInad) {
                     setPassportCountry(cInad);
                 }
-                if (res.documentType || res.docTypeCode) {
-                    var dtStr = (res.documentType || '').toUpperCase();
-                    if (dtStr.indexOf('I') >= 0 || dtStr.indexOf('C') >= 0 || dtStr.indexOf('A') >= 0 || res.docTypeCode === "1") {
+                if (res.documentType || res.docTypeCode || res.docType) {
+                    var dtStr = (res.documentType || res.docType || '').toUpperCase();
+                    if (dtStr.indexOf('I') >= 0 || dtStr.indexOf('C') >= 0 || dtStr.indexOf('A') >= 0 || dtStr.indexOf('KİMLİK') >= 0 || dtStr.indexOf('KIMLIK') >= 0 || res.docTypeCode === "1") {
                         $('#PasaportTuru').val('Kimlik Kartı');
                     } else {
                         $('#PasaportTuru').val('Umuma Mahsus');
@@ -517,7 +527,11 @@
                 if (res.rawText || res.mrz || res.rawMrz) {
                     $('#mrzInputText').val(res.rawText || res.mrz || res.rawMrz);
                 }
-                $('#accKimlik').show();
+                $('#accKimlik, #accBelge').show();
+
+                if (typeof window.applyPassportDataToForm === 'function') {
+                    try { window.applyPassportDataToForm(res); } catch (eForm) { console.error('window.applyPassportDataToForm error:', eForm); }
+                }
             }
 
             // Kimlik ve Ceza Alanları ASLA Gizlenmez - Kalıcı Açık Tutulur
@@ -526,6 +540,24 @@
 
             if (typeof window._onWedgeScanSuccess === 'function') {
                 try { window._onWedgeScanSuccess(); } catch (e) { }
+            }
+
+            // Görsel Önizleme (VIS veya Portre)
+            var imgData = res.visBase64 || res.photoBase64 || res.photo;
+            if (imgData) {
+                var imgSrc = (imgData.indexOf('data:image') === 0) ? imgData : ('data:image/jpeg;base64,' + imgData);
+                if ($('#passportPreviewImg').length) {
+                    $('#passportPreviewImg').attr('src', imgSrc);
+                }
+                if ($('#photoStatusText').length) {
+                    $('#photoStatusText').html('<i class="fas fa-check-circle mr-1"></i> Belge Görüntüsü Aktarıldı');
+                }
+                if ($('#photoFileName').length) {
+                    $('#photoFileName').text('Belge No: ' + (res.documentNumber || '-'));
+                }
+                if ($('#passportPreviewContainer').length) {
+                    $('#passportPreviewContainer').slideDown(200);
+                }
             }
 
             // Sesli ve görsel bildirim
@@ -694,7 +726,7 @@
         showPassportAlert(
             '<strong>⚡ Optik Okuyucu Köprüsü Başlatılıyor...</strong><br/>' +
             '• Köprü daha önce bilgisayarınızda açıldıysa 1-2 saniye içinde otomatik hazır olacaktır.<br/>' +
-            '• İlk kullanımda indirilen <strong>EgmReaderBridge.exe</strong> dosyasını bir kez açın. Kendi hesabınıza kurulur; yönetici izni gerekmez.<br/>' +
+            '• İlk kullanım ise indirilen <strong>EgmReaderBridge.exe</strong> dosyasına 1 kez tıklayınız (Yönetici yetkisi gerekmez).<br/>' +
             '• Açıldığında bu buton otomatik olarak yeşil <strong>"🟢 Okuyucu Hazır"</strong> rozetine dönecektir.',
             'info'
         );
@@ -737,7 +769,7 @@
         if (isDirectScanActive) return;
         isDirectScanActive = true;
 
-        var btns = $('#btnDirectOpticalScan, #btnPanelDirectScan, #btnTopOpticalScan, #btnTutanakOpticalScan, #btnTopScan, #btnPageScanPassport, #btnBigDirectScan, #btnTopScanPassport, #btnModalScanPassport');
+        var btns = $('#btnDirectOpticalScan, #btnPanelDirectScan, #btnTopOpticalScan, #btnTutanakOpticalScan, #btnTopScan, #btnBottomScan, #btnPageScanPassport, #btnBigDirectScan, #btnTopScanPassport, #btnModalScanPassport');
         var originalHtmls = [];
         btns.each(function () {
             originalHtmls.push($(this).html());
@@ -747,10 +779,26 @@
         btns.prop('disabled', true).html('<span class="spinner-border spinner-border-sm mr-1" role="status"></span> Okunuyor...');
         showPassportAlert('<i class="fas fa-satellite-dish fa-spin mr-1"></i> <strong>Optik Okuyucu Taranıyor:</strong> Masanızdaki okuyucuya bağlanılıyor, lütfen pasaportu camda tutunuz...', 'info');
 
+        var safetyTimer = setTimeout(function () {
+            if (isDirectScanActive) {
+                console.warn('triggerDirectOpticalScan safety timeout triggered.');
+                showPassportAlert('Optik okuyucu işlem süresi doldu.', 'warning');
+                finishScan();
+            }
+        }, 10000);
+
         function finishScan() {
+            if (safetyTimer) {
+                clearTimeout(safetyTimer);
+                safetyTimer = null;
+            }
             isDirectScanActive = false;
             btns.each(function (idx) {
-                $(this).prop('disabled', false).html(originalHtmls[idx] || '<span class="passport-pulse-dot mr-1"></span> <i class="fas fa-camera mr-1"></i> Cihazdan Pasaport Oku');
+                var orig = originalHtmls[idx];
+                if (!orig || orig.indexOf('spinner-border') >= 0 || orig.indexOf('Okunuyor') >= 0) {
+                    orig = '<span class="passport-pulse-dot mr-1"></span> <i class="fas fa-camera mr-1"></i> Cihazdan Pasaport / Kimlik Oku';
+                }
+                $(this).prop('disabled', false).html(orig);
             });
         }
 
@@ -765,22 +813,26 @@
         }).done(function (sRes) {
             if (sRes && (sRes.isRunning || sRes.success)) {
                 updateBridgeStatusUI(true, sRes);
-                // Köprü hazır! Donanım tarama isteğini gönder (maksimum 30 saniye)
+                // Köprü hazır! Donanım tarama isteğini gönder (maksimum 8 saniye)
                 $.ajax({
                     url: 'http://127.0.0.1:41102/scan?device=' + encodeURIComponent(dev),
                     type: 'GET',
                     dataType: 'json',
-                    timeout: 30000
+                    timeout: 8000
                 }).done(function (scanRes) {
-                    if (scanRes && scanRes.wedgeMode) {
-                        showPassportAlert(scanRes.message || 'DESKO okuyucu hazır. Belgeyi okuyucuya yerleştirin; veriler otomatik aktarılacaktır.', 'info');
-                    } else if (scanRes && scanRes.success) {
-                        applyScanResult(scanRes);
-                    } else {
-                        var msg = (scanRes && scanRes.message) ? scanRes.message : 'Masanızdaki optik okuyucudan veri alınamadı. Pasaportun okuyucu camına tam yerleştirildiğinden emin olunuz.';
-                        showPassportAlert(msg, 'warning');
+                    try {
+                        if (scanRes && scanRes.success) {
+                            applyScanResult(scanRes);
+                        } else {
+                            var msg = (scanRes && scanRes.message) ? scanRes.message : 'Masanızdaki optik okuyucudan veri alınamadı. Pasaportun okuyucu camına tam yerleştirildiğinden emin olunuz.';
+                            showPassportAlert(msg, 'warning');
+                        }
+                    } catch (scanErr) {
+                        console.error('applyScanResult error:', scanErr);
+                        showPassportAlert('Pasaport verisi forma aktarılırken bir hata oluştu: ' + (scanErr.message || scanErr), 'warning');
+                    } finally {
+                        finishScan();
                     }
-                    finishScan();
                 }).fail(function (xhr, status, error) {
                     showPassportAlert('Optik okuyucu tarama işlemi zaman aşımına veya hataya uğradı: ' + error, 'warning');
                     finishScan();
@@ -818,7 +870,7 @@
         }).done(function (sRes) {
             if (sRes && (sRes.isRunning || sRes.success)) {
                 updateBridgeStatusUI(true, sRes);
-                $('#btnDirectOpticalScan, #btnPanelDirectScan, #btnTopOpticalScan, #btnTopScanPassport').attr('title', 'Optik Okuyucu Köprüsü Aktif (3M / Thales / DESKO / Regula)');
+                $('#btnDirectOpticalScan, #btnPanelDirectScan, #btnTopOpticalScan, #btnTopScanPassport').attr('title', 'Optik Okuyucu Köprüsü Aktif (3M / Thales / Regula)');
             } else {
                 updateBridgeStatusUI(false);
             }
@@ -1108,8 +1160,12 @@
                 updateTopAgeBadge(birthDateStr);
                 highlightInput('#BirthDateCalculate, #topBirthDate');
 
-                if (typeof window.adultchild === 'function') {
-                    window.adultchild($('#BirthDateCalculate')[0]);
+                if (typeof window.adultchild === 'function' && $('#BirthDateCalculate').length) {
+                    try {
+                        window.adultchild($('#BirthDateCalculate')[0]);
+                    } catch (eAdult2) {
+                        console.error('adultchild error:', eAdult2);
+                    }
                 }
             }
 
@@ -1463,8 +1519,12 @@
                 $('#BirthDateCalculate').val(v).trigger('change');
                 $('#BirthdateCFORM').val(v);
                 updateTopAgeBadge(v);
-                if (typeof window.adultchild === 'function') {
-                    window.adultchild($('#BirthDateCalculate')[0]);
+                if (typeof window.adultchild === 'function' && $('#BirthDateCalculate').length) {
+                    try {
+                        window.adultchild($('#BirthDateCalculate')[0]);
+                    } catch (eAdult2) {
+                        console.error('adultchild error:', eAdult2);
+                    }
                 }
             });
         }
@@ -1499,4 +1559,3 @@
     });
 
 })(jQuery);
-

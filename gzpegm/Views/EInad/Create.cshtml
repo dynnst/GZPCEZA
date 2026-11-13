@@ -182,9 +182,33 @@
             <a href="@Url.Action("DownloadBridgeExe", "Calculate")" onclick="handleStartBridgeClick(event)" class="btn btn-warning font-weight-bold shadow mr-2 px-3 text-dark btn-launch-bridge" style="background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:#1f2937 !important; border:none;" title="Masanızdaki Optik Okuyucu Donanım Köprüsünü Başlat veya İndir">
                 <i class="fas fa-bolt text-danger mr-1"></i> <span class="lblBridgeStatusText">Okuyucuyu Başlat</span>
             </a>
-            <button type="button" class="btn btn-success font-weight-bold shadow mr-2 px-3" onclick="scanPassportForCreatePage();" id="btnTopScan">
-                <i class="fas fa-camera mr-1"></i> Cihazdan Pasaport / Kimlik Oku
-            </button>
+            <div class="btn-group mr-2 shadow" role="group">
+                <button type="button" id="btnTopScan" onclick="scanPassportForCreatePage('auto');" class="btn btn-success font-weight-bold px-3" style="border-radius:6px 0 0 6px; background:linear-gradient(135deg, #059669 0%, #047857 100%); border:none;" title="Optik Okuyucudan Pasaport / Kimlik Oku (Otomatik Algıla)">
+                    <span class="passport-pulse-dot mr-1"></span> <i class="fas fa-camera mr-1"></i> Cihazdan Pasaport / Kimlik Oku
+                </button>
+                <button type="button" class="btn btn-success dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="border-radius:0 6px 6px 0; background:#047857; border:none; border-left:1px solid rgba(255,255,255,0.25);" title="Okuyucu Cihazını Seç">
+                    <span class="sr-only">Cihaz Seçimi</span>
+                </button>
+                <div class="dropdown-menu dropdown-menu-right shadow-lg" style="font-size:0.85rem; min-width:260px; z-index:1050;">
+                    <h6 class="dropdown-header text-uppercase font-weight-bold text-muted py-1" style="font-size:0.75rem;"><i class="fas fa-microchip mr-1"></i> Okuyucu Donanımı</h6>
+                    <a class="dropdown-item py-2 font-weight-bold text-success" href="javascript:void(0);" onclick="scanPassportForCreatePage('auto');">
+                        <i class="fas fa-magic mr-2"></i> Otomatik Algıla <span class="badge badge-success ml-1">Önerilen</span>
+                    </a>
+                    <div class="dropdown-divider my-1"></div>
+                    <a class="dropdown-item py-2" href="javascript:void(0);" onclick="scanPassportForCreatePage('3m');">
+                        <i class="fas fa-id-card mr-2 text-primary"></i> 3M Cogent / Gemalto (PV40/AT9000)
+                    </a>
+                    <a class="dropdown-item py-2" href="javascript:void(0);" onclick="scanPassportForCreatePage('regula');">
+                        <i class="fas fa-camera-retro mr-2 text-info"></i> Regula Document Reader (70X4)
+                    </a>
+                    <a class="dropdown-item py-2" href="javascript:void(0);" onclick="scanPassportForCreatePage('desko');">
+                        <i class="fas fa-barcode mr-2 text-warning"></i> Desko PENTA Scanner
+                    </a>
+                    <a class="dropdown-item py-2" href="javascript:void(0);" onclick="scanPassportForCreatePage('thales');">
+                        <i class="fas fa-fingerprint mr-2 text-danger"></i> Thales Cogent CS500f
+                    </a>
+                </div>
+            </div>
             <button type="submit" form="inadForm" class="btn btn-warning font-weight-bold shadow px-4">
                 <i class="fas fa-save mr-1"></i> Kaydet
             </button>
@@ -193,6 +217,7 @@
 
     <!-- Bildirim Alanı -->
     <div id="pageAlertArea"></div>
+    <div id="opticalScanAlert" class="mt-1 mb-2" style="display:none;"></div>
 
     <!-- INAD VERİ GİRİŞ FORMU -->
     <form id="inadForm" method="post" action="@(isEdit ? Url.Action("EditInad", "EInad") : Url.Action("AddInad", "EInad"))">
@@ -304,6 +329,18 @@
                         </select>
                         <small class="text-muted"><i class="fas fa-check-circle mr-1 text-success"></i>Varsayılan: Hamili olduğu belgeye göredir</small>
                     </div>
+                </div>
+
+                <!-- Optik Okuyucu Belge Görseli Önizleme -->
+                <div id="passportPreviewContainer" style="display:none;" class="passport-preview-box mt-3 p-2 border rounded bg-white shadow-sm align-items-center">
+                    <img id="passportPreviewImg" src="" alt="Pasaport / Kimlik Görüntüsü" class="passport-thumbnail border rounded mr-3" style="max-height:110px; max-width:180px; object-fit:contain;" />
+                    <div class="flex-grow-1">
+                        <div class="font-weight-bold text-success" id="photoStatusText"><i class="fas fa-check-circle mr-1"></i> Belge Görüntüsü Aktarıldı</div>
+                        <div class="text-muted small" id="photoFileName"></div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-danger" id="btnRemovePhoto" title="Görüntüyü Kaldır" onclick="$('#passportPreviewContainer').slideUp(150); $('#passportPreviewImg').attr('src', '');">
+                        <i class="fas fa-times"></i>
+                    </button>
                 </div>
             </div>
         </div>
@@ -611,9 +648,33 @@
                     <a href="@Url.Action("DownloadBridgeExe", "Calculate")" onclick="handleStartBridgeClick(event)" class="btn btn-warning font-weight-bold shadow-sm mr-2 px-3 text-dark btn-launch-bridge" style="background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:#1f2937 !important; border:none;" title="Masanızdaki Optik Okuyucu Donanım Köprüsünü Başlat veya İndir">
                         <i class="fas fa-bolt text-danger mr-1"></i> <span class="lblBridgeStatusText">Okuyucuyu Başlat</span>
                     </a>
-                    <button type="button" class="btn btn-outline-success font-weight-bold mr-2" onclick="scanPassportForCreatePage();">
-                        <i class="fas fa-camera mr-1"></i> Cihazdan Pasaport Oku
-                    </button>
+                    <div class="btn-group mr-2 shadow-sm" role="group">
+                        <button type="button" id="btnBottomScan" onclick="scanPassportForCreatePage('auto');" class="btn btn-outline-success font-weight-bold px-3" style="border-radius:6px 0 0 6px;" title="Cihazdan Pasaport / Kimlik Oku (Otomatik Algıla)">
+                            <span class="passport-pulse-dot mr-1"></span> <i class="fas fa-camera mr-1"></i> Cihazdan Pasaport Oku
+                        </button>
+                        <button type="button" class="btn btn-outline-success dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="border-radius:0 6px 6px 0;" title="Okuyucu Cihazını Seç">
+                            <span class="sr-only">Cihaz Seçimi</span>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-right shadow-lg" style="font-size:0.85rem; min-width:260px; z-index:1050;">
+                            <h6 class="dropdown-header text-uppercase font-weight-bold text-muted py-1" style="font-size:0.75rem;"><i class="fas fa-microchip mr-1"></i> Okuyucu Donanımı</h6>
+                            <a class="dropdown-item py-2 font-weight-bold text-success" href="javascript:void(0);" onclick="scanPassportForCreatePage('auto');">
+                                <i class="fas fa-magic mr-2"></i> Otomatik Algıla <span class="badge badge-success ml-1">Önerilen</span>
+                            </a>
+                            <div class="dropdown-divider my-1"></div>
+                            <a class="dropdown-item py-2" href="javascript:void(0);" onclick="scanPassportForCreatePage('3m');">
+                                <i class="fas fa-id-card mr-2 text-primary"></i> 3M Cogent / Gemalto (PV40/AT9000)
+                            </a>
+                            <a class="dropdown-item py-2" href="javascript:void(0);" onclick="scanPassportForCreatePage('regula');">
+                                <i class="fas fa-camera-retro mr-2 text-info"></i> Regula Document Reader (70X4)
+                            </a>
+                            <a class="dropdown-item py-2" href="javascript:void(0);" onclick="scanPassportForCreatePage('desko');">
+                                <i class="fas fa-barcode mr-2 text-warning"></i> Desko PENTA Scanner
+                            </a>
+                            <a class="dropdown-item py-2" href="javascript:void(0);" onclick="scanPassportForCreatePage('thales');">
+                                <i class="fas fa-fingerprint mr-2 text-danger"></i> Thales Cogent CS500f
+                            </a>
+                        </div>
+                    </div>
                     <button type="submit" class="btn btn-primary btn-lg font-weight-bold px-5 shadow">
                         <i class="fas fa-save mr-2"></i> Kaydet
                     </button>
@@ -752,13 +813,17 @@
         }
 
         // 1. Cihazdan Doğrudan Pasaport Oku (3M, Thales, Desko, Regula - Sıfır Kurulum & Donanım Entegrasyonu)
-        window.scanPassportForCreatePage = function () {
+        window.scanPassportForCreatePage = function (deviceType) {
+            deviceType = deviceType || 'auto';
             if (window.PassportReader && typeof window.PassportReader.scanDevice === 'function') {
-                window.PassportReader.scanDevice('auto');
+                window.PassportReader.scanDevice(deviceType);
             } else if (typeof triggerDirectOpticalScan === 'function') {
-                triggerDirectOpticalScan('auto');
+                triggerDirectOpticalScan(deviceType);
+            } else if (typeof scanPassportDirect === 'function') {
+                scanPassportDirect(deviceType);
             }
         };
+        window.scanPassportDirect = window.scanPassportForCreatePage;
 
         // Formu pasaport verisiyle doldur ve 1. bölümü açık tut
         function applyPassportDataToForm(d) {
@@ -804,7 +869,7 @@
                     }
                 });
                 if (!matched) {
-                    if (c.toUpperCase() === 'TUR' || c.toUpperCase() === 'TR' || c.toLowerCase().indexOf('türk') >= 0) {
+                    if (c.toUpperCase() === 'TUR' || c.toUpperCase() === 'TR' || c.toUpperCase() === 'TLR' || c.toLowerCase().indexOf('türk') >= 0) {
                         $('#Uyruk option').each(function () {
                             if ($(this).val().toLowerCase().indexOf('türk') >= 0) {
                                 $('#Uyruk').val($(this).val()).addClass('highlight-flash');
