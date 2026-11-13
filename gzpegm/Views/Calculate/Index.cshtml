@@ -22,7 +22,7 @@
             <div class="d-flex align-items-center mt-2 mt-md-0">
                 <a href="@Url.Action("Mevzuat", "Calculate")" target="_blank" class="btn btn-outline-info mr-2 shadow-sm font-weight-bold" id="btnMevzuat" style="border-radius:6px; font-size:0.86rem; padding:6px 14px; border:1.5px solid #0284c7; background-color:#f0f9ff; color:#0369a1;" title="Hesaplama Algoritmaları ve Yasal Dayanaklar Rehberi"><i class="fas fa-balance-scale mr-1 text-primary"></i> İlgili Mevzuat & Algoritmalar</a>
                 <a href="@Url.Action("DownloadBridgeExe", "Calculate")" id="btnLaunchBridgeDirect" onclick="handleStartBridgeClick(event)" class="btn btn-warning font-weight-bold mr-2 shadow-sm text-dark btn-launch-bridge" style="border-radius:6px; font-size:0.86rem; padding:6px 14px; background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:#1f2937 !important; border:none;" title="Masanızdaki Optik Okuyucu Donanım Köprüsünü Başlat veya İndir (Yönetici Yetkisi Gerekmez)">
-                    <i class="fas fa-bolt text-danger mr-1"></i> <span id="lblBridgeStatusText" class="lblBridgeStatusText">Okuyucuyu Başlat</span>
+                    <i class="fas fa-bolt text-danger mr-1"></i> <span id="lblBridgeStatusText" class="lblBridgeStatusText">Köprüyü Başlat</span>
                 </a>
                 <div class="btn-group mr-2 shadow-sm" role="group">
                     <button type="button" id="btnDirectOpticalScan" onclick="scanPassportDirect('auto');" class="btn btn-success font-weight-bold" style="border-radius:6px 0 0 6px; font-size:0.86rem; padding:6px 14px; background:linear-gradient(135deg, #059669 0%, #047857 100%); border:none;" title="Optik Okuyucudan Pasaport Oku (Otomatik Algıla)">
@@ -656,7 +656,7 @@
                 </div>
                 <div class="d-flex align-items-center mt-2 mt-md-0">
                     <a href="@Url.Action("DownloadBridgeExe", "Calculate")" id="btnLaunchBridgeBottom" onclick="handleStartBridgeClick(event)" class="btn btn-sm btn-warning font-weight-bold mr-2 shadow-sm text-dark btn-launch-bridge py-1 px-3" style="font-size:0.84rem; border-radius:6px; background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:#1f2937 !important; border:none;" title="Masanızdaki Optik Okuyucu Donanım Köprüsünü Başlat veya İndir">
-                        <i class="fas fa-bolt text-danger mr-1"></i> <span class="lblBridgeStatusText">Okuyucuyu Başlat</span>
+                        <i class="fas fa-bolt text-danger mr-1"></i> <span class="lblBridgeStatusText">Köprüyü Başlat</span>
                     </a>
                     <div class="btn-group shadow-sm" role="group">
                     <button type="button" id="btnTutanakOpticalScan" onclick="scanPassportDirect('auto');" class="btn btn-sm btn-success font-weight-bold py-1 px-3" style="font-size:0.84rem; background:linear-gradient(135deg, #059669 0%, #047857 100%); border:none; border-radius:6px 0 0 6px;" title="Optik okuyucudan yolcu kimlik bilgilerini doldur">
@@ -754,7 +754,7 @@
                 </div>
                 <h5 class="font-weight-bold text-dark mb-2">Yönetici Şifresi / Admin İzni GEREKTİRMEZ</h5>
                 <p class="text-muted" style="font-size:0.92rem;">
-                    3M Cogent, Thales, Desko ve Regula okuyucularınızın çalışması için köprüyü ilk kullanımda bir kez indirip açın. Kurulum sadece kendi Windows hesabınıza yapılır.
+                    3M Cogent, Thales ve Regula okuyucularını sayfaya bağlamak için köprüyü ilk kullanımda bir kez indirip açın. Desko PENTA, üretici yazılımının klavye modu üzerinden çalışır. Kurulum sadece kendi Windows hesabınıza yapılır.
                 </p>
                 <div class="alert alert-info py-2 px-3 text-left font-weight-bold mb-3" style="font-size:0.86rem; border-radius:8px;">
                     <i class="fas fa-check-circle mr-1 text-success"></i> Yönetici izni olmadan kendi kullanıcı profilinize kurulur.<br/>
@@ -771,6 +771,7 @@
 </div>
 
 @section Scripts {
+    <script>window.bridgeExeUrl = '@Url.Action("DownloadBridgeExe", "Calculate")';</script>
     <script src="@Url.Content("~/js/passport-reader.js")?v=@gzpegm.Helpers.AssetVersionHelper.GetVersion("~/js/passport-reader.js")"></script>
     <script src="@Url.Content("~/js/calculate-index.js")?v=@gzpegm.Helpers.AssetVersionHelper.GetVersion("~/js/calculate-index.js")"></script>
     <script>

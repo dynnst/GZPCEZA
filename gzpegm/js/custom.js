@@ -696,6 +696,7 @@ function _executeHesapla1() {
 }
 
 function adultchild(elem) {
+    if (!elem || !elem.value) return;
     var strbirthDate = elem.value,
         formatted = '';
     var dizi = strbirthDate.split('.');

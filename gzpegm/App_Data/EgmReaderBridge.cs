@@ -17,15 +17,35 @@ namespace Sahtecilik.ReaderBridge
     {
         private const int Port = 41102;
         private static HttpListener _listener;
-        private static bool _isRunning = true;
+        private static volatile bool _isRunning = true;
         private static string _resolved3mBinDir = null;
         private static dynamic _regulaReader = null;
+        private static readonly object _logFileLock = new object();
 
         private static void Log(string message)
         {
             try
             {
                 Console.WriteLine(message);
+            }
+            catch { }
+
+            try
+            {
+                string logDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "EgmReaderBridge");
+                if (!Directory.Exists(logDir)) Directory.CreateDirectory(logDir);
+
+                string logPath = Path.Combine(logDir, "bridge.log");
+                lock (_logFileLock)
+                {
+                    var logFile = new FileInfo(logPath);
+                    if (logFile.Exists && logFile.Length > 2 * 1024 * 1024)
+                    {
+                        File.WriteAllText(logPath, "");
+                    }
+
+                    File.AppendAllText(logPath, DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff ") + message + Environment.NewLine, Encoding.UTF8);
+                }
             }
             catch { }
         }
@@ -42,6 +62,12 @@ namespace Sahtecilik.ReaderBridge
                 }
                 catch { }
             };
+
+            if (args.Any(IsBridgeStopCommand))
+            {
+                RequestBridgeStop();
+                return;
+            }
 
             EnsureAutoStartInstalled();
             RegisterProtocolInHkcu();
@@ -247,10 +273,25 @@ namespace Sahtecilik.ReaderBridge
 
             string rawPath = (req.Url.AbsolutePath ?? "/").ToLowerInvariant();
             string responseJson = "";
+            bool stopAfterResponse = false;
 
             try
             {
-                if (rawPath.Contains("status"))
+                if (rawPath.TrimEnd('/') == "/stop")
+                {
+                    // Only the local protocol handler may stop the bridge. Browser pages carry Origin.
+                    if (!req.HttpMethod.Equals("POST", StringComparison.OrdinalIgnoreCase) ||
+                        !string.IsNullOrEmpty(req.Headers["Origin"]))
+                    {
+                        resp.StatusCode = (int)HttpStatusCode.Forbidden;
+                        resp.Close();
+                        return;
+                    }
+
+                    responseJson = "{\"success\":true,\"stopping\":true}";
+                    stopAfterResponse = true;
+                }
+                else if (rawPath.Contains("status"))
                 {
                     responseJson = "{\"success\":true,\"isRunning\":true,\"message\":\"EGM Optik Okuyucu Köprüsü Aktif\",\"port\":" + Port + "}";
                 }
@@ -280,6 +321,37 @@ namespace Sahtecilik.ReaderBridge
             {
                 try { resp.Close(); } catch { }
             }
+
+            if (stopAfterResponse)
+            {
+                ThreadPool.QueueUserWorkItem((state) =>
+                {
+                    Thread.Sleep(300);
+                    Log("  -> Kullanıcı isteğiyle optik okuyucu köprüsü durduruluyor.");
+                    _isRunning = false;
+                    StopHttpServer();
+                });
+            }
+        }
+
+        private static bool IsBridgeStopCommand(string arg)
+        {
+            return !string.IsNullOrEmpty(arg) &&
+                (arg.Equals("--stop", StringComparison.OrdinalIgnoreCase) ||
+                 arg.StartsWith("egm-reader://stop", StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static void RequestBridgeStop()
+        {
+            try
+            {
+                var request = (HttpWebRequest)WebRequest.Create("http://127.0.0.1:" + Port + "/stop");
+                request.Method = "POST";
+                request.ContentLength = 0;
+                request.Timeout = 3000;
+                using (var response = (HttpWebResponse)request.GetResponse()) { }
+            }
+            catch { }
         }
 
         private static readonly object _scanLock = new object();
@@ -554,7 +626,8 @@ namespace Sahtecilik.ReaderBridge
             {
                 if (!Ensure3mInitialised()) return null;
 
-                // Belgenin okuyucu camına yerleştirilmesini bekle
+                // Sensor checks can report false on some AT-series readers even when a document is present.
+                // Wait briefly for the sensor, but do not let a false result prevent ReadDocument().
                 int loops = Math.Max(1, maxDocWaitMs / 100);
                 bool docOnWindow = false;
                 for (int waitDoc = 0; waitDoc < loops; waitDoc++)
@@ -567,11 +640,8 @@ namespace Sahtecilik.ReaderBridge
                     Thread.Sleep(100);
                 }
                 Log("  -> 3M Belge camda var mı: " + docOnWindow);
-
                 if (!docOnWindow)
-                {
-                    return null;
-                }
+                    Log("  -> Belge sensörü algılamadı; SDK ReadDocument() yine de denenecek.");
 
                 var readRes = MMM.Readers.FullPage.Reader.ReadDocument();
                 Log("  -> 3M ReadDocument sonucu: " + readRes);
@@ -1074,7 +1144,7 @@ namespace Sahtecilik.ReaderBridge
                         key.SetValue("URL Protocol", "");
                         using (var cmdKey = key.CreateSubKey(@"shell\open\command"))
                         {
-                            if (cmdKey != null) cmdKey.SetValue("", "\"" + exePath + "\"");
+                            if (cmdKey != null) cmdKey.SetValue("", "\"" + exePath + "\" \"%1\"");
                         }
                     }
                 }

@@ -180,7 +180,7 @@
                 <i class="fas fa-list mr-1"></i> Listeye Dön
             </a>
             <a href="@Url.Action("DownloadBridgeExe", "Calculate")" onclick="handleStartBridgeClick(event)" class="btn btn-warning font-weight-bold shadow mr-2 px-3 text-dark btn-launch-bridge" style="background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:#1f2937 !important; border:none;" title="Masanızdaki Optik Okuyucu Donanım Köprüsünü Başlat veya İndir">
-                <i class="fas fa-bolt text-danger mr-1"></i> <span class="lblBridgeStatusText">Okuyucuyu Başlat</span>
+                <i class="fas fa-bolt text-danger mr-1"></i> <span class="lblBridgeStatusText">Köprüyü Başlat</span>
             </a>
             <div class="btn-group mr-2 shadow" role="group">
                 <button type="button" id="btnTopScan" onclick="scanPassportForCreatePage('auto');" class="btn btn-success font-weight-bold px-3" style="border-radius:6px 0 0 6px; background:linear-gradient(135deg, #059669 0%, #047857 100%); border:none;" title="Optik Okuyucudan Pasaport / Kimlik Oku (Otomatik Algıla)">
@@ -646,7 +646,7 @@
                 </a>
                 <div class="d-flex align-items-center">
                     <a href="@Url.Action("DownloadBridgeExe", "Calculate")" onclick="handleStartBridgeClick(event)" class="btn btn-warning font-weight-bold shadow-sm mr-2 px-3 text-dark btn-launch-bridge" style="background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:#1f2937 !important; border:none;" title="Masanızdaki Optik Okuyucu Donanım Köprüsünü Başlat veya İndir">
-                        <i class="fas fa-bolt text-danger mr-1"></i> <span class="lblBridgeStatusText">Okuyucuyu Başlat</span>
+                        <i class="fas fa-bolt text-danger mr-1"></i> <span class="lblBridgeStatusText">Köprüyü Başlat</span>
                     </a>
                     <div class="btn-group mr-2 shadow-sm" role="group">
                         <button type="button" id="btnBottomScan" onclick="scanPassportForCreatePage('auto');" class="btn btn-outline-success font-weight-bold px-3" style="border-radius:6px 0 0 6px;" title="Cihazdan Pasaport / Kimlik Oku (Otomatik Algıla)">
@@ -1207,5 +1207,6 @@
             $('#pageAlertArea').html(html);
         }
     </script>
-    <script src="@Url.Content("~/js/passport-reader.js")?v=@DateTime.Now.Ticks"></script>
+    <script>window.bridgeExeUrl = '@Url.Action("DownloadBridgeExe", "Calculate")';</script>
+    <script src="@Url.Content("~/js/passport-reader.js")?v=@gzpegm.Helpers.AssetVersionHelper.GetVersion("~/js/passport-reader.js")"></script>
 }

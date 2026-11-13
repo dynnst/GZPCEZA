@@ -1273,7 +1273,7 @@ namespace gzpegm.Controllers
                         {
                             writer.WriteLine("====================================================================");
                             writer.WriteLine("  EGM HUDUT KAPILARI SISTEMI");
-                            writer.WriteLine("  Masaustu Optik Okuyucu Donanim Koprusu (3M & Regula)");
+                            writer.WriteLine("  Masaustu Optik Okuyucu Koprusu (3M / Thales / Regula)");
                             writer.WriteLine("====================================================================");
                             writer.WriteLine();
                             writer.WriteLine("KURULUM COK BASITTIR (YALNIZCA 1 DEFA YAPILIR):");
@@ -1285,6 +1285,7 @@ namespace gzpegm.Controllers
                             writer.WriteLine();
                             writer.WriteLine("ONEMLI NOTLAR:");
                             writer.WriteLine("* Kesinlikle Yonetici (Admin) yetkisi gerekmez!");
+                            writer.WriteLine("* Desko PENTA, uretici yaziliminin klavye modu uzerinden calisir.");
                             writer.WriteLine("* Kurulumdan sonra web sayfasina donup 'Cihazdan Pasaport Oku'");
                             writer.WriteLine("  butonlarini kullanabilirsiniz.");
                             writer.WriteLine("====================================================================");

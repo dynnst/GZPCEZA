@@ -30,7 +30,7 @@ reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Run" /v "EgmReaderBridge
 :: egm-reader:// Ozel Protokol Kaydi
 reg add "HKCU\Software\Classes\egm-reader" /ve /d "URL:EgmReaderBridge Protocol" /f >nul 2>&1
 reg add "HKCU\Software\Classes\egm-reader" /v "URL Protocol" /d "" /f >nul 2>&1
-reg add "HKCU\Software\Classes\egm-reader\shell\open\command" /ve /d "\"%TARGET_EXE%\"" /f >nul 2>&1
+reg add "HKCU\Software\Classes\egm-reader\shell\open\command" /ve /d "\"%TARGET_EXE%\" \"%%1\"" /f >nul 2>&1
 
 echo [3/3] Optik okuyucu koprusu arka planda baslatiliyor...
 start "" "%TARGET_EXE%"
