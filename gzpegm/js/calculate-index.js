@@ -29,9 +29,6 @@
         return (dayVal > 0) ? dayVal : 180;
     }
 
-    /**
-     * Formdaki tüm giriş-çıkış çiftlerinin gün farkını ve kayan pencere (180/365 gün) kapsamındaki gününü hesaplar
-     */
     function computeAllDiffs(serverSeferler) {
         var rows = [];
         var maxExitTime = 0;
@@ -257,6 +254,31 @@
     window.resetCalculateForm = resetCalculateForm;
 
     $(document).ready(function () {
+
+        // Select2'nin sonuç ve seçili değer şablonlarına yerel SVG bayraklarını ekle.
+        var $countrySelect = $('#CountryCalculate');
+        if ($countrySelect.length && $.fn.select2) {
+            function renderCountryOption(item) {
+                if (!item.id || !item.element) return item.text;
+                var code = item.element.getAttribute('data-country-code');
+                var $label = $('<span></span>');
+                if (code) {
+                    $label.append($('<span></span>').addClass('flag-icon flag-icon-' + code + ' mr-2').attr('aria-hidden', 'true'));
+                }
+                $label.append(document.createTextNode(item.text));
+                return $label;
+            }
+
+            if ($countrySelect.hasClass('select2-hidden-accessible')) {
+                $countrySelect.select2('destroy');
+            }
+            $countrySelect.select2({
+                theme: 'bootstrap',
+                width: '100%',
+                templateResult: renderCountryOption,
+                templateSelection: renderCountryOption
+            });
+        }
 
         // Tarih farkı ve tekrar giriş güncellemesini custom.js zaten yönetiyor.
         // Burada yalnızca datepicker seçimini hesaplama isteğine bağla.
