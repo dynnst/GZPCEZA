@@ -104,6 +104,66 @@ VALUES
             return byCode != null ? (byCode.fldIdariCode ?? "") : "";
         }
 
+        public List<TahditFormLog> GetEntries(string border, DateTime? startDate, DateTime? endDate)
+        {
+            EnsureTable();
+
+            var entries = new List<TahditFormLog>();
+            using (var con = OpenConnection())
+            using (var cmd = con.CreateCommand())
+            {
+                var conditions = new List<string> { "Border = @Border" };
+                Add(cmd, "@Border", SqlDbType.NVarChar, Normalize(border), 150);
+                if (startDate.HasValue)
+                {
+                    conditions.Add("CreatedAt >= @StartDate");
+                    Add(cmd, "@StartDate", SqlDbType.DateTime, startDate.Value);
+                }
+                if (endDate.HasValue)
+                {
+                    conditions.Add("CreatedAt <= @EndDate");
+                    Add(cmd, "@EndDate", SqlDbType.DateTime, endDate.Value);
+                }
+
+                cmd.CommandText = @"
+SELECT Id, CreatedAt, TahditCode, IdariTahditCode, PenaltyDay, PenaltyMonth, PenaltyTotalDay,
+       PaymentType, VisaType, Country, Border, UserId, UserSicil, UserDisplayName,
+       PassengerName, PassportNo, FormMoney
+FROM dbo.TahditFormLog
+WHERE " + string.Join(" AND ", conditions) + @"
+ORDER BY CreatedAt;";
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        entries.Add(new TahditFormLog
+                        {
+                            Id = reader.GetInt32(0),
+                            CreatedAt = reader.GetDateTime(1),
+                            TahditCode = reader.IsDBNull(2) ? null : reader.GetString(2),
+                            IdariTahditCode = reader.IsDBNull(3) ? null : reader.GetString(3),
+                            PenaltyDay = reader.GetInt32(4),
+                            PenaltyMonth = reader.GetInt32(5),
+                            PenaltyTotalDay = reader.GetInt32(6),
+                            PaymentType = reader.IsDBNull(7) ? null : reader.GetString(7),
+                            VisaType = reader.GetInt32(8),
+                            Country = reader.IsDBNull(9) ? null : reader.GetString(9),
+                            Border = reader.IsDBNull(10) ? null : reader.GetString(10),
+                            UserId = reader.IsDBNull(11) ? (int?)null : reader.GetInt32(11),
+                            UserSicil = reader.IsDBNull(12) ? null : reader.GetString(12),
+                            UserDisplayName = reader.IsDBNull(13) ? null : reader.GetString(13),
+                            PassengerName = reader.IsDBNull(14) ? null : reader.GetString(14),
+                            PassportNo = reader.IsDBNull(15) ? null : reader.GetString(15),
+                            FormMoney = reader.IsDBNull(16) ? null : reader.GetString(16)
+                        });
+                    }
+                }
+            }
+
+            return entries;
+        }
+
         public TahditStatisticsViewModel GetStatistics()
         {
             return GetStatistics(null, null, null, null, null);
