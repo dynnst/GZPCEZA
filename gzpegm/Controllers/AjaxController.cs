@@ -138,6 +138,20 @@ namespace gzpegm.Controllers
                 trips.Add(Tuple.Create(enterdt.Date, exitdt.Date));
             }
 
+            // Normal multi-sefer kayıtları istemciyle aynı sırada (en yeni üstte) gelmeli;
+            // dönemlerin birbirine değmesi/çakışması günleri mükerrer saydırabilir.
+            if (Visa == 5 && trips.Count > 1)
+                return Json(new { Type = "0", Message = "Türkiye'de doğan çocuk hesabında tek tarih aralığı kullanılmalıdır." }, JsonRequestBehavior.AllowGet);
+
+            if (Visa != 5)
+            {
+                for (int i = 0; i < trips.Count - 1; i++)
+                {
+                    if (trips[i].Item1 <= trips[i + 1].Item2)
+                        return Json(new { Type = "0", Message = "Sefer tarihleri çakışıyor veya sıralı değil. En yeni sefer en üstte olmalı; yeni giriş tarihi, önceki seferin çıkış tarihinden sonra olmalıdır." }, JsonRequestBehavior.AllowGet);
+                }
+            }
+
             // =========================================================================
             // TÜRKİYE'DE DOĞAN ÇOCUKLAR HESABI (Visa == 5)
             // Türkiye'de doğan çocukların doğum tarihi giriş tarihi olarak yazılır.

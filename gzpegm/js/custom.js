@@ -550,6 +550,16 @@ function syncRussiaCalculationModel() {
 window.syncRussiaCalculationModel = syncRussiaCalculationModel;
 
 var _hesapla1DebounceTimer = null;
+var _hesapla1RequestId = 0;
+var _hesapla2RequestId = 0;
+function _calculateInputSignature() {
+    var form = document.getElementById('calculate-form');
+    return form ? $(form).serialize() : '';
+}
+function _clearCalculateAmounts() {
+    $('#CezaCalculate, #CezaTLCalculate, #VisaHarcCalculate, #DefterCalculate, #IdariCalculate, #ToplamCalculate').val('');
+    $('#KurCalculate, #ToMCalculate').empty().val('');
+}
 function hesapla1(immediate) {
     clearTimeout(_hesapla1DebounceTimer);
     if (immediate === true) {
@@ -560,6 +570,9 @@ function hesapla1(immediate) {
 }
 
 function _executeHesapla1() {
+    var requestId = ++_hesapla1RequestId;
+    ++_hesapla2RequestId;
+    _clearCalculateAmounts();
     syncRussiaCalculationModel();
     try {
         if (typeof window.computeAllDiffs === 'function') {
@@ -584,7 +597,7 @@ function _executeHesapla1() {
 
     if ($Visa == 4 || $Visa == 8 || $Visa == 10 || $Visa == 11 || $Visa == 12 || $Visa == 13 || $Visa == 15) {
         if ($('#testarihi').val() == '' || $('#testarihi').val() == null) {
-            alert('Lütfen tarih giriniz..!');
+            $('#DayCalculate, #LongCalculate, #OneTimeCalculate, #BasCalculate, #BitCalculate, #CezaAyCalculate, #CezaGunCalculate, #SonucCalculate').val('');
             return false;
         }
     }
@@ -607,7 +620,10 @@ function _executeHesapla1() {
         var enterv = enter[i].value,
             exitv = exit[i].value;
 
-        if (enterv === '' || exitv === '') return false;
+        if (enterv === '' || exitv === '') {
+            $('#DayCalculate, #LongCalculate, #OneTimeCalculate, #BasCalculate, #BitCalculate, #CezaAyCalculate, #CezaGunCalculate, #SonucCalculate').val('');
+            return false;
+        }
 
         // Tarihleri Date objesine çevir; saat bilgileri gün hesabını etkilemez.
         var start = parseDMY(enterv),
@@ -630,6 +646,8 @@ function _executeHesapla1() {
         totalDays += diffDays;
     }
 
+    if (typeof window.validateTripOrder === 'function' && !window.validateTripOrder(true)) return false;
+
     if ($Exit == "" || $Enter == "" || $Passport == "" || $Country == "" || $Visa == "") return false;
 
     $('#DayCalculate, #LongCalculate, #OneTimeCalculate, #BasCalculate, #BitCalculate, #CezaAyCalculate, #CezaGunCalculate, #SonucCalculate').val('');
@@ -640,16 +658,22 @@ function _executeHesapla1() {
         $('#AdultCalculate').val('1');
     }
 
+    var requestSignature = _calculateInputSignature();
     $.ajax({
         url: "/Calculate1",
         type: "POST",
         data: form.serialize(),
         dataType: "json",
         success: function (result) {
+            if (requestId !== _hesapla1RequestId || _calculateInputSignature() !== requestSignature) return;
             if (result.Type == '0') {
-                alert(result.Message);
+                $('#DayCalculate, #LongCalculate, #OneTimeCalculate, #BasCalculate, #BitCalculate, #CezaAyCalculate, #CezaGunCalculate, #SonucCalculate').val('');
+                if (result.Message) {
+                    $('#dateOrderValidation').text(result.Message).show();
+                }
                 return false;
             }
+            $('#dateOrderValidation').hide().empty();
 
             $('#veri').removeClass('hidden');
             $('#DayCalculate').val(result.Day);
@@ -691,6 +715,12 @@ function _executeHesapla1() {
 
             // Calculate1 tamamlandığında hesapla2'yi otomatik tetikle
             hesapla2();
+        },
+        error: function () {
+            if (requestId !== _hesapla1RequestId) return;
+            $('#veri, #hes2, #hes3, #hes4, #hes5').addClass('hidden');
+            $('#DayCalculate, #LongCalculate, #OneTimeCalculate, #BasCalculate, #BitCalculate, #CezaAyCalculate, #CezaGunCalculate, #SonucCalculate').val('');
+            _clearCalculateAmounts();
         }
     });
 }
@@ -727,6 +757,7 @@ function hesapla2() {
 }
 
 function _executeHesapla2() {
+    var requestId = ++_hesapla2RequestId;
     var $Tckt = $('#SonucCalculate').val(),
         $Type = $('#AdultCalculate').val(),
         $Passport = $('#PassportCalculate').val(),
@@ -755,6 +786,7 @@ function _executeHesapla2() {
     $('#hes3').removeClass('hidden');
 
     $('#PayCalculate').val('').change();
+    var requestSignature = _calculateInputSignature();
     $.ajax({
         url: "/Calculate2",
         type: "POST",
@@ -769,6 +801,7 @@ function _executeHesapla2() {
             'V137Expired': $('#V137ExpiredCalculate').val() === '1'
         },
         success: function (result) {
+            if (requestId !== _hesapla2RequestId || _calculateInputSignature() !== requestSignature) return;
             $('#hes2').removeClass('hidden');
             $('#hes3').removeClass('hidden');
             $('#hes4').removeClass('hidden');
@@ -814,8 +847,10 @@ function _executeHesapla2() {
             });
         },
         error: function () {
+            if (requestId !== _hesapla2RequestId) return;
             $('#hes2').removeClass('hidden');
             $('#hes3').addClass('hidden');
+            _clearCalculateAmounts();
         }
     });
 
@@ -866,9 +901,44 @@ function reindexDateRows() {
     var $rows = $container.length ? $container.find('.date-pair-row') : $('.date-pair-row');
     $rows.each(function (i) {
         var idx = i + 1;
+        var rowLabel = idx === 1 ? 'Son' : idx + '.';
         $(this).find('.row-badge').text(idx);
+        $(this).find('.entry-date-caption').text(rowLabel + ' Giriş');
+        $(this).find('.exit-date-caption').text(rowLabel + ' Çıkış');
     });
 }
+
+// Sefer satırları en yeniden eskiye sıralanır; ardışık kalış dönemleri çakışamaz.
+function validateTripOrder(showMessage) {
+    var $rows = $('#date-rows-container .date-pair-row');
+    var valid = true;
+    var message = 'Seferleri en yeni giriş en üstte olacak şekilde sıralayın. Bir seferin çıkışı, sonraki eski seferin girişinden önce olmalıdır.';
+
+    $rows.find('.endt, .exdt').removeClass('is-invalid');
+    $rows.each(function (i) {
+        if (i >= $rows.length - 1) return;
+        var $newer = $($rows[i]);
+        var $older = $($rows[i + 1]);
+        var newerEnter = parseDMY(($newer.find('.endt').val() || '').trim());
+        var olderExit = parseDMY(($older.find('.exdt').val() || '').trim());
+        if (!newerEnter || !olderExit) return;
+        if (newerEnter <= olderExit) {
+            valid = false;
+            $newer.find('.endt').addClass('is-invalid');
+            $older.find('.exdt').addClass('is-invalid');
+        }
+    });
+
+    var $warning = $('#dateOrderValidation');
+    if (!$warning.length) {
+        $warning = $('<div id="dateOrderValidation" class="alert alert-danger py-2 mb-2" role="alert" style="display:none;"></div>');
+        $('#date-rows-container').before($warning);
+    }
+    if (!valid && showMessage) $warning.text(message).show();
+    else if (valid) $warning.hide().empty();
+    return valid;
+}
+window.validateTripOrder = validateTripOrder;
 
 // Satır bazında tekil silme fonksiyonu
 function gcremoveSpecificRow(btn) {
@@ -922,7 +992,7 @@ function gcadd() {
         + '<div class="form-group row form-row date-pair-row extra align-items-end mb-2" id="date-row-' + nextIndex + '">'
         + '<div class="col-xl-4 col-lg-4 col-md-4 col-sm-12 mb-2">'
         + '<label for="' + enterId + '" class="control-label font-weight-bold" style="font-size:12.5px;">'
-        + '<i class="fas fa-sign-in-alt text-primary mr-1"></i> <span class="badge badge-primary mr-1 row-badge">' + labelNum + '</span> Giriş Tarihi'
+        + '<i class="fas fa-sign-in-alt text-primary mr-1"></i> <span class="badge badge-primary mr-1 row-badge">' + labelNum + '</span> <span class="entry-date-caption">' + labelNum + '. Giriş</span>'
         + '</label>'
         + '<div class="input-group">'
         + '<span class="input-group-prepend"><span class="input-group-text"><i class="fas fa-calendar-alt"></i></span></span>'
@@ -930,7 +1000,7 @@ function gcadd() {
         + '</div></div>'
         + '<div class="col-xl-4 col-lg-4 col-md-4 col-sm-12 mb-2">'
         + '<label for="' + exitId + '" class="control-label font-weight-bold" style="font-size:12.5px;">'
-        + '<i class="fas fa-sign-out-alt text-danger mr-1"></i> <span class="badge badge-danger mr-1 row-badge">' + labelNum + '</span> Çıkış Tarihi'
+        + '<i class="fas fa-sign-out-alt text-danger mr-1"></i> <span class="badge badge-danger mr-1 row-badge">' + labelNum + '</span> <span class="exit-date-caption">' + labelNum + '. Çıkış</span>'
         + '</label>'
         + '<div class="input-group">'
         + '<span class="input-group-prepend"><span class="input-group-text"><i class="fas fa-calendar-alt"></i></span></span>'
@@ -981,6 +1051,7 @@ function gcadd() {
     // hemen hesapla/ göster
     syncRussiaCalculationModel();
     computeDiffForRow($row);
+    reindexDateRows();
 }
 
 // Güvenli kaldırma ve etiket yeniden numaralandırma + diff tekrar hesapla

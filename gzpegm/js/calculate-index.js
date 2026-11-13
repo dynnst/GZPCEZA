@@ -258,15 +258,9 @@
 
     $(document).ready(function () {
 
-        // Tarih değişikliklerinde gün farkını hesapla
-        $(document).on('change changeDate input keyup blur', '.endt, .exdt', function () {
-            computePairDiff(this);
-            refreshReEntry();
-        });
-
-        // Datepicker ile tarih tıklandığında anında diff ve hesapla1 tetikle
+        // Tarih farkı ve tekrar giriş güncellemesini custom.js zaten yönetiyor.
+        // Burada yalnızca datepicker seçimini hesaplama isteğine bağla.
         $(document).on('changeDate', '.endt, .exdt', function () {
-            computePairDiff(this);
             if (typeof window.hesapla1 === 'function') {
                 try { window.hesapla1(); } catch (e) { }
             }
