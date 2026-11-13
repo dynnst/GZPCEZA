@@ -5,6 +5,7 @@ using gzpegm.Models;
 using System;
 using System.IO;
 using System.Linq;
+using System.Data.Entity;
 using System.Web;
 using System.Web.Mvc;
 using System.Collections.Generic;
@@ -173,36 +174,31 @@ namespace gzpegm.Controllers
                     ViewBag.InadTopCount = inadTop.Count;
                 }
 
-                // Provide per-border stats for this user so view can show previous borders
+                // Other posts are based on the logged-in staff member's E_IsK operations.
+                var staffOperations = db.E_IsK.AsNoTracking()
+                    .Where(x => x.fldApproval == fullname && x.fldBorder != null)
+                    .ToList();
                 var borderStats = new List<ProfileBorderStat>();
-                foreach (var g in groupedByBorder)
+                foreach (var g in staffOperations
+                    .Where(x => !string.Equals(x.fldBorder, user.fldBorder, StringComparison.OrdinalIgnoreCase))
+                    .GroupBy(x => x.fldBorder)
+                    .OrderByDescending(x => x.Count()))
                 {
-                    // sum of fldPMoney for this border
-                    decimal sum = 0;
-                    foreach (var h in g.Items)
-                    {
-                        var cleaned = System.Text.RegularExpressions.Regex.Replace((h.fldPMoney ?? ""), "[^0-9,.-]", "").Replace(',', '.');
-                        if (decimal.TryParse(cleaned, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var v)) sum += v;
-                    }
-
-                    // most active day for this border
-                    var most = g.Items.Where(h => h.fldDatetime.HasValue)
+                    var most = g.Where(h => h.fldDatetime.HasValue)
                         .GroupBy(h => h.fldDatetime.Value.Date)
                         .Select(x => new { Date = x.Key, Count = x.Count() })
                         .OrderByDescending(x => x.Count).FirstOrDefault();
                     string mostDay = most != null ? most.Date.ToString("dd.MM.yyyy") : null;
 
-                    // samples: first 10 records formatted
-                    var samples = g.Items.OrderByDescending(h => h.fldDatetime).Take(10)
-                        .Select(h => new ProfileSample {
-                            Id = h.fldId,
-                            Date = h.fldDatetime,
-                            Country = h.fldCountry,
-                            Penalty = h.fldPMoney,
-                            User = h.fldUser
-                        }).ToList();
-
-                    borderStats.Add(new ProfileBorderStat { Border = g.Border, Count = g.Count, Sum = sum, MostActiveDay = mostDay, Samples = samples });
+                    var sum = g.Sum(h => ParseProfileMoney(h.fldPMoney));
+                    borderStats.Add(new ProfileBorderStat
+                    {
+                        Border = g.Key,
+                        Count = g.Count(),
+                        Sum = sum,
+                        MostActiveDay = mostDay,
+                        Samples = new List<ProfileSample>()
+                    });
                 }
 
                 ViewBag.BorderHistory = borderStats;
@@ -247,7 +243,143 @@ namespace gzpegm.Controllers
             return View("~/Views/Profil/Index.cshtml", user);
         }
 
-        // ✅ TEK KAYDET BUTONU
+        [HttpGet]
+        [Route("Profil/HudutGecmisi")]
+        public ActionResult BorderHistory(string border, int page = 1)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null)
+                return RedirectToAction("Index", "Giris");
+
+            var user = db.E_User.FirstOrDefault(x => x.fldId == userId);
+            if (user == null)
+                return RedirectToAction("Index", "Giris");
+            if (string.IsNullOrWhiteSpace(border))
+                return HttpNotFound();
+
+            border = border.Trim();
+            const int pageSize = 25;
+            var operations = GetBorderOperations(border);
+            var total = operations.Count;
+            var totalPages = Math.Max(1, (int)Math.Ceiling(total / (double)pageSize));
+            page = Math.Max(1, Math.Min(page, totalPages));
+
+            ViewBag.Border = border;
+            ViewBag.Page = page;
+            ViewBag.PageSize = pageSize;
+            ViewBag.TotalPages = totalPages;
+            ViewBag.Total = total;
+
+            var pageItems = operations.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+            return View("~/Views/Profil/BorderHistory.cshtml", pageItems);
+        }
+
+        private List<BorderOperationViewModel> GetBorderOperations(string border)
+        {
+            var records = db.E_IsK.AsNoTracking()
+                .Where(x => x.fldBorder == border)
+                .OrderByDescending(x => x.fldDatetime)
+                .ThenByDescending(x => x.fldId)
+                .ToList()
+                .Where(x => string.Equals(x.fldBorder ?? "", border, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            var tahditLogs = new List<TahditFormLog>();
+            var datedRecords = records.Where(x => x.fldDatetime.HasValue).ToList();
+            if (datedRecords.Count > 0)
+            {
+                var start = datedRecords.Min(x => x.fldDatetime.Value).AddMinutes(-2);
+                var end = datedRecords.Max(x => x.fldDatetime.Value).AddMinutes(2);
+                tahditLogs = new TahditFormLogService().GetEntries(border, start, end);
+            }
+
+            return records.Select(record =>
+            {
+                var matchingLog = record.fldDatetime.HasValue
+                    ? tahditLogs
+                        .Where(log => IsMatchingTahditLog(record, log))
+                        .OrderBy(log => Math.Abs((log.CreatedAt - record.fldDatetime.Value).Ticks))
+                        .FirstOrDefault()
+                    : null;
+
+                return new BorderOperationViewModel
+                {
+                    Id = record.fldId,
+                    Date = record.fldDatetime,
+                    PassengerName = record.fldName,
+                    Nationality = record.fldOrgin,
+                    Amount = record.fldPMoney,
+                    Visa = record.fldVisa,
+                    TahditCode = matchingLog != null ? matchingLog.TahditCode : null,
+                    AdministrativeTahditCode = matchingLog != null ? matchingLog.IdariTahditCode : null,
+                    Officer = record.fldApproval
+                };
+            }).ToList();
+        }
+
+        private static bool IsMatchingTahditLog(E_IsK record, TahditFormLog log)
+        {
+            if (!string.Equals(record.fldBorder ?? "", log.Border ?? "", StringComparison.OrdinalIgnoreCase))
+                return false;
+            if (!string.Equals(NormalizeOperationMatchValue(record.fldName), NormalizeOperationMatchValue(log.PassengerName), StringComparison.Ordinal))
+                return false;
+            if (!string.IsNullOrWhiteSpace(record.fldPassport) &&
+                !string.Equals(NormalizeOperationMatchValue(record.fldPassport), NormalizeOperationMatchValue(log.PassportNo), StringComparison.Ordinal))
+                return false;
+            if (!string.IsNullOrWhiteSpace(record.fldApproval) &&
+                !string.IsNullOrWhiteSpace(log.UserDisplayName) &&
+                !string.Equals(NormalizeOperationMatchValue(record.fldApproval), NormalizeOperationMatchValue(log.UserDisplayName), StringComparison.Ordinal))
+                return false;
+
+            return record.fldDatetime.HasValue
+                && Math.Abs((log.CreatedAt - record.fldDatetime.Value).TotalMinutes) <= 2;
+        }
+
+        private static string NormalizeOperationMatchValue(string value)
+        {
+            return string.Concat((value ?? "").Where(c => !char.IsWhiteSpace(c))).ToUpperInvariant();
+        }
+
+        private static decimal ParseProfileMoney(string value)
+        {
+            decimal amount;
+            if (decimal.TryParse(value, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.GetCultureInfo("tr-TR"), out amount))
+                return amount;
+            if (decimal.TryParse(value, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out amount))
+                return amount;
+
+            var cleaned = System.Text.RegularExpressions.Regex.Replace(value ?? "", "[^0-9,.-]", "");
+            cleaned = cleaned.Replace(".", "").Replace(',', '.');
+            return decimal.TryParse(cleaned, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out amount)
+                ? amount
+                : 0m;
+        }
+
+        private static void AddProfilePdfHeader(iTextSharp.text.pdf.PdfPTable table, string text, iTextSharp.text.pdf.BaseFont baseFont)
+        {
+            var headerFont = new iTextSharp.text.Font(baseFont, 9, iTextSharp.text.Font.BOLD, iTextSharp.text.BaseColor.WHITE);
+            var cell = new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(text, headerFont))
+            {
+                BackgroundColor = new iTextSharp.text.BaseColor(31, 78, 121),
+                Padding = 5f
+            };
+            table.AddCell(cell);
+        }
+
+        private static void AddProfilePdfCell(
+            iTextSharp.text.pdf.PdfPTable table,
+            string text,
+            iTextSharp.text.Font font,
+            int horizontalAlignment = iTextSharp.text.Element.ALIGN_LEFT)
+        {
+            var cell = new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(text ?? "-", font))
+            {
+                HorizontalAlignment = horizontalAlignment,
+                Padding = 5f
+            };
+            table.AddCell(cell);
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult SaveProfile(
@@ -364,62 +496,76 @@ namespace gzpegm.Controllers
             return RedirectToAction("Index");
         }
 
-        // Return paged details for a given border for the current user
         [HttpGet]
-        public JsonResult GetBorderDetails(string border, int page = 1, int pageSize = 10)
+        public ActionResult ExportBorderPdf(string border)
         {
             var userId = GetCurrentUserId();
-            if (userId == null) return Json(new { success = false, message = "Not logged in" }, JsonRequestBehavior.AllowGet);
+            if (userId == null) return new HttpStatusCodeResult(401);
 
             var user = db.E_User.FirstOrDefault(x => x.fldId == userId);
-            if (user == null) return Json(new { success = false, message = "User not found" }, JsonRequestBehavior.AllowGet);
+            if (user == null) return new HttpStatusCodeResult(401);
+            if (string.IsNullOrWhiteSpace(border)) return new HttpStatusCodeResult(400);
 
-            try
+            var operations = GetBorderOperations(border.Trim());
+
+            using (var stream = new MemoryStream())
             {
-                // build matched records as in Index
-                string fullname = (user.fldName ?? "").Trim() + " " + (user.fldLastName ?? "").Trim();
-                string sicil = (user.fldSicil ?? "").Trim();
+                var document = new iTextSharp.text.Document(iTextSharp.text.PageSize.A4.Rotate(), 24, 24, 24, 24);
+                iTextSharp.text.pdf.PdfWriter.GetInstance(document, stream);
+                document.Open();
 
-                var allWithUser = db.E_History.Where(h => h.fldUser != null).ToList();
-                var matched = allWithUser.Where(h =>
+                var fontPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Fonts), "arial.ttf");
+                var baseFont = iTextSharp.text.pdf.BaseFont.CreateFont(
+                    fontPath,
+                    iTextSharp.text.pdf.BaseFont.IDENTITY_H,
+                    iTextSharp.text.pdf.BaseFont.EMBEDDED);
+                var titleFont = new iTextSharp.text.Font(baseFont, 15, iTextSharp.text.Font.BOLD, new iTextSharp.text.BaseColor(31, 78, 121));
+                var infoFont = new iTextSharp.text.Font(baseFont, 9);
+                var cellFont = new iTextSharp.text.Font(baseFont, 8);
+
+                document.Add(new iTextSharp.text.Paragraph("Hudut Kapısı İşlem Dökümü", titleFont));
+                document.Add(new iTextSharp.text.Paragraph("Hudut Kapısı: " + border.Trim(), infoFont));
+                document.Add(new iTextSharp.text.Paragraph("Oluşturulma tarihi: " + DateTime.Now.ToString("dd.MM.yyyy HH:mm"), infoFont));
+                document.Add(new iTextSharp.text.Paragraph(" "));
+
+                var table = new iTextSharp.text.pdf.PdfPTable(9) { WidthPercentage = 100, HeaderRows = 1 };
+                table.SetWidths(new float[] { 6f, 13f, 17f, 10f, 9f, 11f, 10f, 10f, 14f });
+                AddProfilePdfHeader(table, "Kayıt No", baseFont);
+                AddProfilePdfHeader(table, "Tarih", baseFont);
+                AddProfilePdfHeader(table, "Ad Soyad", baseFont);
+                AddProfilePdfHeader(table, "Uyruk", baseFont);
+                AddProfilePdfHeader(table, "Tutar", baseFont);
+                AddProfilePdfHeader(table, "Vize", baseFont);
+                AddProfilePdfHeader(table, "Tahdit", baseFont);
+                AddProfilePdfHeader(table, "İdari Tahdit", baseFont);
+                AddProfilePdfHeader(table, "Görevli", baseFont);
+
+                foreach (var item in operations)
                 {
-                    var fu = (h.fldUser ?? "").Trim();
-                    if (string.IsNullOrEmpty(fu)) return false;
-                    var ns = fu.ToLowerInvariant();
-                    if (!string.IsNullOrEmpty(sicil))
+                    AddProfilePdfCell(table, item.Id.ToString(), cellFont);
+                    AddProfilePdfCell(table, item.Date.HasValue ? item.Date.Value.ToString("dd.MM.yyyy HH:mm") : "-", cellFont);
+                    AddProfilePdfCell(table, item.PassengerName, cellFont);
+                    AddProfilePdfCell(table, item.Nationality, cellFont);
+                    AddProfilePdfCell(table, item.Amount, cellFont);
+                    AddProfilePdfCell(table, item.Visa, cellFont);
+                    AddProfilePdfCell(table, item.TahditCode, cellFont);
+                    AddProfilePdfCell(table, item.AdministrativeTahditCode, cellFont);
+                    AddProfilePdfCell(table, item.Officer, cellFont);
+                }
+
+                if (!operations.Any())
+                {
+                    var emptyCell = new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase("Bu hudut kapısı için işlem kaydı bulunamadı.", cellFont))
                     {
-                        var nsicil = sicil.ToLowerInvariant();
-                        if (ns.StartsWith(nsicil + "|")) return true;
-                        if (ns == nsicil) return true;
-                        var idx = ns.IndexOf('|');
-                        if (idx > 0)
-                        {
-                            var first = ns.Substring(0, idx).Trim();
-                            if (first == nsicil) return true;
-                        }
-                    }
-                    if (!string.IsNullOrEmpty(fullname) && ns == fullname.ToLowerInvariant()) return true;
-                    return false;
-                }).ToList();
+                        Colspan = 9,
+                        Padding = 5f
+                    };
+                    table.AddCell(emptyCell);
+                }
 
-                var filtered = matched.Where(h => string.Equals(h.fldBorder ?? "", border ?? "", StringComparison.OrdinalIgnoreCase)).OrderByDescending(h => h.fldDatetime).ToList();
-                var total = filtered.Count;
-                var items = filtered.Skip((page - 1) * pageSize).Take(pageSize).Select(h => new
-                {
-                    fldId = h.fldId,
-                    date = h.fldDatetime.HasValue ? h.fldDatetime.Value.ToString("o") : null,
-                    country = h.fldCountry,
-                    penalty = h.fldPMoney,
-                    user = h.fldUser
-                }).ToList();
-
-                var csvUrl = Url.Action("ExportBorderCsv", new { border = border });
-
-                return Json(new { success = true, total = total, page = page, pageSize = pageSize, items = items, csv = csvUrl }, JsonRequestBehavior.AllowGet);
-            }
-            catch (Exception ex)
-            {
-                return Json(new { success = false, message = ex.Message }, JsonRequestBehavior.AllowGet);
+                document.Add(table);
+                document.Close();
+                return File(stream.ToArray(), "application/pdf", "hudut-kapisi-islemleri-" + DateTime.Now.ToString("yyyyMMdd") + ".pdf");
             }
         }
 
@@ -430,47 +576,37 @@ namespace gzpegm.Controllers
             if (userId == null) return new HttpStatusCodeResult(401);
             var user = db.E_User.FirstOrDefault(x => x.fldId == userId);
             if (user == null) return new HttpStatusCodeResult(401);
+            if (string.IsNullOrWhiteSpace(border)) return new HttpStatusCodeResult(400);
 
-            // build matched as before
-            string fullname = (user.fldName ?? "").Trim() + " " + (user.fldLastName ?? "").Trim();
-            string sicil = (user.fldSicil ?? "").Trim();
-
-            var allWithUser = db.E_History.Where(h => h.fldUser != null).ToList();
-            var matched = allWithUser.Where(h =>
-            {
-                var fu = (h.fldUser ?? "").Trim();
-                if (string.IsNullOrEmpty(fu)) return false;
-                var ns = fu.ToLowerInvariant();
-                if (!string.IsNullOrEmpty(sicil))
-                {
-                    var nsicil = sicil.ToLowerInvariant();
-                    if (ns.StartsWith(nsicil + "|")) return true;
-                    if (ns == nsicil) return true;
-                    var idx = ns.IndexOf('|');
-                    if (idx > 0)
-                    {
-                        var first = ns.Substring(0, idx).Trim();
-                        if (first == nsicil) return true;
-                    }
-                }
-                if (!string.IsNullOrEmpty(fullname) && ns == fullname.ToLowerInvariant()) return true;
-                return false;
-            }).ToList();
-
-            var filtered = matched.Where(h => string.Equals(h.fldBorder ?? "", border ?? "", StringComparison.OrdinalIgnoreCase)).OrderByDescending(h => h.fldDatetime).ToList();
+            var operations = GetBorderOperations(border.Trim());
 
             var sb = new System.Text.StringBuilder();
-            sb.AppendLine("Id;Tarih;Ülke;Ceza;Kullanıcı");
-            foreach (var h in filtered)
+            sb.AppendLine("Kayıt No;Tarih;Ad Soyad;Uyruk;Tutar;Vize;Tahdit;İdari Tahdit;Görevli");
+            foreach (var item in operations)
             {
-                var date = h.fldDatetime.HasValue ? h.fldDatetime.Value.ToString("dd.MM.yyyy HH:mm") : "";
-                var line = string.Format("{0};{1};{2};{3};{4}", h.fldId, date, (h.fldCountry ?? ""), (h.fldPMoney ?? ""), (h.fldUser ?? ""));
-                sb.AppendLine(line);
+                var fields = new[]
+                {
+                    item.Id.ToString(),
+                    item.Date.HasValue ? item.Date.Value.ToString("dd.MM.yyyy HH:mm") : "",
+                    item.PassengerName,
+                    item.Nationality,
+                    item.Amount,
+                    item.Visa,
+                    item.TahditCode,
+                    item.AdministrativeTahditCode,
+                    item.Officer
+                };
+                sb.AppendLine(string.Join(";", fields.Select(EscapeCsvField)));
             }
 
-            var bytes = System.Text.Encoding.UTF8.GetBytes(sb.ToString());
-            var fileName = string.Format("border_{0}_history_{1}.csv", border ?? "all", DateTime.Now.ToString("yyyyMMddHHmm"));
+            var bytes = new System.Text.UTF8Encoding(true).GetBytes(sb.ToString());
+            var fileName = string.Format("border_operations_{0}.csv", DateTime.Now.ToString("yyyyMMddHHmm"));
             return File(bytes, "text/csv; charset=utf-8", fileName);
+        }
+
+        private static string EscapeCsvField(string value)
+        {
+            return "\"" + (value ?? "").Replace("\"", "\"\"") + "\"";
         }
 
         protected override void Dispose(bool disposing)

@@ -1,0 +1,92 @@
+﻿@model List<gzpegm.Models.ViewModels.BorderOperationViewModel>
+@{
+    Layout = "~/Views/Shared/_Master.cshtml";
+    ViewBag.Title = "Hudut Kapısı İşlem Dökümü";
+    var border = ViewBag.Border as string ?? "";
+    var page = Convert.ToInt32(ViewBag.Page);
+    var totalPages = Convert.ToInt32(ViewBag.TotalPages);
+    var total = Convert.ToInt32(ViewBag.Total);
+}
+
+<div class="wrapper wrapper-content animated fadeInRight">
+    <div class="row">
+        <div class="col-12">
+            <div class="ibox">
+                <div class="ibox-title d-flex justify-content-between align-items-center flex-wrap">
+                    <div>
+                        <h5 class="mb-1">Hudut Kapısı İşlem Dökümü</h5>
+                        <span class="text-muted">@border — Toplam @total işlem</span>
+                    </div>
+                    <div class="mt-2 mt-md-0">
+                        <a class="btn btn-danger btn-sm" href="@Url.Action("ExportBorderPdf", "Profile", new { border = border })">
+                            <i class="fas fa-file-pdf mr-1"></i> PDF İndir
+                        </a>
+                        <a class="btn btn-outline-secondary btn-sm" href="@Url.Action("ExportBorderCsv", "Profile", new { border = border })">
+                            <i class="fas fa-file-csv mr-1"></i> CSV İndir
+                        </a>
+                        <a class="btn btn-outline-primary btn-sm" href="@Url.Action("Index", "Profile")">Profile Dön</a>
+                    </div>
+                </div>
+                <div class="ibox-content">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Kayıt No</th>
+                                    <th>Tarih</th>
+                                    <th>Ad Soyad</th>
+                                    <th>Uyruk</th>
+                                    <th>Tutar</th>
+                                    <th>Vize</th>
+                                    <th>Tahdit</th>
+                                    <th>İdari Tahdit</th>
+                                    <th>Görevli</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model != null && Model.Any())
+                                {
+                                    foreach (var item in Model)
+                                    {
+                                        <tr>
+                                            <td>@item.Id</td>
+                                            <td>@(item.Date.HasValue ? item.Date.Value.ToString("dd.MM.yyyy HH:mm") : "-")</td>
+                                            <td>@(item.PassengerName ?? "-")</td>
+                                            <td>@(item.Nationality ?? "-")</td>
+                                            <td>@(item.Amount ?? "-")</td>
+                                            <td>@(item.Visa ?? "-")</td>
+                                            <td>@(item.TahditCode ?? "-")</td>
+                                            <td>@(item.AdministrativeTahditCode ?? "-")</td>
+                                            <td>@(item.Officer ?? "-")</td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="9" class="text-center text-muted">Bu hudut kapısı için işlem kaydı bulunamadı.</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    @if (totalPages > 1)
+                    {
+                        <nav aria-label="Sayfa seçimi">
+                            <ul class="pagination justify-content-center">
+                                <li class="page-item @(page <= 1 ? "disabled" : "")">
+                                    <a class="page-link" href="@Url.Action("BorderHistory", "Profile", new { border = border, page = page - 1 })">Önceki</a>
+                                </li>
+                                <li class="page-item disabled"><span class="page-link">@page / @totalPages</span></li>
+                                <li class="page-item @(page >= totalPages ? "disabled" : "")">
+                                    <a class="page-link" href="@Url.Action("BorderHistory", "Profile", new { border = border, page = page + 1 })">Sonraki</a>
+                                </li>
+                            </ul>
+                        </nav>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

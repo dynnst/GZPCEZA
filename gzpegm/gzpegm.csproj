@@ -7217,6 +7217,7 @@
     <Compile Include="Models\ViewModels\MessageViewModel.cs" />
     <Compile Include="Models\ViewModels\OldOperationsViewModels.cs" />
     <Compile Include="Models\ViewModels\ProfileBorderStat.cs" />
+    <Compile Include="Models\ViewModels\BorderOperationViewModel.cs" />
     <Compile Include="Models\ViewModels\SendMessageViewModel.cs" />
     <Compile Include="Models\ViewModels\TahditStatisticsViewModel.cs" />
     <Compile Include="Models\ViewModels\MessageDetailViewModel.cs" />
@@ -7404,6 +7405,7 @@
     <Content Include="Views\Home\Index.cshtml" />
     <Content Include="Views\UserBox\Index.cshtml" />
     <Content Include="Views\Profil\Index.cshtml" />
+    <Content Include="Views\Profil\BorderHistory.cshtml" />
     <Content Include="Views\AllUsers\Index.cshtml" />
     <Content Include="Views\AllUsers\PasswordResetRequests.cshtml" />
     <Content Include="Views\RolePermission\Index.cshtml" />
