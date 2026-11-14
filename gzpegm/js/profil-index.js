@@ -1,156 +1,170 @@
-﻿/* ==========================================================================
-   Profil Sayfasi JavaScript (profil-index.js)
-   ========================================================================== */
-
+﻿/* Profil sayfası etkileşimleri */
 $(function () {
     var cfg = document.getElementById('profil-config');
     var detailsUrl = (cfg && cfg.getAttribute('data-details-url')) || '/Profile/GetBorderDetails';
 
-    // Image preview without upload
-    $("#profileImageInput").on("change", function(e) {
+    // Fotoğrafı yüklemeden önce önizle.
+    $('#profileImageInput').on('change', function (event) {
+        var file = event.target.files && event.target.files[0];
+        if (!file) return;
         var reader = new FileReader();
-        reader.onload = function(event) {
-            $("#profilePreview").attr("src", event.target.result);
-        };
-        if (e.target.files[0]) {
-            reader.readAsDataURL(e.target.files[0]);
-        }
+        reader.onload = function (e) { $('#profilePreview').attr('src', e.target.result); };
+        reader.readAsDataURL(file);
     });
 
-    // Sparkline chart
+    // Son 12 ayın işlem grafiği.
     try {
-        var data = [];
-        if (cfg && cfg.getAttribute('data-history-chart')) {
-            data = JSON.parse(cfg.getAttribute('data-history-chart'));
-        }
-        if (data && data.length) {
-            $('#profile-sparkline').sparkline(data, { type: 'bar', barColor: '#1ab394', height: '220', barWidth: 30, barSpacing: 8 });
+        var chartData = cfg && cfg.getAttribute('data-history-chart')
+            ? JSON.parse(cfg.getAttribute('data-history-chart')) : [];
+        if (chartData && chartData.length && $.fn.sparkline) {
+            $('#profile-sparkline').sparkline(chartData, {
+                type: 'bar',
+                barColor: '#38ad9b',
+                height: '150',
+                barWidth: 28,
+                barSpacing: 9,
+                chartRangeMin: 0
+            });
         } else {
-            $('#profile-sparkline').html('<div class="alert alert-info text-center">Grafik verisi bulunamadÄ±</div>');
+            $('#profile-sparkline').html('<div class="profile-empty-state">Henüz grafik verisi yok.</div>');
         }
-    } catch(e) { console.warn(e); }
+    } catch (error) {
+        console.warn('Profil grafiği yüklenemedi.', error);
+    }
+
+    function escapeHtml(value) {
+        return String(value == null ? '' : value).replace(/[&<>"']/g, function (character) {
+            return {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            }[character];
+        });
+    }
 
     function ensureModal() {
         var $modal = $('#borderDetailModal');
-        if ($modal.length === 0) {
-            $('body').append('<div id="borderDetailModal" class="modal fade" tabindex="-1" role="dialog">' +
-                '<div class="modal-dialog modal-lg modal-dialog-centered" role="document">' +
-                '<div class="modal-content">' +
-                '<div class="modal-header"><h5 class="modal-title"></h5><button type="button" class="close" data-dismiss="modal">&times;</button></div>' +
-                '<div class="modal-body text-center"><div class="spinner-border text-primary" role="status"><span class="sr-only">Loading...</span></div> YÃ¼kleniyor...</div>' +
-                '<div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Kapat</button></div>' +
-                '</div></div></div>');
+        if (!$modal.length) {
+            $('body').append(
+                '<div id="borderDetailModal" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">' +
+                    '<div class="modal-dialog modal-lg modal-dialog-centered" role="document">' +
+                        '<div class="modal-content">' +
+                            '<div class="modal-header"><h5 class="modal-title"></h5><button type="button" class="close" data-dismiss="modal" aria-label="Kapat"><span aria-hidden="true">&times;</span></button></div>' +
+                            '<div class="modal-body"></div>' +
+                            '<div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Kapat</button></div>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>'
+            );
             $modal = $('#borderDetailModal');
         }
         return $modal;
     }
 
-    function renderPageControls(border, page, total, pageSize) {
+    function renderPagination(page, total, pageSize) {
         var totalPages = Math.ceil(total / pageSize) || 1;
-        var html = '<nav aria-label="border-pagination"><ul class="pagination justify-content-center">';
-        var prev = page > 1 ? page - 1 : 1;
-        var next = page < totalPages ? page + 1 : totalPages;
-        html += '<li class="page-item ' + (page <= 1 ? 'disabled' : '') + '"><a class="page-link pg-link" href="#" data-page="' + prev + '">Â« Ã–nceki</a></li>';
+        var previous = Math.max(1, page - 1);
+        var next = Math.min(totalPages, page + 1);
+        var html = '<nav aria-label="Hudut detay sayfaları"><ul class="pagination justify-content-center">';
+        html += '<li class="page-item ' + (page <= 1 ? 'disabled' : '') + '"><a class="page-link pg-link" href="#" data-page="' + previous + '">« Önceki</a></li>';
         for (var p = 1; p <= totalPages; p++) {
             html += '<li class="page-item ' + (p === page ? 'active' : '') + '"><a class="page-link pg-link" href="#" data-page="' + p + '">' + p + '</a></li>';
         }
-        html += '<li class="page-item ' + (page >= totalPages ? 'disabled' : '') + '"><a class="page-link pg-link" href="#" data-page="' + next + '">Sonraki Â»</a></li>';
-        html += '</ul></nav>';
-        return html;
+        html += '<li class="page-item ' + (page >= totalPages ? 'disabled' : '') + '"><a class="page-link pg-link" href="#" data-page="' + next + '">Sonraki »</a></li>';
+        return html + '</ul></nav>';
     }
 
     function loadBorderDetails(border, page) {
-        page = page || 1;
         var $modal = ensureModal();
+        page = page || 1;
+        $modal.find('.modal-title').text(border + ' detayları');
+        $modal.find('.modal-body').html('<div class="profile-empty-state"><span class="spinner-border spinner-border-sm text-primary" role="status"></span> Detaylar yükleniyor…</div>');
         $modal.modal('show');
-        $modal.find('.modal-body').html('<div class="text-center p-4"><div class="spinner-border text-primary"></div><br/> Detaylar getiriliyor...</div>');
-        $.getJSON(detailsUrl, { border: border, page: page }).done(function (res) {
-            if (!res || !res.success) {
-                $modal.find('.modal-body').html('<div class="alert alert-danger">' + (res && res.message ? res.message : 'Veri yÃ¼klenemedi') + '</div>');
+
+        $.getJSON(detailsUrl, { border: border, page: page }).done(function (result) {
+            if (!result || !result.success) {
+                $modal.find('.modal-body').html('<div class="alert alert-danger mb-0">' + escapeHtml(result && result.message ? result.message : 'Veriler yüklenemedi.') + '</div>');
                 return;
             }
-            var html = '<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap"><h5 class="mb-2">' + escapeHtml(border) + ' - KayÄ±tlar</h5>';
-            html += '<a class="btn btn-sm btn-outline-secondary rounded-pill" href="' + res.csv + '">ğŸ“¥ CSV Ä°ndir</a></div>';
-            html += '<div class="table-responsive"><table class="table table-hover table-sm"><thead class="bg-light"><tr><th>Tarih</th><th>Ad Soyad</th><th>Uyruk</th><th>Vize / Tahdit</th><th>Ceza (TL)</th><th>Form</th></tr></thead><tbody>';
-            for (var i = 0; i < res.items.length; i++) {
-                var s = res.items[i];
-                var dt = s.date ? new Date(s.date) : null;
-                var formLink = s.formUrl ? '<a href="' + escapeHtml(s.formUrl) + '" target="_blank" rel="noopener">Goruntule</a>' : '-';
+
+            var pdfUrl = escapeHtml(result.pdf || '#');
+            var html = '<div class="d-flex align-items-center justify-content-between flex-wrap mb-3">' +
+                '<h6 class="mb-2">' + escapeHtml(border) + ' · Kayıtlar</h6>' +
+                '<a class="btn btn-sm btn-outline-secondary rounded-pill mb-2" href="' + pdfUrl + '" target="_blank" rel="noopener"><i class="fas fa-file-pdf mr-1"></i> PDF indir</a>' +
+                '</div><div class="table-responsive"><table class="table table-hover table-sm"><thead><tr>' +
+                '<th>Tarih</th><th>Ad Soyad</th><th>Uyruk</th><th>Vize / Tahdit</th><th>Ceza (TL)</th><th>Form</th></tr></thead><tbody>';
+
+            (result.items || []).forEach(function (item) {
+                var date = item.date ? new Date(item.date) : null;
+                var dateText = date && !isNaN(date.getTime()) ? date.toLocaleString('tr-TR') : '—';
+                var formLink = item.formUrl
+                    ? '<a href="' + escapeHtml(item.formUrl) + '" target="_blank" rel="noopener">Görüntüle</a>'
+                    : '—';
                 html += '<tr>' +
-                    '<td>' + (dt ? dt.toLocaleString('tr-TR') : '-') + '</td>' +
-                    '<td>' + escapeHtml(s.name || '-') + '</td>' +
-                    '<td>' + escapeHtml(s.nationality || '-') + '</td>' +
-                    '<td>' + escapeHtml(s.visa || '-') + '</td>' +
-                    '<td class="text-danger">' + escapeHtml(s.penalty || '0') + '</td>' +
-                    '<td>' + formLink + '</td>' +
-                    '</tr>';
+                    '<td>' + escapeHtml(dateText) + '</td>' +
+                    '<td>' + escapeHtml(item.name || '—') + '</td>' +
+                    '<td>' + escapeHtml(item.nationality || '—') + '</td>' +
+                    '<td>' + escapeHtml(item.visa || '—') + '</td>' +
+                    '<td class="text-danger">₺ ' + escapeHtml(String(item.penalty || '0')) + '</td>' +
+                    '<td>' + formLink + '</td></tr>';
+            });
+
+            if (!(result.items || []).length) {
+                html += '<tr><td colspan="6" class="text-center text-muted py-4">Bu hudut kapısı için kayıt bulunamadı.</td></tr>';
             }
-            html += '</tbody></table></div>';
-            html += renderPageControls(border, res.page, res.total, res.pageSize);
-            $modal.find('.modal-title').text(border + ' DetaylarÄ±');
+            html += '</tbody></table></div>' + renderPagination(result.page || page, result.total || 0, result.pageSize || 10);
             $modal.find('.modal-body').html(html);
-            // bind pagination events
-            $modal.find('.pg-link').off('click').on('click', function (e) {
-                e.preventDefault();
-                var p = parseInt($(this).data('page')) || 1;
-                loadBorderDetails(border, p);
+            $modal.find('.pg-link').on('click', function (event) {
+                event.preventDefault();
+                if ($(this).closest('.page-item').hasClass('disabled') || $(this).closest('.page-item').hasClass('active')) return;
+                loadBorderDetails(border, parseInt($(this).data('page'), 10) || 1);
             });
         }).fail(function () {
-            $modal.find('.modal-body').html('<div class="alert alert-danger">Sunucu hatasÄ±, lÃ¼tfen daha sonra tekrar deneyin.</div>');
+            $modal.find('.modal-body').html('<div class="alert alert-danger mb-0">Sunucu hatası. Lütfen daha sonra tekrar deneyin.</div>');
         });
     }
 
-    // Helper escape
-    function escapeHtml(str) {
-        if(!str) return '';
-        return str.replace(/[&<>]/g, function(m) {
-            if (m === '&') return '&amp;';
-            if (m === '<') return '&lt;';
-            if (m === '>') return '&gt;';
-            return m;
-        });
-    }
-
-    $('.view-border').off('click').on('click', function () {
-        var border = $(this).data('border');
+    $(document).on('click', '.view-border', function () {
+        var border = $(this).attr('data-border');
         if (border) loadBorderDetails(border, 1);
     });
 
-    // Show all borders modal
-    $('#showAllBorders').off('click').on('click', function (e) {
-        e.preventDefault();
+    $('#showAllBorders').on('click', function (event) {
+        event.preventDefault();
         var list = [];
         try {
-            if (cfg && cfg.getAttribute('data-border-history')) {
-                list = JSON.parse(cfg.getAttribute('data-border-history'));
-            }
-        } catch (err) { console.warn(err); }
-
+            list = cfg && cfg.getAttribute('data-border-history')
+                ? JSON.parse(cfg.getAttribute('data-border-history')) : [];
+        } catch (error) {
+            console.warn('Hudut listesi okunamadı.', error);
+        }
         if (!list || !list.length) {
-            alert("KayÄ±tlÄ± hudut bilgisi yok.");
+            window.alert('Kayıtlı hudut bilgisi yok.');
             return;
         }
-        var html = '<h5 class="mb-3">TÃ¼m Hudut KapÄ±larÄ± Ä°statistikleri</h5><div class="table-responsive"><table class="table table-striped"><thead><tr><th>Hudut</th><th>Ä°ÅŸlem SayÄ±sÄ±</th><th>Toplam Ceza</th><th>En Aktif GÃ¼n</th><th></th></tr></thead><tbody>';
-        for (var i = 0; i < list.length; i++) {
-            var b = list[i];
-            html += '<tr>' +
-                '<td><strong>' + (b.Border || '-') + '</strong></td>' +
-                '<td>' + (b.Count || 0) + '</td>' +
-                '<td>â‚º ' + (b.Sum || 0) + '</td>' +
-                '<td>' + (b.MostActiveDay || '-') + '</td>' +
-                '<td><button class="btn btn-sm btn-outline-primary view-border-modal" data-border="' + escapeHtml(b.Border) + '">Detay</button></td>' +
-                '</tr>';
-        }
+
+        var html = '<div class="table-responsive"><table class="table table-hover"><thead><tr>' +
+            '<th>Hudut kapısı</th><th>İşlem sayısı</th><th>Toplam ceza</th><th>En aktif gün</th><th></th>' +
+            '</tr></thead><tbody>';
+        list.forEach(function (item) {
+            var border = item.Border || '';
+            html += '<tr><td><strong>' + escapeHtml(border || '—') + '</strong></td>' +
+                '<td>' + escapeHtml(item.Count || 0) + '</td>' +
+                '<td>₺ ' + escapeHtml(item.Sum || 0) + '</td>' +
+                '<td>' + escapeHtml(item.MostActiveDay || '—') + '</td>' +
+                '<td><button type="button" class="btn btn-sm btn-outline-primary view-border-modal" data-border="' + escapeHtml(border) + '">Detay</button></td></tr>';
+        });
         html += '</tbody></table></div>';
+
         var $modal = ensureModal();
-        $modal.find('.modal-title').text('Hudut KapÄ±larÄ± Listesi');
+        $modal.find('.modal-title').text('Hudut kapıları');
         $modal.find('.modal-body').html(html);
         $modal.modal('show');
-
-        $modal.find('.view-border-modal').off('click').on('click', function () {
-            var border = $(this).data('border');
-            if(border) loadBorderDetails(border, 1);
-            $modal.modal('hide');
+        $modal.find('.view-border-modal').on('click', function () {
+            var border = $(this).attr('data-border');
+            if (border) loadBorderDetails(border, 1);
         });
     });
 });

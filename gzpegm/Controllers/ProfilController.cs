@@ -418,13 +418,84 @@ namespace gzpegm.Controllers
                     h.penalty
                 }).ToList();
 
-                var csvUrl = Url.Action("ExportBorderCsv", new { border = border });
+                var pdfUrl = Url.Action("ExportBorderPdf", new { border = border });
 
-                return Json(new { success = true, total = total, page = page, pageSize = pageSize, items = items, csv = csvUrl }, JsonRequestBehavior.AllowGet);
+                return Json(new { success = true, total = total, page = page, pageSize = pageSize, items = items, pdf = pdfUrl }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
                 return Json(new { success = false, message = ex.Message }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        [HttpGet]
+        public ActionResult ExportBorderPdf(string border)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null) return new HttpStatusCodeResult(401);
+            var user = db.E_User.FirstOrDefault(x => x.fldId == userId);
+            if (user == null) return new HttpStatusCodeResult(401);
+
+            try
+            {
+                string fullname = ((user.fldName ?? "").Trim() + " " + (user.fldLastName ?? "").Trim()).Trim();
+                string sicil = (user.fldSicil ?? "").Trim();
+                var history = GetIskRowsForUser(user)
+                    .Where(h => (h.fldBorder ?? "") == (border ?? ""))
+                    .OrderByDescending(h => h.fldDatetime)
+                    .ToList();
+
+                using (var stream = new MemoryStream())
+                {
+                    var document = new iTextSharp.text.Document(iTextSharp.text.PageSize.A4, 30, 30, 32, 30);
+                    iTextSharp.text.pdf.PdfWriter.GetInstance(document, stream);
+                    document.Open();
+
+                    var fontPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Fonts), "arial.ttf");
+                    var baseFont = iTextSharp.text.pdf.BaseFont.CreateFont(fontPath, iTextSharp.text.pdf.BaseFont.IDENTITY_H, iTextSharp.text.pdf.BaseFont.EMBEDDED);
+                    var titleFont = new iTextSharp.text.Font(baseFont, 16, iTextSharp.text.Font.BOLD, new iTextSharp.text.BaseColor(31, 65, 96));
+                    var infoFont = new iTextSharp.text.Font(baseFont, 9, iTextSharp.text.Font.NORMAL, new iTextSharp.text.BaseColor(92, 107, 124));
+                    var headerFont = new iTextSharp.text.Font(baseFont, 9, iTextSharp.text.Font.BOLD, iTextSharp.text.BaseColor.WHITE);
+                    var cellFont = new iTextSharp.text.Font(baseFont, 9, iTextSharp.text.Font.NORMAL, new iTextSharp.text.BaseColor(39, 54, 72));
+
+                    document.Add(new iTextSharp.text.Paragraph("Hudut Kapısı İşlem Geçmişi", titleFont));
+                    document.Add(new iTextSharp.text.Paragraph("Hudut kapısı: " + (border ?? "-"), infoFont));
+                    document.Add(new iTextSharp.text.Paragraph("Personel: " + (fullname ?? "-") + (string.IsNullOrEmpty(sicil) ? "" : " · " + sicil), infoFont));
+                    document.Add(new iTextSharp.text.Paragraph("Oluşturulma tarihi: " + DateTime.Now.ToString("dd.MM.yyyy HH:mm") + " · Kayıt sayısı: " + history.Count, infoFont));
+                    document.Add(new iTextSharp.text.Paragraph(" "));
+
+                    var table = new iTextSharp.text.pdf.PdfPTable(6) { WidthPercentage = 100, HeaderRows = 1 };
+                    table.SetWidths(new float[] { 18f, 20f, 14f, 16f, 14f, 18f });
+                    foreach (var heading in new[] { "Tarih", "Ad Soyad", "Uyruk", "Vize / Tahdit", "Ceza (TL)", "Kullanıcı" })
+                    {
+                        table.AddCell(new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(heading, headerFont))
+                        {
+                            BackgroundColor = new iTextSharp.text.BaseColor(31, 78, 120),
+                            Padding = 7f,
+                            HorizontalAlignment = iTextSharp.text.Element.ALIGN_LEFT
+                        });
+                    }
+                    foreach (var item in history)
+                    {
+                        table.AddCell(new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(item.fldDatetime?.ToString("dd.MM.yyyy HH:mm") ?? "-", cellFont)) { Padding = 6f });
+                        table.AddCell(new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(item.fldName ?? "-", cellFont)) { Padding = 6f });
+                        table.AddCell(new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(item.fldOrgin ?? "-", cellFont)) { Padding = 6f });
+                        table.AddCell(new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(item.fldVisa ?? "-", cellFont)) { Padding = 6f });
+                        table.AddCell(new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(item.fldPMoney ?? "0", cellFont)) { Padding = 6f, HorizontalAlignment = iTextSharp.text.Element.ALIGN_RIGHT });
+                        table.AddCell(new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(item.fldApproval ?? "-", cellFont)) { Padding = 6f });
+                    }
+                    document.Add(table);
+                    document.Close();
+
+                    var safeBorder = string.Join("_", (border ?? "hudut").Split(Path.GetInvalidFileNameChars()));
+                    var fileName = "hudut_" + safeBorder + "_gecmisi_" + DateTime.Now.ToString("yyyyMMddHHmm") + ".pdf";
+                    return File(stream.ToArray(), "application/pdf", fileName);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.TraceError("Profile border PDF export error: " + ex.ToString());
+                return new HttpStatusCodeResult(500, "PDF oluşturulamadı.");
             }
         }
 
