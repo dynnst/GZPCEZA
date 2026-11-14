@@ -6996,8 +6996,6 @@
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="App_Start\WebApiConfig.cs" />
     <Compile Include="Controllers\CategoryController.cs" />
-    <Compile Include="Controllers\ChatController.cs" />
-    <Compile Include="Controllers\ChatRobotController.cs" />
     <Compile Include="Controllers\ContentController.cs" />
     <Compile Include="Controllers\CourseController.cs" />
     <Compile Include="Controllers\DashboardController.cs" />
@@ -7408,11 +7406,9 @@
     <Content Include="Views\AllUsers\PasswordResetRequests.cshtml" />
     <Content Include="Views\RolePermission\Index.cshtml" />
     <Content Include="Views\RolePermission\Matrix.cshtml" />
-    <Content Include="Views\Health\Dashboard.cshtml" />
     <Content Include="Views\ErrorLogs\Index.cshtml" />
     <Content Include="Views\ErrorLogs\Detail.cshtml" />
     <Content Include="Views\EducationQuality\Index.cshtml" />
-    <Content Include="Views\ChatRobot\Index.cshtml" />
     <Content Include="Views\TGVH\Index.cshtml" />
     <Content Include="Views\AUH\Index.cshtml" />
     <Content Include="Views\TKod\Index.cshtml" />
@@ -7431,7 +7427,6 @@
     <Content Include="Views\Mesaj\Sent.cshtml" />
     <Content Include="Views\Mesaj\Compose.cshtml" />
     <Content Include="Views\Mesaj\Details.cshtml" />
-    <Content Include="Views\Chat\AdminHistory.cshtml" />
     <Content Include="Views\Border\Index.cshtml" />
     <Content Include="Views\OSISK\Index.cshtml" />
     <Content Include="Views\OSISK\OSHIST.cshtml" />
