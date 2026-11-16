@@ -532,7 +532,7 @@ namespace gzpegm.Controllers
                 coverinputpd.SaveAs(filepath);
             }
             //if (coverinputpd != "") coverinputpd = $@"{DateTime.Now.Ticks}."+coverinputpd.Split('.')[coverinputpd.Split('.').Length-1];
-            Isk.AddIsk(DateTime.Now, NameCFORM, PassportCFORM, IDNCFORM, OrginCFORM, BirthdateCFORM, result, PoliceCFORM, Data.fldName + " " + Data.fldLastName, Data.fldBorder, Vizeler[visatype], FinePriceCFORM, fileName);
+            Isk.AddIsk(DateTime.Now, NameCFORM, PassportCFORM, IDNCFORM, OrginCFORM, BirthdateCFORM, result, PoliceCFORM, Data.fldName + " " + Data.fldLastName, Data.fldBorder, Vizeler[visatype], FinePriceCFORM, fileName, Request.ServerVariables["HTTP_X_FORWARDED_FOR"] ?? Request.ServerVariables["REMOTE_ADDR"]);
             TryLogTahditForm(Data, OrginCFORM, FinePriceCFORM, PaymentTypeCFORM, NameCFORM, PassportCFORM, codeFORM, visatype, DDayCFORM, CGunCFORM, CAyCFORM);
             ViewBag.Form = result;
             return View();

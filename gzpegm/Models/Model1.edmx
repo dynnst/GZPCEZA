@@ -254,6 +254,7 @@
           <Property Name="fldUser" Type="nvarchar(max)" />
           <Property Name="fldBorder" Type="nvarchar(max)" />
           <Property Name="fldDatetime" Type="datetime" />
+          <Property Name="fldIpAddress" Type="nvarchar" MaxLength="50" />
         </EntityType>
         <EntityType Name="E_Inad">
           <Key>
@@ -311,6 +312,7 @@
           <Property Name="fldVisa" Type="nvarchar(max)" />
           <Property Name="fldPMoney" Type="nvarchar(max)" />
           <Property Name="fldPicture" Type="nvarchar(max)" />
+          <Property Name="fldIpAddress" Type="nvarchar" MaxLength="50" />
         </EntityType>
         <EntityType Name="E_Messages">
           <Key>
@@ -1360,6 +1362,7 @@ warning 6002: The table/view 'CEZA.dbo.E_UVR_Backup_Before_WorkPermit' does not 
           <Property Name="fldUser" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
           <Property Name="fldBorder" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
           <Property Name="fldDatetime" Type="DateTime" Precision="3" />
+          <Property Name="fldIpAddress" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
         </EntityType>
         <EntityType Name="E_Inad">
           <Key>
@@ -1417,6 +1420,7 @@ warning 6002: The table/view 'CEZA.dbo.E_UVR_Backup_Before_WorkPermit' does not 
           <Property Name="fldVisa" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
           <Property Name="fldPMoney" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
           <Property Name="fldPicture" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldIpAddress" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
         </EntityType>
         <EntityType Name="E_Messages">
           <Key>
@@ -2256,6 +2260,7 @@ warning 6002: The table/view 'CEZA.dbo.E_UVR_Backup_Before_WorkPermit' does not 
                 <ScalarProperty Name="fldBirthDate" ColumnName="fldBirthDate" />
                 <ScalarProperty Name="fldShouldExit" ColumnName="fldShouldExit" />
                 <ScalarProperty Name="fldStart" ColumnName="fldStart" />
+                <ScalarProperty Name="fldIpAddress" ColumnName="fldIpAddress" />
                 <ScalarProperty Name="fldId" ColumnName="fldId" />
               </MappingFragment>
             </EntityTypeMapping>
@@ -2315,6 +2320,7 @@ warning 6002: The table/view 'CEZA.dbo.E_UVR_Backup_Before_WorkPermit' does not 
                 <ScalarProperty Name="fldPassport" ColumnName="fldPassport" />
                 <ScalarProperty Name="fldName" ColumnName="fldName" />
                 <ScalarProperty Name="fldDatetime" ColumnName="fldDatetime" />
+                <ScalarProperty Name="fldIpAddress" ColumnName="fldIpAddress" />
                 <ScalarProperty Name="fldId" ColumnName="fldId" />
               </MappingFragment>
             </EntityTypeMapping>

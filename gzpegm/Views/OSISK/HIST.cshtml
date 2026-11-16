@@ -195,6 +195,7 @@
                             <th>Kapı</th>
                             <th>Ceza Türü</th>
                             <th>Miktar</th>
+                            <th>IP Adresi</th>
                             <th class="text-center">İşlem</th>
                         </tr>
                     </thead>
@@ -208,6 +209,7 @@
                                 <td>@data.fldBorder</td>
                                 <td>@data.fldPenalty</td>
                                 <td class="money-cell">@formatMoney(data.fldPMoney) TL</td>
+                                <td><small class="text-muted">@(data.fldIpAddress ?? "-")</small></td>
                                 <td class="actions text-center">
                                     <a onclick="deleterecordhist('@data.fldId')" class="btn btn-sm btn-outline-danger" title="Sil"><i class="fas fa-trash-alt"></i></a>
                                 </td>

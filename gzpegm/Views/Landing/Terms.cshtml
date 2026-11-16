@@ -7,211 +7,696 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Kullanım Koşulları - Hudut Kapıları Eğitim Merkezi</title>
+    <title>Kullanım Koşulları – EGM Hudut Kapıları Personel Portalı</title>
     <link href="/AdminTemplate/css/bootstrap.min.css" rel="stylesheet">
     <link href="/AdminTemplate/font-awesome/css/font-awesome.min.css" rel="stylesheet">
     <style>
+        :root {
+            --navy: #071426;
+            --navy-mid: #0d213f;
+            --navy-light: #15325b;
+            --gold: #f59e0b;
+            --gold-light: #fbbf24;
+            --teal: #1ab394;
+            --text: #1e293b;
+            --muted: #64748b;
+            --border: #e2e8f0;
+        }
+
+        * { box-sizing: border-box; }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #f8fafc;
+            color: var(--text);
+            line-height: 1.7;
+            margin: 0;
         }
 
-        .navbar {
-            background-color: #2f4050;
-            padding: 15px 0;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        .prv-nav {
+            background: var(--navy);
+            padding: 12px 0;
+            border-bottom: 2px solid var(--gold);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
         }
 
-        .navbar-brand {
-            color: white !important;
-            font-weight: bold;
-            font-size: 18px;
+        .prv-nav-inner {
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
 
-        .page-header {
-            background: linear-gradient(135deg, #1ab394 0%, #0d8f73 100%);
-            color: white;
-            padding: 40px 0;
-            margin-bottom: 40px;
+        .prv-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .prv-brand-shield {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #1e3c72, #071739);
+            border: 2px solid var(--gold);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gold);
+            font-size: 16px;
+        }
+
+        .prv-brand-text strong {
+            display: block;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .prv-brand-text small {
+            color: var(--gold-light);
+            font-size: 10px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .prv-back {
+            color: rgba(255,255,255,0.8);
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            transition: all 0.2s;
+        }
+
+        .prv-back:hover {
+            color: #fff;
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.4);
+        }
+
+        .prv-hero {
+            background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+            color: #fff;
+            padding: 56px 20px 48px;
             text-align: center;
+            position: relative;
+            overflow: hidden;
         }
 
-            .page-header h1 {
-                font-weight: 700;
-                margin: 0;
-                font-size: 2.5rem;
-            }
-
-        .content-section {
-            background: #fff;
-            padding: 30px;
-            margin-bottom: 30px;
-            border-radius: 5px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            border-left: 4px solid #1ab394;
+        .prv-hero::before {
+            content: '\f0c5';
+            font-family: FontAwesome;
+            position: absolute;
+            right: 8%;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 160px;
+            color: rgba(255,255,255,0.03);
+            pointer-events: none;
         }
 
-            .content-section h2 {
-                color: #2f4050;
-                font-weight: 700;
-                margin-bottom: 15px;
-                font-size: 1.5rem;
-            }
-
-            .content-section h3 {
-                color: #1ab394;
-                font-weight: 600;
-                margin-top: 20px;
-                margin-bottom: 10px;
-            }
-
-        .back-button {
+        .prv-hero-kicker {
             display: inline-block;
-            margin-bottom: 20px;
+            background: rgba(245,158,11,0.15);
+            border: 1px solid rgba(245,158,11,0.4);
+            color: var(--gold-light);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 4px 14px;
+            border-radius: 20px;
+            margin-bottom: 16px;
         }
 
-            .back-button a {
-                color: #1ab394;
-                text-decoration: none;
-            }
+        .prv-hero h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            margin: 0 0 10px;
+            letter-spacing: -0.5px;
+        }
 
-                .back-button a:hover {
-                    text-decoration: underline;
-                }
+        .prv-hero p {
+            font-size: 14px;
+            color: rgba(255,255,255,0.7);
+            margin: 0;
+        }
 
-        footer {
-            background: #2f4050;
-            color: #c7d0d9;
-            padding: 30px 0;
+        .prv-hero-meta {
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .prv-hero-meta span {
+            font-size: 12px;
+            color: rgba(255,255,255,0.6);
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .prv-hero-meta span i { color: var(--gold); }
+
+        .prv-layout {
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 48px 20px 64px;
+            display: grid;
+            grid-template-columns: 220px 1fr;
+            gap: 32px;
+            align-items: start;
+        }
+
+        .prv-toc {
+            position: sticky;
+            top: 72px;
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 20px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+        }
+
+        .prv-toc h5 {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--muted);
+            margin: 0 0 14px;
+        }
+
+        .prv-toc a {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: var(--muted);
+            text-decoration: none;
+            padding: 7px 10px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            margin-bottom: 2px;
+        }
+
+        .prv-toc a:hover {
+            color: var(--navy-mid);
+            background: #f1f5f9;
+        }
+
+        .prv-toc a i {
+            font-size: 11px;
+            width: 16px;
             text-align: center;
-            margin-top: 50px;
+            color: var(--teal);
         }
 
-        .warning-box {
-            background-color: #fff3cd;
-            border: 1px solid #ffc107;
-            border-radius: 4px;
-            padding: 15px;
-            margin: 15px 0;
+        .prv-content {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .prv-card {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 28px 32px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+            border-left: 4px solid var(--teal);
+        }
+
+        .prv-card.card-gold   { border-left-color: var(--gold); }
+        .prv-card.card-navy   { border-left-color: var(--navy-light); }
+        .prv-card.card-red    { border-left-color: #ef4444; }
+        .prv-card.card-purple { border-left-color: #8b5cf6; }
+        .prv-card.card-muted  { border-left-color: #94a3b8; background: #f8fafc; }
+
+        .prv-card-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .prv-card-title .icon-wrap {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            background: rgba(26,179,148,0.1);
+            color: var(--teal);
+            flex-shrink: 0;
+        }
+
+        .card-gold .icon-wrap   { background: rgba(245,158,11,0.1);  color: var(--gold); }
+        .card-navy .icon-wrap   { background: rgba(21,50,91,0.1);    color: var(--navy-light); }
+        .card-red .icon-wrap    { background: rgba(239,68,68,0.1);   color: #ef4444; }
+        .card-purple .icon-wrap { background: rgba(139,92,246,0.1);  color: #8b5cf6; }
+        .card-muted .icon-wrap  { background: rgba(148,163,184,0.1); color: #94a3b8; }
+
+        .prv-card-title h2 {
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--text);
+            margin: 0;
+        }
+
+        .prv-card p {
+            font-size: 14px;
+            color: #374151;
+            margin-bottom: 12px;
+        }
+
+        .prv-card p:last-child { margin-bottom: 0; }
+
+        .prv-card ul, .prv-card ol {
+            padding-left: 20px;
+            margin-bottom: 12px;
+        }
+
+        .prv-card li {
+            font-size: 14px;
+            color: #374151;
+            margin-bottom: 6px;
+        }
+
+        .prv-card h3 {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--navy-mid);
+            margin: 18px 0 8px;
+        }
+
+        .prv-alert {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px 16px;
+            border-radius: 10px;
+            margin-bottom: 14px;
+            font-size: 13.5px;
+        }
+
+        .prv-alert.alert-info   { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+        .prv-alert.alert-warn   { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
+        .prv-alert.alert-danger { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+        .prv-alert i { margin-top: 1px; flex-shrink: 0; }
+
+        .do-dont-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 10px;
+        }
+
+        .do-box, .dont-box {
+            border-radius: 10px;
+            padding: 14px 16px;
+        }
+
+        .do-box {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+        }
+
+        .dont-box {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+        }
+
+        .do-box h4   { color: #166534; font-size: 13px; font-weight: 700; margin: 0 0 10px; }
+        .dont-box h4 { color: #991b1b; font-size: 13px; font-weight: 700; margin: 0 0 10px; }
+
+        .do-box li   { color: #166534; font-size: 13px; }
+        .dont-box li { color: #991b1b; font-size: 13px; }
+
+        .prv-footer {
+            background: var(--navy);
+            color: rgba(255,255,255,0.6);
+            text-align: center;
+            padding: 28px 20px;
+            font-size: 12.5px;
+        }
+
+        .prv-footer strong { color: rgba(255,255,255,0.9); }
+
+        @@media (max-width: 768px) {
+            .prv-layout { grid-template-columns: 1fr; }
+            .prv-toc { position: static; }
+            .do-dont-grid { grid-template-columns: 1fr; }
+            .prv-hero h1 { font-size: 1.5rem; }
         }
     </style>
 </head>
 <body>
-    <nav class="navbar">
-        <div class="container">
-            <span class="navbar-brand"><i class="fa fa-file-text"></i> Hudut Kapıları Eğitim Merkezi</span>
+
+    <!-- NAV -->
+    <nav class="prv-nav">
+        <div class="prv-nav-inner">
+            <a href="@Url.Action("Index", "Landing")" class="prv-brand">
+                <div class="prv-brand-shield"><i class="fa fa-shield"></i></div>
+                <div class="prv-brand-text">
+                    <strong>EGM Hudut Kapıları</strong>
+                    <small>Personel Portalı</small>
+                </div>
+            </a>
+            <a href="@Url.Action("Index", "Landing")" class="prv-back">
+                <i class="fa fa-arrow-left"></i> Ana Sayfaya Dön
+            </a>
         </div>
     </nav>
 
-    <div class="page-header">
-        <div class="container">
-            <h1><i class="fa fa-clipboard"></i> Kullanım Koşulları</h1>
-            <p>Platform'u Kullanırken Uymanız Gereken Koşullar</p>
+    <!-- HERO -->
+    <div class="prv-hero">
+        <div class="prv-hero-kicker">Yetkili Personele Özel · Kapalı Sistem</div>
+        <h1><i class="fa fa-file-text"></i> Kullanım Koşulları</h1>
+        <p>Portal'ı kullanırken uyulması gereken kurallar ve yükümlülükler</p>
+        <div class="prv-hero-meta">
+            <span><i class="fa fa-calendar"></i> Son güncelleme: Ocak 2026</span>
+            <span><i class="fa fa-building"></i> T.C. İçişleri Bakanlığı – EGM</span>
+            <span><i class="fa fa-lock"></i> Kapalı intranet sistemi</span>
         </div>
     </div>
 
-    <div class="container" style="max-width: 900px;">
-        <div class="back-button">
-            <a href="@Url.Action("Index", "Landing")"><i class="fa fa-arrow-left"></i> Ana Sayfaya Dön</a>
-        </div>
+    <!-- LAYOUT -->
+    <div class="prv-layout">
 
-        <div class="content-section">
-            <h2><i class="fa fa-book"></i> 1. Genel Koşullar</h2>
-            <p>
-                Hudut Kapıları Eğitim Merkezi Platform'u ("Platform") kullanırken, aşağıdaki koşulları kabul etmiş sayılırsınız.
-                Platform'u kullanmaya devam ederek, bu koşulları kabul ettiğinizi teyit edersiniz.
-            </p>
-        </div>
+        <!-- SIDEBAR -->
+        <aside class="prv-toc">
+            <h5>İçindekiler</h5>
+            <a href="#s1"><i class="fa fa-info-circle"></i> Kapsam ve Tanımlar</a>
+            <a href="#s2"><i class="fa fa-user-circle"></i> Hesap Sorumluluğu</a>
+            <a href="#s3"><i class="fa fa-check-square-o"></i> İzin Verilen Kullanım</a>
+            <a href="#s4"><i class="fa fa-ban"></i> Yasaklı Davranışlar</a>
+            <a href="#s5"><i class="fa fa-file-text-o"></i> İşlem Kayıtları</a>
+            <a href="#s6"><i class="fa fa-graduation-cap"></i> Eğitim ve Sınavlar</a>
+            <a href="#s7"><i class="fa fa-copyright"></i> Fikri Mülkiyet</a>
+            <a href="#s8"><i class="fa fa-gavel"></i> Sorumluluk</a>
+            <a href="#s9"><i class="fa fa-times-circle"></i> Erişim İptali</a>
+            <a href="#s10"><i class="fa fa-pencil"></i> Değişiklikler</a>
+            <a href="#s11"><i class="fa fa-comments"></i> Destek & Geri Bildirim</a>
+        </aside>
 
-        <div class="content-section">
-            <h2><i class="fa fa-user-check"></i> 2. Kullanıcı Hesapları</h2>
-            <h3>Hesap Oluşturma:</h3>
-            <ul>
-                <li>Platform'u kullanmak için hesap oluşturmanız gerekebilir.</li>
-                <li>Sağladığınız bilgiler doğru, güncel ve eksiksiz olmalıdır.</li>
-                <li>Kişisel bilgileriniz için gizlilik sorumluluğu taşırsınız.</li>
-                <li>Hesabınızın başkası tarafından kullanılmamasını sağlamaktan sorumlusunuz.</li>
-            </ul>
-        </div>
+        <!-- CONTENT -->
+        <main class="prv-content">
 
-        <div class="content-section">
-            <h2><i class="fa fa-ban"></i> 3. Yasaklı Davranışlar</h2>
-            <p>Platform'u kullanırken aşağıdaki davranışlar yasaktır:</p>
-            <ul>
-                <li>Yasadışı içerik yayınlamak</li>
-                <li>Başkasının fikri mülkiyet haklarını ihlal etmek</li>
-                <li>Kötü amaçlı yazılım veya virüs yayınlamak</li>
-                <li>Platform'u baltalamaya çalışmak</li>
-                <li>Başkalarını taciz etmek veya tehdit etmek</li>
-                <li>Yanlış bilgi veya dezenformasyon yayınlamak</li>
-                <li>Başka kullanıcıların gizliliğini ihlal etmek</li>
-                <li>Platform hizmetlerini ticari amaçlar için kötüye kullanmak</li>
-            </ul>
-        </div>
-
-        <div class="content-section">
-            <h2><i class="fa fa-copyright"></i> 4. Fikri Mülkiyet Hakları</h2>
-            <p>
-                Platform'daki tüm içerik, tasarım, kod ve materyaller Hudut Kapıları Eğitim Merkezi'ne veya lisans verenlere aittir.
-                Bu içeriği izin almadan kopyalayamaz, değiştiremez veya dağıtamazsınız.
-            </p>
-            <div class="warning-box">
-                <strong><i class="fa fa-exclamation-triangle"></i> Dikkat:</strong> Telif hakkı ihlallerinin cezaları ciddi olabilir.
+            <!-- 1 -->
+            <div class="prv-card" id="s1">
+                <div class="prv-card-title">
+                    <div class="icon-wrap"><i class="fa fa-info-circle"></i></div>
+                    <h2>1. Kapsam ve Tanımlar</h2>
+                </div>
+                <div class="prv-alert alert-info">
+                    <i class="fa fa-info-circle"></i>
+                    <span>Bu portal yalnızca yetkili personelin kullanımına tahsis edilmiş kapalı bir intranet sistemidir. Halka açık bir hizmet değildir.</span>
+                </div>
+                <p>Bu belgede geçen terimler:</p>
+                <ul>
+                    <li><strong>Portal:</strong> EGM Hudut Kapıları Personel Eğitim ve Simülasyon Portalı</li>
+                    <li><strong>Personel / Kullanıcı:</strong> Sisteme yetkili erişimi olan EGM görevlisi</li>
+                    <li><strong>Yönetici:</strong> Sistem yöneticisi veya birim amirliği</li>
+                    <li><strong>İşlem:</strong> Ceza hesaplama, tahdit, inad, V-84 ve benzeri hudut kapısı işlemleri</li>
+                </ul>
+                <p>Portal'a ilk giriş yapan personel bu koşulları okumuş ve kabul etmiş sayılır.</p>
             </div>
-        </div>
 
-        <div class="content-section">
-            <h2><i class="fa fa-gavel"></i> 5. Sorumluluk Sınırlaması</h2>
-            <p>
-                Platform "olduğu gibi" sağlanır. Hudut Kapıları Eğitim Merkezi, Platform'un kesintisiz, hatasız veya
-                virüs barındırmayan olacağını garanti etmez.
-            </p>
-            <p>
-                Makul kapsamda, Platform'un kullanımından kaynaklanabilecek herhangi bir doğrudan, dolaylı, tesadüfi,
-                özel veya sonuçsal hasar için sorumlu değiliz.
-            </p>
-        </div>
+            <!-- 2 -->
+            <div class="prv-card card-navy" id="s2">
+                <div class="prv-card-title">
+                    <div class="icon-wrap"><i class="fa fa-user-circle"></i></div>
+                    <h2>2. Hesap Sorumluluğu</h2>
+                </div>
+                <ul>
+                    <li>Her personele tahsis edilen hesap <strong>kişiye özeldir</strong>; başkasıyla paylaşılamaz.</li>
+                    <li>Şifrenizin güvenliğinden bizzat sorumlusunuz. Şifrenizi kimseyle paylaşmayınız.</li>
+                    <li>Hesabınızın yetkisiz kullanıldığını fark ettiğinizde derhal sistem yöneticinize bildirin.</li>
+                    <li>Profil bilgilerinizi (ad, soyad, sicil, iletişim) güncel ve doğru tutmakla yükümlüsünüz.</li>
+                    <li>Görevinizin sona ermesi halinde hesabınız yönetici tarafından pasife alınır; bu süreçte verilerinize erişim sonlanır.</li>
+                </ul>
+            </div>
 
-        <div class="content-section">
-            <h2><i class="fa fa-link"></i> 6. Dış Bağlantılar</h2>
-            <p>
-                Platform, üçüncü taraf web sitelerine bağlantılar içerebilir. Bu sitelerin içeriğinden sorumlu değiliz.
-                Üçüncü taraf sitelerin koşullarını ve gizlilik politikalarını kontrol etmeniz önerilir.
-            </p>
-        </div>
+            <!-- 3 -->
+            <div class="prv-card" id="s3">
+                <div class="prv-card-title">
+                    <div class="icon-wrap"><i class="fa fa-check-square-o"></i></div>
+                    <h2>3. İzin Verilen Kullanım</h2>
+                </div>
+                <p>Portal yalnızca aşağıdaki amaçlar için kullanılabilir:</p>
+                <ul>
+                    <li>Hudut kapısı ceza hesaplama işlemleri</li>
+                    <li>Tahdit formu oluşturma ve yönetimi</li>
+                    <li>İnad odası kayıt ve takip işlemleri</li>
+                    <li>V-84 şartlı vize değerlendirmeleri</li>
+                    <li>Kaşe vize kontrolü ve pasaport süresi hesaplama</li>
+                    <li>Çevrimiçi eğitim kurslarına katılım ve sınav değerlendirmesi</li>
+                    <li>İstatistik ve raporların görüntülenmesi</li>
+                    <li>Personel içi mesajlaşma</li>
+                </ul>
+            </div>
 
-        <div class="content-section">
-            <h2><i class="fa fa-times"></i> 7. Hesap Sonlandırması</h2>
-            <p>
-                Bu koşulları ihlal ederseniz, hesabınızı askıya alabiliriz veya sonlandırabiliriz.
-                Sonlandırma durumunda, Platform'daki hesapla ilişkili tüm bilgilere erişim sonlandırılır.
-            </p>
-        </div>
+            <!-- 4 -->
+            <div class="prv-card card-red" id="s4">
+                <div class="prv-card-title">
+                    <div class="icon-wrap"><i class="fa fa-ban"></i></div>
+                    <h2>4. Yasaklı Davranışlar</h2>
+                </div>
+                <div class="do-dont-grid">
+                    <div class="dont-box">
+                        <h4><i class="fa fa-times-circle"></i> Kesinlikle Yasak</h4>
+                        <ul>
+                            <li>Hesabı başkasıyla paylaşmak</li>
+                            <li>Yetki dışı modüllere erişmeye çalışmak</li>
+                            <li>Sistemdeki kayıtları izinsiz silmek veya değiştirmek</li>
+                            <li>Başka personelin verilerine izinsiz erişmek</li>
+                            <li>Portal verilerini yetkisiz üçüncü taraflarla paylaşmak</li>
+                            <li>Sistemi test, zafiyet tarama veya saldırı amaçlı kullanmak</li>
+                            <li>Sahte veya yanıltıcı işlem kaydı oluşturmak</li>
+                        </ul>
+                    </div>
+                    <div class="do-box">
+                        <h4><i class="fa fa-check-circle"></i> Beklenen Davranış</h4>
+                        <ul>
+                            <li>Yalnızca görev kapsamındaki işlemleri yürütmek</li>
+                            <li>Hatalı işlemleri amire bildirmek</li>
+                            <li>Şüpheli durumları sistem yöneticisine iletmek</li>
+                            <li>Profil bilgilerini güncel tutmak</li>
+                            <li>Eğitim ve sınavlara bizzat katılmak</li>
+                            <li>Oturum sonunda sistemden çıkış yapmak</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
 
-        <div class="content-section">
-            <h2><i class="fa fa-pencil"></i> 8. Değişiklikler</h2>
-            <p>
-                Bu koşulları önceden haber verilmeksizin değiştirebiliriz. Değişiklikleri Platform'da yayınlayacağız.
-                Değişikliklerden sonra Platform'u kullanmaya devam ederseniz, yeni koşulları kabul etmiş sayılırsınız.
-            </p>
-        </div>
+            <!-- 5 -->
+            <div class="prv-card card-gold" id="s5">
+                <div class="prv-card-title">
+                    <div class="icon-wrap"><i class="fa fa-file-text-o"></i></div>
+                    <h2>5. İşlem Kayıtları ve Sorumluluk</h2>
+                </div>
+                <div class="prv-alert alert-warn">
+                    <i class="fa fa-exclamation-triangle"></i>
+                    <span>Portal üzerinden oluşturulan tüm işlem kayıtları (ceza, tahdit, inad, V-84) <strong>resmi belge niteliği taşır</strong> ve yasal düzenlemeler çerçevesinde saklanır.</span>
+                </div>
+                <ul>
+                    <li>Her işlem kaydı, işlemi gerçekleştiren personelin sicil ve kullanıcı bilgisiyle otomatik olarak ilişkilendirilir.</li>
+                    <li>Hatalı veya eksik kayıt oluşturulması durumunda işlemi yapan personel sorumlu tutulur.</li>
+                    <li>Tahdit formları üzerindeki değişiklikler loglanır; geçmişe dönük iz silinmez.</li>
+                    <li>İşlem kayıtları yalnızca yetkili amir veya sistem yöneticisi tarafından iptal edilebilir.</li>
+                </ul>
+            </div>
 
-        <div class="content-section" style="background-color: #f8f9fa; border-left-color: #6c757d;">
-            <p style="margin: 0; color: #6c757d;">
-                <strong>Son Güncelleme:</strong> 2 Şubat 2026<br>
-                Bu koşullar herhangi bir zamanda değişikliğe tabidır.
-            </p>
-        </div>
+            <!-- 6 -->
+            <div class="prv-card" id="s6">
+                <div class="prv-card-title">
+                    <div class="icon-wrap"><i class="fa fa-graduation-cap"></i></div>
+                    <h2>6. Eğitim ve Sınavlar</h2>
+                </div>
+                <ul>
+                    <li>Eğitim modülleri ve sınavlar yalnızca kayıtlı personel tarafından bizzat tamamlanmalıdır.</li>
+                    <li>Başkası adına sınava girmek veya sınav sorularını paylaşmak disiplin suçu oluşturur.</li>
+                    <li>Sertifikalar yalnızca gerçek performansa dayalı olarak düzenlenir; sahte sertifika talebi işleme alınmaz.</li>
+                    <li>Sınav sonuçlarına itiraz için sistem yöneticisine yazılı başvuru yapılabilir.</li>
+                </ul>
+            </div>
+
+            <!-- 7 -->
+            <div class="prv-card card-purple" id="s7">
+                <div class="prv-card-title">
+                    <div class="icon-wrap"><i class="fa fa-copyright"></i></div>
+                    <h2>7. Fikri Mülkiyet</h2>
+                </div>
+                <p>
+                    Portal'da yer alan tüm içerik, tasarım, yazılım kodu, eğitim materyalleri, simülasyon senaryoları ve belgeler
+                    izin alınmadan kopyalanamaz veya dağıtılamaz.
+                </p>
+                <ul>
+                    <li>İçerikler izin alınmadan kopyalanamaz, çoğaltılamaz veya dağıtılamaz.</li>
+                    <li>Eğitim materyalleri yalnızca görev amaçlı kullanılabilir.</li>
+                    <li>Portal ekran görüntüleri sosyal medya veya kamuya açık platformlarda paylaşılamaz.</li>
+                </ul>
+            </div>
+
+            <!-- 8 -->
+            <div class="prv-card card-navy" id="s8">
+                <div class="prv-card-title">
+                    <div class="icon-wrap"><i class="fa fa-gavel"></i></div>
+                    <h2>8. Sorumluluk Sınırlaması</h2>
+                </div>
+                <p>
+                    Portal planlı veya plansız bakım nedeniyle geçici olarak erişime kapatılabilir. Bu durumlarda
+                    kaçırılan işlemlerden Daire Başkanlığı sorumlu tutulamaz.
+                </p>
+                <p>
+                    Teknik arızalar, veri kaybı veya sistemin yanlış kullanımından kaynaklanabilecek hatalı işlemler
+                    için personelin bizzat amirini bilgilendirmesi beklenir.
+                </p>
+                <p>
+                    Sistem, mevcut veri ve bilgilerle çalışır; hatalı girilen verilerden kaynaklanan sonuçların sorumluluğu
+                    işlemi yapan personele aittir.
+                </p>
+            </div>
+
+            <!-- 9 -->
+            <div class="prv-card card-red" id="s9">
+                <div class="prv-card-title">
+                    <div class="icon-wrap"><i class="fa fa-times-circle"></i></div>
+                    <h2>9. Erişim İptali</h2>
+                </div>
+                <p>Aşağıdaki durumlarda hesap erişimi askıya alınabilir veya kalıcı olarak iptal edilebilir:</p>
+                <ul>
+                    <li>Bu koşulların ihlal edilmesi</li>
+                    <li>Yetkisiz erişim girişimi veya sisteme zarar verme</li>
+                    <li>Başka kullanıcı adına işlem yapılması</li>
+                    <li>Disiplin soruşturması açılması</li>
+                    <li>Görevden ayrılma, emeklilik veya nakil</li>
+                </ul>
+                <p>Erişim iptali durumunda mevcut verilere ulaşım sonlanır; işlem geçmişi yasal saklama süresince arşivde tutulur.</p>
+            </div>
+
+            <!-- 10 -->
+            <div class="prv-card" id="s10">
+                <div class="prv-card-title">
+                    <div class="icon-wrap"><i class="fa fa-pencil"></i></div>
+                    <h2>10. Koşullarda Değişiklik</h2>
+                </div>
+                <p>
+                    Bu koşullar önceden haber verilmeksizin güncellenebilir. Değişiklikler Portal'da duyurulur.
+                    Güncelleme sonrasında sistemi kullanmaya devam etmek yeni koşulların kabul edildiği anlamına gelir.
+                </p>
+            </div>
+
+            <!-- 11 -->
+            <div class="prv-card" id="s11">
+                <div class="prv-card-title">
+                    <div class="icon-wrap"><i class="fa fa-comments"></i></div>
+                    <h2>11. Destek ve Geri Bildirim</h2>
+                </div>
+                <p>Bu kullanım koşullarına ilişkin soru, öneri veya bildirimleriniz için portal üzerindeki iletişim kanallarını kullanabilirsiniz.</p>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:14px;">
+                    <a href="@Url.Action("PublicMessage", "Landing")" style="display:flex; align-items:center; gap:14px; padding:16px 18px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; text-decoration:none; transition:all 0.2s;">
+                        <div style="width:42px;height:42px;border-radius:10px;background:#dcfce7;display:flex;align-items:center;justify-content:center;color:#16a34a;font-size:18px;flex-shrink:0;">
+                            <i class="fa fa-paper-plane"></i>
+                        </div>
+                        <div>
+                            <strong style="display:block;font-size:13.5px;color:#15803d;">Yöneticiye Mesaj Gönder</strong>
+                            <span style="font-size:12px;color:#166534;opacity:0.8;">Soru, öneri ve bildirimler için</span>
+                        </div>
+                    </a>
+                    <a href="@Url.Action("Inbox", "Mesaj")" style="display:flex; align-items:center; gap:14px; padding:16px 18px; background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px; text-decoration:none; transition:all 0.2s;">
+                        <div style="width:42px;height:42px;border-radius:10px;background:#dbeafe;display:flex;align-items:center;justify-content:center;color:#1d4ed8;font-size:18px;flex-shrink:0;">
+                            <i class="fa fa-inbox"></i>
+                        </div>
+                        <div>
+                            <strong style="display:block;font-size:13.5px;color:#1e40af;">Gelen Kutum</strong>
+                            <span style="font-size:12px;color:#1e40af;opacity:0.8;">Mesajlarını görüntüle</span>
+                        </div>
+                    </a>
+                    <a href="@Url.Action("Privacy", "Landing")" style="display:flex; align-items:center; gap:14px; padding:16px 18px; background:#fafafa; border:1px solid #e2e8f0; border-radius:12px; text-decoration:none; transition:all 0.2s;">
+                        <div style="width:42px;height:42px;border-radius:10px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#64748b;font-size:18px;flex-shrink:0;">
+                            <i class="fa fa-lock"></i>
+                        </div>
+                        <div>
+                            <strong style="display:block;font-size:13.5px;color:#334155;">Gizlilik Politikası</strong>
+                            <span style="font-size:12px;color:#64748b;">Kişisel veri işleme bilgisi</span>
+                        </div>
+                    </a>
+                    <a href="@Url.Action("Help", "Landing")" style="display:flex; align-items:center; gap:14px; padding:16px 18px; background:#fafafa; border:1px solid #e2e8f0; border-radius:12px; text-decoration:none; transition:all 0.2s;">
+                        <div style="width:42px;height:42px;border-radius:10px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#64748b;font-size:18px;flex-shrink:0;">
+                            <i class="fa fa-life-ring"></i>
+                        </div>
+                        <div>
+                            <strong style="display:block;font-size:13.5px;color:#334155;">Yardım & Destek</strong>
+                            <span style="font-size:12px;color:#64748b;">Sık sorulan sorular</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- FOOTER NOTE -->
+            <div class="prv-card card-muted">
+                <p style="margin:0; font-size:13px; color: var(--muted);">
+                    <strong style="color: var(--text);">Son güncelleme:</strong> Ocak 2026 &nbsp;·&nbsp;
+                    Bu koşullar önceden haber verilmeksizin değiştirilebilir.
+                    &nbsp;·&nbsp;
+                    <a href="@Url.Action("Privacy", "Landing")" style="color: var(--teal);">Gizlilik Politikası</a>
+                    &nbsp;·&nbsp;
+                    <a href="@Url.Action("Help", "Landing")" style="color: var(--teal);">Yardım & Destek</a>
+                </p>
+            </div>
+
+        </main>
     </div>
 
-    <footer>
-        <div class="container">
-            <p>&copy; 2026 Hudut Kapıları Eğitim Sistemi. Tüm Hakları Saklıdır.</p>
-        </div>
+    <!-- FOOTER -->
+    <footer class="prv-footer">
+        <p>&copy; @DateTime.Now.Year <strong>T.C. İçişleri Bakanlığı Emniyet Genel Müdürlüğü</strong></p>
+        <p style="margin:4px 0 0;">
+            @if (ViewBag.UserBorder != null)
+            {
+                @ViewBag.UserBorder<text> – Personel Eğitim ve Simülasyon Portalı</text>
+            }
+            else
+            {
+                <text>EGM Hudut Kapıları Personel Portalı – Personel Eğitim ve Simülasyon Portalı</text>
+            }
+        </p>
     </footer>
 
     <script src="/AdminTemplate/js/jquery-3.1.1.min.js"></script>
     <script src="/AdminTemplate/js/bootstrap.js"></script>
+    <script>
+        document.querySelectorAll('.prv-toc a').forEach(function (a) {
+            a.addEventListener('click', function (e) {
+                var target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    e.preventDefault();
+                    window.scrollTo({ top: target.offsetTop - 80, behavior: 'smooth' });
+                }
+            });
+        });
+    </script>
 </body>
 </html>

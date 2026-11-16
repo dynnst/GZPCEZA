@@ -426,7 +426,8 @@ namespace gzpegm.Controllers
                 var border = userdata != null ? userdata.fldBorder : "";
                 var sicil = userdata != null ? (userdata.fldSicil ?? "") : "";
                 var userKey = sicil + "|" + fullname;
-                isk.Addhistory(dtbas, dtsexit, dtbdate, csure, ttutar, userKey, border, country);
+                var ipAddress = Request.ServerVariables["HTTP_X_FORWARDED_FOR"] ?? Request.ServerVariables["REMOTE_ADDR"];
+                isk.Addhistory(dtbas, dtsexit, dtbdate, csure, ttutar, userKey, border, country, ipAddress);
                 return Json(new { success = true }, JsonRequestBehavior.AllowGet);
             }
             catch

@@ -235,6 +235,7 @@
                                     <th>Onaylayan</th>
                                     <th>Ceza (₺)</th>
                                     <th>Kapı</th>
+                                    <th>IP Adresi</th>
                                     <th class="text-center">İşlem</th>
                                 </tr>
                             </thead>
@@ -270,6 +271,7 @@
                                             }
                                         </td>
                                         <td><span class="badge-custom">@data.Kapi</span></td>
+                                        <td><small class="text-muted">@(data.IpAddress ?? "-")</small></td>
                                         <td class="text-center">
                                             <a href="/formyazdir/@data.Id" target="_blank" class="btn btn-sm btn-outline-secondary" title="Yazdır">🖨️</a>
                                             <a onclick="deleteRecord('@data.Id')" class="btn btn-sm btn-danger" title="Sil">🗑️</a>

@@ -840,7 +840,8 @@ namespace gzpegm.Controllers
                         x.fldApproval,
                         x.fldPMoney,
                         x.fldBorder,
-                        x.fldVisa
+                        x.fldVisa,
+                        x.fldIpAddress
                     })
                     .ToList();
 
@@ -858,6 +859,7 @@ namespace gzpegm.Controllers
                     onay = x.fldApproval ?? "",
                     para = x.fldPMoney ?? "",
                     kapi = x.fldBorder ?? "",
+                    ip = x.fldIpAddress ?? "",
                     id = x.fldId
                 });
 

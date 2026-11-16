@@ -1352,12 +1352,13 @@
             var delta = now - lastKeystrokeTime;
             lastKeystrokeTime = now;
 
-            // Donanımsal okuyucularda harf basma süresi 5ms-60ms, satır geçişi 160ms'ye kadar sürebilir
-            var isFastBurst = (delta <= 160);
+            // Donanımsal okuyucularda (Wedge) tuş basma süresi 5ms-35ms arasıdır.
+            // İnsan klavye yazımında (80-150ms) tuşların engellenmemesi için eşik 45ms olarak ayarlanır.
+            var isFastBurst = (delta <= 45);
             if (isFastBurst) {
                 burstCount++;
             } else {
-                if (delta > 1200) {
+                if (delta > 250) {
                     scannerBuffer = "";
                     burstCount = 0;
                 }
@@ -1401,8 +1402,9 @@
                 scannerBuffer.indexOf('I;') >= 0
             );
 
-            // Odaktaki input alanını donanım verisiyle kirletmemek için varsayılan yazmayı engelle
-            if ((burstCount >= 2 || hasScannerSignature) && e.target) {
+            // Odaktaki input alanını sadece gerçek bir donanım taraması (seri harf akışı + okuyucu imzası) olduğunda engelle
+            // Normal kullanıcı klavye yazımları (burstCount < 8 veya imzasız) kesinlikle engellenmez.
+            if (burstCount >= 8 && hasScannerSignature && e.target) {
                 var tag = (e.target.tagName || '').toUpperCase();
                 if (tag === 'INPUT' || tag === 'TEXTAREA') {
                     e.preventDefault();
@@ -1521,58 +1523,64 @@
        ========================================================================== */
     function initTopPassportBarSync() {
         // 1. Üst panel -> Alt form senkronizasyonu
-        $('#topPassengerName').on('input change', function () {
-            $('#NameCFORM').val($(this).val());
+        $('#topPassengerName').on('input', function () {
+            var v = $(this).val();
+            if ($('#NameCFORM').val() !== v) $('#NameCFORM').val(v);
         });
 
-        $('#topPassportNumber').on('input change', function () {
+        $('#topPassportNumber').on('input', function () {
             var v = $(this).val().toUpperCase();
-            $(this).val(v);
-            $('#PassportCFORM').val(v);
+            if ($(this).val() !== v) $(this).val(v);
+            if ($('#PassportCFORM').val() !== v) $('#PassportCFORM').val(v);
         });
 
         $('#topBirthDate').on('input change', function () {
             var v = $(this).val();
-            $('#BirthDateCalculate').val(v);
-            $('#BirthdateCFORM').val(v);
+            if ($('#BirthDateCalculate').val() !== v) $('#BirthDateCalculate').val(v);
+            if ($('#BirthdateCFORM').val() !== v) $('#BirthdateCFORM').val(v);
             updateTopAgeBadge(v);
             if (typeof window.adultchild === 'function' && v.length === 10) {
                 window.adultchild($('#BirthDateCalculate')[0]);
             }
         });
 
-        $('#topPersonalNumber').on('input change', function () {
-            $('#IDNCFORM').val($(this).val());
+        $('#topPersonalNumber').on('input', function () {
+            var v = $(this).val();
+            if ($('#IDNCFORM').val() !== v) $('#IDNCFORM').val(v);
         });
 
         // 2. Alt form -> Üst panel senkronizasyonu
-        $('#NameCFORM').on('input change', function () {
-            $('#topPassengerName').val($(this).val());
+        $('#NameCFORM').on('input', function () {
+            var v = $(this).val();
+            if ($('#topPassengerName').val() !== v) $('#topPassengerName').val(v);
         });
 
-        $('#PassportCFORM').on('input change', function () {
-            $('#topPassportNumber').val($(this).val());
+        $('#PassportCFORM').on('input', function () {
+            var v = $(this).val();
+            if ($('#topPassportNumber').val() !== v) $('#topPassportNumber').val(v);
         });
 
         $('#CountryCalculate').on('change', function () {
             var opt = $(this).find('option:selected');
             var txt = opt.text();
             var val = $(this).val();
-            if (val && txt && txt !== 'Seçiniz...') {
-                $('#topCountryDisplay').val(txt);
-            } else {
-                $('#topCountryDisplay').val(val || '');
+            var res = (val && txt && txt !== 'Seçiniz...') ? txt : (val || '');
+            if ($('#topCountryDisplay').val() !== res) {
+                $('#topCountryDisplay').val(res);
             }
         });
 
-        $('#BirthDateCalculate, #BirthdateCFORM').on('input change', function () {
+        $('#BirthDateCalculate, #BirthdateCFORM').on('change', function () {
             var v = $(this).val();
-            $('#topBirthDate').val(v);
-            updateTopAgeBadge(v);
+            if ($('#topBirthDate').val() !== v) {
+                $('#topBirthDate').val(v);
+                updateTopAgeBadge(v);
+            }
         });
 
-        $('#IDNCFORM').on('input change', function () {
-            $('#topPersonalNumber').val($(this).val());
+        $('#IDNCFORM').on('input', function () {
+            var v = $(this).val();
+            if ($('#topPersonalNumber').val() !== v) $('#topPersonalNumber').val(v);
         });
 
         // Üst bar doğum tarihi datepicker desteği

@@ -705,12 +705,20 @@ namespace gzpegm.Controllers
         // Gizlilik Politikası Sayfası
         public ActionResult Privacy()
         {
+            var currentUser = getuserby();
+            ViewBag.UserBorder = currentUser != null && !string.IsNullOrWhiteSpace(currentUser.fldBorder)
+                ? currentUser.fldBorder
+                : null;
             return View();
         }
 
         // Kullanım Koşulları Sayfası
         public ActionResult Terms()
         {
+            var currentUser = getuserby();
+            ViewBag.UserBorder = currentUser != null && !string.IsNullOrWhiteSpace(currentUser.fldBorder)
+                ? currentUser.fldBorder
+                : null;
             return View();
         }
 

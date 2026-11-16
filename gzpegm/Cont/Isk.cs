@@ -30,7 +30,7 @@ namespace gzpegm.Cont
                 throw new Exception("Hata:  Kayıt silinemedi - " + exp.Message.ToString(), exp);
             }
         }
-        public void Addhistory(DateTime bas, DateTime sexit, DateTime bdate, string csure, string ttutar, string User, string Border, string Country)
+        public void Addhistory(DateTime bas, DateTime sexit, DateTime bdate, string csure, string ttutar, string User, string Border, string Country, string ipAddress = null)
         {
             try
             {
@@ -68,6 +68,7 @@ namespace gzpegm.Cont
 
                     data.fldBorder = Border;
                     data.fldDatetime = DateTime.Now;
+                    data.fldIpAddress = ipAddress;
                     _db.E_History.Add(data);
                     _db.SaveChanges();
                 }
@@ -165,7 +166,7 @@ namespace gzpegm.Cont
 
 
 
-        public void AddIsk(DateTime dt, string Name, string Pasaport, string Idn, string Uyruğu, DateTime Birthdate, string Form, string PKPolis, string Onypolis, string Border, string Visa, string Money, string Resim)
+        public void AddIsk(DateTime dt, string Name, string Pasaport, string Idn, string Uyruğu, DateTime Birthdate, string Form, string PKPolis, string Onypolis, string Border, string Visa, string Money, string Resim, string ipAddress = null)
         {
             try
             {
@@ -183,6 +184,7 @@ namespace gzpegm.Cont
                 son.fldVisa = Visa;
                 son.fldPMoney = Money;
                 son.fldPicture = Resim;
+                son.fldIpAddress = ipAddress;
                 using (GZPEGM1 _db = new GZPEGM1())
                 {
                     _db.E_IsK.Add(son);

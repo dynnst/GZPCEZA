@@ -48,8 +48,8 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="T.C. İçişleri Bakanlığı Emniyet Genel Müdürlüğü Hudut Kapıları Daire Başkanlığı Çevrimiçi Eğitim, Simülasyon ve Değerlendirme Portalı">
-    <meta name="author" content="EGM Hudut Kapıları Daire Başkanlığı">
+    <meta name="description" content="T.C. İçişleri Bakanlığı Emniyet Genel Müdürlüğü Çevrimiçi Personel Eğitim, Simülasyon ve Değerlendirme Portalı">
+    <meta name="author" content="EGM Hudut Kapıları Personel Portalı">
 
     <title>EGM HUDUT KAPILARI | Çevrimiçi Eğitim &amp; Sınav Portalı</title>
     <link rel="icon" href="@Url.Content("~/files/logo/favicon-egm-32.png")" type="image/x-icon">
@@ -1800,7 +1800,15 @@
                         <address class="small mb-0 text-light" style="opacity:0.8; line-height:1.6;">
                             <strong>T.C. İçişleri Bakanlığı</strong><br />
                             Emniyet Genel Müdürlüğü<br />
-                            Hudut Kapıları Daire Başkanlığı<br />
+                            @if (Model.CurrentUser != null && !string.IsNullOrWhiteSpace(Model.CurrentUser.fldBorder))
+                            {
+                                <span style="color: #f59e0b; font-weight:700;">@Model.CurrentUser.fldBorder</span>
+                            }
+                            else
+                            {
+                                <text>EGM Hudut Kapıları Personel Portalı</text>
+                            }
+                            <br />
                             Çevrimiçi Personel Eğitim ve Simülasyon Portalı
                         </address>
                     </div>
@@ -1859,7 +1867,14 @@
                         &copy; @DateTime.Now.Year T.C. İçişleri Bakanlığı Emniyet Genel Müdürlüğü
                     </p>
                     <p class="small text-light mb-2" style="opacity:0.7;">
-                        Hudut Kapıları Daire Başkanlığı - Personel Eğitim ve Simülasyon Portalı
+                        @if (Model.CurrentUser != null && !string.IsNullOrWhiteSpace(Model.CurrentUser.fldBorder))
+                        {
+                            @Model.CurrentUser.fldBorder<text> - Personel Eğitim ve Simülasyon Portalı</text>
+                        }
+                        else
+                        {
+                            <text>EGM Hudut Kapıları Personel Portalı - Personel Eğitim ve Simülasyon Portalı</text>
+                        }
                     </p>
                     <div class="mt-2">
                         <a href="@Url.Action("Privacy", "Landing")" class="small text-muted mx-2"><i class="fa fa-lock mr-1"></i> Gizlilik Politikası</a>

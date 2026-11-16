@@ -28,5 +28,6 @@ namespace gzpegm.Models
         public string fldVisa { get; set; }
         public string fldPMoney { get; set; }
         public string fldPicture { get; set; }
+        public string fldIpAddress { get; set; }
     }
 }

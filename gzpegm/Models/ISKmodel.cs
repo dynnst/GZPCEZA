@@ -17,6 +17,6 @@ namespace gzpegm.Models
         public string Money { get; set; }
         public string Kapi { get; set; }
         public string Resim { get; set; }
-
+        public string IpAddress { get; set; }
     }
 }

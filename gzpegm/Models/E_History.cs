@@ -24,5 +24,6 @@ namespace gzpegm.Models
         public string fldUser { get; set; }
         public string fldBorder { get; set; }
         public Nullable<System.DateTime> fldDatetime { get; set; }
+        public string fldIpAddress { get; set; }
     }
 }

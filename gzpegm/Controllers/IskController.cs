@@ -138,7 +138,8 @@ namespace gzpegm.Controllers
                 Money = c.fldPMoney,
                 Vize = c.fldVisa,
                 Kapi = c.fldBorder,
-                Resim = c.fldPicture
+                Resim = c.fldPicture,
+                IpAddress = c.fldIpAddress
             });
         }
 
