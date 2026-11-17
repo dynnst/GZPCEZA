@@ -499,6 +499,21 @@ function visachange(elem) {
             .append('<option value="0">Ödemeyen</option>');
     }
 
+    var defaultPay = '1';
+    if (elem.value == 14) defaultPay = '14';
+    else if (elem.value == 13) defaultPay = '16';
+    else if (elem.value == 11) defaultPay = '4';
+    else if (elem.value == 9) defaultPay = '6';
+    else if (elem.value == 10) defaultPay = '8';
+    else if (elem.value == 12) defaultPay = '10';
+    else if (elem.value == 7) defaultPay = '2';
+    else defaultPay = '1';
+
+    $('#PayCalculate').val(defaultPay);
+    if ($.fn.select2) {
+        $('#PayCalculate').trigger('change.select2');
+    }
+
     updateConditionalEntryDateRows();
 }
 
@@ -651,11 +666,13 @@ function _executeHesapla1() {
     if ($Exit == "" || $Enter == "" || $Passport == "" || $Country == "" || $Visa == "") return false;
 
     $('#DayCalculate, #LongCalculate, #OneTimeCalculate, #BasCalculate, #BitCalculate, #CezaAyCalculate, #CezaGunCalculate, #SonucCalculate').val('');
-    if ($Visa !== '5') {
-        $('#BirthDateCalculate').val('');
-        $('#AdultCalculate').val('0');
-    } else {
+    if ($Visa === '5') {
         $('#AdultCalculate').val('1');
+    } else {
+        // Optik okuyucudan veya manuel girilen doğum tarihi hesaplama sırasında korunur; silinmez.
+        if ($('#BirthDateCalculate').val()) {
+            try { adultchild($('#BirthDateCalculate')[0]); } catch (e) { }
+        }
     }
 
     var requestSignature = _calculateInputSignature();
@@ -727,27 +744,44 @@ function _executeHesapla1() {
 
 function adultchild(elem) {
     if (!elem || !elem.value) return;
-    var strbirthDate = elem.value,
-        formatted = '';
-    var dizi = strbirthDate.split('.');
-    for (var i = 0; i < dizi.length; i++) {
-        formatted += dizi[2 - i] + '/'
-    }
-    formatted = formatted.substring(0, formatted.length - 1);
+    var strbirthDate = String(elem.value).trim();
+    if (!strbirthDate) return;
+
+    var parts = strbirthDate.split('.');
+    if (parts.length !== 3) return;
+    var d = parseInt(parts[0], 10), m = parseInt(parts[1], 10) - 1, y = parseInt(parts[2], 10);
+    if (isNaN(d) || isNaN(m) || isNaN(y) || y < 1900 || y > 2100) return;
+    var birthDate = new Date(y, m, d);
+    if (!birthDate || birthDate.getFullYear() !== y || birthDate.getMonth() !== m || birthDate.getDate() !== d) return;
+
     var today = new Date();
-    var birthDate = new Date(formatted);
     var age = today.getFullYear() - birthDate.getFullYear();
-    var m = today.getMonth() - birthDate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+    var monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
         age--;
     }
-    var targetAdult = (parseInt(age) < 18) ? '1' : '2';
+    window._lastCalculatedAge = age;
+
+    var targetAdult = (parseInt(age, 10) < 18) ? '1' : '2';
     if ($('#AdultCalculate').val() !== targetAdult) {
         $('#AdultCalculate').val(targetAdult).change();
     } else {
         hesapla2();
     }
     $('#BirthdateCFORM').val(strbirthDate);
+    $('#birthDateRequiredAlert').hide();
+    $('#BirthDateCalculate').removeClass('border-danger');
+}
+
+function triggerHesapla2() {
+    var bDate = ($('#BirthDateCalculate').val() || '').trim();
+    var vVal = $('#VisaCalculate').val();
+    if (!bDate && vVal !== '5') {
+        $('#birthDateRequiredAlert').slideDown(200);
+        $('#BirthDateCalculate').addClass('border-danger').focus();
+        return;
+    }
+    hesapla2();
 }
 
 var _hesapla2DebounceTimer = null;
@@ -763,7 +797,19 @@ function _executeHesapla2() {
         $Passport = $('#PassportCalculate').val(),
         $Visa = $('#VisaCalculate').val(),
         $Ctype = $('#CTypeCalculate').val(),
-        $Country = $('#CountryCalculate').val();
+        $Country = $('#CountryCalculate').val(),
+        $bDate = ($('#BirthDateCalculate').val() || '').trim();
+
+    // Doğum tarihi kontrolü: Visa 5 (Türkiye'de Doğan) hariç doğum tarihi girilmemişse
+    // Yaş grubu (yetişkin/çocuk) netleşemez; ödeme tercihi modalına ASLA yönlendirme yapılmaz!
+    var hasBirthDate = ($bDate !== '' || $Visa === '5');
+    if (!hasBirthDate) {
+        $('#birthDateRequiredAlert').slideDown(200);
+        $('#BirthDateCalculate').addClass('border-danger');
+    } else {
+        $('#birthDateRequiredAlert').hide();
+        $('#BirthDateCalculate').removeClass('border-danger');
+    }
 
     if (!$Type || $Type === '0') {
         $Type = '2';
@@ -785,7 +831,6 @@ function _executeHesapla2() {
     $('#hes2').addClass('hidden');
     $('#hes3').removeClass('hidden');
 
-    $('#PayCalculate').val('').change();
     var requestSignature = _calculateInputSignature();
     $.ajax({
         url: "/Calculate2",
@@ -813,6 +858,53 @@ function _executeHesapla2() {
             $('#DefterCalculate').val(result.DFTR);
             $('#IdariCalculate').val(result.ID);
             $('#ToplamCalculate').val(result.toplam);
+
+            // Varsayılan olarak "Ödeyen" seçeneğini hazırla
+            var vVal = $('#VisaCalculate').val();
+            var defPay = '1';
+            if (vVal == 14) defPay = '14';
+            else if (vVal == 13) defPay = '16';
+            else if (vVal == 11) defPay = '4';
+            else if (vVal == 9) defPay = '6';
+            else if (vVal == 10) defPay = '8';
+            else if (vVal == 12) defPay = '10';
+            else if (vVal == 7) defPay = '2';
+            else defPay = '1';
+
+            if (!$('#PayCalculate').val() || $('#PayCalculate').val() === '') {
+                $('#PayCalculate').val(defPay);
+                if ($.fn.select2) {
+                    $('#PayCalculate').trigger('change.select2');
+                }
+            }
+
+            var payElem = document.getElementById('PayCalculate');
+            if (payElem && payElem.value !== '' && typeof tahdit1 === 'function') {
+                tahdit1(payElem);
+            }
+
+            // KRİTİK KURAL: Doğum tarihi girilmeden Ödeme Tercihi Modalı ASLA açılmaz!
+            // Yaş grubu (yetişkin/çocuk) belirlenmeden ve doğum tarihi girilmeden tebliğ/ödeme seçimine gidilemez.
+            if (hasBirthDate && result.toplam && result.toplam !== '0' && result.toplam !== 0) {
+                $('#modalViolationPeriod').text($('#SonucCalculate').val() || '-');
+                $('#modalFineTotal').text(result.toplam);
+
+                var ageText = '';
+                if ($Visa === '5') {
+                    ageText = 'Türkiye\'de Doğan Bebek (Çocuk <18)';
+                } else if (typeof window._lastCalculatedAge === 'number') {
+                    var isChild = window._lastCalculatedAge < 18;
+                    ageText = $bDate + ' (' + window._lastCalculatedAge + ' Yaşında - ' + (isChild ? 'Çocuk <18' : 'Yetişkin 18+') + ')';
+                } else {
+                    ageText = $bDate + ' (' + ($Type === '1' ? 'Çocuk <18' : 'Yetişkin 18+') + ')';
+                }
+                $('#modalPassengerAge').text(ageText);
+
+                $('#modalPaymentChoice').modal('show');
+                setTimeout(function () {
+                    $('#btnModalPayYes').focus();
+                }, 400);
+            }
 
             // Mükerrer Kayıt Önleme: Aynı hesaplama imzası son 15 saniyede kaydedildiyse tekrar /addhistory gönderme
             var histSignature = [
@@ -1124,6 +1216,46 @@ function hesapla3() {
     $('#visatype').val($('#VisaCalculate').val());
     $('#form').removeClass('hidden');
 }
+
+function selectPaymentChoice(isPaid) {
+    $('#modalPaymentChoice').modal('hide');
+    var vVal = $('#VisaCalculate').val();
+    var payVal = '1';
+    if (isPaid) {
+        if (vVal == 14) payVal = '14';
+        else if (vVal == 13) payVal = '16';
+        else if (vVal == 11) payVal = '4';
+        else if (vVal == 9) payVal = '6';
+        else if (vVal == 10) payVal = '8';
+        else if (vVal == 12) payVal = '10';
+        else if (vVal == 7) payVal = '2';
+        else payVal = '1';
+    } else {
+        if (vVal == 14) payVal = '15';
+        else if (vVal == 13) payVal = '17';
+        else if (vVal == 11) payVal = '5';
+        else if (vVal == 9) payVal = '7';
+        else if (vVal == 10) payVal = '9';
+        else if (vVal == 12) payVal = '11';
+        else if (vVal == 7) payVal = '3';
+        else payVal = '0';
+    }
+
+    $('#PayCalculate').val(payVal);
+    if ($.fn.select2) {
+        $('#PayCalculate').trigger('change.select2');
+    }
+    var payElem = document.getElementById('PayCalculate');
+    if (payElem && typeof tahdit1 === 'function') {
+        tahdit1(payElem);
+    }
+    if (typeof window.hesapla3 === 'function') {
+        setTimeout(function () {
+            window.hesapla3();
+        }, 300);
+    }
+}
+window.selectPaymentChoice = selectPaymentChoice;
 function deleterecord(Id) {
     var r = confirm("Kaydı silmek istediğinizde emin misiniz ?");
     if (r == false) {

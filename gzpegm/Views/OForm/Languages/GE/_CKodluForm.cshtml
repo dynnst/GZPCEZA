@@ -1,0 +1,153 @@
+@model gzpegm.Models.ViewModels.FormPrintViewModel
+<table class="form-header-table" style="width: 100%; border: none; border-collapse: collapse; margin-bottom: 6px;">
+  <tbody>
+    <tr>
+      <td class="form-header-logo-cell" style="width: 175px; vertical-align: middle; text-align: left; padding: 0; border: none;">
+        <img src="../img/goc.jpg" width="165" height="78" style="width: 165px; height: auto; max-height: 80px; display: block;">
+      </td>
+      <td class="form-header-title-cell" style="vertical-align: middle; text-align: center; padding: 0 4px; border: none;">
+        <div class="form-main-title" style="font-size: 13pt; font-weight: bold; line-height: 1.25; margin-bottom: 4px; text-align: center;">
+          Ç Kodlu Giriş Yasağı Kararı Tebliğ Formu / Ç კოდის მქონე შემოსვლის აკრძალვის გადაწყვეტილების შეტყობინების ფორმა
+        </div>
+        <div class="form-sub-title" style="font-size: 11pt; font-weight: bold; margin-top: 2px; text-align: center;">
+          Yabancıya İlişkin Bilgiler – ინფორმაცია უცხოელის შესახებ
+        </div>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th scope="col"><strong>Adı – </strong>სახელი</th>
+      <th scope="col">@Model.FirstName</th>
+    </tr>
+    <tr>
+      <th scope="row"><strong>Soyadı – </strong>გვარი</th>
+      <td>@Model.LastName</td>
+    </tr>
+    <tr>
+      <th scope="row"><strong>Baba Adı – </strong>მამის სახელი</th>
+      <td>@Model.FatherName</td>
+    </tr>
+    <tr>
+      <th scope="row"><strong>Anne Adı – </strong>დედის სახელი</th>
+      <td>@Model.MotherName</td>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th scope="col"><strong>Doğum Tarihi – </strong>დაბადების თარიღი</th>
+      <th scope="col">@Model.Birthdate</th>
+      <th scope="col"><strong>Uyruğu – </strong>მოქალაქეობა</th>
+      <th scope="col">@Model.Nationality</th>
+    </tr>
+    <tr>
+      <th scope="row"><strong>İletişim Dili – </strong>საკომუნიკაციო ენა</th>
+      <th colspan="3" scope="row">@Model.Nationality</th>
+    </tr>
+    <tr>
+      <th colspan="4" scope="row"><strong>Karar ve Değerlendirmeye İlişkin Bilgiler – </strong>ინფორმაცია გადაწყვეტილებისა და შეფასების შესახებ</th>
+    </tr>
+    <tr>
+      <th colspan="4" scope="row"><strong>Giriş Yasağı Kararı Başlangıç-Bitiş Tarihi – </strong>შემოსვლის აკრძალვის გადაწყვეტილების დაწყების და დასრულების თარიღი</th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th scope="col"><strong>Giriş Yasağı Kararı Başlangıç-Bitiş Tarihi – </strong>შემოსვლის აკრძალვის გადაწყვეტილების დაწყების და დასრულების თარიღი</th>
+      <th scope="col">@Model.Today</th>
+      <th scope="col">@Model.CanEnterDate</th>
+    </tr>
+    <tr>
+      <th scope="col"><strong>Tahdit Kodu / Restriction Code</strong></th>
+      <th colspan="2" scope="col"><h5>@Model.TahditCode</h5></th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th scope="col">* Bu alana giriş yasağı kararının başlangıç tarihi yazılacaktır. – <em>* ამ ველში იწერება შემოსვლის აკრძალვის გადაწყვეტილების დაწყების თარიღი.</em><br>
+      ** Bu alana giriş yasağı kararının bitiş tarihi yazılacaktır. – <em>** ამ ველში იწერება შემოსვლის აკრძალვის გადაწყვეტილების დასრულების თარიღი.</em></th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th scope="col"><ol start="1" type="1">
+        <li><strong>Giriş Yasağı Kararı – </strong><strong>შემოსვლის აკრძალვის გადაწყვეტილება</strong></li>
+      </ol></th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th scope="col">6458 sayılı Yabancılar ve Uluslararası Koruma Kanunun 9 uncu maddesi uyarınca gerçekleştirilen değerlendirme neticesinde, Göç İdaresi Genel Müdürlüğü / @Model.Province Valiliği (İl Göç İdaresi Müdürlüğü) tarafından hakkınızda giriş yasağı kararı alınmıştır. – <em>უცხოელთა და საერთაშორისო დაცვის შესახებ № 6458 კანონის მე-9 მუხლის შესაბამისად ჩატარებული შეფასების შედეგად, მიგრაციის მართვის გენერალური დირექტორატის / @Model.Province-ის გუბერნიის (მიგრაციის მართვის პროვინციული დირექტორატი) მიერ მიღებულია გადაწყვეტილება თქვენთვის ქვეყანაში შემოსვლის აკრძალვის შესახებ.</em></th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th style="text-align: justify; font-size: 9px;" scope="col"><ul>
+        <li>Hakkınızda giriş yasağı kararı alınmasına dayanak teşkil eden husus/hususlar sebebiyle; – <em>გარემოებათა გამო, რომლებიც საფუძვლად დაედო შემოსვლის აკრძალვის გადაწყვეტილების მიღებას;</em></li>
+        <li><em>İkamet izninizin iptali için gerekli işlemler başlatılacaktır. – დაიწყება შესაბამისი პროცედურები თქვენი ბინადრობის ნებართვის გასაუქმებლად.</em></li>
+        <li><em>Çalışma izninizin iptali için gerekli işlemler başlatılacaktır. – დაიწყება შესაბამისი პროცედურები თქვენი მუშაობის ნებართვის გასაუქმებლად.</em></li>
+        <li><u>Türkiye’ye girişinizin yasaklı olduğu süre içerisinde giriş yapmak istemeniz halinde, Türkiye Cumhuriyeti Dış Temsilciliklerinden amacına uygun (özel meşruhatlı) vize almanız gerekmektedir. – <em>თუ აკრძალვის პერიოდში გსურთ თურქეთში შემოსვლა, აუცილებელია მიიღოთ შესაბამისი (სპეციალური დანიშნულების) ვიზა თურქეთის რესპუბლიკის საზღვარგარეთის წარმომადგენლობებიდან.</em></u></li>
+        <li><em><u>Hakkınızda tahsis edilen giriş yasağı süresinin sona ermesi yüz seksen günde doksan gün kuralının uygulanmasına engel teşkil etmemektedir. Her halükârda vizenin veya vize muafiyetinin Türkiye’de sağladığı kalış süresi, her yüz seksen günde doksan günü geçemez. – <em>თქვენთვის დაწესებული შემოსვლის აკრძალვის ვადის გასვლა ხელს არ უშლის 180 დღეში 90 დღის წესის გამოყენებას. ნებისმიერ შემთხვევაში, ვიზით ან ვიზისგან გათავისუფლებით მინიჭებული ყოფნის ვადა არ შეიძლება აღემატებოდეს 90 დღეს ყოველ 180 დღეში.</em></u></em></li>
+        <li><em><u><em><u>Hakkınızda alınan giriş yasağı kararının süresi dolmuş olsa dahi idari para cezanızı ödememenizden kaynaklanan ön izin kararına ilişkin hükümler saklıdır. – <em>თუნდაც შემოსვლის აკრძალვის გადაწყვეტილების ვადა ამოიწუროს, ადმინისტრაციული ჯარიმის გადაუხდელობით გამოწვეული წინასწარი ნებართვის გადაწყვეტილების დებულებები რჩება ძალაში.</em></u></em></u></em></li>
+      </ul></th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th scope="col"><ol start="2" type="1">
+        <li><strong>Giriş Yasağı Kararına Karşı Yargı Yoluna Başvuru – </strong><strong>შემოსვლის აკრძალვის გადაწყვეტილების სასამართლოში გასაჩივრების წესი</strong></li>
+      </ol></th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th style="text-align: justify; font-size: 9px;" scope="col"><ul>
+        <li>Şahsınız veya yasal temsilciniz ya da avukatınız tarafından, giriş yasağı kararına karşı, kararın tebliğinden itibaren 60 (altmış) gün içinde idare mahkemesine başvurulabilir. – <em>თქვენ, თქვენს კანონიერ წარმომადგენელს ან ადვოკატს შეგიძლიათ გაასაჩივროთ შემოსვლის აკრძალვის გადაწყვეტილება ადმინისტრაციულ სასამართლოში შეტყობინების ჩაბარებიდან 60 (სამოცი) დღის ვადაში.</em></li>
+        <li>Mahkemeye başvuran kişi, giriş yasağı kararı veren makama da başvurusunu bildirir. – <em>სასამართლოში მიმართვის შემთხვევაში განმცხადებელი ასევე ატყობინებს ორგანოს, რომელმაც მიიღო შემოსვლის აკრძალვის გადაწყვეტილება.</em></li>
+        <li>Mahkemeye yapılan başvurular giriş yasağı kararını durdurmaz. – <em>სასამართლოში შეტანილი სარჩელი არ აჩერებს შემოსვლის აკრძალვის გადაწყვეტილების მოქმედებას.</em></li>
+      </ul></th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th style="text-align: justify; font-size: 12px;" scope="col">Bu belge, bir nüshası avukatına/yabancıya/yasal temsilcisine verilmek üzere iki nüsha olarak hazırlanmış olup, hakkında sınır dışı etme kararı alınan yukarıda açık kimliği yazılı yabancıya kendi dilinde/anladığı dilde,&nbsp;<strong>@Model.Today</strong>&nbsp;tarihinde ve&nbsp;<strong>@Model.CurrentTime</strong>&nbsp;saatinde yazılı olarak tebliğ edilmiş ve imza altına alınarak bir sureti tebellüğ edene verilmiştir. – <em>წინამდებარე დოკუმენტი მომზადებულია ორ ეგზემპლარად (ერთი გადაეცემა ადვოკატს/უცხოელს/კანონიერ წარმომადგენელს) და ზემოაღნიშნულ უცხოელს საკუთარ/მისთვის გასაგებ ენაზე წერილობით ჩაბარდა @Model.Today-ში, @Model.CurrentTime საათზე, რაზეც მოაწერა ხელი და ერთი ეგზემპლარი გადაეცა მას.</em></th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="0">
+  <tbody>
+    <tr>
+      <th style="text-align: center" scope="col"><strong>Tebliğ Eden</strong></th>
+      <th style="text-align: center" scope="col"><strong>Tebellüğ Eden</strong></th>
+    </tr>
+    <tr>
+      <th style="text-align: center" scope="row"><strong>შემტყობინებელი</strong></th>
+      <td style="text-align: center"><strong>ჩამბარებელი</strong></td>
+    </tr>
+    <tr>
+      <th style="text-align: center" scope="row"><strong>@Model.ApprovalUser</strong></th>
+      <td style="text-align: center"><strong>@Model.PassengerName</strong></td>
+    </tr>
+  </tbody>
+</table>
+</div>

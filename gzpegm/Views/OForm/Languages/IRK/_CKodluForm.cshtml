@@ -1,0 +1,148 @@
+@model gzpegm.Models.ViewModels.FormPrintViewModel
+<table class="form-header-table" style="width: 100%; border: none; border-collapse: collapse; margin-bottom: 6px;">
+  <tbody>
+    <tr>
+      <td class="form-header-logo-cell" style="width: 175px; vertical-align: middle; text-align: left; padding: 0; border: none;">
+        <img src="../img/goc.jpg" width="165" height="78" style="width: 165px; height: auto; max-height: 80px; display: block;">
+      </td>
+      <td class="form-header-title-cell" style="vertical-align: middle; text-align: center; padding: 0 4px; border: none;">
+        <div class="form-main-title" style="font-size: 13pt; font-weight: bold; line-height: 1.25; margin-bottom: 4px; text-align: center;">
+          Ç Kodlu Giriş Yasağı Kararı Tebliğ Formu / Code Ç – Entry Ban Notification Form
+        </div>
+        <div class="form-sub-title" style="font-size: 11pt; font-weight: bold; margin-top: 2px; text-align: center;">
+          Yabancıya İlişkin Bilgiler –<span dir="RTL"><span dir="RTL">بالأجنبي </span> الخاصة </span> <span dir="RTL">المعلومات </span>
+        </div>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th scope="col"><strong>Adı –&nbsp;</strong><span dir="RTL">الاسم</span></th>
+      <th scope="col">@Model.FirstName</th>
+    </tr>
+    <tr>
+      <th scope="row"><strong>Soyadı –&nbsp;</strong><span dir="RTL">اللقب </span></th>
+      <td>@Model.LastName</td>
+    </tr>
+    <tr>
+      <th scope="row"><strong>Baba Adı – <span dir="RTL">اسم </span>&nbsp;</strong><span dir="RTL">الاب </span></th>
+      <td>@Model.FatherName</td>
+    </tr>
+    <tr>
+      <th scope="row"><strong>Anne Adı – <span dir="RTL">اسم </span>&nbsp;</strong><span dir="RTL">الأم</span></th>
+      <td>@Model.MotherName</td>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th scope="col"><strong>Doğum Tarihi – <span dir="RTL">الميلاد</span>&nbsp;</strong><span dir="RTL">تاريخ </span></th>
+      <th scope="col">@Model.Birthdate</th>
+      <th scope="col"><strong>Uyruğu –&nbsp;</strong><span dir="RTL">الجنسية</span></th>
+      <th scope="col">@Model.Nationality</th>
+    </tr>
+    <tr>
+      <th scope="row"><strong>İletişim Dili –<span dir="RTL">الاتصال</span> &nbsp;</strong><span dir="RTL">لغة </span></th>
+      <th colspan="3" scope="row">@Model.Nationality</th>
+    </tr>
+    <tr>
+      <th colspan="4" scope="row"><strong>Karar ve Değerlendirmeye İlişkin Bilgiler –<span dir="RTL">التقييم</span> <span dir="RTL">و </span> <span dir="RTL">بالقرار </span> <span dir="RTL">المتعلقة </span>&nbsp;</strong><span dir="RTL">المعلومات </span></th>
+    </tr>
+   
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th scope="col"><strong>Giriş Yasağı Kararı Başlangıç-Bitiş Tarihi –&nbsp;</strong><strong><span dir="RTL">حظر </span> <span dir="RTL">قرار </span><span dir="RTL"> بدء </span> <span dir="RTL">تاريخ </span><span dir="RTL"> الدخول</span></strong></th>
+      <th scope="col">@Model.Today</th>
+      <th scope="col">@Model.CanEnterDate</th>
+    </tr>
+    <tr>
+      <th scope="col"><strong>Tahdit Kodu / Restriction Code</strong></th>
+      <th colspan="2" scope="col"><h5>@Model.TahditCode</h5></th>
+    </tr>
+  </tbody>
+</table>
+
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th scope="col"><ol start="1" type="1">
+        <li><strong>Giriş Yasağı Kararı – <span dir="RTL">الدخول&nbsp; </span><span dir="RTL">حظر </span>&nbsp;</strong><span dir="RTL">قرار </span></li>
+      </ol></th>
+    </tr>
+  </tbody>
+</table>
+
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th scope="col"><p>6458 sayılı Yabancılar ve Uluslararası Koruma Kanunun 9 uncu maddesi uyarınca gerçekleştirilen değerlendirme neticesinde, Göç İdaresi Genel Müdürlüğü / @Model.Province Valiliği (İl Göç İdaresi Müdürlüğü) tarafından hakkınızda giriş yasağı kararı alınmıştır. –<em><span dir="RTL"><span dir="RTL"> (</span> اتُخِذ <span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span><em><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span> ، </span></em> </span><span dir="RTL"> </span><em><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span>6458 </span></em> رقم  الدولية  الحماية  و  الأجانب  قانون  من <span dir="RTL"> </span><span dir="RTL"> </span><em><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span>9 </span></em> للمادة  وفقا  أجري  الذي  للتقييم  نتيجة  للمحافظة الهجرة  إدارة  مديرية <span dir="RTL">) </span><span dir="RTL"> </span><em><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span>@Model.Province </span></em> محافظة </span></em><em><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span><em><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span> / </span></em> الهجرة  لإدارة  العامة  المديرية  قبل </span></em><em><span dir="RTL"> من  بحقك  الدخول </span></em><em><span dir="RTL"> منع </span></em> &nbsp;<em><span dir="RTL">قرار </span></em></p>
+      <p>&nbsp;</p></th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th style="text-align: justify; font-size: 9px;" scope="col"><ul>
+        <li>Hakkınızda giriş yasağı kararı alınmasına dayanak teşkil eden husus/hususlar sebebiyle; -<em><span dir="RTL">الأساس </span></em> <em><span dir="RTL">تشكل </span></em><em><span dir="RTL"> التي </span></em><em><span dir="RTL"> المسائل  <span dir="RTL"> </span><span dir="RTL"> </span><em><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span>/ </span></em>-للمسئلة  نظرا <span dir="RTL"> </span><span dir="RTL"> </span><em><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span> ؛</span></em> بحقك</span></em><em><span dir="RTL"> الدخول </span></em><em><span dir="RTL"> حظر </span></em> <em><span dir="RTL"> قرار </span></em>&nbsp;<em><span dir="RTL">لاتخاذ </span></em></li>
+        <li><em>İkamet izninizin iptali için gerekli işlemler başlatılacaktır. –<span dir="RTL">إقامتك</span> <span dir="RTL">تصريح </span> <span dir="RTL">لإلغاء </span> <span dir="RTL">اللازمة </span> <span dir="RTL">الإجراءات </span>&nbsp;<span dir="RTL">ستبدأ </span></em></li>
+        <li><em>Çalışma izninizin iptali için gerekli işlemler başlatılacaktır. –<span dir="RTL">لإلغاء </span> <span dir="RTL">الضرورية </span> <span dir="RTL">الإجراءات </span> <span dir="RTL">ستبدأ </span> <span dir="RTL">بك الخاص </span> <span dir="RTL">العمل </span>&nbsp;<span dir="RTL">تصريح </span></em></li>
+        <li><u>Türkiye’ye girişinizin yasaklı olduğu süre içerisinde giriş yapmak istemeniz halinde, Türkiye Cumhuriyeti Dış Temsilciliklerinden amacına uygun (özel meşruhatlı) vize almanız gerekmektedir. –<em><u><span dir="RTL"> البعثات </span></u></em> <em><u><span dir="RTL">من </span></u></em> <em><u><span dir="RTL">خاصة مشروحة </span></u></em> <em><u><span dir="RTL">الغرض  تلبي </span></u></em> <em><u><span dir="RTL">دخول </span></u></em> <em><u><span dir="RTL">تأشيرة </span></u></em> <em><u><span dir="RTL">على </span></u></em><em><u><span dir="RTL"> الحصول </span></u></em> <em><u><span dir="RTL">ينبغي </span></u></em> <span dir="RTL"> </span><span dir="RTL"> </span><em><u><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span>، </span></u></em> <em><u><span dir="RTL">عليك</span></u></em> <em><u><span dir="RTL">المفروضة </span></u></em><em><u><span dir="RTL"> الدخول </span></u></em> <em><u><span dir="RTL">الدخول </span></u></em><em><u><span dir="RTL">حظر </span></u></em> <em><u><span dir="RTL">فترة </span></u></em> <em><u><span dir="RTL">خلال </span></u></em> <em><u><span dir="RTL">تركيا </span></u></em> <em><u><span dir="RTL">دخول </span></u></em><em><u><span dir="RTL"> في </span></u></em> <em><u><span dir="RTL">ترغب </span></u></em> <em><u><span dir="RTL">كنت </span></u></em><em><u><span dir="RTL"> إذا </span></u></em> <em><u><span dir="RTL">التركية</span></u></em> <em><u><span dir="RTL">للجمهورية </span></u></em></u><em><u><span dir="RTL">الخارجية </span></u></em></li>
+        <li>
+          <p>Hakkınızda tahsis edilen giriş yasağı süresinin sona ermesi yüz seksen günde doksan gün kuralının uygulanmasına engel teşkil etmemektedir. Her halükârda vizenin veya vize muafiyetinin Türkiye’de sağladığı kalış süresi, her yüz seksen günde doksan günü geçemez.”--<span dir="RTL"><em><span dir="RTL"> ألا  يجب </span></em> </span><span dir="RTL"> </span><em><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span>، </span></em> <em><span dir="RTL">حال  أي </span></em> <em><span dir="RTL">على </span></em> <span dir="RTL"><em><span dir="RTL">و </span></em> </span><span dir="RTL"> </span><em><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span> . </span></em> <em><span dir="RTL">يومًا وثمانين  مائة </span></em> <em><span dir="RTL"> خلال </span></em><em><span dir="RTL"> يومًا  التسعين </span></em> <em><span dir="RTL">قاعدة  تطبيق  من </span></em> <em><span dir="RTL">يمنع  لا </span></em> <em><span dir="RTL">بك  المخصص  الدخول </span></em> <em><span dir="RTL">حظر  انتهاء  إن  يومًا وثمانين  مائة  خلال </span></em> <em><span dir="RTL">يومًا  التسعين  تركيا </span></em> <em><span dir="RTL">في  المقدمة  التأشيرة </span> <span dir="RTL">من  الإعفاء  أو  التأشيرة </span></em><em><span dir="RTL"> مدة </span></em> <em><span dir="RTL">تتجاوز </span></em></p>
+        </li>
+        <li><em><u><em><u>Hakkınızda alınan giriş yasağı kararının süresi dolmuş olsa dahi idari para cezanızı ödememenizden kaynaklanan ön izin kararına ilişkin hükümler saklıdır. -<span dir="RTL">الناتج  المسبق  الاذن  &nbsp; بقرار  المتعلقة  بالأحكام  الاحتفاظ </span> <span dir="RTL">يتم </span> <span dir="RTL">انه  إلا <span dir="RTL"> </span><span dir="RTL"> </span><em><u><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span> ، </span></u></em> بحقك</span><span dir="RTL"> المتخذ  الدخول </span> <span dir="RTL">حظر </span><span dir="RTL"> قرار  انتهاء  حالة </span> <span dir="RTL">في </span> <span dir="RTL">حتى  الإدارية  الغرامة </span> <span dir="RTL">دفع </span> <span dir="RTL">عدم </span> &nbsp;</u><u><span dir="RTL">عن </span></u></em></u></em></li>
+      </ul></th>
+    </tr>
+  </tbody>
+</table>
+
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th scope="col"><ol start="2" type="1">
+        <li><strong>Giriş Yasağı Kararına Karşı Yargı Yoluna Başvuru –<span dir="RTL"><span dir="RTL"> <span dir="RTL">الدخول </span>حظر </span> قرار </span> <span dir="RTL"><span dir="RTL"><span dir="RTL">ضد </span> للقضاء </span> طلب </span> &nbsp;</strong><span dir="RTL">تقديم </span></li>
+      </ol></th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th style="text-align: justify; font-size: 9px;" scope="col"><ul>
+        <li>Şahsınız veya yasal temsilciniz ya da avukatınız tarafından, giriş yasağı kararına karşı, kararın tebliğinden itibaren 60 (altmış) gün içinde idare mahkemesine başvurulabilir. – <em><span dir="RTL">ضد </span></em><em><span dir="RTL"> الإدارية </span></em><em><span dir="RTL"> المحكمة  إلى  بطلب  التقدم </span></em><em><span dir="RTL"> محاميك  أو </span></em><em><span dir="RTL"> القانوني  ممثلك  أو  أنت </span></em> <em><span dir="RTL">يمكنك </span></em> <em><span dir="RTL">بالقرار</span></em> <em><span dir="RTL">تبليغكم </span></em> <em><span dir="RTL">تاريخ  من </span></em> <em><span dir="RTL">يومًا </span></em> <span dir="RTL">(<em><span dir="RTL">ستين</span></em>) </span><span dir="RTL"> </span><em><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span>60 </span></em> <em><span dir="RTL">غضون </span></em> <em><span dir="RTL">في </span></em><em><span dir="RTL"> الدخول </span></em> <em><span dir="RTL">حظر </span></em> &nbsp;<em><span dir="RTL">قرار </span></em></li>
+        <li>Mahkemeye başvuran kişi, giriş yasağı kararı veren makama da başvurusunu bildirir. –<em><span dir="RTL">الجهة </span></em> <em><span dir="RTL">بإبلاغ </span></em><em><span dir="RTL"> للمحكمة </span></em><em><span dir="RTL"> المتقدم </span></em><em><span dir="RTL"> الشخص </span></em> <em><span dir="RTL">يقوم </span></em><em><span dir="RTL"> ايضا</span></em><em><span dir="RTL"> الدخول </span></em> <em><span dir="RTL">منع </span></em> <em><span dir="RTL">قرار </span></em> <em><span dir="RTL"> اتخذت </span></em>&nbsp;<em><span dir="RTL">التي </span></em></li>
+        <li>Mahkemeye yapılan başvurular giriş yasağı kararını durdurmaz. –<em><span dir="RTL">الدخول</span></em> <em><span dir="RTL">حظر </span></em><em><span dir="RTL">قرار  توقف  لا </span></em> <em><span dir="RTL">للمحكمة </span></em><em><span dir="RTL">المقدمة </span></em>&nbsp;<em><span dir="RTL">الطلبات </span></em></li>
+      </ul></th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th style="text-align: justify; font-size: 12px;" scope="col"><span style="text-align:justify; font-size:12px">Bu belge, bir nüshası avukatına/yabancıya/yasal temsilcisine verilmek üzere iki nüsha olarak hazırlanmış olup, hakkında sınır dışı etme kararı alınan yukarıda açık kimliği yazılı yabancıya kendi dilinde/anladığı dilde,&nbsp;<a name="_Hlk43631423"><em>@Model.Today&nbsp;&nbsp;</em></a>tarihinde ve&nbsp;&nbsp;<a name="_Hlk43631423"><em>@Model.CurrentTime&nbsp;</em></a>saatinde yazılı olarak tebliğ edilmiş ve imza altına alınarak bir sureti tebellüğ edene verilmiştir. –<em><span dir="RTL">إعلام</span><span dir="RTL"> </span></em> <em><span dir="RTL">تم </span></em> <em><span dir="RTL">وقد <span dir="RTL"> </span><span dir="RTL"> </span><em><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span>، </span></em> القانوني</span></em> <em><span dir="RTL">ممثله <span dir="RTL"> </span><span dir="RTL"> </span><em><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span> / </span></em> الأجنبي<span dir="RTL"> </span><span dir="RTL"> </span><em><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span> / </span></em> المحامي وكيله  إلى&nbsp; </span></em><em><span dir="RTL"> واحدة  نسخة </span></em> <em><span dir="RTL">تسليم  يتم </span></em><em><span dir="RTL"> أن  على <span dir="RTL"> </span><span dir="RTL"> </span><em><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span> ، </span></em> نسختين</span></em><em><span dir="RTL"> شكل  على </span></em><em><span dir="RTL"> الوثيقة </span></em><em><span dir="RTL"> هذه  تنظيم </span></em> <em><span dir="RTL">تم <a name="_Hlk43631423"><em>@Model.Today&nbsp;</em></a><span dir="RTL"> </span><span dir="RTL"> </span><em><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span></span></em>التاريخ  في  وذلك </span></em> <em><span dir="RTL">يفهمها  التي  أواللغة <span dir="RTL"> </span><span dir="RTL"> </span><em><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span>/ </span></em> وبلغته كتابي </span></em><span dir="RTL"><em><span dir="RTL"> بشكل  التبليغ  وتم </span></em></span><span dir="RTL"> </span><em><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span> . </span></em> <em><span dir="RTL">حقه</span></em> <em><span dir="RTL">في  الصادر  الترحيل  بقرار  أعلاه  الواضحة  هويته  المذكورة  الأجنبي </span></em> <em><span dir="RTL">بالتبليغ المخاطب  الشخص </span></em><em><span dir="RTL"> إلى  منها  نسخة </span></em> <em><span dir="RTL">وتسليم  الوثيقة  هذه  على  التوقيع </span></em> <span dir="RTL"><em><span dir="RTL">تم  وعليه </span></em></span><span dir="RTL"> </span><em><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span>@Model.CurrentTime</span></em> <em><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span><em><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span> : </span></em> الساعة</span></em> <em><span dir="RTL"> في </span></em>&nbsp;<span dir="RTL"> </span><span dir="RTL"> </span><em><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span>20 </span></em></span></th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="0">
+  <tbody>
+    <tr>
+      <th style="text-align: center" scope="col"><strong>Tebliğ Eden</strong></th>
+      <th style="text-align: center" scope="col"><strong>Tebellüğ Eden</strong></th>
+    </tr>
+    <tr>
+      <th style="text-align: center" scope="row"><strong><span dir="RTL">المُبَلّْغ</span></strong></th>
+      <td style="text-align: center"><strong><span dir="RTL"> إليه المًبَلَّغ </span></strong></td>
+    </tr>
+    <tr>
+      <th style="text-align: center" scope="row"><strong>@Model.ApprovalUser</strong></th>
+      <td style="text-align: center"><strong>@Model.PassengerName</strong></td>
+    </tr>
+  </tbody>
+</table>

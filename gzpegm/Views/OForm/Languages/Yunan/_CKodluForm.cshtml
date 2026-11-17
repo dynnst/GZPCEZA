@@ -1,0 +1,154 @@
+@model gzpegm.Models.ViewModels.FormPrintViewModel
+<table class="form-header-table" style="width: 100%; border: none; border-collapse: collapse; margin-bottom: 6px;">
+  <tbody>
+    <tr>
+      <td class="form-header-logo-cell" style="width: 175px; vertical-align: middle; text-align: left; padding: 0; border: none;">
+        <img src="../img/goc.jpg" width="165" height="78" style="width: 165px; height: auto; max-height: 80px; display: block;">
+      </td>
+      <td class="form-header-title-cell" style="vertical-align: middle; text-align: center; padding: 0 4px; border: none;">
+        <div class="form-main-title" style="font-size: 13pt; font-weight: bold; line-height: 1.25; margin-bottom: 4px; text-align: center;">
+          Ç Kodlu Giriş Yasağı Kararı Tebliğ Formu / Code Ç – Entry Ban Notification Form
+        </div>
+        <div class="form-sub-title" style="font-size: 11pt; font-weight: bold; margin-top: 2px; text-align: center;">
+          Yabancıya İlişkin Bilgiler – Information on the Foreigner
+        </div>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th scope="col"><strong>Adı –&nbsp;</strong>Name</th>
+      <th scope="col">@Model.FirstName</th>
+    </tr>
+    <tr>
+      <th scope="row"><strong>Soyadı –&nbsp;</strong>Surname</th>
+      <td>@Model.LastName</td>
+    </tr>
+    <tr>
+      <th scope="row"><strong>Baba Adı –&nbsp;</strong>Father’s Name</th>
+      <td>@Model.FatherName</td>
+    </tr>
+    <tr>
+      <th scope="row"><strong>Anne Adı –&nbsp;</strong>Mother’s Name</th>
+      <td>@Model.MotherName</td>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th scope="col"><strong>Doğum Tarihi –&nbsp;</strong>Date of Birth</th>
+      <th scope="col">@Model.Birthdate</th>
+      <th scope="col"><strong>Uyruğu –&nbsp;</strong>Nationality</th>
+      <th scope="col">@Model.Nationality</th>
+    </tr>
+    <tr>
+      <th scope="row"><strong>İletişim Dili –&nbsp;</strong>Communication Language</th>
+      <th colspan="3" scope="row">@Model.Nationality</th>
+    </tr>
+    <tr>
+      <th colspan="4" scope="row"><strong>Karar ve Değerlendirmeye İlişkin Bilgiler –&nbsp;</strong>Information about the Decision and Evaluation</th>
+    </tr>
+    <tr>
+      <th colspan="4" scope="row"><strong>Giriş Yasağı Kararı Başlangıç-Bitiş Tarihi –&nbsp;</strong>Start and End Date of Entry Ban Decision</th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th scope="col"><strong>Giriş Yasağı Kararı Başlangıç-Bitiş Tarihi –&nbsp;</strong>Start and End Date of Entry Ban Decision</th>
+      <th scope="col">@Model.Today</th>
+      <th scope="col">@Model.CanEnterDate</th>
+    </tr>
+    <tr>
+      <th scope="col"><strong>Tahdit Kodu / Restriction Code</strong></th>
+      <th colspan="2" scope="col"><h5>@Model.TahditCode</h5></th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th scope="col">* Bu alana giriş yasağı kararının başlangıç tarihi yazılacaktır. –&nbsp;<em>*&nbsp;</em><em>Enter start date of entry ban decision to this field.</em> <br>
+      ** Bu alana giriş yasağı kararının bitiş tarihi yazılacaktır. –&nbsp;<em>**&nbsp;</em><em>Enter end date of entry ban decision to this field.</em></th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th scope="col"><ol start="1" type="1">
+        <li><strong>Giriş Yasağı Kararı –&nbsp;</strong><strong>Entry Ban Decision</strong></li>
+      </ol></th>
+    </tr>
+  </tbody>
+</table>
+
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th scope="col">6458 sayılı Yabancılar ve Uluslararası Koruma Kanunun 9 uncu maddesi uyarınca gerçekleştirilen değerlendirme neticesinde, Göç İdaresi Genel Müdürlüğü / @Model.Province Valiliği (İl Göç İdaresi Müdürlüğü) tarafından hakkınızda giriş yasağı kararı alınmıştır. –&nbsp;<em>As a result of the evaluation conducted in accordance with the Article 9 of the Law on Foreigners and International Protection numbered 6458, Directorate General of Migration Management / Governorship of @Model.Province (Provincial Directorate of Migration Management) has resolved to impose an entry ban on you.</em></th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th style="text-align: justify; font-size: 9px;" scope="col"><ul>
+        <li>Hakkınızda giriş yasağı kararı alınmasına dayanak teşkil eden husus/hususlar sebebiyle; -&nbsp;<em>Based on the particular/particulars constituting grounds for imposing an entry ban on you;</em></li>
+        <li><em>İkamet izninizin iptali için gerekli işlemler başlatılacaktır. –&nbsp;<a name="_Hlk43630024"><em>Respective procedures will be commenced for cancelling your residence permit.</em></a>&nbsp;</em></li>
+        <li><em>Çalışma izninizin iptali için gerekli işlemler başlatılacaktır. –&nbsp;<em>Respective procedures will be commenced for cancelling your work permit.</em></em></li>
+        <li><u>Türkiye’ye girişinizin yasaklı olduğu süre içerisinde giriş yapmak istemeniz halinde, Türkiye Cumhuriyeti Dış Temsilciliklerinden amacına uygun (özel meşruhatlı) vize almanız gerekmektedir. –&nbsp;</u><em><u>If you wish to enter Turkey during the period of your entry ban, you are required to obtain the relevant visa (annotated visa) from Foreign Representative Offices of the Republic of Turkey.&nbsp;</u></em></li>
+        <li><em><u>Hakkınızda tahsis edilen giriş yasağı süresinin sona ermesi yüz seksen günde doksan gün kuralının uygulanmasına engel teşkil etmemektedir. Her halükârda vizenin veya vize muafiyetinin Türkiye’de sağladığı kalış süresi, her yüz seksen günde doksan günü geçemez. –&nbsp;<em>Note that the expiration of the entry ban period imposed on you does not constitute any impediment for implementing the rule of ninety days in one hundred and eighty days. In any case, the duration of stay in Turkey granted by the visa or the visa exemption cannot exceed ninety days in every one hundred and eighty days.</em></u></em></li>
+        <li><em><u><em><u>Hakkınızda alınan giriş yasağı kararının süresi dolmuş olsa dahi idari para cezanızı ödememenizden kaynaklanan ön izin kararına ilişkin hükümler saklıdır. -&nbsp;</u><em><u>All provisions with respect to the preliminary permission decision stemming from the non-payment of your administrative fine are reserved regardless of the expiration of the entry ban decision imposed on you.</u></em></em></u></em></li>
+      </ul></th>
+    </tr>
+  </tbody>
+</table>
+
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th scope="col"><ol start="2" type="1">
+        <li><strong>Giriş Yasağı Kararına Karşı Yargı Yoluna Başvuru –&nbsp;</strong><strong>Resort to the Jurisdiction Against the Entry Ban Decision</strong></li>
+      </ol></th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th style="text-align: justify; font-size: 9px;" scope="col"><ul>
+        <li>Şahsınız veya yasal temsilciniz ya da avukatınız tarafından, giriş yasağı kararına karşı, kararın tebliğinden itibaren 60 (altmış) gün içinde idare mahkemesine başvurulabilir. –&nbsp;<a name="_Hlk43631319"><em>You or your legal representative or lawyer may appeal against the entry ban decision to the Administrative Court within 60 (sixty) days from the notification of the decision.</em></a></li>
+        <li>Mahkemeye başvuran kişi, giriş yasağı kararı veren makama da başvurusunu bildirir. –&nbsp;<a name="_Hlk43631350"><em>The applicant who applied to the Court also notifies the authority of the entry ban decision.</em></a></li>
+        <li>Mahkemeye yapılan başvurular giriş yasağı kararını durdurmaz. –&nbsp;<a name="_Hlk43631381"><em>Applications made to the Court does not suspend the entry ban decision.</em></a></li>
+      </ul></th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th style="text-align: justify; font-size: 12px;" scope="col">Bu belge, bir nüshası avukatına/yabancıya/yasal temsilcisine verilmek üzere iki nüsha olarak hazırlanmış olup, hakkında sınır dışı etme kararı alınan yukarıda açık kimliği yazılı yabancıya kendi dilinde/anladığı dilde,&nbsp;<strong>@Model.Today</strong>&nbsp;tarihinde ve&nbsp;<strong>@Model.CurrentTime</strong>&nbsp;saatinde yazılı olarak tebliğ edilmiş ve imza altına alınarak bir sureti tebellüğ edene verilmiştir. –&nbsp;<a name="_Hlk43631423"><em>This document has been issued in duplicate so a copy can be given to the lawyer/foreigner/legal representative and the foreigner, whose open identity is given above and upon whom the deportation decision has been imposed, has been notified in writing in his own language/language of comprehension on @Model.Today at @Model.CurrentTime and one copy has been given to the notified with a signature.</em></a></th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="0">
+  <tbody>
+    <tr>
+      <th style="text-align: center" scope="col"><strong>Tebliğ Eden</strong></th>
+      <th style="text-align: center" scope="col"><strong>Tebellüğ Eden</strong></th>
+    </tr>
+    <tr>
+      <th style="text-align: center" scope="row"><strong>Notifying Party</strong></th>
+      <td style="text-align: center"><strong>Notified</strong></td>
+    </tr>
+    <tr>
+      <th style="text-align: center" scope="row"><strong>@Model.ApprovalUser</strong></th>
+      <td style="text-align: center"><strong>@Model.PassengerName</strong></td>
+    </tr>
+  </tbody>
+</table>

@@ -1,0 +1,152 @@
+@model gzpegm.Models.ViewModels.FormPrintViewModel
+<table class="form-header-table" style="width: 100%; border: none; border-collapse: collapse; margin-bottom: 6px;">
+  <tbody>
+    <tr>
+      <td class="form-header-logo-cell" style="width: 175px; vertical-align: middle; text-align: left; padding: 0; border: none;">
+        <img src="../img/goc.jpg" width="165" height="78" style="width: 165px; height: auto; max-height: 80px; display: block;">
+      </td>
+      <td class="form-header-title-cell" style="vertical-align: middle; text-align: center; padding: 0 4px; border: none;">
+        <div class="form-main-title" style="font-size: 13pt; font-weight: bold; line-height: 1.25; margin-bottom: 4px; text-align: center;">
+          Ç Kodlu Giriş Yasağı Kararı Tebliğ Formu / <strong><span lang="de">Kode Ç -&nbsp;</span><span lang="DE">Notifizierungsformular für den Ausschlussbeschluss</span></strong>
+        </div>
+        <div class="form-sub-title" style="font-size: 11pt; font-weight: bold; margin-top: 2px; text-align: center;">
+          Yabancıya İlişkin Bilgiler – Informationen über den Ausländer
+        </div>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th style="text-align: left" scope="col"><strong>Adı –&nbsp;</strong>Name</th>
+      <th scope="col">@Model.FirstName</th>
+    </tr>
+    <tr>
+      <th style="text-align: left" scope="row"><strong>Soyadı –&nbsp;</strong>Nachname</th>
+      <td>@Model.LastName</td>
+    </tr>
+    <tr>
+      <th style="text-align: left" scope="row"><strong>Baba Adı –&nbsp;</strong>Name des Vaters</th>
+      <td>@Model.FatherName</td>
+    </tr>
+    <tr>
+      <th style="text-align: left" scope="row"><strong>Anne Adı –&nbsp;</strong>Name der Mutter</th>
+      <td>@Model.MotherName</td>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th style="text-align: left" scope="col"><strong>Doğum Tarihi –&nbsp;</strong>Geburtsdatum</th>
+      <th scope="col">@Model.Birthdate</th>
+      <th scope="col"><strong>Uyruğu –&nbsp;</strong>Nationalität</th>
+      <th scope="col">@Model.Nationality</th>
+    </tr>
+    <tr>
+      <th style="text-align: left" scope="row"><strong>İletişim Dili –&nbsp;</strong>Kommunikationssprache</th>
+      <th colspan="3" scope="row">@Model.Nationality</th>
+    </tr>
+    <tr>
+      <th colspan="4" scope="row"><strong>Karar ve Değerlendirmeye İlişkin Bilgiler –&nbsp;</strong>Informationen über die Entscheidung und Beurteilung</th>
+    </tr>
+   
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th scope="col"><strong>Giriş Yasağı Kararı Başlangıç-Bitiş Tarihi –&nbsp;</strong>Anfangs- und Enddatum des Ausschlussbeschluss</th>
+      <th scope="col">@Model.Today</th>
+      <th scope="col">@Model.CanEnterDate</th>
+    </tr>
+    <tr>
+      <th scope="col"><strong>Tahdit Kodu / Einreisesperrcode</strong></th>
+      <th colspan="2" scope="col"><h5>@Model.TahditCode</h5></th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th style="text-align: justify; font-size: 10px;" scope="col">* Bu alana giriş yasağı kararının başlangıç tarihi yazılacaktır. –&nbsp;<em>*&nbsp;</em><em><span lang="de">Das Anfangs- und Enddatum des Ausschlussbeschluss sollen auf diesen Platz geschrieben werden.</span></em><br>
+      ** Bu alana giriş yasağı kararının bitiş tarihi yazılacaktır. –&nbsp;<em>**&nbsp;</em><em><span lang="de">Der Enddatum des Ausschlussbeschluss sollen auf diesen Platz geschrieben werden.</span></em></th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th scope="col"><ol start="1" type="1">
+        <li><strong>Giriş Yasağı Kararı –&nbsp;</strong><strong><span lang="de">Ausschlussbeschluss</span></strong></li>
+      </ol></th>
+    </tr>
+  </tbody>
+</table>
+
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th style="text-align: justify; font-size: 12px;" scope="col">6458 sayılı Yabancılar ve Uluslararası Koruma Kanunun 9 uncu maddesi uyarınca gerçekleştirilen değerlendirme neticesinde, Göç İdaresi Genel Müdürlüğü / @Model.Province Valiliği (İl Göç İdaresi Müdürlüğü) tarafından hakkınızda giriş yasağı kararı alınmıştır. –&nbsp;<em><span lang="de">Infolge der Beurteilung, die gemäß Artikel 9 des Ausländer- und internationalen Schutzgesetz durchgeführt ist, ist der Ausschlussbeschluss für Sie Durch die Einwanderungsbehörde / das Gouverneursamt @Model.Province (Provinzeinwanderungsbehörde) getroffen.</span></em></th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th style="text-align: justify; font-size: 9px;" scope="col"><ul>
+        <li>Hakkınızda giriş yasağı kararı alınmasına dayanak teşkil eden husus/hususlar sebebiyle; -<em><span lang="de">Aufgrund des/der Grunds/Gründen, der/die zu Grunde liegt/liegen, dass der Ausschlussbeschluss für Sie betroffen ist;</span></em></li>
+        <li><em>İkamet izninizin iptali için gerekli işlemler başlatılacaktır. –&nbsp;<span lang="de">Notwendige Vorgänge sollen zur Aufhebung ihrer Aufenthaltsbefugnis eingeführt werden.</span></em></li>
+        <li><em>Çalışma izninizin iptali için gerekli işlemler başlatılacaktır. –&nbsp;<span lang="de">Notwendige Vorgänge sollen zur Aufhebung ihrer Arbeitserlaubnis eingeführt werden.</span></em></li>
+        <li><u>Türkiye’ye girişinizin yasaklı olduğu süre içerisinde giriş yapmak istemeniz halinde, Türkiye Cumhuriyeti Dış Temsilciliklerinden amacına uygun (özel meşruhatlı) vize almanız gerekmektedir. –</u><em><u>&nbsp;<em><u><span lang="DE">Falls Sie während ihres Ausschlussbeschluss in die Türkei einreisen wollen, sollen Sie durch die türkischen Auslandvertretungen ein relevantes (annotiertes) Visum erhalten.</span></u></em>&nbsp;</u></em></li>
+        <li><em><u>Hakkınızda tahsis edilen giriş yasağı süresinin sona ermesi yüz seksen günde doksan gün kuralının uygulanmasına engel teşkil etmemektedir. Her halükârda vizenin veya vize muafiyetinin Türkiye’de sağladığı kalış süresi, her yüz seksen günde doksan günü geçemez. </u><span lang="de">Der Ablauf des für Sie betroffenen Ausschlussbeschlusszeit hindern es nicht, die Regel der neunzig Tagen in der einhundertachtzig Tagen durchzuführen. Jedenfalls überschreitet der von dem Visum oder der Visumfreiheit angebotene Aufenthalt in der Türkei nicht die neunzig Tage pro der einhundertachtzig Tagen.</span></em></li>
+        <li><em><u><em><u>Hakkınızda alınan giriş yasağı kararının süresi dolmuş olsa dahi idari para cezanızı ödememenizden kaynaklanan ön izin kararına ilişkin hükümler saklıdır. -</u></em></u></em><em><u><span lang="de">Auch wenn die für Sie betroffene Ausschlussbeschlusszeit abgelaufen ist, sind Alle Bestimmungen in Bezug auf die Entscheidung über die vorläufige Erlaubnis vorbehalten, die dadurch auftreten, dass Sie das Ordnungsgeld nicht bezahlen.</span></u></em></li>
+      </ul></th>
+    </tr>
+  </tbody>
+</table>
+
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th scope="col"><ol start="2" type="1">
+        <li><strong>Giriş Yasağı Kararına Karşı Yargı Yoluna Başvuru –&nbsp;</strong><strong><span lang="DE">Rechtmittels – Antrag gegen den Ausschlussbeschluss</span></strong></li>
+      </ol></th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th style="text-align: justify; font-size: 9px;" scope="col"><ul>
+        <li>Şahsınız veya yasal temsilciniz ya da avukatınız tarafından, giriş yasağı kararına karşı, kararın tebliğinden itibaren 60 (altmış) gün içinde idare mahkemesine başvurulabilir. –&nbsp;<em><span lang="de">Sie oder ihr/e Rechtsvertreter/in oder Rechtsanwalt/in können einen Antrag gegen den Ausschlussbeschluss vor Verwaltungsgericht in der 60 (sechzig) Tagen ab der Ankündigung des Beschluss stellen.</span></em></li>
+        <li>Mahkemeye başvuran kişi, giriş yasağı kararı veren makama da başvurusunu bildirir. –&nbsp;<a name="_Hlk43631350"><em><span lang="de">Derjenige/Diejenige, der/die den Antrag vor dem Gericht stellt, stellt auch den Antrag vor dem Gericht, das den Ausschlussbeschluss trifft.</span></em></a></li>
+        <li>Mahkemeye yapılan başvurular giriş yasağı kararını durdurmaz. –&nbsp;<a name="_Hlk43631381"><em><span lang="de">Die vor dem Gericht gestellte Anträge heben den Ausschlussbeschluss nicht auf.</span></em></a></li>
+      </ul></th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th style="text-align: justify; font-size: 12px;" scope="col">Bu belge, bir nüshası avukatına/yabancıya/yasal temsilcisine verilmek üzere iki nüsha olarak hazırlanmış olup, hakkında sınır dışı etme kararı alınan yukarıda açık kimliği yazılı yabancıya kendi dilinde/anladığı dilde,&nbsp;<strong>@Model.Today</strong>&nbsp;tarihinde ve&nbsp;<strong>@Model.CurrentTime</strong>&nbsp;saatinde yazılı olarak tebliğ edilmiş ve imza altına alınarak bir sureti tebellüğ edene verilmiştir. –&nbsp;<a name="_Hlk43631423"><em><span lang="de">Dieses Dokument wurde in zweifacher Ausfertigung erstellt, so dass eine Kopie an den Anwalt/Ausländer/gesetzlichen Vertreter übergeben werden kann und der Ausländer, dessen offene Identität oben gegeben ist und über den die Ausweisungsentscheidung ergangen ist wurde schriftlich in seiner eigenen Sprache/Sprache seines Verständnisses am</span></em><strong>@Model.Today</strong><em><span lang="DE">um&nbsp;</span></em><strong>@Model.CurrentTime</strong>&nbsp;<em><span lang="de">benachrichtigt und eine Kopie wurde ihm gegen eine Unterschrift übergeben.</span></em></a></th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="0">
+  <tbody>
+    <tr>
+      <th style="text-align: center" scope="col"><strong>Tebliğ Eden</strong></th>
+      <th style="text-align: center" scope="col"><strong>Tebellüğ Eden</strong></th>
+    </tr>
+    <tr>
+      <th style="text-align: center" scope="row"><strong><span lang="DE">Benachrichtigende Partei</span></strong></th>
+      <td style="text-align: center"><strong><span lang="DE">Benachrichtigter</span></strong></td>
+    </tr>
+    <tr>
+      <th style="text-align: center" scope="row"><strong>@Model.ApprovalUser</strong></th>
+      <td style="text-align: center"><strong>@Model.PassengerName</strong></td>
+    </tr>
+  </tbody>
+</table>

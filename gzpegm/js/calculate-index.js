@@ -215,18 +215,21 @@
             $('#PassportCalculate').val('1').trigger('change.select2');
             $('#CountryCalculate').val('').trigger('change.select2');
             $('#VisaCalculate').val('2').trigger('change.select2');
-            $('#PayCalculate').val('').trigger('change.select2');
+            $('#PayCalculate').val('1').trigger('change.select2');
         } else {
             $('#CTypeCalculate').val('1');
             $('#PassportCalculate').val('1');
             $('#CountryCalculate').val('');
             $('#VisaCalculate').val('2');
-            $('#PayCalculate').val('');
+            $('#PayCalculate').val('1');
         }
 
         $('#AdultCalculate').val('2'); // Varsayılan Yetişkin
         $('#Visaday, #testarihi, #BirthDateCalculate').val('');
         $('#V137ExpiredCalculate').val('0');
+        $('#birthDateRequiredAlert').hide();
+        $('#BirthDateCalculate').removeClass('border-danger');
+        window._lastCalculatedAge = null;
 
         // Sonuç bölümlerini gizle ve temizle
         $('#veri, #hes2, #hes3, #hes4, #hes5, #ikametli, #v137SureDurumu').addClass('hidden');
@@ -288,6 +291,13 @@
             }
         });
 
+        // Doğum tarihi seçildiğinde veya girildiğinde yaş grubunu tespit et
+        $(document).on('changeDate change input', '#BirthDateCalculate', function () {
+            if (typeof window.adultchild === 'function') {
+                window.adultchild(this);
+            }
+        });
+
         // Ödeme tercihi seçildiğinde tahdit kodunu getir ve tutanak formunu otomatik doldur
         $(document).on('change', '#PayCalculate', function () {
             var val = $(this).val();
@@ -296,6 +306,26 @@
                     window.hesapla3();
                 }, 400);
             }
+        });
+
+        // Mükerrer Tıklama Önleme: Resmi Tutanağı Oluştur butonuna tıklandığında 1.5 saniye koruma
+        $(document).on('submit', '#form', function (e) {
+            var $btn = $(this).find('button[type="submit"]');
+            if ($btn.data('isSubmitting') === true) {
+                e.preventDefault();
+                return false;
+            }
+
+            $btn.data('isSubmitting', true);
+            $btn.css({ 'pointer-events': 'none', 'opacity': '0.75' });
+            var origHtml = $btn.html();
+            $btn.html('<i class="fas fa-spinner fa-spin mr-1"></i> Yazdırılıyor...');
+
+            setTimeout(function () {
+                $btn.data('isSubmitting', false);
+                $btn.css({ 'pointer-events': 'auto', 'opacity': '1' });
+                $btn.html(origHtml);
+            }, 1500); // 1.5 saniye - seri işlem için akıcı süre
         });
 
         // Sağ panel yer tutucusunu izle ve güncelle

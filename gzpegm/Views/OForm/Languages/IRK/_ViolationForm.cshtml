@@ -1,0 +1,90 @@
+@model gzpegm.Models.ViewModels.FormPrintViewModel
+<h3 align="center" class="violation-title">VİZE İHLALİ İŞLEM FORMU /VISA VIOLATION FORM</h3><h3 align="center"><table class="violation-data-table" style="width: 100%; border: 1px solid #000; border-collapse: collapse; margin-bottom: 6px;">
+  <tbody>
+    <tr>
+      <td style="width: 70%; border: 1px solid #000; padding: 2px 5px; font-size: 11.5pt;">Adı Soyadı /Name/Surname</td>
+      <td style="width: 30%; border: 1px solid #000; padding: 2px 5px; font-size: 11.5pt;"><strong class="passenger-val">@Model.PassengerName</strong></td>
+    </tr>
+    <tr>
+      <td style="border: 1px solid #000; padding: 2px 5px; font-size: 11.5pt;">Uyruğu / Nationality</td>
+      <td style="border: 1px solid #000; padding: 2px 5px; font-size: 11.5pt;"><strong class="passenger-val">@Model.Nationality</strong></td>
+    </tr>
+    <tr>
+      <td style="border: 1px solid #000; padding: 2px 5px; font-size: 11.5pt;">Pasaport No / Passport No</td>
+      <td style="border: 1px solid #000; padding: 2px 5px; font-size: 11.5pt;"><strong class="passenger-val">@Model.PassportNo</strong></td>
+    </tr>
+    <tr>
+      <td style="border: 1px solid #000; padding: 2px 5px; font-size: 11.5pt;">* Ülkemize Giriş Tarihiniz ve Vize süreniz Date of entry into country / Notification Date and visa validity</td>
+      <td style="border: 1px solid #000; padding: 2px 5px; font-size: 11.5pt;"><strong>@Model.EntryDate</strong> &nbsp; <strong>@Model.VisaDistanceDays Day(s)</strong></td>
+    </tr>
+    <tr>
+      <td style="border: 1px solid #000; padding: 2px 5px; font-size: 11.5pt;">* Ülkemizden çıkış için müracaat tarihiniz/ The date that you are applying to leave the country</td>
+      <td style="border: 1px solid #000; padding: 2px 5px; font-size: 11.5pt;"><strong>@Model.Today</strong></td>
+    </tr>
+    <tr>
+      <td style="border: 1px solid #000; padding: 2px 5px; font-size: 11.5pt;">* Ülkemizden çıkış yapmanız gereken tarih/ The date that you were meant to leave the country</td>
+      <td style="border: 1px solid #000; padding: 2px 5px; font-size: 11.5pt;"><strong>@Model.ShouldExitDate</strong></td>
+    </tr>
+    <tr>
+      <td style="border: 1px solid #000; padding: 2px 5px; font-size: 11.5pt;">* Ülkemize giriş yapabileceğiniz tarih/ (Giriş yasağınızın otomatik olarak iptal edileceği tarih) / The date on which the ban on entry will be automatically canceled</td>
+      <td style="border: 1px solid #000; padding: 2px 5px; font-size: 11.5pt;"><strong>@Model.CanEnterDate</strong></td>
+    </tr>
+    <tr>
+      <td style="border: 1px solid #000; padding: 2px 5px; font-size: 11.5pt;">* Tebliğ Edilen, Tahdit Çıkış veya İkamet Teskere Bitiş Tarihi / End date of notified or limitation date or residence permit</td>
+      <td style="border: 1px solid #000; padding: 2px 5px; font-size: 11.5pt;"><strong>@Model.ShouldExitDate</strong></td>
+    </tr>
+    <tr>
+      <td style="border: 1px solid #000; padding: 2px 5px; font-size: 11.5pt;">* Vize ihlal süreniz / Visa violation period</td>
+      <td style="border: 1px solid #000; padding: 2px 5px; font-size: 11.5pt;"><strong>@Model.ViolationPeriod</strong></td>
+    </tr>
+    <tr>
+      <td style="border: 1px solid #000; padding: 2px 5px; font-size: 11.5pt;">* Vize ihlali için ödenecek ücret / Penalty for visa violation</td>
+      <td style="border: 1px solid #000; padding: 2px 5px; font-size: 11.5pt;"><strong>@Model.FineAmount TL</strong></td>
+    </tr>
+  </tbody>
+</table>
+<span style="font-size: 13px; text-align: left;"></span><table width="800" border="0" style="font-size: 13px; text-align: left;"><tbody><tr><td style="font-size: 12px;"><p>
+<p>
+@if (Model.IsPaid)
+{
+    if (Model.IsOver90 && Model.HasCKodlu)
+    {
+        <span>Sayın&nbsp;<span style="color: rgb(0, 0, 0); font-size: 13px;">@Model.PassengerName</span>&nbsp;Ülkemizdeki yasal kalış sürenizi ihlal etmiş bulunmaktasınız. Vize ihlal ücretini ödediğiniz için hakkınızda ülkemize&nbsp;<strong>@Model.EntryBanDays&nbsp;</strong>Gün giriş yasağı uygulanacaktır.&nbsp; Hakkınızda girilecek&nbsp;Tahdit kodu @Model.TahditCode</span>
+    }
+    else
+    {
+        <span>Sayın&nbsp;<span style="color: rgb(0, 0, 0); font-size: 13px;">@Model.PassengerName</span>&nbsp;Ülkemizdeki yasal kalış sürenizi ihlal etmiş bulunmaktasınız. Vize ihlal ücretinizi şimdi ödediğinizden dolayı teşekkür ederiz.</span>
+    }
+}
+else
+{
+    <span>Sayın&nbsp;<span style="color: rgb(0, 0, 0); font-size: 13px;">@Model.PassengerName</span>&nbsp;Ülkemizdeki yasal kalış sürenizi ihlal etmiş bulunmaktasınız. Vize ihlal ücretini ödemediğiniz için hakkınızda ülkemize&nbsp;<strong>@Model.EntryBanDays&nbsp;</strong>Gün giriş yasağı uygulanacaktır.&nbsp; Hakkınızda girilecek&nbsp;Tahdit kodu @Model.TahditCode</span>
+}
+</p>
+<hr>
+<table width="800" border="0">
+  <tbody>
+    <tr>
+      <td>
+        Dear Madame/Sir <strong>@Model.PassengerName</strong>, you have overstayed your legal period of stay in our country.
+        @if (Model.IsPaid)
+        {
+            if (Model.IsOver90 && Model.HasCKodlu)
+            {
+                <span>Since you have paid the visa violation fine, an entry ban for <strong>@Model.EntryBanDays</strong> days will be imposed on re-entering Turkey. Entry Ban Code: <strong>@Model.TahditCode</strong></span>
+            }
+            else
+            {
+                <span>Thank you for paying your visa violation fine.</span>
+            }
+        }
+        else
+        {
+            <span>As you have not paid the relevant fine, an entry ban for <strong>@Model.EntryBanDays</strong> days will be imposed on re-entering Turkey. Entry Ban Code: <strong>@Model.TahditCode</strong></span>
+        }
+      </td>
+    </tr>
+  </tbody>
+</table>
+</td></tr></tbody></table><span style="text-align: left; font-size: 14px;"><br></span><span style="font-size: 13px; text-align: left;"></span><table align="center" width="400" border="0" style="font-size: 13px; text-align: left;"><tbody><tr><td>Düzenleme Tarihi / Dated On:</td><td><span style="font-weight: 700 !important;">@Model.Today</span></td></tr></tbody></table><span style="text-align: left; font-size: 14px;"><br></span><span style="font-size: 13px; text-align: left;"></span><table width="800" border="0" style="font-size: 13px; text-align: left;"><tbody><tr align="center"><td>Yolcu İmzası</td><td>Pasaport Kontrol Polisi</td></tr><tr align="center"><td>Signature of passenger</td><td>Passport police officer</td></tr><tr align="center"><td><span style="font-weight: 700 !important;">&nbsp;@Model.PassengerName</span></td><td><span style="font-weight: 700 !important;">@Model.PoliceOfficer</span></td></tr></tbody></table><span style="text-align: left; font-size: 14px;"><br></span><span style="font-size: 13px; text-align: left;"></span><table width="800" border="0" style="font-size: 13px; text-align: left;"><tbody><tr><td>Formu okudum, imzaladım ve kopyasını aldım / I have read the form, signed it,and have a copy of the form</td></tr></tbody></table><span style="text-align: left; font-size: 14px;"><br></span><span style="font-size: 13px; text-align: left;"></span><table width="800" border="0" style="font-size: 13px; text-align: left;"><tbody><tr align="center"><td><span style="font-weight: 700 !important;">O N A Y</span></td></tr><tr align="center"><td>APPROVAL</td></tr><tr align="center"><td>@Model.ApprovalUser</td></tr></tbody></table><span style="text-align: left; font-size: 14px;"><br></span><span style="font-size: 13px; text-align: left;"></span><table width="800" border="0" style="font-size: 13px; text-align: left;"><tbody><tr><th scope="col"><span style="font-size: 10px;">1</span></th><td><span style="font-size: 10px;">İkamet Harçları 492 sayılı Harçlar kanununun 6 sayılı tarifesine göre her yıl Maliye Bakanlığınca Belirlenmektedir./</span><span style="font-size: 10px;">Residence Fees are determined by the Ministry of Finance every year according to the tariff no. 6 of the Fees Law No. 492.</span></td></tr><tr><th scope="row"><span style="font-size: 10px;">2</span></th><td><span style="font-size: 10px;">Hakkınızda konulmuşsa, konulan ülkemize giriş yasağının kaldırılması için Türkiye Cumhuriyeti dış temsilciliklerine özel amaçlı vize için müracaat ediniz./</span><span style="font-size: 10px;">If it has been placed about you, apply for a special purpose visa to the foreign representatives of the Republic of Turkey in order to lift the ban on entry to our country.</span></td></tr><tr><th scope="row"><span style="font-size: 10px;">3</span></th><td><span style="font-size: 10px;">Vize ihlali nedeniyle hakkınızda uygulanan "N" veya "Ç" tahdit kodlarıyla ilgili , 60(altmış) gün içerisinde İdare mahkemesine başvuru yapmanız gerekmektedir./</span><span style="font-size: 10px;">You must apply to the Administrative Court within 60 (sixty) days regarding the "N" or "C" restriction codes applied to you due to visa violation.</span></td></tr><tr><th scope="row"><span style="font-size: 10px;">4</span></th><td><span style="font-size: 10px;">Tahdit iş ve işlemler ile ilgili uygulamalar Göç İdaresi Genel Müdürlüğü'nün 22/07/2020 tarih ve 2020/17 sayılı genelgeye istinaden yapılmaktadır./</span><span style="font-size: 10px;">Applications related to the restriction works and transactions are made in accordance with the circular numbered 2020/17 dated 22/07/2020 of the General Directorate of Migration Management.</span></td></tr><tr><th scope="row"><span style="font-size: 10px;">5</span></th><td><span style="font-size: 10px;">Vize ihlalinde bulunan yolcularla ilgili yurda giriş yasaklarına ilişkin uygulama 2020/17 sayılı genelgenin Madde 6'nın "A" ve "B" bendlerine istinaden uygulanır./</span><span style="font-size: 10px;">Implementation of bans on entry to the dormitory for passengers violating a visa is applied pursuant to subparagraphs "A" and "B" of Article 6 of the circular numbered 2020/17.</span></td></tr><tr><th scope="row"><span style="font-size: 10px;">6</span></th><td><span style="font-size: 10px;">6458 Sayılı Yabancılar ve Uluslararası Koruma Kanununun "9","15","102" Maddeleri./</span><span style="font-size: 10px;">Articles "9","15","102" of the Foreigners and International Protection Law No. 6458</span></td></tr><tr><th scope="row"><span style="font-size: 10px;">7</span></th><td><span style="font-size: 10px;">17/03/2016 tarihli ve 29656 sayılı Yabancılar ve Uluslararası Koruma Kanununun Uygulamasına İlişkin Yönetmeliğin 8. ve 9. Maddeleri./</span><span style="font-size: 10px;">Articles 8 and 9 of the Regulation on the Implementation of the Law on Foreigners and International Protection dated 17/03/2016 and numbered 29656</span></td></tr><tr><th scope="row"><span style="font-size: 10px;">8</span></th><td><span style="font-size: 10px;">Göç İdaresi Başkanlığı'nın 06.01.2022 tarih ve V-157 İdari Takip Kodu Görüş Talebi Konulu Yazısı.</span><span style="font-size: 10px;">Letter of the Directorate of Migration Management, dated 06.01.2022, on V-157 Administrative Tracking Code, Request for Opinion</span></td></tr></tbody></table></h3>
+<p>&nbsp;&nbsp;</p>

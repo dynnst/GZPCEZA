@@ -1,0 +1,154 @@
+@model gzpegm.Models.ViewModels.FormPrintViewModel
+<div class="n-form-container">
+<table class="form-header-table" style="width: 100%; border: none; border-collapse: collapse; margin-bottom: 6px;">
+  <tbody>
+    <tr>
+      <td class="form-header-logo-cell" style="width: 175px; vertical-align: middle; text-align: left; padding: 0; border: none;">
+        <img src="../img/goc.jpg" width="165" height="78" style="width: 165px; height: auto; max-height: 80px; display: block;">
+      </td>
+      <td class="form-header-title-cell" style="vertical-align: middle; text-align: center; padding: 0 4px; border: none;">
+        <div class="form-main-title" style="font-size: 13pt; font-weight: bold; line-height: 1.25; margin-bottom: 4px; text-align: center;">
+          İdari Para Cezalarına İlişkin N Kodlu Ön İzin Kararı Tebliğ Formu<br>
+      <strong><span lang="de">Kode N in Bezug auf die Ordnungsgelder –</span></strong><strong><span lang="de">Notifizierungsformular für die Entscheidung über die vorläufige Erlaubnis</span></strong>
+        </div>
+        <div class="form-sub-title" style="font-size: 11pt; font-weight: bold; margin-top: 2px; text-align: center;">
+          Yabancıya İlişkin Bilgiler&nbsp;–&nbsp;Informationen über den Ausländer
+        </div>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <td >Adı –&nbsp;Name</td>
+      <td ><strong>@Model.FirstName</strong></td>
+    </tr>
+    <tr>
+      <td >Soyadı –&nbsp;Nachname</td>
+      <td ><strong>@Model.LastName</strong></td>
+    </tr>
+    <tr>
+      <td >Baba Adı –&nbsp;&nbsp;Name des Vaters</td>
+      <td ><strong>@Model.FatherName</strong></td>
+    </tr>
+    <tr>
+      <td >Anne Adı –&nbsp;Name der Mutter</td>
+      <td ><strong>@Model.MotherName</strong></td>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <td>Doğum Tarihi –&nbsp;Geburtsdatum</td>
+      <td><strong>@Model.Birthdate</strong></td>
+      <td>Uyruğu –&nbsp;Nationalität</td>
+      <td><strong>@Model.Nationality</strong></td>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <td>İletişim Dili –&nbsp;Kommunikationssprache</td>
+      <td><strong>@Model.Nationality</strong></td>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <td style="text-align: center">Karar ve Değerlendirmeye İlişkin Bilgiler –&nbsp;Informationen über<span style="text-align: center"></span> die Entscheidung und Beurteilung</td>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th width="518" rowspan="2" scope="col">Giriş Yasağı Kararı Başlangıç-Bitiş Tarihi –&nbsp;Anfangs- und Enddatum des Ausschlussbeschluss</th>
+      <th width="53" scope="col">1-</th>
+      <th width="207" scope="col">@Model.Today</th>
+    </tr>
+    <tr>
+      <th scope="col">2-</th>
+      <th scope="col">&nbsp;</th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th  scope="col">* Bu alana giriş yasağı kararının başlangıç tarihi yazılacaktır.</th>
+      <th  scope="col"><em><span lang="DE">Das Anfangs- und Enddatum des Ausschlussbeschluss sollen auf diesen Platz geschrieben werden</span></em></th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th  scope="col">** Bu alana giriş yasağı kararının bitiş tarihi yazılacaktır.</th>
+      <th  scope="col"><em><span lang="DE">&nbsp;Der Enddatum des Ausschlussbeschluss sollen auf diesen Platz geschrieben werden.</span></em></th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="0">
+  <tbody>
+    <tr>
+      <th style="text-align: justify;"><li style="text-align:center"><strong>Ön İzin Kararı –<span lang="DE">Die Entscheidung über die vorläufige Erlaubnis</span></strong></li>
+        <li><strong>6458 sayılı Yabancılar ve Uluslararası Koruma Kanunun 9 uncu maddesi uyarınca gerçekleştirilen değerlendirme neticesinde, @Model.Province Valiliği (İl Göç İdaresi Müdürlüğü) tarafından hakkınızda ön izin kararı alınmıştır. –&nbsp;<em>Infolge der Beurteilung, die gemäß Artikel 9 des Ausländer- und internationalen Schutzgesetz durchgeführt ist, ist die Entscheidung über die vorläufige Erlaubnis für Sie durch das Gouverneursamt @Model.Province (Provinzeinwanderungsbehörde) getroffen.</em></strong></li><em>
+        <li><strong>
+        Hakkınızda ön izin kararı alınmasına dayanak teşkil eden husus/hususlar sebebiyle; -&nbsp;</strong></li>
+        <span lang="DE">Aufgrund des/der Grunds/Gründen, der/die zu Grunde liegt/liegen, dass die Entscheidung über die vorläufige Erlaubnis für Sie betroffen ist;</span>
+        <li><strong>&nbsp;İkamet izninizin iptali için gerekli işlemler başlatılacaktır. -&nbsp;</strong></li>
+        <span lang="DE">Notwendige Vorgänge sollen zur Aufhebung ihrer Aufenthaltsbefugnis eingeführt werden</span>
+        <li><strong>Çalışma izninizin iptali için gerekli işlemler başlatılacaktır. -&nbsp;</strong></li>
+        <span lang="de">Notwendige Vorgänge sollen zur Aufhebung ihrer Arbeitserlaubnis eingeführt werden.</span>
+        <li><strong><u>İdari para cezanızı ödememeniz nedeni ile hakkınızda alınan ön izin kararı, idari para cezasının ödendiğine ilişkin makbuzun idareye tebliğ edilmesi halinde kaldırılır ve&nbsp;</u>girişinize engel olacak başka bir hususun bulunmaması kaydıyla<u>&nbsp;Türkiye’ye girişinize izin verilir.</u>&nbsp;</strong></li>
+        <li><strong><em>&nbsp;<u><span lang="DE">Die Entscheidung über die vorläufige Erlaubnis, die für Sie dadurch getroffen, dass Sie das Ordnungsgeld nicht bezahlen wird aufgehoben, falls der Beleg in Bezug auf die Bezahlung des Ordnungsgeld der Behörde gegeben wird und dann könne Sie in Türkei einreisen</span></u></em><em><span lang="DE">, falls es keine weitere Sache gibt, die sie daran hindert, in die Türkei einzureisen.</span></em></strong></li>
+        <li style="text-align:center"><strong>Ön İzin Kararına Karşı Yargı Yoluna Başvuru –&nbsp;<span lang="DE">Rechtmittelsantrag gegen die Entscheidung über die vorläufige Erlaubnis</span></strong></li>
+        <li><strong>Şahsınız veya yasal temsilciniz ya da avukatınız tarafından, ön izin kararına karşı, kararın tebliğinden itibaren 60 (altmış) gün içinde idare mahkemesine başvurulabilir. –&nbsp;</strong></li>
+        <span lang="DE">Sie oder ihr/e Rechtsvertreter/in oder Rechtsanwalt/in können einen Antrag gegen die Entscheidung über die vorläufige Erlaubnis vor Verwaltungsgericht in der 60 (sechzig) Tagen ab der Ankündigung des Beschlusses stellen.</span>
+        <li><strong><a name="_Hlk43633494"></a></strong></li>
+        <li><strong>Mahkemeye başvuran kişi, ön izin kararı veren makama da başvurusunu bildirir. –&nbsp;</strong></li>
+        <span lang="DE">Derjenige/Diejenige, der/die den Antrag vor dem Gericht stellt, stellt auch den Antrag vor dem Gericht, das die Entscheidung über die vorläufige Erlaubnis trifft.</span>
+        <li><strong><a name="_Hlk43633548"></a></strong></li>
+        <li><strong>Mahkemeye yapılan başvurular ön izin kararını durdurmaz. –&nbsp;</strong></li>
+        <span lang="DE">Die vor dem Gericht gestellte Anträge heben die Entscheidung für die vorläufige Erlaubnis nicht auf.</span>        <strong>
+        
+      </strong></em></th>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th style="text-align: justify;">Bu belge, bir nüshası avukatına/yabancıya/yasal temsilcisine verilmek üzere iki nüsha olarak hazırlanmış olup, hakkında sınır dışı etme kararı alınan yukarıda açık kimliği yazılı yabancıya kendi dilinde/anladığı dilde,&nbsp;<a name="_Hlk43631423"><em>@Model.Today&nbsp;&nbsp;</em></a>tarihinde ve&nbsp;&nbsp;<a name="_Hlk43631423"><em>@Model.CurrentTime&nbsp;</em></a>saatinde yazılı olarak tebliğ edilmiş ve imza altına alınarak bir sureti tebellüğ edene verilmiştir. –&nbsp;<em><span lang="DE">Dieses Dokument wurde in zweifacher Ausfertigung erstellt, so dass eine Kopie an den Anwalt/Ausländer/gesetzlichen Vertreter übergeben werden kann und der Ausländer, dessen offene Identität oben gegeben ist und über den die Ausweisungsentscheidung ergangen ist wurde schriftlich in seiner eigenen Sprache/Sprache seines Verständnisses am&nbsp;</span></em><strong>@Model.Today</strong><em><span lang="DE">um&nbsp;</span></em><strong>@Model.CurrentTime</strong>&nbsp;<em><span lang="DE">benachrichtigt und eine Kopie wurde ihm gegen eine Unterschrift übergeben.</span></em></th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="0" align="center" class="n-signature-table" style="margin-top: 18px; width: 100%;">
+  <tbody>
+    <tr align="center">
+      <th scope="col" style="font-size: 11pt;"><strong>Tebliğ Eden</strong></th>
+      <th scope="col" style="font-size: 11pt;"><strong>Tebellüğ Eden</strong></th>
+    </tr>
+    <tr align="center">
+      <th scope="row" style="font-size: 10pt;"><strong><span lang="DE">Benachrichtigende Partei</span></strong></th>
+      <td scope="col" style="font-size: 10pt;"><strong><span lang="DE">Benachrichtigter</span></strong></td>
+    </tr>
+    <tr align="center" style="height: 35px;">
+      <td style="vertical-align: bottom; font-size: 9.5pt; font-style: italic;">(İmza / Signature)</td>
+      <td style="vertical-align: bottom; font-size: 9.5pt; font-style: italic;">(İmza / Signature)</td>
+    </tr>
+    <tr align="center">
+      <th scope="row" style="font-size: 11.5pt; padding-top: 4px;"><strong>@Model.ApprovalUser</strong></th>
+      <td style="font-size: 11.5pt; padding-top: 4px;"><strong>@Model.PassengerName</strong></td>
+    </tr>
+  </tbody>
+</table>
+</div>

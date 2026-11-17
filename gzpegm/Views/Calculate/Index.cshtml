@@ -471,10 +471,12 @@
                         <div class="p-2 mt-2 rounded bg-light border">
                             <div class="form-row align-items-center">
                                 <div class="col-md-5 mb-1 mb-md-0">
-                                    <label for="BirthDateCalculate" class="control-label mb-1">Yolcu Doğum Tarihi</label>
+                                    <label for="BirthDateCalculate" class="control-label mb-1 font-weight-bold">
+                                        <i class="fas fa-birthday-cake text-danger mr-1"></i> Yolcu Doğum Tarihi <span class="text-danger">*</span>
+                                    </label>
                                     <div class="input-group">
-                                        <span class="input-group-prepend"><span class="input-group-text"><i class="fas fa-birthday-cake"></i></span></span>
-                                        <input autocomplete="off" onchange="adultchild(this)" id="BirthDateCalculate" name="BirthDateCalculate" type="text" data-plugin-datepicker data-plugin-options='{"format":"dd.mm.yyyy","autoclose":"true","weekStart":"1" ,"language":"tr","startView": "years"}' class="form-control" placeholder="GG.AA.YYYY">
+                                        <span class="input-group-prepend"><span class="input-group-text"><i class="fas fa-calendar-alt"></i></span></span>
+                                        <input autocomplete="off" onchange="adultchild(this)" id="BirthDateCalculate" name="BirthDateCalculate" type="text" data-plugin-datepicker data-plugin-options='{"format":"dd.mm.yyyy","autoclose":"true","weekStart":"1" ,"language":"tr","startView": "years"}' class="form-control" placeholder="GG.AA.YYYY" required>
                                     </div>
                                 </div>
 
@@ -487,10 +489,13 @@
                                 </div>
 
                                 <div class="col-md-4 mt-2 mt-md-3 text-right">
-                                    <button onclick="hesapla2()" type="button" class="btn btn-primary btn-block font-weight-bold" id="btnHesapla2" style="height:34px; font-size:0.85rem;">
+                                    <button onclick="triggerHesapla2()" type="button" class="btn btn-primary btn-block font-weight-bold" id="btnHesapla2" style="height:34px; font-size:0.85rem;">
                                         <i class="fas fa-calculator mr-1"></i> Cezaları Hesapla
                                     </button>
                                 </div>
+                            </div>
+                            <div id="birthDateRequiredAlert" class="mt-2 text-left" style="display:none; font-size:12px; color:#b91c1c; font-weight:600;">
+                                <i class="fas fa-exclamation-triangle mr-1"></i> Yolcunun yaş grubu (yetişkin/çocuk) tespiti ve cezanın kesinleşmesi için lütfen doğum tarihini giriniz veya pasaportu okutunuz!
                             </div>
                         </div>
 
@@ -618,7 +623,7 @@
                                     </label>
                                     <select onchange="tahdit1(this)" id="PayCalculate" name="PayCalculate" data-plugin-selectTwo class="form-control populate" required>
                                         <option value="">Lütfen Seçiniz</option>
-                                        <option value="1">Ödeyen</option>
+                                        <option value="1" selected>Ödeyen</option>
                                         <option value="0">Ödemeyen</option>
                                     </select>
                                 </div>
@@ -634,9 +639,6 @@
                                 <div id="lastalert" class="small"></div>
                             </div>
 
-                            <button onclick="hesapla3()" type="button" class="btn btn-sm btn-outline-primary btn-block font-weight-bold" id="btnHesapla3">
-                                <i class="fas fa-file-invoice mr-1"></i> Tutanak Bilgilerini Doldur
-                            </button>
                             <div class="text-center mt-2"><a href="@Url.Action("Mevzuat", "Calculate")" target="_blank" class="text-muted small font-weight-bold"><i class="fas fa-balance-scale mr-1 text-primary"></i> İlgili Mevzuat, Tahdit Kodları ve Yasal Dayanaklar Listesi</a></div>
                         </div>
 
@@ -736,6 +738,60 @@
             </div>
         </form>
 
+    </div>
+</div>
+
+<!-- YOLCU ÖDEME DURUMU SEÇİM MODALI -->
+<div class="modal fade" id="modalPaymentChoice" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false" style="z-index:99990;">
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 480px;">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:14px; overflow:hidden;">
+            <div class="modal-header bg-dark text-white py-3">
+                <h5 class="modal-title font-weight-bold">
+                    <i class="fas fa-coins text-warning mr-2"></i>Yolcu Ceza Ödeme Tercihi
+                </h5>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <div class="p-3 mb-3 rounded text-left" style="background:#f8fafc; border:1px solid #e2e8f0;">
+                    <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                        <span class="small text-muted font-weight-bold"><i class="fas fa-id-card-alt text-primary mr-1"></i>Yolcu Yaş Durumu:</span>
+                        <span id="modalPassengerAge" class="badge badge-primary font-weight-bold px-2 py-1" style="font-size:0.85rem;">-</span>
+                    </div>
+                    <div class="d-flex justify-content-around align-items-center text-center pt-1">
+                        <div>
+                            <span class="small text-muted">İhlal Süresi:</span>
+                            <div id="modalViolationPeriod" class="font-weight-bold text-dark" style="font-size:1.15rem;">-</div>
+                        </div>
+                        <div style="height:35px; border-left:1px solid #cbd5e1;"></div>
+                        <div>
+                            <span class="small text-muted">Toplam Ceza:</span>
+                            <div class="font-weight-bold text-danger" style="font-size:1.35rem;"><span id="modalFineTotal">0</span> TL</div>
+                        </div>
+                    </div>
+                </div>
+
+                <h5 class="font-weight-bold text-dark mb-2">Yolcu Cezayı Ödeyecek mi?</h5>
+                <p class="text-muted small mb-4">
+                    Yolcunun beyanına veya vezne makbuzuna göre lütfen seçim yapınız. Bu seçim resmi tebliğ formunu ve giriş yasağı kodunu belirler.
+                </p>
+
+                <div class="row">
+                    <div class="col-6 pr-2">
+                        <button type="button" class="btn btn-success btn-lg btn-block shadow-sm font-weight-bold py-3" onclick="selectPaymentChoice(true)" id="btnModalPayYes" style="border-radius:10px;">
+                            <i class="fas fa-check-circle fa-lg d-block mb-1"></i>
+                            ÖDEYEN
+                            <small class="d-block font-weight-normal" style="font-size:0.75rem;">(Cezayı Ödedi / Ödeyecek)</small>
+                        </button>
+                    </div>
+                    <div class="col-6 pl-2">
+                        <button type="button" class="btn btn-outline-danger btn-lg btn-block shadow-sm font-weight-bold py-3" onclick="selectPaymentChoice(false)" id="btnModalPayNo" style="border-radius:10px;">
+                            <i class="fas fa-times-circle fa-lg d-block mb-1"></i>
+                            ÖDEMEYEN
+                            <small class="d-block font-weight-normal" style="font-size:0.75rem;">(Ödeme Yapmadı / Yapamaz)</small>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 

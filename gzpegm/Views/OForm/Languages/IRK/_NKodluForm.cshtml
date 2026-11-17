@@ -1,0 +1,150 @@
+@model gzpegm.Models.ViewModels.FormPrintViewModel
+<div class="n-form-container">
+<table class="form-header-table" style="width: 100%; border: none; border-collapse: collapse; margin-bottom: 6px;">
+  <tbody>
+    <tr>
+      <td class="form-header-logo-cell" style="width: 175px; vertical-align: middle; text-align: left; padding: 0; border: none;">
+        <img src="../img/goc.jpg" width="165" height="78" style="width: 165px; height: auto; max-height: 80px; display: block;">
+      </td>
+      <td class="form-header-title-cell" style="vertical-align: middle; text-align: center; padding: 0 4px; border: none;">
+        <div class="form-main-title" style="font-size: 13pt; font-weight: bold; line-height: 1.25; margin-bottom: 4px; text-align: center;">
+          İdari Para Cezalarına İlişkin N Kodlu Ön İzin Kararı Tebliğ Formu<br>
+      Notification Form for Code N Preliminary Permission Decision Regarding Administrative Fines
+        </div>
+        <div class="form-sub-title" style="font-size: 11pt; font-weight: bold; margin-top: 2px; text-align: center;">
+          Yabancıya İlişkin Bilgiler&nbsp;–<span dir="RTL"><span dir="RTL">بالأجنبي </span> الخاصة </span> &nbsp;<span dir="RTL">المعلومات </span>
+        </div>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <td >Adı –&nbsp;<span dir="RTL">الاسم</span></td>
+      <td ><strong>@Model.FirstName</strong></td>
+    </tr>
+    <tr>
+      <td >Soyadı –&nbsp;<span dir="RTL">اللقب </span></td>
+      <td ><strong>@Model.LastName</strong></td>
+    </tr>
+    <tr>
+      <td >Baba Adı –&nbsp;<span dir="RTL">اسم </span> <span dir="RTL">الاب </span></td>
+      <td ><strong>@Model.FatherName</strong></td>
+    </tr>
+    <tr>
+      <td >Anne Adı –<span dir="RTL">اسم </span> &nbsp;<span dir="RTL">الأم</span></td>
+      <td ><strong>@Model.MotherName</strong></td>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <td>Doğum Tarihi –<span dir="RTL">الميلاد</span> &nbsp;<span dir="RTL">تاريخ </span></td>
+      <td><strong>@Model.Birthdate</strong></td>
+      <td>Uyruğu –&nbsp;<span dir="RTL">الجنسية</span></td>
+      <td><strong>@Model.Nationality</strong></td>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <td>İletişim Dili – <span dir="RTL">لغة </span>&nbsp;<span dir="RTL">الاتصال</span></td>
+      <td><strong>@Model.Nationality</strong></td>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <td>Karar ve Değerlendirmeye İlişkin Bilgiler –<span dir="RTL"><span dir="RTL"><span dir="RTL"><span dir="RTL">التقييم</span> و </span> بالقرار </span> المتعلقة </span> &nbsp;<span dir="RTL">المعلومات </span></td>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th width="518" rowspan="2" scope="col">Giriş Yasağı Kararı Başlangıç-Bitiş Tarihi –<span dir="RTL">حظر </span><span dir="RTL"> قرار </span> <span dir="RTL"><span dir="RTL">بدء </span> تاريخ </span> &nbsp;<span dir="RTL">الدخول</span></th>
+      <th width="53" scope="col">1-</th>
+      <th width="207" scope="col">@Model.Today</th>
+    </tr>
+    <tr>
+      <th scope="col">2-</th>
+      <th scope="col">&nbsp;</th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th  scope="col">* Bu alana giriş yasağı kararının başlangıç tarihi yazılacaktır.</th>
+      <th  scope="col"><em><span dir="RTL">الحقلهذا في الدخول حظر قرار بدء  تاريخ كتابة  سيتم </span></em></th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th  scope="col">** Bu alana giriş yasağı kararının bitiş tarihi yazılacaktır.</th>
+      <th  scope="col"><em><span dir="RTL"> الحقل  هذا  في  الدخول  حظر  انتهاء  تاريخ  كتابة  سيتم </span></em></th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="0">
+  <tbody>
+    <tr>
+      <th style="text-align: justify;"><li style="text-align:center"><strong>Ön İzin Kararı –<span dir="RTL"><span dir="RTL">المسبق </span> الإذن </span> &nbsp;<span dir="RTL">قرار </span></strong></li>
+        <li><strong>6458 sayılı Yabancılar ve Uluslararası Koruma Kanunun 9 uncu maddesi uyarınca gerçekleştirilen değerlendirme neticesinde, @Model.Province Valiliği (İl Göç İdaresi Müdürlüğü) tarafından hakkınızda ön izin kararı alınmıştır. –<em><span dir="RTL">نتيجة </span></em> <em><span dir="RTL">الهجرة  إدارة </span></em> <span dir="RTL"><em><span dir="RTL"> مديرية </span></em> </span><span dir="RTL"> </span><em><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span>@Model.Province </span></em> <em><span dir="RTL">محافظة  قبل  من </span></em><em><span dir="RTL"> بحقك  المسبق  الاذن </span></em><span dir="RTL"><span dir="RTL"><em><span dir="RTL"> قرار  اتُخِذ </span></em> </span><span dir="RTL"> </span><em><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span>، </span></em> </span><span dir="RTL"> </span><em><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span>، </span></em> <em><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span><em><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span> 6458</span></em> رقم  الدولية </span></em> <em><span dir="RTL">الحماية </span></em> <span dir="RTL"><em><span dir="RTL"> و  الأجانب  قانون  من </span></em> </span><span dir="RTL"> </span><em><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span> 9 </span></em> <em><span dir="RTL">للمادة </span></em>&nbsp;<em><span dir="RTL">وفقا  أجري  الذي </span></em> <em><span dir="RTL">للتقييم </span></em> <em><span dir="RTL">للمحافظة</span></em></strong></li>
+        <em>
+        <li><strong>
+        Hakkınızda ön izin kararı alınmasına dayanak teşkil eden husus/hususlar sebebiyle; -</strong></li>
+        <span dir="RTL">الأساس </span>         <span dir="RTL">تشكل </span>        <span dir="RTL">التي </span>        <span dir="RTL">المسائل </span><span dir="RTL"> </span><em><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span> / </span></em> <span dir="RTL">للمسئلة </span>        <span dir="RTL">نظرا </span><strong><span dir="RTL"> </span><em><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span> ؛</span></em></strong>        <span dir="RTL">بحقك</span>        <span dir="RTL">المسبق </span>        <span dir="RTL">الاذن </span>        <span dir="RTL">قرار </span><strong>&nbsp;</strong>        <span dir="RTL">لاتخاذ </span>
+        <li><strong>&nbsp;İkamet izninizin iptali için gerekli işlemler başlatılacaktır. -</strong> </li>
+        <span dir="RTL">إقامتك</span>         <span dir="RTL">تصريح </span>        <span dir="RTL">لإلغاء </span>        <span dir="RTL">اللازمة </span>        <span dir="RTL">الإجراءات</span><strong>&nbsp; </strong>        <span dir="RTL">ستبدأ </span>
+        <li><strong>Çalışma izninizin iptali için gerekli işlemler başlatılacaktır. -        <span dir="RTL"><em>لإلغاء </em></span> <span dir="RTL"><em>الضرورية </em></span> <span dir="RTL"><em>الإجراءات </em></span><strong><em>&nbsp;</em></strong> <span dir="RTL"><em>ستبدأ<span dir="RTL"> بكاالخاص  لعمل </span><u> </u></em></span></strong>         </li>
+        <span dir="RTL">تصريح </span><strong><u>dari para cezanızı ödememeniz nedeni ile hakkınızda alınan ön izin kararı, idari para cezasının ödendiğine ilişkin makbuzun idareye tebliğ edilmesi halinde kaldırılır ve&nbsp;</u>girişinize engel olacak başka bir hususun bulunmaması kaydıyla<u>&nbsp;Türkiye’ye girişinize izin verilir </u></strong><u><span dir="RTL">دفع </span></u><u><span dir="RTL">وصل </span></u><strong><u> </u></strong><u><span dir="RTL">تقديم </span></u><u><span dir="RTL"> حال </span></u><strong><u> </u></strong><u><span dir="RTL">في  الادارية  المالية  للغرامة  دفعك  لعدم  بحقك  المتخذ  المسبق  الإذن </span></u><strong><u> </u></strong><u><span dir="RTL">قرار  رفع  يتم </span></u><span dir="RTL"> للدخول اخرى  عوائق  وجود </span><strong><u> </u></strong><span dir="RTL">عدم </span><span dir="RTL"> حال  في </span><strong><u> </u></strong><u><span dir="RTL">تركيا </span></u><strong><u> </u></strong><u><span dir="RTL">بدخول  لك  السماح  ويتم <span dir="RTL">  </span><span dir="RTL"> </span><em><u><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span>، </span></u></em> للإدارة</span></u><strong><u> .</u></strong><u><span dir="RTL">المالية </span></u><strong> &nbsp;</strong><u><span dir="RTL">االغرامة  </span></u>
+        <li></li>
+        <li style="text-align:center"><strong>Ön İzin Kararına Karşı Yargı Yoluna Başvuru –<span dir="RTL">المسبق  الاذن  قرار  ضد  للقضاء </span> <span dir="RTL">طلب </span> &nbsp;<span dir="RTL">تقديم </span></strong></li>
+        <li><strong>Şahsınız veya yasal temsilciniz ya da avukatınız tarafından, ön izin kararına karşı, kararın tebliğinden itibaren 60 (altmış) gün içinde idare mahkemesine başvurulabilir. –</strong></li>
+        <span dir="RTL">المحكمة </span>        <span dir="RTL">إلى </span>        <span dir="RTL">بطلب </span>        <span dir="RTL">التقدم </span>        <span dir="RTL">محاميك </span>         <span dir="RTL">أو </span>         <span dir="RTL">القانوني </span>        <span dir="RTL">ممثلك </span>        <span dir="RTL">أو </span>        <span dir="RTL">أنت </span>         <span dir="RTL">يمكنك </span>        <span dir="RTL">بالقرار</span>         <span dir="RTL">تبليغكم </span>         <span dir="RTL">تاريخ </span>         <span dir="RTL">من </span>        <span dir="RTL">يومًا </span><strong><span dir="RTL">(</span></strong>        <span dir="RTL">ستين</span><strong><span dir="RTL">) </span><span dir="RTL"> </span><em><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span>60 </span></em></strong>        <span dir="RTL">غضون </span>         <span dir="RTL">في </span>        <span dir="RTL">المسبق </span>        <span dir="RTL">الاذن </span>        <span dir="RTL">قرار </span>        <span dir="RTL">ضد </span>        <span dir="RTL">الإدارية </span>
+        <li><strong>Mahkemeye başvuran kişi, ön izin kararı veren makama da başvurusunu bildirir. –</strong></li>
+        <span dir="RTL">للمحكمة </span>        <span dir="RTL">المتقدم </span>        <span dir="RTL">الشخص </span>        <span dir="RTL">يقوم </span>        <span dir="RTL">ايضا</span>        <span dir="RTL">المسبق </span>        <span dir="RTL">الاذن </span>        <span dir="RTL">قرار </span>        <span dir="RTL">اتخذت </span>        <span dir="RTL">التي </span>        <span dir="RTL">الجهة </span><strong>&nbsp;</strong>        <span dir="RTL">بإبلاغ </span>
+        <li><em><strong>Mahkemeye yapılan başvurular ön izin kararını durdurmaz. –</strong><span dir="RTL">المسبق  الاذن  قرار </span> <strong> </strong><span dir="RTL">توقف  لا  للمحكمة  االمقدمة   الطلبات  </span></em></li>
+        </em></th>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th style="text-align: justify;">Bu belge, bir nüshası avukatına/yabancıya/yasal temsilcisine verilmek üzere iki nüsha olarak hazırlanmış olup, hakkında sınır dışı etme kararı alınan yukarıda açık kimliği yazılı yabancıya kendi dilinde/anladığı dilde,&nbsp;<a name="_Hlk43631423"><em>@Model.Today&nbsp;&nbsp;</em></a>tarihinde ve&nbsp;&nbsp;<a name="_Hlk43631423"><em>@Model.CurrentTime&nbsp;</em></a>saatinde yazılı olarak tebliğ edilmiş ve imza altına alınarak bir sureti tebellüğ edene verilmiştir. –<em><span dir="RTL">إعلام</span><span dir="RTL"> </span></em> <em><span dir="RTL">تم </span></em> <em><span dir="RTL">وقد <span dir="RTL"> </span><span dir="RTL"> </span><em><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span>، </span></em> القانوني</span></em> <em><span dir="RTL">ممثله <span dir="RTL"> </span><span dir="RTL"> </span><em><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span> / </span></em> الأجنبي<span dir="RTL"> </span><span dir="RTL"> </span><em><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span> / </span></em> المحامي وكيله  إلى&nbsp; </span></em><em><span dir="RTL"> واحدة  نسخة </span></em> <em><span dir="RTL">تسليم  يتم </span></em><em><span dir="RTL"> أن  على <span dir="RTL"> </span><span dir="RTL"> </span><em><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span> ، </span></em> نسختين</span></em><em><span dir="RTL"> شكل  على </span></em><em><span dir="RTL"> الوثيقة </span></em><em><span dir="RTL"> هذه  تنظيم </span></em> <em><span dir="RTL">تم <a name="_Hlk43631423"><em>@Model.Today&nbsp;</em></a><span dir="RTL"> </span><span dir="RTL"> </span><em><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span> </span></em>التاريخ  في  وذلك </span></em> <em><span dir="RTL">يفهمها  التي  أواللغة <span dir="RTL"> </span><span dir="RTL"> </span><em><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span>/ </span></em> وبلغته كتابي </span></em><span dir="RTL"><em><span dir="RTL"> بشكل  التبليغ  وتم </span></em> </span><span dir="RTL"> </span><em><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span> . </span></em> <em><span dir="RTL">حقه</span></em> <em><span dir="RTL">في  الصادر  الترحيل  بقرار  أعلاه  الواضحة  هويته  المذكورة  الأجنبي </span></em> <em><span dir="RTL">بالتبليغ المخاطب  الشخص </span></em><em><span dir="RTL"> إلى  منها  نسخة </span></em> <em><span dir="RTL">وتسليم  الوثيقة  هذه  على  التوقيع </span></em> <span dir="RTL"><em><span dir="RTL">تم  وعليه  </span></em> </span><span dir="RTL"> </span><em><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span>@Model.CurrentTime</span></em> <em><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span><em><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span> : </span></em> الساعة</span></em> <em><span dir="RTL"> في </span></em>&nbsp;<span dir="RTL"> </span><span dir="RTL"> </span><em><span dir="RTL"><span dir="RTL"> </span><span dir="RTL"> </span>20 </span></em></th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="0" align="center" class="n-signature-table" style="margin-top: 18px; width: 100%;">
+  <tbody>
+    <tr align="center">
+      <th scope="col" style="font-size: 11pt;"><strong>Tebliğ Eden</strong></th>
+      <th scope="col" style="font-size: 11pt;"><strong>Tebellüğ Eden</strong></th>
+    </tr>
+    <tr align="center">
+      <th scope="row" style="font-size: 10pt;"><strong><span dir="RTL">المُبَلّْغ</span></strong></th>
+      <td scope="col" style="font-size: 10pt;"><strong><span dir="RTL">إليه المًبَلَّغ </span></strong></td>
+    </tr>
+    <tr align="center" style="height: 35px;">
+      <td style="vertical-align: bottom; font-size: 9.5pt; font-style: italic;">(İmza / Signature)</td>
+      <td style="vertical-align: bottom; font-size: 9.5pt; font-style: italic;">(İmza / Signature)</td>
+    </tr>
+    <tr align="center">
+      <th scope="row" style="font-size: 11.5pt; padding-top: 4px;"><strong>@Model.ApprovalUser</strong></th>
+      <td style="font-size: 11.5pt; padding-top: 4px;"><strong>@Model.PassengerName</strong></td>
+    </tr>
+  </tbody>
+</table>
+</div>

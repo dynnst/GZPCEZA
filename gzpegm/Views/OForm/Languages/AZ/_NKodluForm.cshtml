@@ -1,0 +1,140 @@
+@model gzpegm.Models.ViewModels.FormPrintViewModel
+<div class="n-form-container">
+<table class="form-header-table" style="width: 100%; border: none; border-collapse: collapse; margin-bottom: 6px;">
+  <tbody>
+    <tr>
+      <td class="form-header-logo-cell" style="width: 175px; vertical-align: middle; text-align: left; padding: 0; border: none;">
+        <img src="../img/goc.jpg" width="165" height="78" style="width: 165px; height: auto; max-height: 80px; display: block;">
+      </td>
+      <td class="form-header-title-cell" style="vertical-align: middle; text-align: center; padding: 0 4px; border: none;">
+        <div class="form-main-title" style="font-size: 13pt; font-weight: bold; line-height: 1.25; margin-bottom: 4px; text-align: center;">
+          İdari Para Cezalarına İlişkin N Kodlu Ön İzin Kararı Tebliğ Formu<br>
+      İnzibati Cərimələrə dair N Kodlu İlkin İcazə Qərarının Bildirilməsi Forması
+        </div>
+        <div class="form-sub-title" style="font-size: 11pt; font-weight: bold; margin-top: 2px; text-align: center;">
+          Yabancıya İlişkin Bilgiler – Əcnəbi haqqında məlumat
+        </div>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <td >Adı – Adı</td>
+      <td ><strong>@Model.FirstName</strong></td>
+    </tr>
+    <tr>
+      <td >Soyadı – Soyadı</td>
+      <td ><strong>@Model.LastName</strong></td>
+    </tr>
+    <tr>
+      <td >Baba Adı – Ata adı</td>
+      <td ><strong>@Model.FatherName</strong></td>
+    </tr>
+    <tr>
+      <td >Anne Adı – Ana adı</td>
+      <td ><strong>@Model.MotherName</strong></td>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <td>Doğum Tarihi – Doğum tarixi</td>
+      <td><strong>@Model.Birthdate</strong></td>
+      <td>Uyruğu – Vətəndaşlığı</td>
+      <td><strong>@Model.Nationality</strong></td>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <td>İletişim Dili – Ünsiyyət dili</td>
+      <td><strong>@Model.Nationality</strong></td>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <td>Karar ve Değerlendirmeye İlişkin Bilgiler – Qərar və qiymətləndirməyə dair məlumat</td>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th width="518" rowspan="2" scope="col">Giriş Yasağı Kararı Başlangıç-Bitiş Tarihi – Giriş qadağası qərarının başlanğıc və bitmə tarixi</th>
+      <th width="53" scope="col">1-</th>
+      <th width="207" scope="col">@Model.Today</th>
+    </tr>
+    <tr>
+      <th scope="col">2-</th>
+      <th scope="col">&nbsp;</th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th  scope="col">* Bu alana giriş yasağı kararının başlangıç tarihi yazılacaktır.</th>
+      <th  scope="col">Bu xanaya giriş qadağası qərarının başlanğıc tarixi yazılacaqdır.</th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th  scope="col">** Bu alana giriş yasağı kararının bitiş tarihi yazılacaktır.</th>
+      <th  scope="col">Bu xanaya giriş qadağası qərarının bitmə tarixi yazılacaqdır.</th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="0">
+  <tbody>
+    <tr>
+      <th style="text-align: justify;"><li style="text-align:center"><strong>Ön İzin Kararı – İlkin İcazə Qərarı</strong></li>
+        <li><strong>6458 sayılı Yabancılar ve Uluslararası Koruma Kanunun 9 uncu maddesi uyarınca gerçekleştirilen değerlendirme neticesinde, @Model.Province Valiliği (İl Göç İdaresi Müdürlüğü) tarafından hakkınızda ön izin kararı alınmıştır. – <em>6458 saylı Əcnəbilər və Beynəlxalq Mühafizə Qanununun 9-cu maddəsinə uyğun olaraq aparılan qiymətləndirmə nəticəsində @Model.Province Valiliyi (İl Miqrasiya İdarəsi Müdirliyi) tərəfindən barənizdə ilkin icazə qərarı qəbul edilmişdir.</em></strong></li>
+        <li><strong>Hakkınızda ön izin kararı alınmasına dayanak teşkil eden husus/hususlar sebebiyle; – <em>Barənizdə ilkin icazə qərarının qəbul edilməsinə əsas təşkil edən səbəb/səbəblərə görə;</em></strong></li>
+        <li><strong>İkamet izninizin iptali için gerekli işlemler başlatılacaktır. – <em>Yaşayış icazənizin ləğvi üçün müvafiq tədbirlər başlanacaqdır.</em></strong></li>
+        <li><strong>Çalışma izninizin iptali için gerekli işlemler başlatılacaktır. – <em>İş icazənizin ləğvi üçün müvafiq tədbirlər başlanacaqdır.</em></strong></li>
+        <li><strong><u>İdari para cezanızı ödememeniz nedeni ile hakkınızda alınan ön izin kararı, idari para cezasının ödendiğine ilişkin makbuzun idareye tebliğ edilmesi halinde kaldırılır ve </u>girişinize engel olacak başka bir hususun bulunmaması kaydıyla<u> Türkiye’ye girişinize izin verilir.</u></strong></li>
+        <li><strong><em><u>İnzibati cəriməni ödəməməyiniz səbəbilə barənizdə qəbul edilmiş ilkin icazə qərarı, cərimənin ödənildiyini təsdiq edən qəbzin idarəyə təqdim olunması halında ləğv edilir və başqa maneə olmadığı təqdirdə Türkiyəyə girişinizə icazə verilir.</u></em></strong></li>
+        <li style="text-align:center"><strong>Ön İzin Kararına Karşı Yargı Yoluna Başvuru – İlkin İcazə Qərarına qarşı məhkəməyə müraciət qaydası</strong></li>
+        <li><strong>Şahsınız veya yasal temsilciniz ya da avukatınız tarafından, ön izin kararına karşı, kararın tebliğinden itibaren 60 (altmış) gün içinde idare mahkemesine başvurulabilir. – <em>Şəxsən, qanuni nümayəndəniz və ya vəkiliniz tərəfindən qərarın bildirildiyi tarixdən etibarən 60 (altmış) gün ərzində İnzibati Məhkəməyə müraciət edilə bilər.</em></strong></li>
+        <li><strong>Mahkemeye başvuran kişi, ön izin kararı veren makama da başvurusunu bildirir. – <em>Məhkəməyə müraciət edən şəxs bu barədə ilkin icazə qərarı verən orqana da məlumat verir.</em></strong></li>
+        <li><strong>Mahkemeye yapılan başvurular ön izin kararını durdurmaz. – <em>Məhkəməyə edilən müraciətlər ilkin icazə qərarının icrasını dayandırmır.</em></strong></li>
+      </th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th style="text-align: justify;">Bu belge, bir nüshası avukatına/yabancıya/yasal temsilcisine verilmek üzere iki nüsha olarak hazırlanmış olup, hakkında sınır dışı etme kararı alınan yukarıda açık kimliği yazılı yabancıya kendi dilinde/anladığı dilde,&nbsp;@Model.Today&nbsp;tarihinde ve&nbsp;@Model.CurrentTime&nbsp;saatinde yazılı olarak tebliğ edilmiş ve imza altına alınarak bir sureti tebellüğ edene verilmiştir. – <em>Bu sənəd iki nüsxədə hazırlanmış (bir nüsxəsi vəkilə/əcnəbiyə/qanuni nümayəndəyə təqdim olunmaq üçün) və barəsində deportasiya qərarı qəbul edilmiş yuxarıda şəxsiyyəti göstərilən əcnəbiyə öz dilində/başa düşdüyü dildə @Model.Today tarixində, saat @Model.CurrentTime-da yazılı şəkildə bildirilmiş və imzalanaraq bir nüsxəsi təhvil verilmişdir.</em></th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="0" align="center" class="n-signature-table" style="margin-top: 18px; width: 100%;">
+  <tbody>
+    <tr align="center">
+      <th scope="col" style="font-size: 11pt;"><strong>Tebliğ Eden</strong></th>
+      <th scope="col" style="font-size: 11pt;"><strong>Tebellüğ Eden</strong></th>
+    </tr>
+    <tr align="center">
+      <th scope="row" style="font-size: 10pt;"><strong>Təbliğ edən</strong></th>
+      <td scope="col" style="font-size: 10pt;"><strong>Təhvil alan</strong></td>
+    </tr>
+    <tr align="center" style="height: 35px;">
+      <td style="vertical-align: bottom; font-size: 9.5pt; font-style: italic;">(İmza / Signature)</td>
+      <td style="vertical-align: bottom; font-size: 9.5pt; font-style: italic;">(İmza / Signature)</td>
+    </tr>
+    <tr align="center">
+      <th scope="row" style="font-size: 11.5pt; padding-top: 4px;"><strong>@Model.ApprovalUser</strong></th>
+      <td style="font-size: 11.5pt; padding-top: 4px;"><strong>@Model.PassengerName</strong></td>
+    </tr>
+  </tbody>
+</table>
+</div>

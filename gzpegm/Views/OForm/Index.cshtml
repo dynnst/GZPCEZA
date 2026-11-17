@@ -1,6 +1,8 @@
-﻿@using Newtonsoft.Json
+﻿@model gzpegm.Models.ViewModels.FormPrintViewModel
+@using Newtonsoft.Json
 @{
     Layout = null;
+    string lang = Model != null ? (Model.LanguageCode ?? "GB") : "GB";
 }
 <!DOCTYPE html>
 
@@ -19,11 +21,11 @@
 
     <style>
         /* ==========================================================================
-           A4 STANDART BASKI VE SAYFA KONTROL STİLLERİ
+           A4 STANDART BASKI VE SAYFA KONTROL STİLLERİ (12pt Times New Roman)
            ========================================================================== */
         @@page {
             size: A4 portrait;
-            margin: 7mm 10mm;
+            margin: 5mm 4mm;
         }
 
         body, table, td, th, p, span, li, a {
@@ -31,8 +33,8 @@
         }
 
         body {
-            font-size: 12px !important;
-            line-height: 1.25 !important;
+            font-size: 12pt !important;
+            line-height: 1.2 !important;
             color: #000 !important;
             background: #fff !important;
             margin: 0 !important;
@@ -42,8 +44,8 @@
         .invoice {
             position: relative !important;
             width: 100% !important;
-            max-width: 800px !important;
-            margin: 0 auto !important;
+            max-width: 100% !important;
+            margin: 0 !important;
             padding: 0 !important;
         }
 
@@ -59,41 +61,175 @@
             border: none !important;
         }
 
+        .violation-title {
+            margin-top: 0 !important;
+            margin-bottom: 6px !important;
+            font-size: 16pt !important;
+            font-weight: bold !important;
+            text-align: center !important;
+            line-height: 1.25 !important;
+        }
+
+        .passenger-info-table {
+            width: 520px !important;
+            max-width: 70% !important;
+            margin-bottom: 6px !important;
+        }
+
+        .passenger-info-table td {
+            font-size: 12.5pt !important;
+            padding: 2px 4px !important;
+            line-height: 1.25 !important;
+        }
+
+        .passenger-val {
+            font-weight: bold !important;
+            font-size: 12.5pt !important;
+            color: #000 !important;
+        }
+
+        .violation-data-table {
+            width: 100% !important;
+            border: 1px solid #000 !important;
+            border-collapse: collapse !important;
+            margin-bottom: 6px !important;
+        }
+
+        .violation-data-table td {
+            border: 1px solid #000 !important;
+            padding: 1.5px 4px !important;
+            font-size: 11.5pt !important;
+            line-height: 1.2 !important;
+            vertical-align: middle !important;
+        }
+
         h3 {
             margin-top: 0 !important;
-            margin-bottom: 4px !important;
-            font-size: 15px !important;
+            margin-bottom: 2px !important;
+            font-size: 13.5pt !important;
             font-weight: bold !important;
         }
 
         p {
-            margin-top: 1.5px !important;
-            margin-bottom: 3px !important;
-            font-size: 12px !important;
-            line-height: 1.25 !important;
+            margin-top: 1px !important;
+            margin-bottom: 2px !important;
+            font-size: 12pt !important;
+            line-height: 1.2 !important;
         }
 
         table {
+            width: 100% !important;
             border-collapse: collapse !important;
-            margin-bottom: 3px !important;
+            margin-bottom: 2px !important;
         }
 
         table td, table th {
-            padding: 2px 4px !important;
-            font-size: 12px !important;
-            line-height: 1.25 !important;
+            padding: 1.5px 3px !important;
+            font-size: 12pt !important;
+            line-height: 1.2 !important;
             vertical-align: middle !important;
         }
 
+        ul, ol {
+            margin: 1px 0 !important;
+            padding-left: 18px !important;
+        }
+
+        li {
+            margin: 1px 0 !important;
+            font-size: 12pt !important;
+            line-height: 1.15 !important;
+        }
+
         .invoice br {
-            line-height: 6px !important;
+            line-height: 3px !important;
+        }
+
+        /* Ç ve N Kodlu Form Üst Başlık ve Logo Düzeni */
+        .form-header-table {
+            width: 100% !important;
+            border: none !important;
+            border-collapse: collapse !important;
+            margin-bottom: 6px !important;
+        }
+
+        .form-header-table td {
+            padding: 0 !important;
+            border: none !important;
+        }
+
+        .form-header-logo-cell {
+            width: 175px !important;
+            vertical-align: middle !important;
+            text-align: left !important;
+        }
+
+        .form-header-logo-cell img {
+            width: 165px !important;
+            height: auto !important;
+            max-height: 80px !important;
+            display: block !important;
+        }
+
+        .form-header-title-cell {
+            vertical-align: middle !important;
+            text-align: center !important;
+            padding: 0 4px !important;
+        }
+
+        .form-main-title {
+            font-size: 13pt !important;
+            font-weight: bold !important;
+            line-height: 1.25 !important;
+            margin-bottom: 4px !important;
+            text-align: center !important;
+        }
+
+        .form-sub-title {
+            font-size: 11pt !important;
+            font-weight: bold !important;
+            margin-top: 2px !important;
+            text-align: center !important;
+        }
+
+        /* N-Kodlu Form Sizing & Page Fit */
+        .n-form-container table {
+            margin-bottom: 2.5px !important;
+        }
+
+        .n-form-container td,
+        .n-form-container th {
+            font-size: 10.2pt !important;
+            line-height: 1.16 !important;
+            padding: 2px 3px !important;
+        }
+
+        .n-form-container .form-main-title {
+            font-size: 13pt !important;
+            line-height: 1.2 !important;
+            margin-bottom: 2px !important;
+        }
+
+        .n-form-container .form-sub-title {
+            font-size: 11pt !important;
+            margin-top: 1px !important;
+        }
+
+        .n-form-container li {
+            font-size: 10.2pt !important;
+            line-height: 1.16 !important;
+            margin: 0.5px 0 !important;
+        }
+
+        .n-signature-table {
+            margin-top: 18px !important;
         }
 
         /* Karekod Alanı (Sayfanın sağ üst köşesine sabitlenir, sayfa düzenini ve tabloları aşağı itmez) */
         #cezaQrCode {
             position: absolute;
-            top: 10px;
-            right: 15px;
+            top: 5px;
+            right: 10px;
             width: 68px;
             height: 68px;
             z-index: 9999;
@@ -110,8 +246,8 @@
             #cezaQrCode {
                 display: block !important;
                 position: absolute !important;
-                top: 10px !important;
-                right: 15px !important;
+                top: 5px !important;
+                right: 10px !important;
             }
         }
     </style>
@@ -122,13 +258,32 @@
         <div id="cezaQrCode">
             <canvas id="qrCanvas" width="64" height="64" style="width: 64px; height: 64px;"></canvas>
         </div>
-        @Html.Raw(ViewBag.Form) 
+        @if (Model != null)
+        {
+            @Html.Partial("Languages/" + lang + "/_ViolationForm", Model)
+
+            if (Model.HasNKodlu)
+            {
+                <div class="page-break" style="display:block; page-break-before:always !important; break-before:page !important; clear:both;"></div>
+                @Html.Partial("Languages/" + lang + "/_NKodluForm", Model)
+            }
+
+            if (Model.HasCKodlu && Model.IsAdult && (Model.IsOver90 || !Model.IsPaid))
+            {
+                <div class="page-break" style="display:block; page-break-before:always !important; break-before:page !important; clear:both;"></div>
+                @Html.Partial("Languages/" + lang + "/_CKodluForm", Model)
+            }
+        }
+        else
+        {
+            @Html.Raw(ViewBag.Form) 
+        }
     </div>
 
     <script>
         (function () {
             try {
-                var qrText = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.QrText ?? ""));
+                var qrText = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model != null ? Model.QrText : (ViewBag.QrText ?? "")));
                 if (!qrText || qrText.length === 0) {
                     var bodyText = document.body.innerText || "";
                     var nameMatch = bodyText.match(/(?:Adı Soyadı|Name\/Surname|姓名)[^\n:]*[:\t\s]+([^\n\r]+)/i);

@@ -1,0 +1,153 @@
+@model gzpegm.Models.ViewModels.FormPrintViewModel
+<table class="form-header-table" style="width: 100%; border: none; border-collapse: collapse; margin-bottom: 6px;">
+  <tbody>
+    <tr>
+      <td class="form-header-logo-cell" style="width: 175px; vertical-align: middle; text-align: left; padding: 0; border: none;">
+        <img src="../img/goc.jpg" width="165" height="78" style="width: 165px; height: auto; max-height: 80px; display: block;">
+      </td>
+      <td class="form-header-title-cell" style="vertical-align: middle; text-align: center; padding: 0 4px; border: none;">
+        <div class="form-main-title" style="font-size: 13pt; font-weight: bold; line-height: 1.25; margin-bottom: 4px; text-align: center;">
+          Ç Kodlu Giriş Yasağı Kararı Tebliğ Formu / Формуляр за уведомяване за решение за забрана за влизане с код Ç
+        </div>
+        <div class="form-sub-title" style="font-size: 11pt; font-weight: bold; margin-top: 2px; text-align: center;">
+          Yabancıya İlişkin Bilgiler – Информация за чужденеца
+        </div>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th scope="col"><strong>Adı – </strong>Име</th>
+      <th scope="col">@Model.FirstName</th>
+    </tr>
+    <tr>
+      <th scope="row"><strong>Soyadı – </strong>Фамилия</th>
+      <td>@Model.LastName</td>
+    </tr>
+    <tr>
+      <th scope="row"><strong>Baba Adı – </strong>Бащино име</th>
+      <td>@Model.FatherName</td>
+    </tr>
+    <tr>
+      <th scope="row"><strong>Anne Adı – </strong>Майчино име</th>
+      <td>@Model.MotherName</td>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th scope="col"><strong>Doğum Tarihi – </strong>Дата на раждане</th>
+      <th scope="col">@Model.Birthdate</th>
+      <th scope="col"><strong>Uyruğu – </strong>Гражданство</th>
+      <th scope="col">@Model.Nationality</th>
+    </tr>
+    <tr>
+      <th scope="row"><strong>İletişim Dili – </strong>Език за комуникация</th>
+      <th colspan="3" scope="row">@Model.Nationality</th>
+    </tr>
+    <tr>
+      <th colspan="4" scope="row"><strong>Karar ve Değerlendirmeye İlişkin Bilgiler – </strong>Информация за решението и оценката</th>
+    </tr>
+    <tr>
+      <th colspan="4" scope="row"><strong>Giriş Yasağı Kararı Başlangıç-Bitiş Tarihi – </strong>Начална и крайна дата на решението за забрана за влизане</th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th scope="col"><strong>Giriş Yasağı Kararı Başlangıç-Bitiş Tarihi – </strong>Начална и крайна дата на решението за забрана за влизане</th>
+      <th scope="col">@Model.Today</th>
+      <th scope="col">@Model.CanEnterDate</th>
+    </tr>
+    <tr>
+      <th scope="col"><strong>Tahdit Kodu / Restriction Code</strong></th>
+      <th colspan="2" scope="col"><h5>@Model.TahditCode</h5></th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th scope="col">* Bu alana giriş yasağı kararının başlangıç tarihi yazılacaktır. – <em>* Въведете началната дата на решението за забрана за влизане в това поле.</em><br>
+      ** Bu alana giriş yasağı kararının bitiş tarihi yazılacaktır. – <em>** Въведете крайната дата на решението за забрана за влизане в това поле.</em></th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th scope="col"><ol start="1" type="1">
+        <li><strong>Giriş Yasağı Kararı – </strong><strong>Решение за забрана за влизане</strong></li>
+      </ol></th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th scope="col">6458 sayılı Yabancılar ve Uluslararası Koruma Kanunun 9 uncu maddesi uyarınca gerçekleştirilen değerlendirme neticesinde, Göç İdaresi Genel Müdürlüğü / @Model.Province Valiliği (İl Göç İdaresi Müdürlüğü) tarafından hakkınızda giriş yasağı kararı alınmıştır. – <em>Въз основа на оценката, извършена в съответствие с чл. 9 от Закон № 6458 за чужденците и международната закрила, от Главна дирекция за управление на миграцията / Областна управа на @Model.Province (Областна дирекция за управление на миграцията) е взето решение за налагане на забрана за влизане спрямо Вас.</em></th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th style="text-align: justify; font-size: 9px;" scope="col"><ul>
+        <li>Hakkınızda giriş yasağı kararı alınmasına dayanak teşkil eden husus/hususlar sebebiyle; – <em>Въз основа на обстоятелствата, послужили като основание за налагане на забрана за влизане;</em></li>
+        <li><em>İkamet izninizin iptali için gerekli işlemler başlatılacaktır. – Ще бъдат предприети необходимите процедури за анулиране на Вашето разрешение за пребиваване.</em></li>
+        <li><em>Çalışma izninizin iptali için gerekli işlemler başlatılacaktır. – Ще бъдат предприети необходимите процедури за анулиране на Вашето разрешение за работа.</em></li>
+        <li><u>Türkiye’ye girişinizin yasaklı olduğu süre içerisinde giriş yapmak istemeniz halinde, Türkiye Cumhuriyeti Dış Temsilciliklerinden amacına uygun (özel meşruhatlı) vize almanız gerekmektedir. – <em>Ако желаете да влезете в Турция по време на периода на забрана, трябва да получите съответна виза със специална бележка от задграничните представителства на Република Турция.</em></u></li>
+        <li><em><u>Hakkınızda tahsis edilen giriş yasağı süresinin sona ermesi yüz seksen günde doksan gün kuralının uygulanmasına engel teşkil etmemektedir. Her halükârda vizenin veya vize muafiyetinin Türkiye’de sağladığı kalış süresi, her yüz seksen günde doksan günü geçemez. – <em>Изтичането на срока на наложената забрана за влизане не отменя прилагането на правилото за 90 дни в рамките на 180 дни. Престоят в Турция по виза или визово освобождаване не може да надвишава 90 дни на всеки 180 дни.</em></u></em></li>
+        <li><em><u><em><u>Hakkınızda alınan giriş yasağı kararının süresi dolmuş olsa dahi idari para cezanızı ödememenizden kaynaklanan ön izin kararına ilişkin hükümler saklıdır. – <em>Дори срокът на забраната за влизане да е изтекъл, разпоредбите за предварително разрешение поради неплащане на административната глоба остават в сила.</em></u></em></u></em></li>
+      </ul></th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th scope="col"><ol start="2" type="1">
+        <li><strong>Giriş Yasağı Kararına Karşı Yargı Yoluna Başvuru – </strong><strong>Обжалване на решението за забрана за влизане по съдебен ред</strong></li>
+      </ol></th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th style="text-align: justify; font-size: 9px;" scope="col"><ul>
+        <li>Şahsınız veya yasal temsilciniz ya da avukatınız tarafından, giriş yasağı kararına karşı, kararın tebliğinden itibaren 60 (altmış) gün içinde idare mahkemesine başvurulabilir. – <em>Вие, Вашият законен представител или адвокат можете да обжалвате решението за забрана за влизане пред Административния съд в срок от 60 (шестдесет) дни от уведомяването.</em></li>
+        <li>Mahkemeye başvuran kişi, giriş yasağı kararı veren makama da başvurusunu bildirir. – <em>Лицето, подало жалба в съда, уведомява и органа, издал решението за забрана за влизане.</em></li>
+        <li>Mahkemeye yapılan başvurular giriş yasağı kararını durdurmaz. – <em>Жалбите, подадени до съда, не спират изпълнението на решението за забрана за влизане.</em></li>
+      </ul></th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="1">
+  <tbody>
+    <tr>
+      <th style="text-align: justify; font-size: 12px;" scope="col">Bu belge, bir nüshası avukatına/yabancıya/yasal temsilcisine verilmek üzere iki nüsha olarak hazırlanmış olup, hakkında sınır dışı etme kararı alınan yukarıda açık kimliği yazılı yabancıya kendi dilinde/anladığı dilde,&nbsp;<strong>@Model.Today</strong>&nbsp;tarihinde ve&nbsp;<strong>@Model.CurrentTime</strong>&nbsp;saatinde yazılı olarak tebliğ edilmiş ve imza altına alınarak bir sureti tebellüğ edene verilmiştir. – <em>Настоящият документ е изготвен в два екземпляра (един за чужденеца/адвоката/законния представител) и е връчен писмено на посочения по-горе чужденец на родния му/разбираем от него език на @Model.Today г. в @Model.CurrentTime ч., като копие е предадено срещу подпис.</em></th>
+    </tr>
+  </tbody>
+</table>
+<table width="800" border="0">
+  <tbody>
+    <tr>
+      <th style="text-align: center" scope="col"><strong>Tebliğ Eden</strong></th>
+      <th style="text-align: center" scope="col"><strong>Tebellüğ Eden</strong></th>
+    </tr>
+    <tr>
+      <th style="text-align: center" scope="row"><strong>Уведомител</strong></th>
+      <td style="text-align: center"><strong>Уведомен</strong></td>
+    </tr>
+    <tr>
+      <th style="text-align: center" scope="row"><strong>@Model.ApprovalUser</strong></th>
+      <td style="text-align: center"><strong>@Model.PassengerName</strong></td>
+    </tr>
+  </tbody>
+</table>
+</div>

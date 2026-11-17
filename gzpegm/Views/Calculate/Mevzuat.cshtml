@@ -275,6 +275,14 @@
                         <span>7. Önceki Raporlar ve Denetim</span>
                         <i class="fas fa-chevron-right text-muted" style="font-size:0.75rem;"></i>
                     </a>
+                    <a href="#sec-tebligat-formlari" class="quick-nav-pill">
+                        <span>8. Çok Dilli Tebligat &amp; Valilik</span>
+                        <i class="fas fa-chevron-right text-muted" style="font-size:0.75rem;"></i>
+                    </a>
+                    <a href="#sec-operasyonel-guvenlik" class="quick-nav-pill">
+                        <span>9. Optik Okuyucu &amp; Güvenlik</span>
+                        <i class="fas fa-chevron-right text-muted" style="font-size:0.75rem;"></i>
+                    </a>
                 </div>
             </div>
         </div>
@@ -478,6 +486,13 @@ if (borderExitDt &lt;= permitEndDt) {
                         <li><strong>Beyaz Rusya (Belarus):</strong> Takvim penceresi 365 gündür. Tek seferde 30 gün kalış hakkı, 1 yılda azami 90 gün kalış.</li>
                         <li><strong>Günübirlik Giriş-Çıkışlar:</strong> Giriş ve çıkış aynı gün yapılmışsa sistem yasa gereği 1 gün kalış kabul eder.</li>
                     </ul>
+
+                    <div class="algo-box success mt-3">
+                        <div class="algo-title"><i class="fas fa-calendar-check mr-1 text-success"></i> 180 Gün Geriye Dönük Takvim Penceresi Tarih Esası</div>
+                        <p class="mb-0">
+                            180 günlük hareketli takvim penceresi açılırken sunucu/sistem saati (<code>DateTime.Now</code>) değil, <strong>yolcunun pasaport kontrol noktasına fiilen müracaat ettiği son çıkış tarihi (Çıkış Tarihi)</strong> baz alınır. Gecikmeli veya geçmiş tarihli çıkış işlemlerinde pencere, girilen çıkış tarihinden geriye doğru tam 180 gün olarak hesaplanır.
+                        </p>
+                    </div>
                 </div>
             </div>
 
@@ -544,6 +559,17 @@ if (borderExitDt &lt;= permitEndDt) {
                     <div class="algo-box warning mt-3">
                         <div class="algo-title"><i class="fas fa-exclamation-triangle mr-1 text-warning"></i> V-137 Terke Davet Rejimi ve 20.605 TL İdari Para Cezası</div>
                         Terke davet edilen yabancılara tanınan süre içinde çıkış yapılması halinde giriş yasağı konulmaz. Ancak terke davet süresini aşan yabancılara (<span class="code-pill">Visa == 11, 13</span>) tahdit kodunun yanında <strong>20.605 TL İdari Para Cezası</strong> tahakkuk ettirilir.
+                    </div>
+
+                    <div class="algo-box mt-3" style="border-left-color: #0284c7; background: #f0f9ff;">
+                        <div class="algo-title"><i class="fas fa-coins mr-1 text-primary"></i> Yolcu Ceza Ödeme Durumu Seçim Modalı (Ödeyen / Ödemeyen Esası)</div>
+                        <p class="mb-2">
+                            Yolcunun doğum tarihi girilip ihlal süresi ve ceza tutarı hesaplandıktan sonra personele <strong>Ödeme Tercihi Modalı</strong> sunulur. Personel yolcunun ödeme makbuzuna veya beyanına göre seçim yapar:
+                        </p>
+                        <ul class="mb-0" style="padding-left: 20px;">
+                            <li class="mb-1"><strong>Ödeyen Seçilirse:</strong> Vize ihlali 90 güne kadar ise <strong>0 Gün (Giriş Yasağı Yok)</strong> kararı uygulanır ve sadece 1 sayfalık <em>Vize İhlali İşlem Formu</em> tanzim edilir. 90 günü aşan ihlallerde indirimli Ç kodu tahsis edilir.</li>
+                            <li><strong>Ödemeyen Seçilirse:</strong> 1 günden itibaren doğrudan <strong>3 aydan başlayan Ç-114 veya Ç-115 giriş yasağı</strong> uygulanır; ayrıca YUKK Md. 9 gereğince <strong>N Kodlu Ön İzin Kararı</strong> tahsis edilerek çok dilli resmi tebligat seti basılır.</li>
+                        </ul>
                     </div>
                 </div>
             </div>
@@ -650,6 +676,101 @@ if (borderExitDt &lt;= permitEndDt) {
                                     Genelge 2024/4 ve Genelge 2024/5 ile ihlal aralıkları, ödeyen/ödemeyen ayrımı ve Ç-113, Ç-114, Ç-115 kodları denetimi.
                                 </p>
                                 <span class="badge badge-success"><i class="fas fa-check mr-1"></i> %100 Uyumlu</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 8. Resmi Tebligat Belgeleri, 12 Dil ve Valilik Entegrasyonu -->
+            <div id="sec-tebligat-formlari" class="law-card">
+                <div class="law-card-header">
+                    <h4><i class="fas fa-file-invoice mr-2 text-primary"></i> 8. Resmi Tebligat Belgeleri, 12 Dilde Form Yapısı ve Valilik Entegrasyonu</h4>
+                    <span class="law-tag law-tag-primary">Resmi Formlar</span>
+                </div>
+                <div class="law-card-body">
+                    <p>
+                        YUKK Madde 9 ve Madde 10 uyarınca, yabancı hakkında alınan giriş yasağı ve ön izin kararlarının yabancının anladığı dilde tebliğ edilmesi esastır. Sistem <strong>12 resmi dünya dilinde</strong> birebir çevrilmiş ve onaylanmış tebligat formları üretmektedir:
+                    </p>
+
+                    <div class="d-flex flex-wrap mb-3" style="gap: 6px;">
+                        <span class="badge badge-light border p-2"><i class="fas fa-globe text-primary mr-1"></i> İngilizce (GB)</span>
+                        <span class="badge badge-light border p-2"><i class="fas fa-globe text-primary mr-1"></i> Rusça (RU)</span>
+                        <span class="badge badge-light border p-2"><i class="fas fa-globe text-primary mr-1"></i> Almanca (DE)</span>
+                        <span class="badge badge-light border p-2"><i class="fas fa-globe text-primary mr-1"></i> Fransızca (FR)</span>
+                        <span class="badge badge-light border p-2"><i class="fas fa-globe text-primary mr-1"></i> Farsça (IR)</span>
+                        <span class="badge badge-light border p-2"><i class="fas fa-globe text-primary mr-1"></i> Arapça (IRK)</span>
+                        <span class="badge badge-light border p-2"><i class="fas fa-globe text-primary mr-1"></i> Çince (Cin)</span>
+                        <span class="badge badge-light border p-2"><i class="fas fa-globe text-primary mr-1"></i> Yunanca (Yunan)</span>
+                        <span class="badge badge-light border p-2"><i class="fas fa-globe text-primary mr-1"></i> Bulgarca (BG)</span>
+                        <span class="badge badge-light border p-2"><i class="fas fa-globe text-primary mr-1"></i> Romence (RO)</span>
+                        <span class="badge badge-light border p-2"><i class="fas fa-globe text-primary mr-1"></i> Azerice (AZ)</span>
+                        <span class="badge badge-light border p-2"><i class="fas fa-globe text-primary mr-1"></i> Gürcüce (GE)</span>
+                    </div>
+
+                    <h5 class="font-weight-bold text-dark mb-2">Resmi Form Katmanları ve Sayfa Standartları:</h5>
+                    <div class="table-responsive">
+                        <table class="custom-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 25%;">Form Adı</th>
+                                    <th style="width: 45%;">Kapsam ve Yasal İçerik</th>
+                                    <th style="width: 30%;">Sayfa ve Tipografi Standardı</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>1. Vize İhlali İşlem Formu (Sayfa 1)</strong></td>
+                                    <td>Yolcu kimlik bilgileri, giriş/çıkış tarihleri, ihlal günü ve ödenecek ceza tutarı dökümü.</td>
+                                    <td>Tek çerçeveli resmi ızgara tablo, koyu (bold) parametre değerleri, memur ve yolcu imza blokları.</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>2. N Kodlu Ön İzin Kararı Formu (Sayfa 2)</strong></td>
+                                    <td>Cezasız / idari para cezasını ödemeden çıkan yabancılara YUKK Md. 9 uyarınca ön izin kararı tebliği.</td>
+                                    <td>A4 dikey alanının %85-90'ını kaplayan okunaklı 10.2pt tipografi, ortalı logo ve başlık, resmi (İmza / Signature) satırı.</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>3. Ç Kodlu Giriş Yasağı Formu (Sayfa 3)</strong></td>
+                                    <td>Hakkında yurda giriş yasağı (Ç-113, Ç-114, Ç-115 vb.) kararı alınan yabancılar için hukuki tebliğ metni.</td>
+                                    <td>Yasak başlangıç-bitiş tarihleri, gerekçe maddeleri ve idare mahkemesine 60 gün içinde başvuru hakkı bildirimi.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="algo-box warning mt-3">
+                        <div class="algo-title"><i class="fas fa-landmark mr-1 text-warning"></i> Valilik ve İl Göç İdaresi Otomatik Entegrasyonu</div>
+                        Ç ve N Kodlu resmi tebliğ metinlerinde yer alan <em>"6458 sayılı Kanunun 9 uncu maddesi uyarınca... <strong>………… Valiliği (İl Göç İdaresi Müdürlüğü)</strong> tarafından hakkınızda ön izin / giriş yasağı kararı alınmıştır"</em> ifadesindeki noktalı alana; işlemi yapan hudut kapısının bağlı bulunduğu il mülki idaresi (Örn. Gazipaşa/Antalya için <strong>Antalya Valiliği</strong>, Sabiha Gökçen için <strong>İstanbul Valiliği</strong> vb.) sistem tarafından otomatik olarak atanmaktadır.
+                    </div>
+                </div>
+            </div>
+
+            <!-- 9. Operasyonel Standartlar: Optik Okuyucu ve Mükerrer Kayıt Koruması -->
+            <div id="sec-operasyonel-guvenlik" class="law-card">
+                <div class="law-card-header">
+                    <h4><i class="fas fa-shield-alt mr-2 text-success"></i> 9. Operasyonel Standartlar: Optik Okuyucu ve Mükerrer Kayıt Koruması</h4>
+                    <span class="law-tag law-tag-success">Sistem Güvenliği</span>
+                </div>
+                <div class="law-card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="p-3 border rounded bg-light h-100">
+                                <h6 class="font-weight-bold text-dark mb-2">
+                                    <i class="fas fa-id-card text-primary mr-1"></i> Donanım ve Optik Pasaport Okuma (MRZ)
+                                </h6>
+                                <p class="small text-muted mb-0">
+                                    Masaüstü optik pasaport okuyucular (3M Cogent, Thales, Regula, Desko PENTA) ile yolcunun seyahat belgesi okutulduğunda ad, soyad, doğum tarihi, pasaport numarası ve uyruk doğrudan form alanlarına aktarılır. Yolcunun 18 yaş altı çocuk olup olmadığı doğum tarihi üzerinden anlık teyit edilir.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="p-3 border rounded bg-light h-100">
+                                <h6 class="font-weight-bold text-dark mb-2">
+                                    <i class="fas fa-clone text-danger mr-1"></i> Çift / Mükerrer Kayıt Önleme (Idempotency)
+                                </h6>
+                                <p class="small text-muted mb-0">
+                                    Memurun butona art arda çift tıklamasını önlemek için form submit anında <strong>1.5 saniyelik</strong> akıllı kilit uygulanır. Ayrıca aynı pasaport numarası ve ceza tutarı ile son 3 dakika içinde açılmış bir kayıt varsa sunucu ikinci bir kayıt açmayarak mevcut kaydı günceller; ceza istatistiklerinin mükerrer şişmesi %100 önlenir.
+                                </p>
                             </div>
                         </div>
                     </div>

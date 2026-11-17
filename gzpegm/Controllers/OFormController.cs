@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Web;
 using System.Web.Mvc;
+using System.Linq;
 
 namespace gzpegm.Controllers
 {
@@ -30,7 +31,7 @@ namespace gzpegm.Controllers
                                  "Tarih: " + (data.fldDatetime.HasValue ? data.fldDatetime.Value.ToString("dd.MM.yyyy HH:mm") : "-");
             }
             ViewBag.Form = Result;
-            return View();
+            return View((gzpegm.Models.ViewModels.FormPrintViewModel)null);
         }
         [Route("Formolustur")]
         public ActionResult Index(string OrginCFORM, string IDNCFORM, string EntryDateCFORM, string VisaDistanceCFORM, string ShouldExitCFORM, string FineDayCFORM, string FinePriceCFORM, string PaymentTypeCFORM, string NameCFORM, string PassportCFORM, string PoliceCFORM, string DDayCFORM, string DefterCFORM, string CGunCFORM, string CAyCFORM, string FatherCFORM, string MotherCFORM, DateTime BirthdateCFORM, string codeFORM, int visatype, HttpPostedFileBase coverinputpd)
@@ -98,181 +99,125 @@ namespace gzpegm.Controllers
                     else FINET += " Toplam=" + FinePriceCFORM;
                 }
             }
-            bool isPaid = (PaymentTypeCFORM == "1" || PaymentTypeCFORM == "2" || PaymentTypeCFORM == "10" || PaymentTypeCFORM == "8" || PaymentTypeCFORM == "6" || PaymentTypeCFORM == "14" || PaymentTypeCFORM == "4");
-            var allForms = formT.GetAllForms();
-            string template = "";
+            int cGun = 0, cAy = 0;
+            int.TryParse(CGunCFORM, out cGun);
+            int.TryParse(CAyCFORM, out cAy);
+            int totalDays = (cAy * 30) + cGun;
 
-            if (OrginCFORM == "Rusya Federasyonu" || OrginCFORM == "Ukrayna" || OrginCFORM == "Rusya" || OrginCFORM == "Russia" || OrginCFORM == "Ukraine")
+            bool isPaid = (payType == "1" || payType == "2" || payType == "10" || payType == "8" || payType == "6" || payType == "14" || payType == "4");
+
+            bool isUnder90 = (totalDays < 90 && payType != "2" && payType != "3" && payType != "6")
+                          || (payType == "6" && totalDays < 11)
+                          || (payType == "8" && totalDays < 11)
+                          || (payType == "14" && totalDays < 11)
+                          || !adult;
+
+            if (!adult && !isPaid)
             {
-                template = isPaid ? allForms.fldRUC : allForms.fldRU;
-            }
-            else if (OrginCFORM == "Fransa" || OrginCFORM == "France")
-            {
-                template = isPaid ? allForms.fldFransizca : allForms.fldFransizcaC;
-            }
-            else if (OrginCFORM == "Almanya" || OrginCFORM == "Germany")
-            {
-                template = isPaid ? allForms.fldDEC : allForms.fldDE;
-            }
-            else if (OrginCFORM == "İran" || OrginCFORM == "Iran")
-            {
-                template = isPaid ? allForms.fldIRC : allForms.fldIR;
-            }
-            else if (OrginCFORM == "Irak" || OrginCFORM == "Iraq")
-            {
-                template = isPaid ? allForms.fldIRKC : allForms.fldIRK;
-            }
-            else if (OrginCFORM == "Çin" || OrginCFORM == "China" || OrginCFORM == "Çin Halk Cumhuriyeti")
-            {
-                template = isPaid ? allForms.fldCinC : allForms.fldCin;
-            }
-            else if (OrginCFORM == "Yunanistan" || OrginCFORM == "Greece")
-            {
-                template = isPaid ? allForms.fldYunanC : allForms.fldYunan;
-            }
-            else
-            {
-                template = isPaid ? allForms.fldGBC : allForms.fldGB;
+                Adı = FatherCFORM + ", " + MotherCFORM + " çocuğu " + Adı;
             }
 
-            result = template ?? "";
-            result = result.Replace("{{GATE}}", Data?.fldBorder?.Split(' ')[0] ?? "");
-
-            if (isPaid)
+            string lang = "GB";
+            string origin = (OrginCFORM ?? "").Trim();
+            if (origin == "Rusya Federasyonu" || origin == "Ukrayna" || origin == "Rusya" || origin == "Russia" || origin == "Ukraine")
             {
-                result = result.Replace("{{TCODE}}", codeFORM)
-                               .Replace("{{NAME}}", NameCFORM)
-                               .Replace("{{ORGIN}}", OrginCFORM)
-                               .Replace("{{PASSPORT}}", PassportCFORM)
-                               .Replace("{{EDATE}}", EntryDateCFORM)
-                               .Replace("{{TODAY}}", DateTime.Now.ToString("dd.MM.yyyy"))
-                               .Replace("{{SEDATE}}", ShouldExitCFORM)
-                               .Replace("{{VDAY}}", VisaDistanceCFORM)
-                               .Replace("{{FINETIME}}", ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)).ToString())
-                               .Replace("{{FINET}}", FINET)
-                               .Replace("{{POLICE}}", PoliceCFORM)
-                               .Replace("{{USER}}", Data?.fldSicil ?? "")
-                               .Replace("{{CANENT}}", DateTime.Now.AddDays(Convert.ToInt32(DDayCFORM)).ToString("dd.MM.yyyy"))
-                               .Replace("{{FINEDAY}}", DDayCFORM)
-                               .Replace("{{FIRSTNAME}}", Adı)
-                               .Replace("{{LASTNAME}}", Soyadı)
-                               .Replace("{{FATHERNAME}}", FatherCFORM)
-                               .Replace("{{MOTHERNAME}}", MotherCFORM)
-                               .Replace("{{BIRTHDATE}}", BirthdateCFORM.ToString("dd.MM.yyyy"))
-                               .Replace("{{TOTIME}}", DateTime.Now.ToShortTimeString());
-
-                bool isUnder90 = (((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 90 && PaymentTypeCFORM != "2" && PaymentTypeCFORM != "3" && PaymentTypeCFORM != "6")
-                              || (PaymentTypeCFORM == "6" && ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 11)
-                              || (PaymentTypeCFORM == "8" && ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 11)
-                              || (PaymentTypeCFORM == "14" && ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 11)
-                              || adult == false;
-
-                if (isUnder90 || !codeFORM.Contains("Ç"))
-                {
-                    int start = result.IndexOf("{{S}}"),
-                        finish = result.IndexOf("{{F}}");
-                    if (start >= 0 && finish > start)
-                        result = result.Remove(start, (finish - start) + 5);
-                    int start1 = result.IndexOf("{{S1}}"),
-                        finish1 = result.IndexOf("{{F1}}");
-                    if (start1 >= 0 && finish1 > start1)
-                        result = result.Remove(start1, (finish1 - start1) + 6);
-                    result = result.Replace("{{S}}", "").Replace("{{F}}", "").Replace("{{S1}}", "").Replace("{{F1}}", "");
-                }
-                else
-                {
-                    result = result.Replace("{{S}}", "").Replace("{{F}}", "");
-                    result = result.Replace("{{S1}}", "<div class=\"page-break\" style=\"display:block; page-break-before:always !important; break-before:page !important; clear:both;\"></div>");
-                    result = result.Replace("{{F1}}", "");
-                }
-                result = result.Trim();
+                lang = "RU";
             }
-            else
+            else if (origin == "Almanya" || origin == "Germany")
             {
-                if (!adult)
-                {
-                    Adı = FatherCFORM + ", " + MotherCFORM + " çocuğu " + Adı;
-                }
-
-                result = result.Replace("{{TCODE}}", codeFORM)
-                               .Replace("{{NAME}}", NameCFORM)
-                               .Replace("{{ORGIN}}", OrginCFORM)
-                               .Replace("{{PASSPORT}}", PassportCFORM)
-                               .Replace("{{EDATE}}", EntryDateCFORM)
-                               .Replace("{{TODAY}}", DateTime.Now.ToString("dd.MM.yyyy"))
-                               .Replace("{{SEDATE}}", ShouldExitCFORM)
-                               .Replace("{{VDAY}}", VisaDistanceCFORM)
-                               .Replace("{{FINETIME}}", ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)).ToString())
-                               .Replace("{{FINET}}", FINET)
-                               .Replace("{{POLICE}}", PoliceCFORM)
-                               .Replace("{{USER}}", Data?.fldSicil ?? "")
-                               .Replace("{{CANENT}}", DateTime.Now.AddDays(Convert.ToInt32(DDayCFORM)).ToString("dd.MM.yyyy"))
-                               .Replace("{{FINEDAY}}", DDayCFORM)
-                               .Replace("{{FIRSTNAME}}", Adı)
-                               .Replace("{{LASTNAME}}", Soyadı)
-                               .Replace("{{FATHERNAME}}", FatherCFORM)
-                               .Replace("{{MOTHERNAME}}", MotherCFORM)
-                               .Replace("{{BIRTHDATE}}", BirthdateCFORM.ToString("dd.MM.yyyy"))
-                               .Replace("{{TOTIME}}", DateTime.Now.ToShortTimeString());
-
-                result = result.Replace("{{S}}", "").Replace("{{F}}", "").Replace("{{S1}}", "").Replace("{{F1}}", "");
-
-                int nKodluPos = result.IndexOf("N Kodlu");
-                if (nKodluPos > 0)
-                {
-                    int imgBeforeN = result.LastIndexOf("<img", nKodluPos);
-                    int targetPos = -1;
-                    if (imgBeforeN > 0)
-                    {
-                        int pBefore = result.LastIndexOf("<p", imgBeforeN);
-                        targetPos = (pBefore > 0 && (imgBeforeN - pBefore) < 100) ? pBefore : imgBeforeN;
-                    }
-                    else
-                    {
-                        targetPos = result.LastIndexOf("<table", nKodluPos);
-                    }
-                    if (targetPos > 0)
-                    {
-                        result = result.Insert(targetPos, "<div class=\"page-break\" style=\"display:block; page-break-before:always !important; break-before:page !important; clear:both;\"></div>");
-                    }
-                }
-
-                if (!codeFORM.Contains("Ç") || !adult)
-                {
-                    int start3 = result.IndexOf("{{ÇS}}");
-                    if (start3 >= 0)
-                    {
-                        int pBefore = result.LastIndexOf("<p", start3);
-                        if (pBefore > 0 && (start3 - pBefore) < 150)
-                            result = result.Substring(0, pBefore).Trim();
-                        else
-                            result = result.Substring(0, start3).Trim();
-                    }
-                }
-                else
-                {
-                    int start3 = result.IndexOf("{{ÇS}}");
-                    if (start3 >= 0)
-                    {
-                        int pBefore = result.LastIndexOf("<p", start3);
-                        int cKodluPos = result.IndexOf("Ç Kodlu", start3);
-                        int imgBeforeC = cKodluPos > 0 ? result.LastIndexOf("<img", cKodluPos) : -1;
-                        int targetEnd = imgBeforeC > 0 ? result.LastIndexOf("<p", imgBeforeC) : -1;
-                        if (targetEnd < 0) targetEnd = imgBeforeC > 0 ? imgBeforeC : (start3 + 6);
-
-                        int cutStart = (pBefore >= 0 && (start3 - pBefore) < 150) ? pBefore : start3;
-                        if (targetEnd > cutStart)
-                        {
-                            result = result.Remove(cutStart, targetEnd - cutStart).Insert(cutStart, "<div class=\"page-break\" style=\"display:block; page-break-before:always !important; break-before:page !important; clear:both;\"></div>");
-                        }
-                        else
-                        {
-                            result = result.Replace("{{ÇS}}", "<div class=\"page-break\" style=\"display:block; page-break-before:always !important; break-before:page !important; clear:both;\"></div>");
-                        }
-                    }
-                }
-                result = result.Trim();
+                lang = "DE";
             }
+            else if (origin == "Fransa" || origin == "France")
+            {
+                lang = "FR";
+            }
+            else if (origin == "İran" || origin == "Iran")
+            {
+                lang = "IR";
+            }
+            else if (origin == "Irak" || origin == "Iraq")
+            {
+                lang = "IRK";
+            }
+            else if (origin == "Çin" || origin == "China" || origin == "Çin Halk Cumhuriyeti")
+            {
+                lang = "Cin";
+            }
+            else if (origin == "Yunanistan" || origin == "Greece")
+            {
+                lang = "Yunan";
+            }
+            else if (origin == "Bulgaristan" || origin == "Bulgaria")
+            {
+                lang = "BG";
+            }
+            else if (origin == "Romanya" || origin == "Romania" || origin == "Moldova" || origin == "Moldavya")
+            {
+                lang = "RO";
+            }
+            else if (origin == "Azerbaycan" || origin == "Azerbaijan")
+            {
+                lang = "AZ";
+            }
+            else if (origin == "Gürcistan" || origin == "Georgia")
+            {
+                lang = "GE";
+            }
+
+            bool hasCKodlu = (codeFORM ?? "").Contains("Ç");
+            bool hasNKodlu = !isPaid;
+
+            int dDay = 0;
+            int.TryParse(DDayCFORM, out dDay);
+
+            string qrText = "T.C. ICISLERI BAKANLIGI EGM\n" +
+                            "Yolcu: " + (NameCFORM ?? "-") + "\n" +
+                            "Pasaport: " + (PassportCFORM ?? "-") + "\n" +
+                            "Uyruk: " + (OrginCFORM ?? "-") + "\n" +
+                            "Ceza Tutari: " + (FinePriceCFORM ?? "-") + " TL\n" +
+                            "Tahdit Kodu: " + (codeFORM ?? "-") + "\n" +
+                            "Hudut Kapisi: " + (Data != null ? (Data.fldBorder ?? "-") : "-") + "\n" +
+                            "Gorevli Memur: " + (PoliceCFORM ?? "-") + " (Sicil: " + (Data != null ? (Data.fldSicil ?? "-") : "-") + ")\n" +
+                            "Tarih: " + DateTime.Now.ToString("dd.MM.yyyy HH:mm");
+
+            var model = new gzpegm.Models.ViewModels.FormPrintViewModel
+            {
+                PassengerName = NameCFORM,
+                FirstName = Adı,
+                LastName = Soyadı,
+                FatherName = FatherCFORM,
+                MotherName = MotherCFORM,
+                Nationality = OrginCFORM,
+                PassportNo = PassportCFORM,
+                Birthdate = BirthdateCFORM.ToString("dd.MM.yyyy"),
+                CommunicationLanguage = OrginCFORM,
+                EntryDate = EntryDateCFORM,
+                ApplicationDate = DateTime.Now.ToString("dd.MM.yyyy"),
+                ShouldExitDate = ShouldExitCFORM,
+                CanEnterDate = DateTime.Now.AddDays(dDay).ToString("dd.MM.yyyy"),
+                VisaDistanceDays = VisaDistanceCFORM,
+                ViolationPeriod = totalDays.ToString(),
+                FineAmount = FINET,
+                FinePriceTotal = FinePriceCFORM,
+                DefterPrice = DefterCFORM,
+                TahditCode = codeFORM,
+                EntryBanDays = DDayCFORM,
+                PoliceOfficer = PoliceCFORM,
+                ApprovalUser = Data?.fldSicil ?? "",
+                BorderGate = Data?.fldBorder ?? "",
+                Province = ResolveProvince(Data?.fldBorder ?? ""),
+                Today = DateTime.Now.ToString("dd.MM.yyyy"),
+                CurrentTime = DateTime.Now.ToShortTimeString(),
+                IsPaid = isPaid,
+                IsAdult = adult,
+                IsOver90 = !isUnder90,
+                HasCKodlu = hasCKodlu,
+                HasNKodlu = hasNKodlu,
+                LanguageCode = lang,
+                QrText = qrText
+            };
+
+            result = RenderRazorViewToString(this.ControllerContext, "Index", model);
             //if (DefterCFORM == "0") result = result.Replace("+Def", "");
             Isk Isk = new Isk();
             string ext = coverinputpd != null ? coverinputpd.FileName.Substring(coverinputpd.FileName.LastIndexOf('.')).ToLower() : "NO IMAGE";
@@ -285,8 +230,55 @@ namespace gzpegm.Controllers
                 coverinputpd.SaveAs(filepath);
             }
             //if (coverinputpd != "") coverinputpd = $@"{DateTime.Now.Ticks}."+coverinputpd.Split('.')[coverinputpd.Split('.').Length-1];
-            Isk.AddIsk(DateTime.Now, NameCFORM, PassportCFORM, IDNCFORM, OrginCFORM, BirthdateCFORM, result, PoliceCFORM, Data.fldName + " " + Data.fldLastName, Data.fldBorder, Vizeler[visatype], FinePriceCFORM, fileName, Request.ServerVariables["HTTP_X_FORWARDED_FOR"] ?? Request.ServerVariables["REMOTE_ADDR"]);
-            TryLogTahditForm(Data, OrginCFORM, FinePriceCFORM, PaymentTypeCFORM, NameCFORM, PassportCFORM, codeFORM, visatype, DDayCFORM, CGunCFORM, CAyCFORM);
+            // Mükerrer Kayıt Önleme: Aynı pasaport numarası, aynı hudut kapısı ve aynı ceza tutarı ile
+            // son 3 dakika içerisinde zaten bir kayıt yapılmışsa E_IsK tablosuna mükerrer kayıt ekleme.
+            // Form çıktısı memura kesintisiz üretilmeye devam eder ve mevcut kayıt en güncel form içeriğiyle yenilenir.
+            var cleanPassport = (PassportCFORM ?? "").Trim();
+            var cleanName = (NameCFORM ?? "").Trim();
+            var borderName = Data != null ? (Data.fldBorder ?? "") : "";
+            var cutoffTime = DateTime.Now.AddMinutes(-3);
+
+            E_IsK existingRecord = null;
+            using (GZPEGM1 _db = new GZPEGM1())
+            {
+                if (!string.IsNullOrEmpty(cleanPassport))
+                {
+                    existingRecord = _db.E_IsK
+                        .Where(x => x.fldPassport == cleanPassport
+                                 && x.fldBorder == borderName
+                                 && x.fldPMoney == FinePriceCFORM
+                                 && x.fldDatetime.HasValue
+                                 && x.fldDatetime.Value >= cutoffTime)
+                        .OrderByDescending(x => x.fldId)
+                        .FirstOrDefault();
+                }
+                else if (!string.IsNullOrEmpty(cleanName))
+                {
+                    existingRecord = _db.E_IsK
+                        .Where(x => x.fldName == cleanName
+                                 && x.fldBorder == borderName
+                                 && x.fldPMoney == FinePriceCFORM
+                                 && x.fldDatetime.HasValue
+                                 && x.fldDatetime.Value >= cutoffTime)
+                        .OrderByDescending(x => x.fldId)
+                        .FirstOrDefault();
+                }
+
+                if (existingRecord != null)
+                {
+                    // Mevcut kaydı güncelle (yeni mükerrer satır açma)
+                    existingRecord.fldForm = result;
+                    existingRecord.fldName = NameCFORM;
+                    existingRecord.fldIdn = IDNCFORM;
+                    _db.SaveChanges();
+                }
+            }
+
+            if (existingRecord == null)
+            {
+                Isk.AddIsk(DateTime.Now, NameCFORM, PassportCFORM, IDNCFORM, OrginCFORM, BirthdateCFORM, result, PoliceCFORM, Data.fldName + " " + Data.fldLastName, Data.fldBorder, Vizeler[visatype], FinePriceCFORM, fileName, Request.ServerVariables["HTTP_X_FORWARDED_FOR"] ?? Request.ServerVariables["REMOTE_ADDR"]);
+                TryLogTahditForm(Data, OrginCFORM, FinePriceCFORM, PaymentTypeCFORM, NameCFORM, PassportCFORM, codeFORM, visatype, DDayCFORM, CGunCFORM, CAyCFORM);
+            }
             ViewBag.QrText = "T.C. ICISLERI BAKANLIGI EGM\n" +
                              "Yolcu: " + (NameCFORM ?? "-") + "\n" +
                              "Pasaport: " + (PassportCFORM ?? "-") + "\n" +
@@ -297,7 +289,7 @@ namespace gzpegm.Controllers
                              "Gorevli Memur: " + (PoliceCFORM ?? "-") + " (Sicil: " + (Data != null ? (Data.fldSicil ?? "-") : "-") + ")\n" +
                              "Tarih: " + DateTime.Now.ToString("dd.MM.yyyy HH:mm");
             ViewBag.Form = result;
-            return View();
+            return View(model);
         }
 
         private void TryLogTahditForm(E_User user, string country, string finePrice, string paymentType, string passengerName, string passportNo, string tahditCode, int visaType, string dday, string penaltyDay, string penaltyMonth)
@@ -344,6 +336,131 @@ namespace gzpegm.Controllers
             {
                 System.Diagnostics.Trace.TraceError("Tahdit form log error: " + ex.Message);
             }
+        }
+
+        private string RenderRazorViewToString(ControllerContext context, string viewName, object model)
+        {
+            try
+            {
+                ViewData.Model = model;
+                using (var sw = new System.IO.StringWriter())
+                {
+                    var viewResult = ViewEngines.Engines.FindView(context, viewName, null);
+                    if (viewResult.View == null)
+                    {
+                        viewResult = ViewEngines.Engines.FindPartialView(context, viewName);
+                    }
+                    if (viewResult != null && viewResult.View != null)
+                    {
+                        var viewContext = new ViewContext(context, viewResult.View, ViewData, TempData, sw);
+                        viewResult.View.Render(viewContext, sw);
+                        viewResult.ViewEngine.ReleaseView(context, viewResult.View);
+                        return sw.GetStringBuilder().ToString();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.TraceError("RenderRazorViewToString error: " + ex.Message);
+            }
+            return "";
+        }
+
+        private static readonly string[] TurkishProvinces = new string[]
+        {
+            "Adana", "Adıyaman", "Afyonkarahisar", "Ağrı", "Aksaray", "Amasya", "Ankara", "Antalya", "Ardahan", "Artvin",
+            "Aydın", "Balıkesir", "Bartın", "Batman", "Bayburt", "Bilecik", "Bingöl", "Bitlis", "Bolu", "Burdur",
+            "Bursa", "Çanakkale", "Çankırı", "Çorum", "Denizli", "Diyarbakır", "Düzce", "Edirne", "Elazığ", "Erzincan",
+            "Erzurum", "Eskişehir", "Gaziantep", "Giresun", "Gümüşhane", "Hakkari", "Hatay", "Iğdır", "Isparta", "İstanbul",
+            "İzmir", "Kahramanmaraş", "Karabük", "Karaman", "Kars", "Kastamonu", "Kayseri", "Kırıkkale", "Kırklareli", "Kırşehir",
+            "Kilis", "Kocaeli", "Konya", "Kütahya", "Malatya", "Manisa", "Mardin", "Mersin", "Muğla", "Muş",
+            "Nevşehir", "Niğde", "Ordu", "Osmaniye", "Rize", "Sakarya", "Samsun", "Siirt", "Sinop", "Sivas",
+            "Şanlıurfa", "Şırnak", "Tekirdağ", "Tokat", "Trabzon", "Tunceli", "Uşak", "Van", "Yalova", "Yozgat", "Zonguldak"
+        };
+
+        private static readonly Dictionary<string, string> SpecialBorderGateProvinces = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "ÇUKUROVA", "Mersin" },
+            { "KAPADOKYA", "Nevşehir" },
+            { "MARMARİS", "Muğla" },
+            { "ÇEŞME", "İzmir" },
+            { "İSKENDERUN", "Hatay" },
+            { "BODRUM", "Muğla" },
+            { "FETHİYE", "Muğla" },
+            { "DATÇA", "Muğla" },
+            { "DALAMAN", "Muğla" },
+            { "KUŞADASI", "Aydın" },
+            { "DİDİM", "Aydın" },
+            { "AYVALIK", "Balıkesir" },
+            { "BANDIRMA", "Balıkesir" },
+            { "MARMARA DENİZ", "Balıkesir" },
+            { "SARP", "Artvin" },
+            { "HOPA", "Artvin" },
+            { "KAPIKULE", "Edirne" },
+            { "HAMZABEYLİ", "Edirne" },
+            { "İPSALA", "Edirne" },
+            { "PAZARKULE", "Edirne" },
+            { "DEREKÖY", "Kırklareli" },
+            { "GÜRBULAK", "Ağrı" },
+            { "HABUR", "Şırnak" },
+            { "ESENDERE", "Hakkari" },
+            { "ÜZÜMLÜ", "Hakkari" },
+            { "DERECİK", "Hakkari" },
+            { "TÜRKGÖZÜ", "Ardahan" },
+            { "AKTAŞ", "Ardahan" },
+            { "DİLUCU", "Iğdır" },
+            { "ALİCAN", "Iğdır" },
+            { "KAPIKÖY", "Van" },
+            { "CİLVEGÖZÜ", "Hatay" },
+            { "ÖNCÜPINAR", "Kilis" },
+            { "ÇOBANBEY", "Kilis" },
+            { "KARKAMIŞ", "Gaziantep" },
+            { "GAZİPAŞA", "Antalya" },
+            { "SABİHA GÖKÇEN", "İstanbul" },
+            { "ESENBOĞA", "Ankara" },
+            { "ADNAN MENDERES", "İzmir" },
+            { "DAİRE BAŞKANLIĞI", "Ankara" }
+        };
+
+        public static string ResolveProvince(string borderGate)
+        {
+            if (string.IsNullOrWhiteSpace(borderGate)) return "Antalya";
+
+            string bg = borderGate.Trim();
+            var trCulture = System.Globalization.CultureInfo.GetCultureInfo("tr-TR");
+            string bgUpper = bg.ToUpper(trCulture);
+
+            // 1. Check if border gate name starts with or equals any of the 81 Turkish provinces
+            foreach (var prov in TurkishProvinces)
+            {
+                string provUpper = prov.ToUpper(trCulture);
+                if (bgUpper == provUpper || bgUpper.StartsWith(provUpper + " ") || bgUpper.StartsWith(provUpper + "-"))
+                {
+                    return prov;
+                }
+            }
+
+            // 2. Check special mappings (Çukurova, Kapadokya, Marmaris, Çeşme, etc.)
+            foreach (var kvp in SpecialBorderGateProvinces)
+            {
+                string keyUpper = kvp.Key.ToUpper(trCulture);
+                if (bgUpper.IndexOf(keyUpper, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return kvp.Value;
+                }
+            }
+
+            // 3. Substring search for province inside border gate name
+            foreach (var prov in TurkishProvinces)
+            {
+                string provUpper = prov.ToUpper(trCulture);
+                if (bgUpper.IndexOf(provUpper, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return prov;
+                }
+            }
+
+            return "Antalya";
         }
     }
 }
