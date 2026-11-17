@@ -334,7 +334,7 @@
 
                                     <!-- Diğer İşlemler Dropdown Menü -->
                                     <div class="dropdown">
-                                        <button class="btn btn-light btn-sm border" type="button" id="courseMenu_@course.CourseId" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="Diğer İşlemler">
+                                        <button class="btn btn-light btn-sm border dropdown-toggle-dots" type="button" id="courseMenu_@course.CourseId" data-toggle="dropdown" data-display="static" aria-haspopup="true" aria-expanded="false" title="Diğer İşlemler">
                                             <i class="fas fa-ellipsis-v"></i>
                                         </button>
                                         <div class="dropdown-menu dropdown-menu-right shadow border-0" aria-labelledby="courseMenu_@course.CourseId">
@@ -362,14 +362,10 @@
                                             @if (canEdit)
                                             {
                                                 <div class="dropdown-divider"></div>
-                                                <form method="post" action="@Url.Action("Delete", "Course")" class="d-inline"
-                                                      onsubmit="return confirmDeleteWithEnrollments(this, @enrollmentCount);">
-                                                    @Html.AntiForgeryToken()
-                                                    <input type="hidden" name="id" value="@course.CourseId" />
-                                                    <button type="submit" class="dropdown-item text-danger">
-                                                        <i class="fas fa-trash-alt mr-2"></i> Dersi Sil
-                                                    </button>
-                                                </form>
+                                                <button type="button" class="dropdown-item text-danger font-weight-bold"
+                                                        onclick="openDeleteCourseModal(@course.CourseId, '@Html.Raw(HttpUtility.JavaScriptStringEncode(course.CourseTitle))', @enrollmentCount)">
+                                                    <i class="fas fa-trash-alt mr-2"></i> Dersi Sil / Arşivle
+                                                </button>
                                             }
                                         </div>
                                     </div>
@@ -475,14 +471,10 @@
                                                         data-toggle="modal" data-target="#addExamModalForCourse_@course.CourseId" title="Sınav Ekle">
                                                     <i class="fas fa-plus-circle"></i>
                                                 </button>
-                                                <form method="post" action="@Url.Action("Delete", "Course")" class="d-inline"
-                                                      onsubmit="return confirmDeleteWithEnrollments(this, @enrollmentCount);">
-                                                    @Html.AntiForgeryToken()
-                                                    <input type="hidden" name="id" value="@course.CourseId" />
-                                                    <button type="submit" class="btn btn-outline-danger" title="Dersi Sil">
-                                                        <i class="fas fa-trash-alt"></i>
-                                                    </button>
-                                                </form>
+                                                <button type="button" class="btn btn-outline-danger" title="Dersi Sil / Arşivle"
+                                                        onclick="openDeleteCourseModal(@course.CourseId, '@Html.Raw(HttpUtility.JavaScriptStringEncode(course.CourseTitle))', @enrollmentCount)">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
                                             }
                                         </div>
                                     </td>
@@ -840,13 +832,132 @@
     </div>
 }
 
+<!-- DERS SİLME / ARŞİVLEME SEÇENEK MODALI -->
+<div class="modal fade" id="deleteCourseModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 540px;">
+        <div class="modal-content" style="border-radius: 14px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title font-weight-bold">
+                    <i class="fas fa-exclamation-triangle mr-2"></i> Dersi Sil / Arşive Kaldır
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Kapat" style="opacity: 0.9;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="p-3 mb-3 bg-light rounded border">
+                    <div class="small text-muted font-weight-bold">Seçilen Ders:</div>
+                    <div class="font-weight-bold text-dark h6 mb-1" id="delModalCourseTitle">-</div>
+                    <div id="delModalEnrollmentInfo" class="text-danger small font-weight-bold"></div>
+                </div>
+
+                <p class="text-secondary small mb-3">
+                    Bu dersi yayından kaldırmak için ihtiyacınıza uygun olan yöntemi seçiniz:
+                </p>
+
+                <div class="list-group mb-0">
+                    <!-- SEÇENEK 1: ARŞİVLEME -->
+                    <div class="list-group-item p-3 border rounded mb-3" style="background:#f0fdf4; border-color:#bbf7d0 !important;">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <span class="font-weight-bold text-success" style="font-size: 14px;">
+                                <i class="fas fa-archive mr-1"></i> 1. Arşive Kaldır (Tavsiye Edilen)
+                            </span>
+                            <span class="badge badge-success px-2 py-1">Güvenli</span>
+                        </div>
+                        <p class="small text-muted mb-2">
+                            Ders yayından ve öğrenci ekranlarından tamamen çekilir, yeni kayıt engellenir. Ancak bu eğitimi daha önce almış personelin sınav geçmişi ve sertifikaları korunur. Veri tabanı hatası almazsınız.
+                        </p>
+                        <form method="post" action="@Url.Action("Delete", "Course")">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" class="delModalCourseId" />
+                            <input type="hidden" name="deleteType" value="archive" />
+                            <button type="submit" class="btn btn-success btn-sm btn-block font-weight-bold py-2">
+                                <i class="fas fa-archive mr-1"></i> Dersi Arşive Kaldır (Yayından Çek)
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- SEÇENEK 2: KALICI SİLME -->
+                    <div class="list-group-item p-3 border rounded" style="background:#fef2f2; border-color:#fecaca !important;">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <span class="font-weight-bold text-danger" style="font-size: 14px;">
+                                <i class="fas fa-trash-alt mr-1"></i> 2. Kalıcı Olarak Tamamen Sil
+                            </span>
+                            <span class="badge badge-danger px-2 py-1">Geri Alınamaz</span>
+                        </div>
+                        <p class="small text-muted mb-2">
+                            Dersle birlikte ona bağlı tüm öğrenci kayıtları, sınavlar, sorular ve yüklenen dijital içerikler veri tabanından tamamen temizlenir.
+                        </p>
+
+                        <!-- ETKİLENECEK VERİ BİLGİLENDİRME ALANI (CANLI SAYILAR) -->
+                        <div class="mb-3 p-2 bg-white rounded border shadow-sm" style="border-color: #fca5a5 !important;">
+                            <div class="d-flex align-items-center justify-content-between mb-2 pb-1 border-bottom">
+                                <span class="small font-weight-bold text-danger">
+                                    <i class="fas fa-database mr-1"></i> Silinecek İlişkili Veri Özeti:
+                                </span>
+                                <span id="delModalStatsLoading" class="spinner-border spinner-border-sm text-danger" role="status" style="display:none; width: 14px; height: 14px;"></span>
+                            </div>
+                            <div class="row no-gutters text-center">
+                                <div class="col-4 px-1">
+                                    <div class="p-2 rounded bg-light border">
+                                        <div class="h5 font-weight-bold text-danger mb-0" id="statUsersCount">-</div>
+                                        <div class="text-muted font-weight-bold" style="font-size: 11px;">Kayıtlı Kullanıcı</div>
+                                    </div>
+                                </div>
+                                <div class="col-4 px-1">
+                                    <div class="p-2 rounded bg-light border">
+                                        <div class="h5 font-weight-bold text-danger mb-0" id="statQuestionsCount">-</div>
+                                        <div class="text-muted font-weight-bold" style="font-size: 11px;">Soru Sayısı</div>
+                                    </div>
+                                </div>
+                                <div class="col-4 px-1">
+                                    <div class="p-2 rounded bg-light border">
+                                        <div class="h5 font-weight-bold text-danger mb-0" id="statAnswersCount">-</div>
+                                        <div class="text-muted font-weight-bold" style="font-size: 11px;">Öğrenci Cevabı</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-2 text-center text-secondary" style="font-size: 11px;">
+                                <span class="badge badge-light border text-muted px-2 py-1 mr-1">
+                                    <i class="fas fa-file-alt mr-1"></i><strong id="statExamsCount">0</strong> Sınav
+                                </span>
+                                <span class="badge badge-light border text-muted px-2 py-1 mr-1">
+                                    <i class="fas fa-poll-h mr-1"></i><strong id="statExamResultsCount">0</strong> Sonuç
+                                </span>
+                                <span class="badge badge-light border text-muted px-2 py-1 mr-1">
+                                    <i class="fas fa-certificate mr-1"></i><strong id="statCertificatesCount">0</strong> Sertifika
+                                </span>
+                                <span class="badge badge-light border text-muted px-2 py-1">
+                                    <i class="fas fa-folder-open mr-1"></i><strong id="statContentsCount">0</strong> Materyal
+                                </span>
+                            </div>
+                        </div>
+
+                        <form method="post" action="@Url.Action("Delete", "Course")" id="forceDeleteCourseForm">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" class="delModalCourseId" />
+                            <input type="hidden" name="deleteType" value="force" />
+                            <button type="submit" class="btn btn-outline-danger btn-sm btn-block font-weight-bold py-2">
+                                <i class="fas fa-trash-alt mr-1"></i> Kalıcı Olarak Tamamen Sil (Zorla Sil)
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light p-2 px-3">
+                <button type="button" class="btn btn-secondary btn-sm font-weight-bold px-3" data-dismiss="modal">Vazgeç</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Styles {
     <style>
         /* ============================================================ */
         /* TEMEL DERS SAYFASI STİLLERİ (PORTO / BOOTSTRAP 4 İLE %100 UYUMLU) */
         /* ============================================================ */
         .course-page-container {
-            padding: 10px 0 40px;
+            padding: 10px 0 160px; /* Alttaki kartların açılır menüleri için geniş alt boşluk */
         }
 
         /* HERO BANNER */
@@ -986,12 +1097,23 @@
         }
 
         /* MODERN DERS KARTLARI (GRID) */
+        .course-card-wrapper {
+            position: relative;
+        }
+
+        .course-card-wrapper:hover,
+        .course-card-wrapper:focus-within,
+        .course-card-wrapper.dropdown-active {
+            z-index: 1040;
+        }
+
         .modern-course-card {
             border-radius: 12px;
-            overflow: hidden;
+            overflow: visible !important;
             transition: all 0.25s ease;
             background: #ffffff;
             border: 1px solid #eef2f7 !important;
+            position: relative;
         }
 
         .modern-course-card:hover {
@@ -1005,6 +1127,30 @@
             height: 185px;
             overflow: hidden;
             background: #1e293b;
+            border-radius: 11px 11px 0 0;
+        }
+
+        .modern-course-card .dropdown-menu {
+            z-index: 1060 !important;
+            min-width: 230px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15) !important;
+            border: 1px solid #e2e8f0 !important;
+            max-height: 420px;
+            overflow-y: auto;
+        }
+
+        .modern-course-card .dropdown.dropup .dropdown-menu {
+            top: auto !important;
+            bottom: calc(100% + 5px) !important;
+            margin-bottom: 5px !important;
+            box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.18) !important;
+        }
+
+        .modern-course-card .dropdown-menu.show {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
         }
 
         .card-cover-img {
@@ -1230,15 +1376,98 @@
 
 @section Scripts {
     <script>
-        // Kurs Silme Doğrulama Fonksiyonu
-        window.confirmDeleteWithEnrollments = function (form, enrollmentCount) {
+        var currentCourseDeletionStats = null;
+
+        // Kurs Silme / Arşivleme Modalı Açma Fonksiyonu
+        window.openDeleteCourseModal = function (courseId, courseTitle, enrollmentCount) {
+            $('.delModalCourseId').val(courseId);
+            $('#delModalCourseTitle').text(courseTitle || 'Ders');
+
             if (enrollmentCount > 0) {
-                alert('⚠️ Dikkat! Bu kursa ' + enrollmentCount + ' öğrenci kayıtlı.\n\n' +
-                    'Kursu silmeden önce tüm öğrenci kayıtlarını silmelisiniz.\n\n' +
-                    'Lütfen önce "Kayıtlı Öğrenciler" ekranına giderek kayıtları temizleyiniz.');
-                return false;
+                $('#delModalEnrollmentInfo').html('<i class="fas fa-users mr-1"></i> Bu derse kayıtlı <strong>' + enrollmentCount + ' öğrenci</strong> bulunmaktadır.');
+            } else {
+                $('#delModalEnrollmentInfo').html('<i class="fas fa-info-circle mr-1"></i> Bu derse henüz kayıtlı öğrenci bulunmamaktadır.');
             }
-            return confirm('Bu dersi ve bağlı tüm içerikleri silmek istediğinizden emin misiniz?\nBu işlem geri alınamaz!');
+
+            // Sayı kutularını başlangıç durumuna / yükleniyor durumuna getir
+            $('#statUsersCount').text('...');
+            $('#statQuestionsCount').text('...');
+            $('#statAnswersCount').text('...');
+            $('#statExamsCount').text('0');
+            $('#statExamResultsCount').text('0');
+            $('#statCertificatesCount').text('0');
+            $('#statContentsCount').text('0');
+            $('#delModalStatsLoading').show();
+
+            currentCourseDeletionStats = {
+                courseTitle: courseTitle,
+                enrollmentCount: enrollmentCount || 0,
+                questionCount: 0,
+                answerCount: 0,
+                examResultCount: 0
+            };
+
+            // AJAX ile anlık silinecek veri istatistiklerini getir
+            $.ajax({
+                url: '@Url.Action("GetCourseDeletionStats", "Course")',
+                type: 'GET',
+                data: { courseId: courseId },
+                cache: false,
+                success: function (res) {
+                    $('#delModalStatsLoading').hide();
+                    if (res && res.success) {
+                        currentCourseDeletionStats = res;
+                        $('#statUsersCount').text(res.enrollmentCount);
+                        $('#statQuestionsCount').text(res.questionCount);
+                        $('#statAnswersCount').text(res.answerCount);
+                        $('#statExamsCount').text(res.examCount);
+                        $('#statExamResultsCount').text(res.examResultCount);
+                        $('#statCertificatesCount').text(res.certificateCount);
+                        $('#statContentsCount').text(res.contentCount);
+
+                        if (res.enrollmentCount > 0) {
+                            $('#delModalEnrollmentInfo').html('<i class="fas fa-users mr-1"></i> Bu derse kayıtlı <strong>' + res.enrollmentCount + ' öğrenci</strong> bulunmaktadır.');
+                        }
+                    } else {
+                        $('#statUsersCount').text(enrollmentCount || 0);
+                        $('#statQuestionsCount').text('0');
+                        $('#statAnswersCount').text('0');
+                    }
+                },
+                error: function () {
+                    $('#delModalStatsLoading').hide();
+                    $('#statUsersCount').text(enrollmentCount || 0);
+                    $('#statQuestionsCount').text('-');
+                    $('#statAnswersCount').text('-');
+                }
+            });
+
+            $('#deleteCourseModal').modal('show');
+        };
+
+        // Kalıcı silme form onayı (Detaylı veri özeti ile kullanıcıyı uyarır)
+        $(document).on('submit', '#forceDeleteCourseForm', function (e) {
+            var stats = currentCourseDeletionStats || {};
+            var title = stats.courseTitle || $('#delModalCourseTitle').text() || 'Ders';
+            var users = stats.enrollmentCount !== undefined ? stats.enrollmentCount : $('#statUsersCount').text();
+            var questions = stats.questionCount !== undefined ? stats.questionCount : $('#statQuestionsCount').text();
+            var answers = stats.answerCount !== undefined ? stats.answerCount : $('#statAnswersCount').text();
+
+            var confirmMsg = '⚠️ DİKKAT! KALICI SİLME İŞLEMİ (CASCADE DELETE)\n\n' +
+                '\"' + title + '\" dersine ait:\n' +
+                '• ' + users + ' Kayıtlı Kullanıcı / Öğrenci\n' +
+                '• ' + questions + ' Sınav Sorusu\n' +
+                '• ' + answers + ' Öğrenci Cevabı\n\n' +
+                've bağlı tüm sınavlar ile materyaller veri tabanından tamamen silinecektir!\n' +
+                'Bu işlem GERİ ALINAMAZ.\n\n' +
+                'Kalıcı olarak silmeyi onaylıyor musunuz?';
+
+            return confirm(confirmMsg);
+        });
+
+        // Eski fonksiyon uyumluluk için korundu
+        window.confirmDeleteWithEnrollments = function (form, enrollmentCount) {
+            return true;
         };
 
         // Kapak Görseli Önizleme Fonksiyonu
@@ -1256,6 +1485,53 @@
         };
 
         $(document).ready(function () {
+            // ==========================================
+            // KART ÜÇ NOKTA (DROPDOWN) MENÜ GÜVENCESİ
+            // ==========================================
+            $(document).on('click', '[id^="courseMenu_"]', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var $btn = $(this);
+                var $dropdown = $btn.closest('.dropdown');
+                var $menu = $dropdown.find('.dropdown-menu');
+                var isVisible = $menu.hasClass('show');
+
+                // Diğer tüm dropdownları ve z-indexleri sıfırla
+                $('.dropdown-menu.show').removeClass('show');
+                $('.dropdown.show').removeClass('show');
+                $('.dropdown.dropup').removeClass('dropup');
+                $('.course-card-wrapper').removeClass('dropdown-active').css('z-index', '');
+
+                if (!isVisible) {
+                    // Ekranın alt sınırına olan mesafeyi hesapla
+                    var btnOffset = $btn.offset();
+                    var btnHeight = $btn.outerHeight();
+                    var windowScrollTop = $(window).scrollTop();
+                    var windowHeight = $(window).height();
+                    var spaceBelow = windowHeight - (btnOffset.top - windowScrollTop + btnHeight);
+
+                    // Menü yüksekliği yaklaşık 240px; eğer altta 270px'den az yer varsa YUKARI AÇ (dropup)
+                    if (spaceBelow < 270) {
+                        $dropdown.addClass('dropup');
+                    } else {
+                        $dropdown.removeClass('dropup');
+                    }
+
+                    $btn.closest('.course-card-wrapper').addClass('dropdown-active').css('z-index', '1050');
+                    $dropdown.addClass('show');
+                    $menu.addClass('show');
+                }
+            });
+
+            $(document).on('click', function (e) {
+                if (!$(e.target).closest('.dropdown').length) {
+                    $('.dropdown-menu.show').removeClass('show');
+                    $('.dropdown.show').removeClass('show');
+                    $('.dropdown.dropup').removeClass('dropup');
+                    $('.course-card-wrapper').removeClass('dropdown-active').css('z-index', '');
+                }
+            });
+
             // ==========================================
             // SAYFALANDIRMA VE FİLTRELEME YÖNETİMİ
             // ==========================================

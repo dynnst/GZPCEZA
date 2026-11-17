@@ -6,7 +6,7 @@ namespace gzpegm.Cont
 {
     public class ContFormT
     {
-        public void UpdateForm(string GB, string GBC, string DE, string DEC, string RU, string RUC, string IR, string IRC, string IRK, string IRKC, string FRC, string FR)
+        public void UpdateForm(string GB, string GBC, string DE, string DEC, string RU, string RUC, string IR, string IRC, string IRK, string IRKC, string FRC, string FR, string Cin = null, string CinC = null, string Yunan = null, string YunanC = null)
         {
             try
             {
@@ -25,6 +25,10 @@ namespace gzpegm.Cont
                     edit.fldIRKC = IRKC;
                     edit.fldFransizcaC = FRC;
                     edit.fldFransizca = FR;
+                    if (Cin != null) edit.fldCin = Cin;
+                    if (CinC != null) edit.fldCinC = CinC;
+                    if (Yunan != null) edit.fldYunan = Yunan;
+                    if (YunanC != null) edit.fldYunanC = YunanC;
                     _db.SaveChanges();
                 }
             }

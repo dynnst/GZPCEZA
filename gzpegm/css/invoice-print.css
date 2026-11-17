@@ -1,12 +1,105 @@
-/*
+/* ==========================================================================
+   T.C. İÇİŞLERİ BAKANLIĞI EGM - VİZE İHLAL VE TEBLİĞ FORMLARI BASKI STİLLERİ
+   A4 Standart Baskı / Yazıcı Düzeni
+   ========================================================================== */
 
-// BASIC
-// -----------------------------------------------------------------------------
-@import "base/elements";
+@page {
+    size: A4 portrait;
+    margin: 7mm 10mm;
+}
 
-// PAGES
-// -----------------------------------------------------------------------------
-@import "../../modules/tables/css/tables";
-@import "../../modules/pages/css/invoice";
+@media print {
+    html, body, table, td, th, p, span, li, a {
+        font-family: "Times New Roman", Times, serif !important;
+    }
 
-*/
+    html, body {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff !important;
+        color: #000 !important;
+        font-size: 12px !important;
+        line-height: 1.25 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    .invoice {
+        width: 100% !important;
+        max-width: 800px !important;
+        margin: 0 auto !important;
+        padding: 0 !important;
+    }
+
+    .page-break {
+        display: block !important;
+        page-break-before: always !important;
+        break-before: page !important;
+        clear: both !important;
+        height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+    }
+
+    h3 {
+        margin-top: 0 !important;
+        margin-bottom: 4px !important;
+        font-size: 15px !important;
+        font-weight: bold !important;
+    }
+
+    p {
+        margin-top: 1.5px !important;
+        margin-bottom: 3px !important;
+        font-size: 12px !important;
+        line-height: 1.25 !important;
+    }
+
+    table {
+        border-collapse: collapse !important;
+        margin-bottom: 3px !important;
+    }
+
+    table td, table th {
+        padding: 2px 4px !important;
+        font-size: 12px !important;
+        line-height: 1.25 !important;
+        vertical-align: middle !important;
+    }
+
+    /* Tablolar arası gereksiz dikey boşlukları optimize et */
+    .invoice br {
+        line-height: 6px !important;
+    }
+}
+
+/* Ekran önizleme görünümü için */
+.page-break {
+    display: block;
+    page-break-before: always;
+    break-before: page;
+}
+@media print {
+
+    .page-break {
+        display: block !important;
+        page-break-before: always !important;
+        break-before: page !important;
+        height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+    }
+
+    table,
+    tr {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+
+    img {
+        max-width: 100% !important;
+    }
+}

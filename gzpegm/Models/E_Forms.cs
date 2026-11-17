@@ -27,5 +27,9 @@ namespace gzpegm.Models
         public string fldIRK { get; set; }
         public string fldFransizca { get; set; }
         public string fldFransizcaC { get; set; }
+        public string fldCin { get; set; }
+        public string fldCinC { get; set; }
+        public string fldYunan { get; set; }
+        public string fldYunanC { get; set; }
     }
 }

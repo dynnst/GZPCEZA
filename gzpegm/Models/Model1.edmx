@@ -239,6 +239,10 @@
           <Property Name="fldIRK" Type="nvarchar(max)" />
           <Property Name="fldFransizca" Type="nvarchar(max)" />
           <Property Name="fldFransizcaC" Type="nvarchar(max)" />
+          <Property Name="fldCin" Type="nvarchar(max)" />
+          <Property Name="fldCinC" Type="nvarchar(max)" />
+          <Property Name="fldYunan" Type="nvarchar(max)" />
+          <Property Name="fldYunanC" Type="nvarchar(max)" />
         </EntityType>
         <EntityType Name="E_History">
           <Key>
@@ -1347,6 +1351,10 @@ warning 6002: The table/view 'CEZA.dbo.E_UVR_Backup_Before_WorkPermit' does not 
           <Property Name="fldIRK" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
           <Property Name="fldFransizca" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
           <Property Name="fldFransizcaC" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldCin" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldCinC" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldYunan" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="fldYunanC" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
         </EntityType>
         <EntityType Name="E_History">
           <Key>
@@ -2232,6 +2240,10 @@ warning 6002: The table/view 'CEZA.dbo.E_UVR_Backup_Before_WorkPermit' does not 
           <EntitySetMapping Name="E_Forms">
             <EntityTypeMapping TypeName="CEZAModel.E_Forms">
               <MappingFragment StoreEntitySet="E_Forms">
+                <ScalarProperty Name="fldCin" ColumnName="fldCin" />
+                <ScalarProperty Name="fldCinC" ColumnName="fldCinC" />
+                <ScalarProperty Name="fldYunan" ColumnName="fldYunan" />
+                <ScalarProperty Name="fldYunanC" ColumnName="fldYunanC" />
                 <ScalarProperty Name="fldFransizcaC" ColumnName="fldFransizcaC" />
                 <ScalarProperty Name="fldFransizca" ColumnName="fldFransizca" />
                 <ScalarProperty Name="fldIRK" ColumnName="fldIRK" />

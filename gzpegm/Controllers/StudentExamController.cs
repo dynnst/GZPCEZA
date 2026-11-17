@@ -412,6 +412,82 @@ namespace gzpegm.Controllers
                 double percentage = maxScore > 0 ? ((double)totalScore / maxScore) * 100 : 0;
                 bool isPassed = percentage >= (exam?.PassingScore ?? 60);
 
+                // OTOMATİK SERTİFİKA ONAYI: Kursun tüm sınavları başarıyla tamamlandıysa anında sertifika oluştur
+                bool certificateCreated = false;
+                int certificateId = 0;
+                if (isPassed && exam != null)
+                {
+                    try
+                    {
+                        var courseExams = db.Exam.Where(e => e.CourseId == exam.CourseId && e.IsActive == true).ToList();
+                        var courseExamIds = courseExams.Select(e => e.ExamId).ToList();
+
+                        var passedExamIds = db.ExamResult
+                            .Where(er => courseExamIds.Contains(er.ExamId) && er.UserId == user.fldId && er.Status == 1)
+                            .Select(er => er.ExamId)
+                            .Distinct()
+                            .ToList();
+
+                        bool allDone = courseExams.All(e => passedExamIds.Contains(e.ExamId));
+                        if (allDone)
+                        {
+                            var existingCert = db.Certificate.FirstOrDefault(c => c.UserId == user.fldId && c.CourseId == exam.CourseId && c.IsActive);
+                            if (existingCert == null)
+                            {
+                                var certReq = db.CertificateRequest.FirstOrDefault(r => r.UserId == user.fldId && r.CourseId == exam.CourseId);
+                                if (certReq == null)
+                                {
+                                    certReq = new CertificateRequest
+                                    {
+                                        UserId = user.fldId,
+                                        CourseId = exam.CourseId,
+                                        RequestDate = DateTime.Now,
+                                        Status = 1,
+                                        AdminNote = "Sınav Başarısı ile Otomatik Oluşturuldu (Yerel Eğitim)",
+                                        ProcessedDate = DateTime.Now,
+                                        ProcessedBy = user.fldId
+                                    };
+                                    db.CertificateRequest.Add(certReq);
+                                    db.SaveChanges();
+                                }
+                                else
+                                {
+                                    certReq.Status = 1;
+                                    certReq.AdminNote = "Sınav Başarısı ile Otomatik Oluşturuldu (Yerel Eğitim)";
+                                    certReq.ProcessedDate = DateTime.Now;
+                                    db.SaveChanges();
+                                }
+
+                                var newCert = new Certificate
+                                {
+                                    UserId = user.fldId,
+                                    CourseId = exam.CourseId,
+                                    ExamResultId = examResultId,
+                                    CertificateNumber = "CERT-" + DateTime.Now.ToString("yyyyMMdd") + "-" + certReq.RequestId.ToString("D5"),
+                                    IssuedDate = DateTime.Now,
+                                    Score = (int)percentage,
+                                    IsActive = true,
+                                    CreatedAt = DateTime.Now
+                                };
+                                db.Certificate.Add(newCert);
+                                db.SaveChanges();
+
+                                certificateCreated = true;
+                                certificateId = newCert.CertificateId;
+                            }
+                            else
+                            {
+                                certificateCreated = true;
+                                certificateId = existingCert.CertificateId;
+                            }
+                        }
+                    }
+                    catch (Exception exCert)
+                    {
+                        System.Diagnostics.Trace.TraceError($"AutoCert Generation Error: {exCert.Message}");
+                    }
+                }
+
                 if (!string.IsNullOrEmpty(user.fldEmail))
                 {
                     try
@@ -435,7 +511,9 @@ namespace gzpegm.Controllers
                     score = totalScore,
                     maxScore = maxScore,
                     percentage = (int)percentage,
-                    isPassed = isPassed
+                    isPassed = isPassed,
+                    certificateCreated = certificateCreated,
+                    certificateId = certificateId
                 });
             }
             catch (Exception ex)
@@ -618,6 +696,10 @@ namespace gzpegm.Controllers
                     Duration = duration,
                     Answers = answers
                 };
+
+                // Eğer bu eğitime ait sertifika mevcutsa view'a gönder
+                var cert = db.Certificate.FirstOrDefault(c => c.CourseId == exam.CourseId && c.UserId == examResult.UserId && c.IsActive);
+                ViewBag.CourseCertificate = cert;
 
                 return View(viewModel);
             }

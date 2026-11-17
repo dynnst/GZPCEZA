@@ -484,6 +484,38 @@ namespace gzpegm.Controllers
             return View(examDetails);
         }
 
+        // ---------------- ÖĞRENCİ SINAV YÖNLENDİRME KÖPRÜLERİ (BACKWARD COMPATIBILITY / ALIASES) ----------------
+        // /Exam/Take/{id} veya /Exam/StartExam/{id} çağrıldığında 404 hatası almamak için öğrenci sınav motoruna yönlendirir
+        [AllowAnonymous]
+        public ActionResult Take(int? id)
+        {
+            if (!id.HasValue || id.Value <= 0)
+            {
+                return RedirectToAction("AvailableExams", "StudentExam");
+            }
+            return RedirectToAction("StartExam", "StudentExam", new { id = id.Value });
+        }
+
+        [AllowAnonymous]
+        public ActionResult StartExam(int? id)
+        {
+            if (!id.HasValue || id.Value <= 0)
+            {
+                return RedirectToAction("AvailableExams", "StudentExam");
+            }
+            return RedirectToAction("StartExam", "StudentExam", new { id = id.Value });
+        }
+
+        [AllowAnonymous]
+        public ActionResult ExamResult(int? id)
+        {
+            if (!id.HasValue || id.Value <= 0)
+            {
+                return RedirectToAction("MyExamResults", "StudentExam");
+            }
+            return RedirectToAction("ExamResult", "StudentExam", new { id = id.Value });
+        }
+
         protected override void Dispose(bool disposing)
         {
             if (disposing) db?.Dispose();

@@ -201,16 +201,43 @@ namespace gzpegm.Controllers
 
             var certificate = db.Certificate
                 .Include(c => c.Courses)
-                .FirstOrDefault(c => c.CertificateId == certificateId && c.UserId == user.fldId && c.IsActive);
+                .Include(c => c.E_User)
+                .FirstOrDefault(c => c.CertificateId == certificateId && c.IsActive);
 
-            if (certificate == null)
+            if (certificate == null || (certificate.UserId != user.fldId && user.Role != "Admin"))
             {
                 TempData["msgError"] = "Sertifika bulunamadı veya erişim yetkiniz yok.";
                 return RedirectToAction("MyCertificates");
             }
 
+            var certOwner = certificate.E_User ?? db.E_User.Find(certificate.UserId) ?? user;
+            ViewBag.CertOwner = certOwner;
             ViewBag.CurrentUser = user;
             return View(certificate);
+        }
+
+        // Genel / İntranet Doğrulama Ekranı (Karekod veya Sertifika No ile Sorgulama)
+        [AllowAnonymous]
+        public ActionResult Verify(string code)
+        {
+            if (string.IsNullOrWhiteSpace(code))
+            {
+                ViewBag.Searched = false;
+                return View();
+            }
+
+            code = code.Trim();
+            var cert = db.Certificate
+                .Include(c => c.Courses)
+                .Include(c => c.E_User)
+                .FirstOrDefault(c => c.CertificateNumber == code && c.IsActive);
+
+            ViewBag.Searched = true;
+            ViewBag.Found = (cert != null);
+            ViewBag.Cert = cert;
+            ViewBag.Code = code;
+
+            return View();
         }
 
         // Sertifikayı indir (PDF)

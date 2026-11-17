@@ -759,7 +759,7 @@ namespace gzpegm.Controllers
         // ---------------- DELETE ----------------
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Delete(int id)
+        public ActionResult Delete(int id, string deleteType = "archive")
         {
             try
             {
@@ -787,118 +787,167 @@ namespace gzpegm.Controllers
                     return RedirectToAction("Index");
                 }
 
-                // Kontrol et: Kursa kayıtlı öğrenci var mı?
-                bool hasEnrollments = db.CourseEnrollments.Any(e => e.CourseId == id);
-                var courseExamIds = db.Exam
-                    .Where(e => e.CourseId == id)
-                    .Select(e => e.ExamId)
-                    .ToList();
-
-                var courseQuestionIds = courseExamIds.Any()
-                    ? db.Question
-                        .Where(q => courseExamIds.Contains(q.ExamId))
-                        .Select(q => q.QuestionId)
-                        .ToList()
-                    : new List<int>();
-
-                bool hasExamResults = courseExamIds.Any() && db.ExamResult.Any(r => courseExamIds.Contains(r.ExamId));
-                bool hasExamAnswers = courseQuestionIds.Any() && db.Answer.Any(a => courseQuestionIds.Contains(a.QuestionId));
-                bool hasExams = hasExamResults || hasExamAnswers;
-                bool hasReviews = db.CourseReviews.Any(r => r.CourseId == id);
-                bool hasCertificateRequests = db.CertificateRequest.Any(r => r.CourseId == id);
-                bool hasCertificates =
-                    (from certificate in db.Certificate
-                     join examResult in db.ExamResult on certificate.ExamResultId equals examResult.ExamResultId
-                     join exam in db.Exam on examResult.ExamId equals exam.ExamId
-                     where exam.CourseId == id
-                     select certificate.CertificateId).Any();
-
-                var blockers = new List<string>();
-                if (hasEnrollments) blockers.Add("öğrenci kayıtları");
-                if (hasExams) blockers.Add("sınavlar");
-                if (hasReviews) blockers.Add("yorumlar");
-                if (hasCertificateRequests) blockers.Add("sertifika talepleri");
-                if (hasCertificates) blockers.Add("oluşturulmuş sertifikalar");
-
-                if (blockers.Any())
+                // 1. ARŞİVE KALDIRMA (Soft Delete - Güvenli ve Önerilen Yöntem)
+                if (string.Equals(deleteType, "archive", StringComparison.OrdinalIgnoreCase))
                 {
-                    TempData["msgError"] = "Bu kurs silinemedi çünkü bağlı kayıtlar var: " + string.Join(", ", blockers) + ". Önce bu kayıtları temizlemelisiniz.";
+                    course.IsDeleted = true;
+                    course.IsActive = false;
+                    db.SaveChanges();
+
+                    CacheService.Remove("AllActiveCourses");
+                    CacheService.Remove("Landing_ActiveCoursePreview_v1");
+
+                    TempData["msgSuccess"] = "Ders başarıyla arşive kaldırıldı ve yayından çekildi. (Geçmiş öğrenci kayıtları ve sınav verileri korundu)";
                     return RedirectToAction("Index");
                 }
 
-                string uploadPath = GetUploadPath();
-
-                if (!string.IsNullOrEmpty(course.CoverImage))
+                // 2. KALICI VE İLİŞKİLİ TÜM VERİLERİ TEMİZLEYEREK SİLME (Force Cascade Delete)
+                using (var transaction = db.Database.BeginTransaction())
                 {
-                    string coverPath = Path.Combine(uploadPath, course.CoverImage);
-                    if (System.IO.File.Exists(coverPath))
-                        System.IO.File.Delete(coverPath);
-                }
-
-                if (!string.IsNullOrEmpty(course.ResourceFile))
-                {
-                    string resourcePath = Path.Combine(uploadPath, course.ResourceFile);
-                    if (System.IO.File.Exists(resourcePath))
-                        System.IO.File.Delete(resourcePath);
-                }
-
-                // Kursa ait içerikleri de sil
-                var contents = db.CourseContents.Where(c => c.CourseId == id).ToList();
-                foreach (var content in contents)
-                {
-                    if (!string.IsNullOrEmpty(content.FilePath))
+                    try
                     {
-                        string contentPath = Path.Combine(uploadPath, content.FilePath);
-                        if (System.IO.File.Exists(contentPath))
-                            System.IO.File.Delete(contentPath);
-                    }
-                    db.CourseContents.Remove(content);
-                }
-
-                if (courseQuestionIds.Any())
-                {
-                    var mediaFiles = db.QuestionMedia.Where(m => courseQuestionIds.Contains(m.QuestionId)).ToList();
-                    foreach (var media in mediaFiles)
-                    {
-                        if (!string.IsNullOrWhiteSpace(media.MediaPath))
+                        // A. Sertifikaları temizle
+                        var certificates = db.Certificate.Where(c => c.CourseId == id).ToList();
+                        if (certificates.Any())
                         {
-                            var mediaPath = media.MediaPath.StartsWith("~/", StringComparison.Ordinal)
-                                ? FileStorageHelper.MapPath(Server, media.MediaPath)
-                                : FileStorageHelper.MapUrlToPhysicalPath(Server, media.MediaPath);
-
-                            if (!string.IsNullOrWhiteSpace(mediaPath) && System.IO.File.Exists(mediaPath))
-                                System.IO.File.Delete(mediaPath);
+                            db.Certificate.RemoveRange(certificates);
                         }
+
+                        // B. Sertifika taleplerini temizle
+                        var certRequests = db.CertificateRequest.Where(r => r.CourseId == id).ToList();
+                        if (certRequests.Any())
+                        {
+                            db.CertificateRequest.RemoveRange(certRequests);
+                        }
+
+                        // C. Sınavlar ve bağlı soru/cevap/sonuçları bul
+                        var courseExams = db.Exam.Where(e => e.CourseId == id).ToList();
+                        var courseExamIds = courseExams.Select(e => e.ExamId).ToList();
+
+                        if (courseExamIds.Any())
+                        {
+                            var examResults = db.ExamResult.Where(er => courseExamIds.Contains(er.ExamId)).ToList();
+                            var examResultIds = examResults.Select(er => er.ExamResultId).ToList();
+
+                            // Cevapları sil
+                            if (examResultIds.Any())
+                            {
+                                var answers = db.Answer.Where(a => examResultIds.Contains(a.ExamResultId)).ToList();
+                                if (answers.Any())
+                                {
+                                    db.Answer.RemoveRange(answers);
+                                }
+                            }
+
+                            // Sınav sonuçlarını sil
+                            if (examResults.Any())
+                            {
+                                db.ExamResult.RemoveRange(examResults);
+                            }
+
+                            // Soruları bul
+                            var questions = db.Question.Where(q => courseExamIds.Contains(q.ExamId)).ToList();
+                            var questionIds = questions.Select(q => q.QuestionId).ToList();
+
+                            if (questionIds.Any())
+                            {
+                                // Soru medyalarını sil (fiziksel ve DB)
+                                var mediaFiles = db.QuestionMedia.Where(m => questionIds.Contains(m.QuestionId)).ToList();
+                                foreach (var media in mediaFiles)
+                                {
+                                    if (!string.IsNullOrWhiteSpace(media.MediaPath))
+                                    {
+                                        var mediaPath = media.MediaPath.StartsWith("~/", StringComparison.Ordinal)
+                                            ? FileStorageHelper.MapPath(Server, media.MediaPath)
+                                            : FileStorageHelper.MapUrlToPhysicalPath(Server, media.MediaPath);
+
+                                        if (!string.IsNullOrWhiteSpace(mediaPath) && System.IO.File.Exists(mediaPath))
+                                        {
+                                            try { System.IO.File.Delete(mediaPath); } catch { }
+                                        }
+                                    }
+                                }
+                                db.QuestionMedia.RemoveRange(mediaFiles);
+
+                                // Şıkları sil
+                                var options = db.QuestionOption.Where(o => questionIds.Contains(o.QuestionId)).ToList();
+                                db.QuestionOption.RemoveRange(options);
+
+                                // Soruları sil
+                                db.Question.RemoveRange(questions);
+                            }
+
+                            // Sınavları sil
+                            db.Exam.RemoveRange(courseExams);
+                        }
+
+                        // D. Kurs yorumlarını sil
+                        var reviews = db.CourseReviews.Where(r => r.CourseId == id).ToList();
+                        if (reviews.Any())
+                        {
+                            db.CourseReviews.RemoveRange(reviews);
+                        }
+
+                        // E. Öğrenci kayıtlarını sil
+                        var enrollments = db.CourseEnrollments.Where(e => e.CourseId == id).ToList();
+                        if (enrollments.Any())
+                        {
+                            db.CourseEnrollments.RemoveRange(enrollments);
+                        }
+
+                        // F. İçerikleri ve dosyaları sil
+                        string uploadPath = GetUploadPath();
+                        var contents = db.CourseContents.Where(c => c.CourseId == id).ToList();
+                        foreach (var content in contents)
+                        {
+                            if (!string.IsNullOrEmpty(content.FilePath))
+                            {
+                                string contentPath = Path.Combine(uploadPath, content.FilePath);
+                                if (System.IO.File.Exists(contentPath))
+                                {
+                                    try { System.IO.File.Delete(contentPath); } catch { }
+                                }
+                            }
+                            db.CourseContents.Remove(content);
+                        }
+
+                        // G. Kurs kapak görseli ve kaynak dosyasını sil
+                        if (!string.IsNullOrEmpty(course.CoverImage))
+                        {
+                            string coverPath = Path.Combine(uploadPath, course.CoverImage);
+                            if (System.IO.File.Exists(coverPath))
+                            {
+                                try { System.IO.File.Delete(coverPath); } catch { }
+                            }
+                        }
+
+                        if (!string.IsNullOrEmpty(course.ResourceFile))
+                        {
+                            string resourcePath = Path.Combine(uploadPath, course.ResourceFile);
+                            if (System.IO.File.Exists(resourcePath))
+                            {
+                                try { System.IO.File.Delete(resourcePath); } catch { }
+                            }
+                        }
+
+                        // H. Kurs kaydını sil
+                        db.Courses.Remove(course);
+                        db.SaveChanges();
+
+                        transaction.Commit();
+
+                        CacheService.Remove("AllActiveCourses");
+                        CacheService.Remove("Landing_ActiveCoursePreview_v1");
+
+                        TempData["msgSuccess"] = "Ders ve bağlı tüm öğrenci kayıtları, sınavlar, sorular ve içerikler kalıcı olarak başarıyla silindi.";
                     }
-
-                    db.QuestionMedia.RemoveRange(mediaFiles);
-
-                    var options = db.QuestionOption.Where(o => courseQuestionIds.Contains(o.QuestionId)).ToList();
-                    db.QuestionOption.RemoveRange(options);
-
-                    var questions = db.Question.Where(q => courseQuestionIds.Contains(q.QuestionId)).ToList();
-                    db.Question.RemoveRange(questions);
+                    catch (Exception exTrans)
+                    {
+                        transaction.Rollback();
+                        System.Diagnostics.Trace.TraceError($"Cascade Delete Error: {exTrans.Message}");
+                        TempData["msgError"] = "Kalıcı silme sırasında veri tabanı hatası oluştu: " + exTrans.Message;
+                    }
                 }
-
-                if (courseExamIds.Any())
-                {
-                    var exams = db.Exam.Where(e => courseExamIds.Contains(e.ExamId)).ToList();
-                    db.Exam.RemoveRange(exams);
-                }
-
-                db.Courses.Remove(course);
-                db.SaveChanges();
-
-                // Cache'i temizle
-                CacheService.Remove("AllActiveCourses");
-                CacheService.Remove("Landing_ActiveCoursePreview_v1");
-
-                TempData["msgSuccess"] = "Ders başarıyla silindi.";
-            }
-            catch (DbUpdateException dbEx)
-            {
-                System.Diagnostics.Trace.TraceError($"Delete DbUpdateException: {dbEx.Message}");
-                TempData["msgError"] = "Ders silinirken veri tabanı hatası oluştu. Lütfen öğrenci kayıtlarını kontrol edin.";
             }
             catch (Exception ex)
             {
@@ -906,6 +955,69 @@ namespace gzpegm.Controllers
                 TempData["msgError"] = "Ders silinirken bir hata oluştu. Lütfen tekrar deneyiniz.";
             }
             return RedirectToAction("Index");
+        }
+
+        // Seçilen dersin kalıcı silinmesi durumunda etkilenecek ilişkili kayıt sayıları (Kullanıcı, Soru, Cevap vb.)
+        [HttpGet]
+        public JsonResult GetCourseDeletionStats(int courseId)
+        {
+            try
+            {
+                var user = GetCurrentUser();
+                if (user == null || !HasAccessToPage(user))
+                {
+                    return Json(new { success = false, message = "Yetkiniz bulunmamaktadır." }, JsonRequestBehavior.AllowGet);
+                }
+
+                var course = db.Courses.Find(courseId);
+                if (course == null)
+                {
+                    return Json(new { success = false, message = "Ders bulunamadı." }, JsonRequestBehavior.AllowGet);
+                }
+
+                int enrollmentCount = db.CourseEnrollments.Count(e => e.CourseId == courseId);
+                int certificateCount = db.Certificate.Count(c => c.CourseId == courseId);
+                int certRequestCount = db.CertificateRequest.Count(r => r.CourseId == courseId);
+                int contentCount = db.CourseContents.Count(c => c.CourseId == courseId);
+                int reviewCount = db.CourseReviews.Count(r => r.CourseId == courseId);
+
+                var examIds = db.Exam.Where(e => e.CourseId == courseId).Select(e => e.ExamId).ToList();
+                int examCount = examIds.Count;
+                int questionCount = 0;
+                int examResultCount = 0;
+                int answerCount = 0;
+
+                if (examIds.Any())
+                {
+                    questionCount = db.Question.Count(q => examIds.Contains(q.ExamId));
+                    var examResultIds = db.ExamResult.Where(er => examIds.Contains(er.ExamId)).Select(er => er.ExamResultId).ToList();
+                    examResultCount = examResultIds.Count;
+                    if (examResultIds.Any())
+                    {
+                        answerCount = db.Answer.Count(a => examResultIds.Contains(a.ExamResultId));
+                    }
+                }
+
+                return Json(new
+                {
+                    success = true,
+                    courseId = courseId,
+                    courseTitle = course.CourseTitle,
+                    enrollmentCount = enrollmentCount,
+                    questionCount = questionCount,
+                    answerCount = answerCount,
+                    examCount = examCount,
+                    examResultCount = examResultCount,
+                    certificateCount = certificateCount + certRequestCount,
+                    contentCount = contentCount,
+                    reviewCount = reviewCount
+                }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.TraceError($"GetCourseDeletionStats Error: {ex.Message}");
+                return Json(new { success = false, message = ex.Message }, JsonRequestBehavior.AllowGet);
+            }
         }
 
         // Tüm öğretmenleri ve adminleri listele
@@ -1483,17 +1595,65 @@ ORDER BY r.CreatedDate DESC", id)
             ViewBag.AllExamsCompleted = allExamsDone;
 
             byte certStatus = 255; // Talep yok
+            int certId = 0;
             if (allExamsDone && userId.HasValue)
             {
-                var certReq = db.CertificateRequest
-                    .Where(r => r.UserId == userId.Value && r.CourseId == courseId)
-                    .OrderByDescending(r => r.RequestDate)
-                    .FirstOrDefault();
+                var existingCert = db.Certificate.FirstOrDefault(c => c.UserId == userId.Value && c.CourseId == courseId && c.IsActive);
+                if (existingCert != null)
+                {
+                    certStatus = 1;
+                    certId = existingCert.CertificateId;
+                }
+                else
+                {
+                    // Otomatik Onay Mekanizması: Sınavlar başarıyla geçildiyse sertifikayı ve talep kaydını anında oluştur
+                    var certReq = db.CertificateRequest
+                        .Where(r => r.UserId == userId.Value && r.CourseId == courseId)
+                        .OrderByDescending(r => r.RequestDate)
+                        .FirstOrDefault();
 
-                if (certReq != null)
-                    certStatus = certReq.Status;
+                    if (certReq == null)
+                    {
+                        certReq = new CertificateRequest
+                        {
+                            UserId = userId.Value,
+                            CourseId = courseId,
+                            RequestDate = DateTime.Now,
+                            Status = 1,
+                            AdminNote = "Sistem Tarafından Otomatik Onaylandı (Yerel Eğitim Başarısı)",
+                            ProcessedDate = DateTime.Now,
+                            ProcessedBy = userId.Value
+                        };
+                        db.CertificateRequest.Add(certReq);
+                        db.SaveChanges();
+                    }
+                    else if (certReq.Status != 1)
+                    {
+                        certReq.Status = 1;
+                        certReq.AdminNote = "Sistem Tarafından Otomatik Onaylandı (Yerel Eğitim Başarısı)";
+                        certReq.ProcessedDate = DateTime.Now;
+                        db.SaveChanges();
+                    }
+
+                    var newCert = new Certificate
+                    {
+                        UserId = userId.Value,
+                        CourseId = courseId,
+                        CertificateNumber = "CERT-" + DateTime.Now.ToString("yyyyMMdd") + "-" + certReq.RequestId.ToString("D5"),
+                        IssuedDate = DateTime.Now,
+                        Score = 0,
+                        IsActive = true,
+                        CreatedAt = DateTime.Now
+                    };
+                    db.Certificate.Add(newCert);
+                    db.SaveChanges();
+
+                    certStatus = 1;
+                    certId = newCert.CertificateId;
+                }
             }
             ViewBag.CertificateStatus = certStatus;
+            ViewBag.CertificateId = certId;
 
             return View(model);
         }
@@ -2997,30 +3157,56 @@ ORDER BY r.CreatedDate DESC", new object[] { (object)courseId ?? DBNull.Value, u
                 return RedirectToAction("Details", new { id = courseId });
             }
 
-            bool existingRequest = db.CertificateRequest.Any(r =>
-                r.UserId == user.fldId &&
-                r.CourseId == courseId &&
-                (r.Status == 0 || r.Status == 1));
-
-            if (existingRequest)
+            // 1. Zaten verilmiş aktif sertifika var mı kontrol et
+            var existingCert = db.Certificate.FirstOrDefault(c => c.UserId == user.fldId && c.CourseId == courseId && c.IsActive);
+            if (existingCert != null)
             {
-                TempData["msgInfo"] = "Bu kurs için zaten bir sertifika talebiniz bulunmaktadır.";
-                return RedirectToAction("Details", new { id = courseId });
+                TempData["msgInfo"] = "Bu eğitime ait başarı belgeniz zaten mevcuttur.";
+                return RedirectToAction("ViewCertificate", "Certificate", new { certificateId = existingCert.CertificateId });
             }
 
-            var request = new CertificateRequest
+            // 2. Otomatik Onay: Talep kaydını oluştur ve hemen 'Onaylandı (Status = 1)' yap
+            var request = db.CertificateRequest.FirstOrDefault(r => r.UserId == user.fldId && r.CourseId == courseId);
+            if (request == null)
+            {
+                request = new CertificateRequest
+                {
+                    UserId = user.fldId,
+                    CourseId = courseId,
+                    RequestDate = DateTime.Now,
+                    Status = 1,
+                    AdminNote = "Sistem Tarafından Otomatik Onaylandı (Yerel Eğitim Başarısı)",
+                    ProcessedDate = DateTime.Now,
+                    ProcessedBy = user.fldId
+                };
+                db.CertificateRequest.Add(request);
+                db.SaveChanges();
+            }
+            else
+            {
+                request.Status = 1;
+                request.AdminNote = "Sistem Tarafından Otomatik Onaylandı (Yerel Eğitim Başarısı)";
+                request.ProcessedDate = DateTime.Now;
+                request.ProcessedBy = user.fldId;
+                db.SaveChanges();
+            }
+
+            // 3. Sertifikayı anında üret
+            var certificate = new Certificate
             {
                 UserId = user.fldId,
                 CourseId = courseId,
-                RequestDate = DateTime.Now,
-                Status = 0
+                CertificateNumber = "CERT-" + DateTime.Now.ToString("yyyyMMdd") + "-" + request.RequestId.ToString("D5"),
+                IssuedDate = DateTime.Now,
+                Score = 0,
+                IsActive = true,
+                CreatedAt = DateTime.Now
             };
-
-            db.CertificateRequest.Add(request);
+            db.Certificate.Add(certificate);
             db.SaveChanges();
 
-            TempData["msgSuccess"] = "Sertifika talebiniz alındı. Admin onayından sonra sertifikanız hazırlanacaktır.";
-            return RedirectToAction("Details", new { id = courseId });
+            TempData["msgSuccess"] = "Tebrikler! Sınavları başarıyla tamamladığınız için belgeniz sistem tarafından anında oluşturuldu.";
+            return RedirectToAction("ViewCertificate", "Certificate", new { certificateId = certificate.CertificateId });
         }
         // ---------------- DRAW ENTRY ----------------
         [HttpPost]

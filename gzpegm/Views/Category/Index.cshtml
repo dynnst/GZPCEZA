@@ -1,117 +1,528 @@
 ﻿@model IEnumerable<gzpegm.Models.Categories>
-
+@using System
+@using gzpegm.Models
 @{
     ViewBag.Title = "Kategori Yönetimi";
     Layout = "~/Views/Shared/_Master.cshtml";
+
+    var categoryList = Model != null ? Model.ToList() : new List<Categories>();
+    int totalCount = categoryList.Count;
+    int activeCount = categoryList.Count(c => c.IsActive);
+    int passiveCount = categoryList.Count(c => !c.IsActive);
 }
 
-<div class="page-wrapper">
-    <div class="container-fluid p-0">
-        <!-- BAŞLIK BÖLÜMÜ -->
-        <div class="page-heading mb-4">
-            <div class="d-flex justify-content-between align-items-center flex-wrap">
+@section Styles {
+    <style>
+        .category-portal-wrapper {
+            padding: 10px 0 35px;
+        }
+
+        /* HEADER BANNER */
+        .category-header {
+            background: linear-gradient(135deg, #071426 0%, #15325b 70%, #4338ca 100%);
+            border-radius: 16px;
+            padding: 24px 28px;
+            color: #fff;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 24px rgba(7, 20, 38, 0.12);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .category-header::after {
+            content: '\f07b';
+            font-family: FontAwesome;
+            position: absolute;
+            right: 25px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 130px;
+            color: rgba(255, 255, 255, 0.04);
+            pointer-events: none;
+        }
+
+        .category-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(99, 102, 241, 0.2);
+            border: 1px solid rgba(99, 102, 241, 0.4);
+            color: #a5b4fc;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding: 3px 12px;
+            border-radius: 20px;
+            margin-bottom: 8px;
+        }
+
+        .category-header h2 {
+            font-size: 1.6rem;
+            font-weight: 800;
+            margin: 0 0 4px;
+            color: #fff;
+        }
+
+        .category-header p {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.85);
+            margin: 0;
+            max-width: 650px;
+        }
+
+        .btn-header-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 12.5px;
+            font-weight: 700;
+            text-decoration: none !important;
+            transition: all 0.2s ease;
+        }
+
+        .btn-header-back {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff !important;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(4px);
+        }
+
+        .btn-header-back:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+        }
+
+        .btn-header-primary {
+            background: #f59e0b;
+            color: #fff !important;
+            border: 1px solid #d97706;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        }
+
+        .btn-header-primary:hover {
+            background: #d97706;
+            transform: translateY(-2px);
+        }
+
+        /* KPI STATS */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .kpi-stat-card {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 18px 22px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: transform 0.2s ease;
+        }
+
+        .kpi-stat-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .kpi-icon-box {
+            width: 46px;
+            height: 46px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .kpi-indigo { background: #eef2ff; color: #4f46e5; }
+        .kpi-emerald { background: #ecfdf5; color: #059669; }
+        .kpi-amber { background: #fffbeb; color: #d97706; }
+
+        /* PORTAL CARD */
+        .category-card {
+            background: #fff;
+            border-radius: 14px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+
+        .category-card-header {
+            padding: 16px 22px;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .category-card-title {
+            font-size: 14.5px;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* TABLE */
+        .modern-table {
+            width: 100%;
+            margin-bottom: 0;
+        }
+
+        .modern-table th {
+            font-size: 11.5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #64748b;
+            font-weight: 700;
+            border-bottom: 2px solid #e2e8f0;
+            padding: 14px 18px;
+            background: #f8fafc;
+            white-space: nowrap;
+        }
+
+        .modern-table td {
+            padding: 14px 18px;
+            vertical-align: middle;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 13px;
+        }
+
+        .modern-table tbody tr:hover {
+            background-color: #fafbfd;
+        }
+
+        .badge-status-active {
+            background: #ecfdf5;
+            color: #059669;
+            border: 1px solid #a7f3d0;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11.5px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .badge-status-passive {
+            background: #f1f5f9;
+            color: #64748b;
+            border: 1px solid #cbd5e1;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11.5px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .course-count-pill {
+            background: #eff6ff;
+            color: #2563eb;
+            border: 1px solid #bfdbfe;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            text-decoration: none !important;
+            transition: all 0.2s ease;
+        }
+
+        .course-count-pill:hover {
+            background: #dbeafe;
+            color: #1d4ed8;
+            transform: translateY(-1px);
+        }
+
+        .btn-action-sm {
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s;
+        }
+
+        .empty-portal-box {
+            text-align: center;
+            padding: 50px 20px;
+            color: #64748b;
+        }
+
+        .empty-portal-box i {
+            font-size: 48px;
+            color: #cbd5e1;
+            margin-bottom: 14px;
+        }
+    </style>
+}
+
+<div class="category-portal-wrapper">
+
+    <!-- HEADER BANNER -->
+    <div class="category-header">
+        <div>
+            <span class="category-kicker">
+                <i class="fas fa-folder-open"></i> Eğitim & Kurs Sınıflandırma
+            </span>
+            <h2>Kategori Yönetimi</h2>
+            <p>Eğitimleri konularına ve birimlerine göre sınıflandırabilir, yeni kategori tanımlayabilir veya durumlarını yönetebilirsiniz.</p>
+        </div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <button type="button" class="btn-header-action btn-header-primary" data-toggle="modal" data-target="#addCategoryModal">
+                <i class="fas fa-plus-circle"></i> Yeni Kategori Ekle
+            </button>
+            <a href="@Url.Action("Index", "Course")" class="btn-header-action btn-header-back">
+                <i class="fas fa-graduation-cap"></i> Dersler Listesi
+            </a>
+            <a href="@Url.Action("Index", "Dashboard")" class="btn-header-action btn-header-back">
+                <i class="fas fa-arrow-left"></i> Panel
+            </a>
+        </div>
+    </div>
+
+    <!-- BİLDİRİM MESAJLARI -->
+    @if (TempData["msgSuccess"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm mb-4" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-check-circle fa-lg mr-2 text-success"></i>
                 <div>
-                    <h2 class="page-title">
-                        <span class="me-2">📁</span> Kategori Yönetimi
-                    </h2>
-                    <p class="page-subtitle">Kategorileri ekleyin, düzenleyin, pasifleştirin veya tamamen silin</p>
+                    <strong>İşlem Başarılı!</strong> @TempData["msgSuccess"]
                 </div>
-                <button class="btn btn-primary btn-lg" onclick="openAddModal()">
-                    <span class="me-2">➕</span> Yeni Kategori Ekle
-                </button>
+            </div>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Kapat">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+    @if (TempData["msgError"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-4" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-exclamation-triangle fa-lg mr-2 text-danger"></i>
+                <div>
+                    <strong>Hata!</strong> @TempData["msgError"]
+                </div>
+            </div>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Kapat">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
+    <!-- 3 KPI STAT CARDS -->
+    <div class="kpi-grid">
+        <div class="kpi-stat-card">
+            <div>
+                <div class="text-muted small text-uppercase font-weight-bold mb-1">Toplam Kategori</div>
+                <div class="h3 font-weight-bold mb-0 text-dark">@totalCount</div>
+                <small class="text-muted">Tanımlı tüm kategoriler</small>
+            </div>
+            <div class="kpi-icon-box kpi-indigo">
+                <i class="fas fa-folder"></i>
             </div>
         </div>
 
-        <!-- MESAJLAR -->
-        @if (TempData["msgSuccess"] != null)
-        {
-            <div class="alert alert-success">
-                <strong>✅ Başarılı!</strong> @TempData["msgSuccess"]
+        <div class="kpi-stat-card">
+            <div>
+                <div class="text-muted small text-uppercase font-weight-bold mb-1">Aktif Kategoriler</div>
+                <div class="h3 font-weight-bold mb-0 text-success">@activeCount</div>
+                <small class="text-muted">Ders eklemeye açık</small>
             </div>
-        }
-        @if (TempData["msgError"] != null)
-        {
-            <div class="alert alert-danger">
-                <strong>❌ Hata!</strong> @TempData["msgError"]
-            </div>
-        }
-
-        <!-- ARAMA & TOPLAM KARTI -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h4 class="card-title mb-0">🔍 Kategori Ara</h4>
-                        <p class="card-subtitle mt-1">Kategori adına göre filtrele</p>
-                    </div>
-                    <div class="table-info">
-                        <span class="badge bg-primary">Toplam: @Model.Count()</span>
-                    </div>
-                </div>
-            </div>
-            <div class="card-body">
-                <input type="text" id="searchBox" class="form-control" placeholder="Kategori adı girin...">
+            <div class="kpi-icon-box kpi-emerald">
+                <i class="fas fa-check-circle"></i>
             </div>
         </div>
 
-        <!-- KATEGORİ TABLOSU -->
-        <div class="card">
-            <div class="card-header">
-                <h4 class="card-title mb-0">📋 Kategori Listesi</h4>
-                <p class="card-subtitle mt-1">Tüm kategoriler ve işlemler</p>
+        <div class="kpi-stat-card">
+            <div>
+                <div class="text-muted small text-uppercase font-weight-bold mb-1">Pasif Kategoriler</div>
+                <div class="h3 font-weight-bold mb-0 text-warning">@passiveCount</div>
+                <small class="text-muted">Kullanıma kapalı</small>
             </div>
-            <div class="card-body p-0">
+            <div class="kpi-icon-box kpi-amber">
+                <i class="fas fa-pause-circle"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- ARAMA VE FİLTRE KARTI -->
+    <div class="category-card mb-4">
+        <div class="category-card-header">
+            <h4 class="category-card-title">
+                <i class="fas fa-filter text-primary"></i> Kategorileri Filtrele & Ara
+            </h4>
+            <span class="badge badge-light border p-2 font-weight-bold text-muted">
+                Toplam: <strong>@totalCount</strong> Kategori
+            </span>
+        </div>
+        <div class="p-3">
+            <div class="row align-items-center">
+                <div class="col-md-8 col-sm-12 mb-2 mb-md-0">
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text bg-light border-right-0">
+                                <i class="fas fa-search text-muted"></i>
+                            </span>
+                        </div>
+                        <input type="text" id="catSearchBox" class="form-control border-left-0" placeholder="Kategori adı veya açıklamasına göre ara..." style="height: 42px;">
+                    </div>
+                </div>
+                <div class="col-md-4 col-sm-12">
+                    <select id="catStatusFilter" class="form-control" style="height: 42px; border-radius: 8px;">
+                        <option value="all">Tüm Durumlar (@totalCount)</option>
+                        <option value="active">Sadece Aktifler (@activeCount)</option>
+                        <option value="passive">Sadece Pasifler (@passiveCount)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- KATEGORİ LİSTESİ TABLOSU -->
+    <div class="category-card">
+        <div class="category-card-header">
+            <h4 class="category-card-title">
+                <i class="fas fa-list text-indigo"></i> Tanımlı Eğitim Kategorileri
+            </h4>
+        </div>
+        <div class="p-0">
+            @if (categoryList.Count == 0)
+            {
+                <div class="empty-portal-box">
+                    <i class="fas fa-folder-open"></i>
+                    <h5 class="font-weight-bold text-dark">Henüz Kategori Tanımlanmamış</h5>
+                    <p class="text-muted">Kurum içi eğitimleri gruplandırmak için yukarıdaki butondan ilk kategorinizi oluşturabilirsiniz.</p>
+                    <button type="button" class="btn btn-primary font-weight-bold btn-sm" data-toggle="modal" data-target="#addCategoryModal">
+                        <i class="fas fa-plus mr-1"></i> Yeni Kategori Ekle
+                    </button>
+                </div>
+            }
+            else
+            {
                 <div class="table-responsive">
-                    <table class="table" id="categoryTable">
+                    <table class="table modern-table" id="categoriesTable">
                         <thead>
                             <tr>
-                                <th style="width: 60px">#</th>
+                                <th style="width: 80px;">#ID</th>
                                 <th>Kategori Adı</th>
                                 <th>Açıklama</th>
-                                <th style="width: 90px">Aktif</th>
-                                <th style="width: 280px">İşlemler</th>
+                                <th style="width: 140px;" class="text-center">Bağlı Dersler</th>
+                                <th style="width: 120px;" class="text-center">Durum</th>
+                                <th style="width: 220px;" class="text-right">İşlemler</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var item in Model)
+                            @foreach (var item in categoryList)
                             {
-                                <tr>
-                                    <td class="fw-semibold">@item.CategoryId</td>
-                                    <td class="catName">@item.CategoryName</td>
-                                    <td>@item.Description</td>
+                                int courseCount = item.Courses != null
+                                    ? item.Courses.Count(c => c.IsActive && (c.IsDeleted == null || c.IsDeleted == false))
+                                    : 0;
+
+                                <tr class="cat-row"
+                                    data-search="@((item.CategoryName ?? "") + " " + (item.Description ?? "") + " " + item.CategoryId).ToLowerInvariant()"
+                                    data-status="@(item.IsActive ? "active" : "passive")">
                                     <td>
+                                        <span class="badge badge-light border text-muted font-weight-bold">#@item.CategoryId</span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="mr-2 text-primary" style="font-size: 18px;">
+                                                <i class="fas fa-folder"></i>
+                                            </div>
+                                            <div class="font-weight-bold text-dark cat-name-cell" style="font-size: 14px;">
+                                                @item.CategoryName
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="text-muted small">
+                                            @(string.IsNullOrWhiteSpace(item.Description) ? "—" : item.Description)
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <a href="@Url.Action("Index", "Course")" class="course-count-pill" title="Kategoriye ait dersleri gör">
+                                            <i class="fas fa-book-open"></i> @courseCount Ders
+                                        </a>
+                                    </td>
+                                    <td class="text-center">
                                         @if (item.IsActive)
                                         {
-                                            <span class="badge bg-success">Aktif</span>
+                                            <span class="badge-status-active">
+                                                <i class="fas fa-check-circle"></i> Aktif
+                                            </span>
                                         }
                                         else
                                         {
-                                            <span class="badge bg-danger">Pasif</span>
+                                            <span class="badge-status-passive">
+                                                <i class="fas fa-pause-circle"></i> Pasif
+                                            </span>
                                         }
                                     </td>
-                                    <td>
-                                        <div class="action-buttons">
-                                            <button class="btn btn-warning btn-sm" onclick="openEditModal(@item.CategoryId)">
-                                                ✏️ Düzenle
+                                    <td class="text-right">
+                                        <div class="d-inline-flex align-items-center" style="gap: 5px;">
+                                            <!-- Düzenle Butonu -->
+                                            <button type="button" class="btn btn-light btn-action-sm border text-dark"
+                                                    data-toggle="modal" data-target="#editCategoryModal_@item.CategoryId" title="Kategoriyi Düzenle">
+                                                <i class="fas fa-edit text-warning"></i> Düzenle
                                             </button>
 
-                                            @using (Html.BeginForm("DeleteCategory", "Category", FormMethod.Post, new { @class = "d-inline" }))
-                                            {
+                                            <!-- Durum Değiştir (Pasife Al / Aktif Yap) -->
+                                            <form method="post" action="@Url.Action("DeleteCategory", "Category")" class="d-inline">
                                                 @Html.AntiForgeryToken()
-                                                @Html.Hidden("id", item.CategoryId)
-                                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('⚠️ Bu kategori pasife alınacak. Kategoriye bağlı aktif kurslar varsa işlem iptal edilecek. Devam etmek istiyor musunuz?');">
-                                                    🚫 Pasife Al
-                                                </button>
-                                            }
+                                                <input type="hidden" name="id" value="@item.CategoryId" />
+                                                @if (item.IsActive)
+                                                {
+                                                    <button type="submit" class="btn btn-light btn-action-sm border text-secondary"
+                                                            title="Kategoriyi Pasife Al"
+                                                            onclick="return confirm('Bu kategori pasife alınacak. Devam etmek istiyor musunuz?');">
+                                                        <i class="fas fa-ban"></i>
+                                                    </button>
+                                                }
+                                                else
+                                                {
+                                                    <button type="submit" class="btn btn-light btn-action-sm border text-success"
+                                                            title="Kategoriyi Aktifleştir">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                }
+                                            </form>
 
-                                            @using (Html.BeginForm("ForceDeleteCategory", "Category", FormMethod.Post, new { @class = "d-inline" }))
-                                            {
+                                            <!-- Kalıcı Sil (Force Delete) -->
+                                            <form method="post" action="@Url.Action("ForceDeleteCategory", "Category")" class="d-inline">
                                                 @Html.AntiForgeryToken()
-                                                @Html.Hidden("id", item.CategoryId)
-                                                <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('🔥 DİKKAT! Bu kategori ve bağlı TÜM KURSLAR kalıcı olarak silinecek! Bu işlem geri alınamaz. Emin misiniz?');">
-                                                    🗑️ Tamamen Sil
+                                                <input type="hidden" name="id" value="@item.CategoryId" />
+                                                <button type="submit" class="btn btn-light btn-action-sm border text-danger"
+                                                        title="Kategoriyi ve Bağlı Tüm Dersleri Kalıcı Olarak Sil"
+                                                        onclick="return confirm('⚠️ DİKKAT!\nBu kategori ve ona bağlı @courseCount ders ile tüm sınav/içerikler KALICI olarak silinecektir!\nBu işlem GERİ ALINAMAZ.\n\nEmin misiniz?');">
+                                                    <i class="fas fa-trash-alt"></i>
                                                 </button>
-                                            }
+                                            </form>
                                         </div>
                                     </td>
                                 </tr>
@@ -119,535 +530,129 @@
                         </tbody>
                     </table>
                 </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- YENİ KATEGORİ EKLEME MODALI (gradient başlıklı) -->
-<div id="addModal" class="modal">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
-                <h5 class="modal-title">
-                    <span class="me-2">➕</span> Yeni Kategori Ekle
-                </h5>
-                <button type="button" class="close" onclick="closeModal('addModal')">&times;</button>
-            </div>
-            @using (Html.BeginForm("AddCategory", "Category", FormMethod.Post))
-            {
-                @Html.AntiForgeryToken()
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label class="form-label">Kategori Adı <span class="text-danger">*</span></label>
-                        <input type="text" name="CategoryName" class="form-control" required />
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Açıklama</label>
-                        <input type="text" name="Description" class="form-control" />
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('addModal')">İptal</button>
-                    <button type="submit" class="btn btn-primary">Kaydet</button>
-                </div>
             }
         </div>
     </div>
+
 </div>
 
-<!-- DÜZENLEME MODALLARI (her kategori için ayrı) -->
-@foreach (var item in Model)
-{
-    <div id="editModal_@item.CategoryId" class="modal">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
-                    <h5 class="modal-title">
-                        <span class="me-2">✏️</span> Kategori Düzenle
-                    </h5>
-                    <button type="button" class="close" onclick="closeModal('editModal_@item.CategoryId')">&times;</button>
+<!-- YENİ KATEGORİ EKLEME MODALI -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 480px;">
+        <div class="modal-content" style="border-radius: 14px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+            <div class="modal-header text-white" style="background: linear-gradient(135deg, #071426 0%, #15325b 70%, #4338ca 100%);">
+                <h5 class="modal-title font-weight-bold">
+                    <i class="fas fa-plus-circle mr-2"></i> Yeni Kategori Ekle
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Kapat" style="opacity: 0.9;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form method="post" action="@Url.Action("AddCategory", "Category")">
+                @Html.AntiForgeryToken()
+                <div class="modal-body p-4">
+                    <div class="form-group mb-3">
+                        <label class="font-weight-bold small text-dark mb-1">
+                            Kategori Adı <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" name="CategoryName" class="form-control" placeholder="Örn: Pasaport & Hudut Mevzuatı" required style="border-radius: 8px; height: 42px;" />
+                    </div>
+                    <div class="form-group mb-0">
+                        <label class="font-weight-bold small text-dark mb-1">
+                            Açıklama (Opsiyonel)
+                        </label>
+                        <textarea name="Description" class="form-control" rows="3" placeholder="Kategoriye ait kapsam veya açıklama giriniz..." style="border-radius: 8px;"></textarea>
+                    </div>
                 </div>
-                @using (Html.BeginForm("EditCategory", "Category", FormMethod.Post))
-                {
+                <div class="modal-footer bg-light p-2 px-3 d-flex justify-content-end" style="gap: 8px;">
+                    <button type="button" class="btn btn-secondary btn-sm font-weight-bold px-3" data-dismiss="modal" style="border-radius: 6px;">İptal</button>
+                    <button type="submit" class="btn btn-primary btn-sm font-weight-bold px-4" style="border-radius: 6px;">
+                        <i class="fas fa-save mr-1"></i> Kaydet
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- DÜZENLEME MODALLARI -->
+@foreach (var item in categoryList)
+{
+    <div class="modal fade" id="editCategoryModal_@item.CategoryId" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 480px;">
+            <div class="modal-content" style="border-radius: 14px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+                <div class="modal-header text-white" style="background: linear-gradient(135deg, #071426 0%, #15325b 70%, #d97706 100%);">
+                    <h5 class="modal-title font-weight-bold">
+                        <i class="fas fa-edit mr-2"></i> Kategori Düzenle (#@item.CategoryId)
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Kapat" style="opacity: 0.9;">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form method="post" action="@Url.Action("EditCategory", "Category")">
                     @Html.AntiForgeryToken()
-                    <div class="modal-body">
-                        @Html.Hidden("CategoryId", item.CategoryId)
-                        <div class="form-group">
-                            <label class="form-label">Kategori Adı</label>
-                            <input type="text" name="CategoryName" class="form-control" value="@item.CategoryName" required />
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Açıklama</label>
-                            <input type="text" name="Description" class="form-control" value="@item.Description" />
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Aktif mi?</label><br />
-                            <label class="switch">
-                                <input type="checkbox" name="IsActive" value="true" @(item.IsActive ? "checked" : "") />
-                                <span class="slider round"></span>
+                    <input type="hidden" name="CategoryId" value="@item.CategoryId" />
+
+                    <div class="modal-body p-4">
+                        <div class="form-group mb-3">
+                            <label class="font-weight-bold small text-dark mb-1">
+                                Kategori Adı <span class="text-danger">*</span>
                             </label>
+                            <input type="text" name="CategoryName" class="form-control" value="@item.CategoryName" required style="border-radius: 8px; height: 42px;" />
+                        </div>
+                        <div class="form-group mb-3">
+                            <label class="font-weight-bold small text-dark mb-1">
+                                Açıklama
+                            </label>
+                            <textarea name="Description" class="form-control" rows="3" style="border-radius: 8px;">@item.Description</textarea>
+                        </div>
+                        <div class="form-group mb-0">
+                            <div class="custom-control custom-switch">
+                                <input type="checkbox" class="custom-control-input" id="editIsActive_@item.CategoryId" name="IsActive" value="true" @(item.IsActive ? "checked" : "") />
+                                <label class="custom-control-label font-weight-bold small text-dark" for="editIsActive_@item.CategoryId">
+                                    Kategori Aktif (Ders kayıtlarına açık)
+                                </label>
+                            </div>
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" onclick="closeModal('editModal_@item.CategoryId')">İptal</button>
-                        <button type="submit" class="btn btn-primary">Güncelle</button>
+                    <div class="modal-footer bg-light p-2 px-3 d-flex justify-content-end" style="gap: 8px;">
+                        <button type="button" class="btn btn-secondary btn-sm font-weight-bold px-3" data-dismiss="modal" style="border-radius: 6px;">İptal</button>
+                        <button type="submit" class="btn btn-warning btn-sm font-weight-bold px-4 text-white" style="border-radius: 6px; background:#d97706;">
+                            <i class="fas fa-sync-alt mr-1"></i> Güncelle
+                        </button>
                     </div>
-                }
+                </form>
             </div>
         </div>
     </div>
 }
 
-<style>
-    /* ========== GENEL SAYFA YAPISI (Dersler sayfasındaki gibi) ========== */
-    * {
-        box-sizing: border-box;
-    }
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Canlı filtreleme (Arama ve Durum Seçimi)
+            function filterCategories() {
+                var query = ($('#catSearchBox').val() || '').toLowerCase().trim();
+                var status = ($('#catStatusFilter').val() || 'all').trim();
 
-    body {
-        background: #f5f7fb;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        margin: 0;
-        padding: 0;
-    }
+                $('.cat-row').each(function () {
+                    var $row = $(this);
+                    var rowSearch = ($row.attr('data-search') || '').toLowerCase();
+                    var rowStatus = ($row.attr('data-status') || '').trim();
 
-    .page-wrapper {
-        padding: 20px;
-        background: #f5f7fb;
-        min-height: 100vh;
-    }
+                    var matchQuery = !query || rowSearch.indexOf(query) !== -1;
+                    var matchStatus = (status === 'all') || (rowStatus === status);
 
-    .container-fluid {
-        max-width: 1400px;
-        margin: 0 auto;
-    }
-
-    .page-heading {
-        margin-bottom: 30px;
-    }
-
-    .page-title {
-        font-size: 28px;
-        font-weight: 700;
-        color: #333;
-        margin: 0 0 8px 0;
-    }
-
-    .page-subtitle {
-        font-size: 14px;
-        color: #999;
-        margin: 0;
-    }
-
-    /* KARTLAR */
-    .card {
-        border: none;
-        border-radius: 12px;
-        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-        overflow: hidden;
-        background: white;
-        margin-bottom: 24px;
-    }
-
-    .card-header {
-        background: white;
-        border-bottom: 1px solid #eef2f7;
-        padding: 20px 25px;
-    }
-
-    .card-title {
-        font-size: 18px;
-        font-weight: 600;
-        color: #333;
-        margin: 0;
-    }
-
-    .card-subtitle {
-        font-size: 12px;
-        color: #999;
-        margin-top: 4px;
-    }
-
-    .card-body {
-        padding: 20px 25px;
-    }
-
-    /* TABLO */
-    .table {
-        width: 100%;
-        border-collapse: collapse;
-        background: white;
-    }
-
-        .table thead th {
-            background-color: #f8f9fa;
-            border-bottom: 2px solid #eef2f7;
-            font-weight: 600;
-            color: #666;
-            font-size: 13px;
-            padding: 15px;
-            text-align: left;
-        }
-
-        .table tbody tr {
-            border-bottom: 1px solid #eef2f7;
-            transition: background-color 0.2s ease;
-        }
-
-            .table tbody tr:hover {
-                background-color: #fafbfc;
+                    if (matchQuery && matchStatus) {
+                        $row.show();
+                    } else {
+                        $row.hide();
+                    }
+                });
             }
 
-        .table tbody td {
-            padding: 15px;
-            vertical-align: middle;
-        }
-
-    .fw-semibold {
-        font-weight: 500;
-    }
-
-    /* BUTON GRUBU */
-    .action-buttons {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-        align-items: center;
-    }
-
-    .btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 14px;
-        font-size: 12px;
-        font-weight: 500;
-        border-radius: 6px;
-        cursor: pointer;
-        border: none;
-        transition: all 0.2s ease;
-        text-decoration: none;
-    }
-
-    .btn-sm {
-        padding: 5px 12px;
-        font-size: 12px;
-    }
-
-    .btn-primary {
-        background: #4361ee;
-        color: white;
-    }
-
-        .btn-primary:hover {
-            background: #3a56d4;
-        }
-
-    .btn-warning {
-        background: #ffc107;
-        color: #212529;
-    }
-
-        .btn-warning:hover {
-            background: #e0a800;
-        }
-
-    .btn-danger {
-        background: #dc3545;
-        color: white;
-    }
-
-        .btn-danger:hover {
-            background: #c82333;
-        }
-
-    .btn-outline-danger {
-        background: transparent;
-        border: 1px solid #dc3545;
-        color: #dc3545;
-    }
-
-        .btn-outline-danger:hover {
-            background: #dc3545;
-            color: white;
-        }
-
-    .btn-secondary {
-        background: #6c757d;
-        color: white;
-    }
-
-        .btn-secondary:hover {
-            background: #5a6268;
-        }
-
-    .btn-lg {
-        padding: 10px 20px;
-        font-size: 14px;
-    }
-
-    /* BADGE */
-    .badge {
-        display: inline-block;
-        padding: 6px 12px;
-        border-radius: 6px;
-        font-size: 11px;
-        font-weight: 600;
-    }
-
-    .bg-success {
-        background-color: #28a745;
-        color: white;
-    }
-
-    .bg-danger {
-        background-color: #dc3545;
-        color: white;
-    }
-
-    .bg-primary {
-        background-color: #4361ee;
-        color: white;
-    }
-
-    /* ALERT */
-    .alert {
-        padding: 15px 20px;
-        border-radius: 10px;
-        margin-bottom: 20px;
-        background: white;
-        border-left: 4px solid;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    }
-
-    .alert-success {
-        border-left-color: #28a745;
-        background: #f0fff4;
-        color: #155724;
-    }
-
-    .alert-danger {
-        border-left-color: #dc3545;
-        background: #fff5f5;
-        color: #721c24;
-    }
-
-    /* FORM */
-    .form-group {
-        margin-bottom: 20px;
-    }
-
-    .form-label {
-        font-weight: 600;
-        font-size: 13px;
-        margin-bottom: 8px;
-        display: block;
-        color: #555;
-    }
-
-    .form-control {
-        width: 100%;
-        padding: 10px 12px;
-        border: 1px solid #e1e5eb;
-        border-radius: 8px;
-        font-size: 14px;
-        transition: 0.2s;
-    }
-
-        .form-control:focus {
-            border-color: #667eea;
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
-        }
-
-    /* TOGGLE SWITCH */
-    .switch {
-        position: relative;
-        display: inline-block;
-        width: 50px;
-        height: 24px;
-    }
-
-        .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-    .slider {
-        position: absolute;
-        cursor: pointer;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: #ccc;
-        border-radius: 24px;
-        transition: 0.3s;
-    }
-
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 18px;
-            width: 18px;
-            left: 3px;
-            bottom: 3px;
-            background-color: white;
-            border-radius: 50%;
-            transition: 0.3s;
-        }
-
-    input:checked + .slider {
-        background-color: #28a745;
-    }
-
-        input:checked + .slider:before {
-            transform: translateX(26px);
-        }
-
-    /* MODAL (dersler sayfasındaki gibi gradient) */
-    .modal {
-        display: none;
-        position: fixed;
-        z-index: 1050;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        overflow: auto;
-        background-color: rgba(0,0,0,0.5);
-        align-items: center;
-        justify-content: center;
-    }
-
-    .modal-dialog {
-        width: 500px;
-        max-width: 90%;
-        margin: 1.75rem auto;
-    }
-
-    .modal-content {
-        background: white;
-        border-radius: 16px;
-        overflow: hidden;
-        box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-    }
-
-    .modal-header {
-        padding: 20px 25px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-bottom: none;
-    }
-
-    .modal-title {
-        font-size: 20px;
-        font-weight: 600;
-        margin: 0;
-    }
-
-    .close {
-        background: none;
-        border: none;
-        font-size: 28px;
-        font-weight: 300;
-        cursor: pointer;
-        color: white;
-        opacity: 0.8;
-        line-height: 1;
-    }
-
-        .close:hover {
-            opacity: 1;
-        }
-
-    .modal-body {
-        padding: 25px;
-    }
-
-    .modal-footer {
-        background: #f8f9fa;
-        border-top: 1px solid #eef2f7;
-        padding: 15px 25px;
-        display: flex;
-        justify-content: flex-end;
-        gap: 10px;
-    }
-
-    /* RESPONSIVE */
-    @@media (max-width: 768px) {
-        .page-wrapper {
-            padding: 15px;
-        }
-
-        .page-title {
-            font-size: 22px;
-        }
-
-        .action-buttons {
-            flex-direction: column;
-            align-items: stretch;
-        }
-
-            .action-buttons .btn {
-                justify-content: center;
-            }
-
-        .table-responsive {
-            overflow-x: auto;
-        }
-
-        .modal-dialog {
-            width: calc(100% - 20px);
-        }
-    }
-</style>
-
-<script>
-    // Modal aç/kapa (saf JavaScript, jQuery yok)
-    function openAddModal() {
-        document.getElementById('addModal').style.display = 'flex';
-    }
-    function openEditModal(id) {
-        var modal = document.getElementById('editModal_' + id);
-        if (modal) modal.style.display = 'flex';
-    }
-    function closeModal(modalId) {
-        var modal = document.getElementById(modalId);
-        if (modal) modal.style.display = 'none';
-    }
-
-    // Arka plana tıklayınca kapat
-    window.onclick = function (event) {
-        var modals = document.querySelectorAll('.modal');
-        modals.forEach(function (modal) {
-            if (event.target === modal) {
-                modal.style.display = 'none';
-            }
+            $('#catSearchBox').on('keyup', filterCategories);
+            $('#catStatusFilter').on('change', filterCategories);
         });
-    }
-
-    // Arama (kategori adına göre)
-    document.getElementById('searchBox').addEventListener('keyup', function () {
-        var value = this.value.toLowerCase();
-        var rows = document.querySelectorAll('#categoryTable tbody tr');
-        rows.forEach(function (row) {
-            var catNameCell = row.querySelector('.catName');
-            if (catNameCell) {
-                var text = catNameCell.textContent.toLowerCase();
-                row.style.display = text.includes(value) ? '' : 'none';
-            }
-        });
-    });
-
-    // Otomatik alert kapatma (5 sn)
-    setTimeout(function () {
-        var alerts = document.querySelectorAll('.alert');
-        alerts.forEach(function (alert) {
-            alert.style.display = 'none';
-        });
-    }, 5000);
-</script>
+    </script>
+}

@@ -1414,13 +1414,22 @@
                         <div class="alert alert-success d-flex align-items-center mb-3 p-3">
                             <i class="fas fa-check-circle fa-2x text-success mr-3"></i>
                             <div>
-                                <strong class="d-block">Tebrikler! Sertifikanız Onaylandı.</strong>
+                                <strong class="d-block">Tebrikler! Belgeniz Hazırlandı.</strong>
                                 <span class="small">Tüm sınavları başarıyla tamamladınız.</span>
                             </div>
                         </div>
-                        <a href="@Url.Action("MyCertificates", "Profile")" class="btn btn-success btn-block font-weight-bold shadow-sm">
-                            <i class="fas fa-download mr-1"></i> Sertifikamı Görüntüle
-                        </a>
+                        if (ViewBag.CertificateId != null && (int)ViewBag.CertificateId > 0)
+                        {
+                            <a href="@Url.Action("ViewCertificate", "Certificate", new { certificateId = (int)ViewBag.CertificateId })" class="btn btn-success btn-block font-weight-bold shadow-sm" target="_blank">
+                                <i class="fas fa-award mr-1"></i> Başarı Belgesini Görüntüle
+                            </a>
+                        }
+                        else
+                        {
+                            <a href="@Url.Action("MyCertificates", "Certificate")" class="btn btn-success btn-block font-weight-bold shadow-sm">
+                                <i class="fas fa-certificate mr-1"></i> Sertifikalarımı Görüntüle
+                            </a>
+                        }
                     }
                     else if (certStatus == 0)
                     {
@@ -1428,19 +1437,26 @@
                             <i class="fas fa-clock fa-2x text-warning mr-3"></i>
                             <div>
                                 <strong class="d-block">Sertifika Onayı Bekleniyor</strong>
-                                <span class="small">Sınavlarınız inceleniyor, onaylandığında hazır olacaktır.</span>
+                                <span class="small">Sınavlarınız inceleniyor, belgeniz hazırlanmaktadır.</span>
                             </div>
                         </div>
                     }
                     else if (allExamsDone)
                     {
                         <div class="alert alert-info d-flex align-items-center mb-3 p-3">
-                            <i class="fas fa-info-circle fa-2x text-info mr-3"></i>
+                            <i class="fas fa-trophy fa-2x text-warning mr-3"></i>
                             <div>
                                 <strong class="d-block">Sınavlar Tamamlandı!</strong>
-                                <span class="small">Sertifikanızı talep etmek için başvurabilirsiniz.</span>
+                                <span class="small">Sertifikanızı anında oluşturmak için aşağıdaki butona tıklayınız.</span>
                             </div>
                         </div>
+                        <form method="post" action="@Url.Action("RequestCertificate", "Course")">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="courseId" value="@Model.CourseId" />
+                            <button type="submit" class="btn btn-primary btn-block font-weight-bold shadow-sm">
+                                <i class="fas fa-award mr-1"></i> Başarı Belgesini Anında Oluştur
+                            </button>
+                        </form>
                     }
                     else
                     {
@@ -1517,17 +1533,17 @@
                                         @if (isExamCompleted)
                                         {
                                             <div class="d-flex gap-2">
-                                                <a href="@Url.Action("ExamResult", "Exam", new { id = ex.ExamResultId.Value })" class="btn btn-xs btn-outline-info flex-fill font-weight-bold">
+                                                <a href="@Url.Action("ExamResult", "StudentExam", new { id = ex.ExamResultId.Value })" class="btn btn-xs btn-outline-info flex-fill font-weight-bold">
                                                     <i class="fas fa-poll mr-1"></i> Sonucu Gör
                                                 </a>
-                                                <a href="@Url.Action("Take", "Exam", new { id = ex.ExamId })" class="btn btn-xs btn-outline-secondary flex-fill">
+                                                <a href="@Url.Action("StartExam", "StudentExam", new { id = ex.ExamId })" class="btn btn-xs btn-outline-secondary flex-fill">
                                                     <i class="fas fa-redo mr-1"></i> Tekrarla
                                                 </a>
                                             </div>
                                         }
                                         else
                                         {
-                                            <a href="@Url.Action("Take", "Exam", new { id = ex.ExamId })" class="btn btn-sm btn-danger btn-block font-weight-bold shadow-sm">
+                                            <a href="@Url.Action("StartExam", "StudentExam", new { id = ex.ExamId })" class="btn btn-sm btn-danger btn-block font-weight-bold shadow-sm">
                                                 <i class="fas fa-pen-alt mr-1"></i> Sınava Başla
                                             </a>
                                         }

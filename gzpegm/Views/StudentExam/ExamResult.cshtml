@@ -85,6 +85,32 @@
 
     @if (Model != null)
     {
+        if (ViewBag.CourseCertificate != null)
+        {
+            var courseCert = (gzpegm.Models.Certificate)ViewBag.CourseCertificate;
+            <div class="card mb-4 border-0 shadow-sm" style="background: linear-gradient(135deg, #071426 0%, #15325b 60%, #059669 100%); color: #fff; border-radius: 14px; overflow: hidden;">
+                <div class="card-body p-3 p-md-4 d-flex align-items-center justify-content-between flex-wrap">
+                    <div class="d-flex align-items-center mb-2 mb-md-0">
+                        <div class="mr-3 text-warning" style="font-size: 2.4rem;">
+                            <i class="fas fa-award"></i>
+                        </div>
+                        <div>
+                            <div class="badge badge-warning text-dark font-weight-bold px-2 py-1 mb-1" style="font-size: 11px;">
+                                <i class="fas fa-check-circle mr-1"></i> YEREL BAŞARI BELGESİ HAZIRLANDI
+                            </div>
+                            <h5 class="mb-1 font-weight-bold text-white">Tebrikler! Eğitim Başarı Belgeniz Sistem Tarafından Üretildi</h5>
+                            <p class="mb-0 small text-white-50">Tüm sınavları başarıyla tamamladınız. Belgenizi anında görüntüleyebilir veya indirebilirsiniz.</p>
+                        </div>
+                    </div>
+                    <div>
+                        <a href="@Url.Action("ViewCertificate", "Certificate", new { certificateId = courseCert.CertificateId })" class="btn btn-warning text-dark font-weight-bold px-4 py-2 shadow-sm" target="_blank" style="border-radius: 8px;">
+                            <i class="fas fa-certificate mr-1"></i> Belgeyi Görüntüle &amp; İndir
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+
         <!-- 4 İSTATİSTİK METRİK KARTI -->
         <div class="row stat-cards-row mb-4">
 

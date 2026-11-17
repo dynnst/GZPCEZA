@@ -3,158 +3,720 @@
 @{
     ViewBag.Title = "Yönetim Paneli";
     Layout = "~/Views/Shared/_Master.cshtml";
+
+    var currentUser = Model?.CurrentUser;
+    var userFullName = currentUser != null ? (currentUser.fldName + " " + currentUser.fldLastName).Trim() : "Yönetici";
+    var userRole = currentUser != null ? currentUser.Role : "Admin";
+    var roleBadgeClass = userRole == "Admin" ? "badge-danger" : "badge-info";
+    var roleDisplayName = userRole == "Admin" ? "Sistem Yöneticisi" : (userRole == "Teacher" ? "Eğitmen" : "Personel");
 }
 
 @section Styles {
-    <link rel="stylesheet" href="@Url.Content("~/Content/dashboard-v2.css")" />
+    <style>
+        /* DASHBOARD MODERN V3 STYLES */
+        .dash-container {
+            padding: 10px 0 30px;
+        }
+
+        /* WELCOME BANNER */
+        .dash-welcome {
+            background: linear-gradient(135deg, #071426 0%, #15325b 70%, #0d9488 100%);
+            border-radius: 16px;
+            padding: 24px 28px;
+            color: #fff;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 24px rgba(7, 20, 38, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .dash-welcome::after {
+            content: '\f19d';
+            font-family: FontAwesome;
+            position: absolute;
+            right: 25px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 130px;
+            color: rgba(255, 255, 255, 0.04);
+            pointer-events: none;
+        }
+
+        .dash-welcome-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(245, 158, 11, 0.18);
+            border: 1px solid rgba(245, 158, 11, 0.4);
+            color: #fbbf24;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding: 3px 12px;
+            border-radius: 20px;
+            margin-bottom: 8px;
+        }
+
+        .dash-welcome h2 {
+            font-size: 1.65rem;
+            font-weight: 800;
+            margin: 0 0 6px;
+            letter-spacing: -0.3px;
+            color: #fff;
+        }
+
+        .dash-welcome p {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.8);
+            margin: 0;
+            max-width: 620px;
+        }
+
+        .dash-welcome-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 14px;
+        }
+
+        .dash-action-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 12.5px;
+            font-weight: 700;
+            padding: 7px 15px;
+            border-radius: 8px;
+            text-decoration: none !important;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        .dash-action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+        }
+
+        .btn-gold {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: #1e293b !important;
+        }
+
+        .btn-teal {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: #fff !important;
+        }
+
+        .btn-blue {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff !important;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(4px);
+        }
+
+        .btn-blue:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        /* PENDING APPROVAL CARDS */
+        .dash-pending-card {
+            background: #fff;
+            border-radius: 14px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .dash-pending-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+        }
+
+        .dash-pending-card.card-amber::before { background: #f59e0b; }
+        .dash-pending-card.card-cyan::before  { background: #0284c7; }
+        .dash-pending-card.card-emerald::before { background: #10b981; }
+
+        .dash-pending-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+        }
+
+        .pending-info-wrap {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .pending-icon-circle {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .card-amber .pending-icon-circle   { background: #fef3c7; color: #d97706; }
+        .card-cyan .pending-icon-circle    { background: #e0f2fe; color: #0284c7; }
+        .card-emerald .pending-icon-circle { background: #d1fae5; color: #059669; }
+
+        .pending-text h5 {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: #1e293b;
+            margin: 0 0 2px;
+        }
+
+        .pending-text p {
+            font-size: 12px;
+            color: #64748b;
+            margin: 0;
+        }
+
+        .pending-badge {
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        .badge-amber-soft { background: #fef3c7; color: #b45309; }
+        .badge-cyan-soft  { background: #e0f2fe; color: #0369a1; }
+        .badge-emerald-soft { background: #d1fae5; color: #047857; }
+        .badge-muted-soft { background: #f1f5f9; color: #64748b; }
+
+        /* KPI STAT CARDS */
+        .kpi-card {
+            background: #fff;
+            border-radius: 14px;
+            padding: 20px 22px;
+            margin-bottom: 24px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+            transition: all 0.25s ease;
+            position: relative;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+            border-color: #cbd5e1;
+        }
+
+        .kpi-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .kpi-title {
+            font-size: 12.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #64748b;
+            margin: 0;
+        }
+
+        .kpi-icon-box {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .icon-emerald { background: #d1fae5; color: #059669; }
+        .icon-blue    { background: #e0f2fe; color: #0284c7; }
+        .icon-indigo  { background: #ede9fe; color: #6366f1; }
+        .icon-amber   { background: #fef3c7; color: #d97706; }
+
+        .kpi-value {
+            font-size: 2.1rem;
+            font-weight: 800;
+            color: #0f172a;
+            line-height: 1.1;
+            margin-bottom: 6px;
+        }
+
+        .kpi-meta {
+            font-size: 12px;
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .kpi-meta i {
+            color: #10b981;
+        }
+
+        /* MODERN BOX / CARD CONTAINER */
+        .modern-box {
+            background: #fff;
+            border-radius: 14px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+
+        .modern-box-header {
+            padding: 16px 22px;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #fff;
+        }
+
+        .modern-box-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .modern-box-title i {
+            color: #0284c7;
+        }
+
+        .modern-box-subtitle {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 2px;
+        }
+
+        .modern-box-body {
+            padding: 22px;
+        }
+
+        /* MINI STAT ITEMS IN BIG CHART */
+        .mini-stat-item {
+            padding: 14px 16px;
+            border-radius: 10px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 12px;
+        }
+
+        .mini-stat-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .mini-stat-item h4 {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 0 0 2px;
+        }
+
+        .mini-stat-item span {
+            font-size: 12px;
+            color: #64748b;
+            display: block;
+        }
+
+        .mini-progress {
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .mini-progress-bar {
+            height: 100%;
+            border-radius: 10px;
+        }
+
+        /* TOP STUDENTS LIST */
+        .student-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .student-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .student-item:first-child {
+            padding-top: 0;
+        }
+
+        .student-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .student-rank-badge {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 800;
+            flex-shrink: 0;
+        }
+
+        .rank-gold   { background: #fef3c7; color: #b45309; }
+        .rank-silver { background: #f1f5f9; color: #475569; }
+        .rank-bronze { background: #ffedd5; color: #c2410c; }
+        .rank-default{ background: #f8fafc; color: #94a3b8; font-size: 12px; }
+
+        .student-name strong {
+            display: block;
+            font-size: 13.5px;
+            color: #1e293b;
+        }
+
+        .student-name small {
+            font-size: 11.5px;
+            color: #94a3b8;
+        }
+
+        .student-score {
+            text-align: right;
+        }
+
+        .student-score-badge {
+            font-size: 12.5px;
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: 6px;
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        /* RECENT EXAMS TABLE */
+        .custom-table {
+            width: 100%;
+            margin-bottom: 0;
+        }
+
+        .custom-table th {
+            font-size: 11.5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #64748b;
+            font-weight: 700;
+            border-top: none;
+            border-bottom: 2px solid #e2e8f0;
+            padding: 10px 14px;
+        }
+
+        .custom-table td {
+            font-size: 13px;
+            color: #334155;
+            padding: 12px 14px;
+            vertical-align: middle;
+            border-top: 1px solid #f1f5f9;
+        }
+
+        .custom-table tr:hover td {
+            background: #f8fafc;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 11.5px;
+            font-weight: 700;
+            padding: 3px 9px;
+            border-radius: 20px;
+        }
+
+        .status-pill-success { background: #dcfce7; color: #166534; }
+        .status-pill-warning { background: #fef3c7; color: #92400e; }
+
+        /* RESPONSIVE */
+        @@media (max-width: 768px) {
+            .dash-welcome {
+                padding: 20px 16px;
+            }
+            .dash-welcome h2 {
+                font-size: 1.35rem;
+            }
+            .dash-welcome::after {
+                display: none;
+            }
+            .kpi-value {
+                font-size: 1.7rem;
+            }
+        }
+    </style>
 }
 
-<div class="wrapper wrapper-content animated fadeInRight dashboard-v2">
-    @if (Model != null && Model.CurrentUser != null && (Model.CurrentUser.Role == "Admin" || Model.CurrentUser.Role == "Teacher"))
+<div class="dash-container">
+
+    <!-- 1. HOŞ GELDİNİZ VE HIZLI AKSİYON BANNER'I -->
+    <div class="dash-welcome">
+        <span class="dash-welcome-kicker">
+            <i class="fa fa-shield"></i> EGM Hudut Kapıları Personel Portalı
+        </span>
+        <h2>Hoş Geldiniz, @userFullName</h2>
+        <p>
+            Eğitim kataloğu, personel sınav analizleri, optik okuyucu durumları ve bekleyen onay taleplerinizi tek merkezden yönetin.
+        </p>
+
+        <div class="dash-welcome-actions">
+            <a href="@Url.Action("Index", "Calculate")" class="dash-action-btn btn-gold" title="Vize ve İkamet İhlali Ceza Hesaplama Ekranını Aç">
+                <i class="fa fa-calculator"></i> Ceza Hesaplama
+            </a>
+            <a href="@Url.Action("Index", "Course")" class="dash-action-btn btn-teal" title="Tüm Kurs Kataloğu ve İçerikleri">
+                <i class="fa fa-book"></i> Kurs Kataloğu
+            </a>
+            <a href="@Url.Action("AvailableExams", "StudentExam")" class="dash-action-btn btn-blue" title="Aktif Değerlendirme Sınavları">
+                <i class="fa fa-graduation-cap"></i> Sınavlar
+            </a>
+            <a href="@Url.Action("PublicMessage", "Landing")" class="dash-action-btn btn-blue" title="Gelen Personel Mesajları">
+                <i class="fa fa-envelope-o"></i> Mesajlar
+            </a>
+        </div>
+    </div>
+
+    <!-- 2. BEKLEYEN ONAY VE BİLDİRİM KARTLARI (ADMIN / TEACHER) -->
+    @if (Model != null && currentUser != null && (userRole == "Admin" || userRole == "Teacher"))
     {
         <div class="row">
-            <div class="col-lg-4">
-                <div class="ibox">
-                    <div class="ibox-title">
-                        <span class="label label-warning float-right">@Model.PendingCourseReviewsCount</span>
-                        <h5>Kurs Yorumları</h5>
+            <!-- Kurs Yorumları Onay Sayfası -->
+            <div class="col-lg-4 col-md-6 col-sm-12">
+                <div class="dash-pending-card card-amber">
+                    <div class="pending-info-wrap">
+                        <div class="pending-icon-circle">
+                            <i class="fa fa-star"></i>
+                        </div>
+                        <div class="pending-text">
+                            <h5>Kurs Yorumları</h5>
+                            <p>Öğrenci değerlendirmeleri</p>
+                        </div>
                     </div>
-                    <div class="ibox-content">
-                        <h3><i class="fa fa-star"></i> Bekleyen Yorumlar</h3>
-                        <p>Öğrencilerin kurs yorumlarını onayla veya sil.</p>
-                        <a class="btn btn-warning btn-sm" href="@Url.Action("PendingReviews", "Course")">Yorumları Yönet</a>
+                    <div class="text-right d-flex align-items-center">
+                        @if (Model.PendingCourseReviewsCount > 0)
+                        {
+                            <span class="pending-badge badge-amber-soft mr-2"><i class="fa fa-bell mr-1"></i>@Model.PendingCourseReviewsCount Bekliyor</span>
+                        }
+                        else
+                        {
+                            <span class="pending-badge badge-muted-soft mr-2"><i class="fa fa-check mr-1"></i>0 Bekleyen</span>
+                        }
+                        <a class="btn btn-warning btn-sm font-weight-bold" href="@Url.Action("PendingReviews", "Course")" title="Kurs Yorumları Onay Sayfasına Git">
+                            Yönet <i class="fa fa-arrow-circle-right ml-1"></i>
+                        </a>
                     </div>
                 </div>
             </div>
-            <div class="col-lg-4">
-                <div class="ibox">
-                    <div class="ibox-title">
-                        <span class="label label-info float-right">@Model.PendingLandingCommentsCount</span>
-                        <h5>Anasayfa Yorumları</h5>
+
+            <!-- Anasayfa Yorumları Onay Sayfası -->
+            <div class="col-lg-4 col-md-6 col-sm-12">
+                <div class="dash-pending-card card-cyan">
+                    <div class="pending-info-wrap">
+                        <div class="pending-icon-circle">
+                            <i class="fa fa-comments"></i>
+                        </div>
+                        <div class="pending-text">
+                            <h5>Portal Yorumları</h5>
+                            <p>Kullanıcı geri bildirimleri</p>
+                        </div>
                     </div>
-                    <div class="ibox-content">
-                        <h3><i class="fa fa-comments"></i> Bekleyen Yorumlar</h3>
-                        <p>Kullanıcı yorumlarını onayla veya sil.</p>
-                        <a class="btn btn-info btn-sm" href="@Url.Action("PendingComments", "Landing")">Yorumları Yönet</a>
+                    <div class="text-right d-flex align-items-center">
+                        @if (Model.PendingLandingCommentsCount > 0)
+                        {
+                            <span class="pending-badge badge-cyan-soft mr-2"><i class="fa fa-bell mr-1"></i>@Model.PendingLandingCommentsCount Bekliyor</span>
+                        }
+                        else
+                        {
+                            <span class="pending-badge badge-muted-soft mr-2"><i class="fa fa-check mr-1"></i>0 Bekleyen</span>
+                        }
+                        <a class="btn btn-info btn-sm font-weight-bold" href="@Url.Action("PendingComments", "Landing")" title="Anasayfa Yorumları Onay Sayfasına Git">
+                            Yönet <i class="fa fa-arrow-circle-right ml-1"></i>
+                        </a>
                     </div>
                 </div>
             </div>
-            <div class="col-lg-4">
-                <div class="ibox">
-                    <div class="ibox-title">
-                        <span class="label label-success float-right">@Model.PendingCertificateRequestsCount</span>
-                        <h5>Sertifika Talepleri</h5>
+
+            <!-- Sertifika Talepleri Onay Sayfası -->
+            <div class="col-lg-4 col-md-12 col-sm-12">
+                <div class="dash-pending-card card-emerald">
+                    <div class="pending-info-wrap">
+                        <div class="pending-icon-circle">
+                            <i class="fa fa-certificate"></i>
+                        </div>
+                        <div class="pending-text">
+                            <h5>Sertifika Talepleri</h5>
+                            <p>Eğitim başarı belgeleri</p>
+                        </div>
                     </div>
-                    <div class="ibox-content">
-                        <h3><i class="fa fa-certificate"></i> Bekleyen Talepler</h3>
-                        <p>Öğrencilerin sertifika taleplerini onayla veya reddet.</p>
-                        <a class="btn btn-success btn-sm" href="@Url.Action("PendingRequests", "Certificate")">Talepleri Yönet</a>
+                    <div class="text-right d-flex align-items-center">
+                        @if (Model.PendingCertificateRequestsCount > 0)
+                        {
+                            <span class="pending-badge badge-emerald-soft mr-2"><i class="fa fa-bell mr-1"></i>@Model.PendingCertificateRequestsCount Bekliyor</span>
+                        }
+                        else
+                        {
+                            <span class="pending-badge badge-muted-soft mr-2"><i class="fa fa-check mr-1"></i>0 Bekleyen</span>
+                        }
+                        <a class="btn btn-success btn-sm font-weight-bold" href="@Url.Action("PendingRequests", "Certificate")" title="Sertifika Talepleri Onay Sayfasına Git">
+                            Yönet <i class="fa fa-arrow-circle-right ml-1"></i>
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
     }
 
+    <!-- 3. KPI İSTATİSTİK SAYAÇ KARTLARI -->
     <div class="row">
-        <div class="col-lg-3">
-            <div class="ibox">
-                <div class="ibox-title">
-                    <span class="label label-success float-right">Aktif</span>
-                    <h5>Toplam Kurs</h5>
+        <!-- Toplam Kurs -->
+        <div class="col-xl-3 col-lg-3 col-md-6 col-sm-6">
+            <a href="@Url.Action("Index", "Course")" style="text-decoration:none; display:block;" title="Tüm Kursları Yönet">
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-title">Aktif Kurslar</span>
+                        <div class="kpi-icon-box icon-emerald">
+                            <i class="fa fa-book"></i>
+                        </div>
+                    </div>
+                    <div class="kpi-value">@Model.TotalCourses</div>
+                    <div class="kpi-meta">
+                        <i class="fa fa-check-circle"></i> Yayındaki eğitim içerikleri <i class="fa fa-chevron-right ml-auto text-muted"></i>
+                    </div>
                 </div>
-                <div class="ibox-content">
-                    <h1 class="no-margins">@Model.TotalCourses</h1>
-                    <div class="stat-percent font-bold text-success"><i class="fa fa-book"></i></div>
-                    <small>Aktif kurslar</small>
-                </div>
-            </div>
+            </a>
         </div>
-        <div class="col-lg-3">
-            <div class="ibox">
-                <div class="ibox-title">
-                    <span class="label label-info float-right">Aktif</span>
-                    <h5>Toplam Sınav</h5>
+
+        <!-- Toplam Sınav -->
+        <div class="col-xl-3 col-lg-3 col-md-6 col-sm-6">
+            <a href="@Url.Action("AvailableExams", "StudentExam")" style="text-decoration:none; display:block;" title="Tüm Sınavları Görüntüle">
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-title">Aktif Sınavlar</span>
+                        <div class="kpi-icon-box icon-blue">
+                            <i class="fa fa-graduation-cap"></i>
+                        </div>
+                    </div>
+                    <div class="kpi-value">@Model.TotalExams</div>
+                    <div class="kpi-meta">
+                        <i class="fa fa-shield"></i> Değerlendirme modülleri <i class="fa fa-chevron-right ml-auto text-muted"></i>
+                    </div>
                 </div>
-                <div class="ibox-content">
-                    <h1 class="no-margins">@Model.TotalExams</h1>
-                    <div class="stat-percent font-bold text-info"><i class="fa fa-graduation-cap"></i></div>
-                    <small>Aktif sınavlar</small>
-                </div>
-            </div>
+            </a>
         </div>
-        <div class="col-lg-3">
-            <div class="ibox">
-                <div class="ibox-title">
-                    <span class="label label-primary float-right">Kayıtlı</span>
-                    <h5>Toplam Öğrenci</h5>
+
+        <!-- Toplam Öğrenci -->
+        <div class="col-xl-3 col-lg-3 col-md-6 col-sm-6">
+            <a href="@Url.Action("Index", "AllUsers")" style="text-decoration:none; display:block;" title="Personel Listesini Görüntüle">
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-title">Kayıtlı Personel</span>
+                        <div class="kpi-icon-box icon-indigo">
+                            <i class="fa fa-users"></i>
+                        </div>
+                    </div>
+                    <div class="kpi-value">@Model.TotalStudents</div>
+                    <div class="kpi-meta">
+                        <i class="fa fa-user-check"></i> Aktif personel hesabı <i class="fa fa-chevron-right ml-auto text-muted"></i>
+                    </div>
                 </div>
-                <div class="ibox-content">
-                    <h1 class="no-margins">@Model.TotalStudents</h1>
-                    <div class="stat-percent font-bold text-navy"><i class="fa fa-users"></i></div>
-                    <small>Kayıtlı öğrenciler</small>
-                </div>
-            </div>
+            </a>
         </div>
-        <div class="col-lg-3">
-            <div class="ibox">
-                <div class="ibox-title">
-                    <span class="label label-danger float-right">Toplam</span>
-                    <h5>Kurs Kayıtları</h5>
+
+        <!-- Toplam Kurs Kaydı -->
+        <div class="col-xl-3 col-lg-3 col-md-6 col-sm-6">
+            <a href="@Url.Action("Enrollments", "Course")" style="text-decoration:none; display:block;" title="Tüm Kayıt Hareketlerini Gör">
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-title">Toplam Kayıt</span>
+                        <div class="kpi-icon-box icon-amber">
+                            <i class="fa fa-list-alt"></i>
+                        </div>
+                    </div>
+                    <div class="kpi-value">@Model.TotalEnrollments</div>
+                    <div class="kpi-meta">
+                        <i class="fa fa-history"></i> Kurs tamamlama hareketleri <i class="fa fa-chevron-right ml-auto text-muted"></i>
+                    </div>
                 </div>
-                <div class="ibox-content">
-                    <h1 class="no-margins">@Model.TotalEnrollments</h1>
-                    <div class="stat-percent font-bold text-danger"><i class="fa fa-list"></i></div>
-                    <small>Tüm kurs kayıtları</small>
-                </div>
-            </div>
+            </a>
         </div>
     </div>
 
+    <!-- 4. ANA GRAFİK: SON 30 GÜN KAYITLARI & METRİK ÖZETİ -->
     <div class="row">
         <div class="col-lg-12">
-            <div class="ibox">
-                <div class="ibox-title">
-                    <h5>Son 30 Gün Kurs Kayıtları</h5>
-                    <div class="float-right">
-                        <div class="btn-group">
-                            <button type="button" class="btn btn-xs btn-white active">30 Gün</button>
-                            <button type="button" class="btn btn-xs btn-white">Kurs</button>
-                            <button type="button" class="btn btn-xs btn-white">Sınav</button>
-                        </div>
+            <div class="modern-box">
+                <div class="modern-box-header">
+                    <div>
+                        <h4 class="modern-box-title">
+                            <i class="fa fa-line-chart text-teal"></i> Son 30 Günlük Personel Kurs Kayıt Eğilimi
+                        </h4>
+                        <div class="modern-box-subtitle">Günlük yeni kayıt hareketleri ve aktivite yoğunluğu</div>
+                    </div>
+                    <div>
+                        <span class="badge badge-light p-2 font-weight-bold" style="font-size:11.5px; border:1px solid #e2e8f0;">
+                            <i class="fa fa-calendar mr-1 text-primary"></i> Canlı İstatistik
+                        </span>
                     </div>
                 </div>
-                <div class="ibox-content">
-                    <div class="row">
-                        <div class="col-lg-9">
-                            <canvas id="enrollmentChart" height="120"></canvas>
+                <div class="modern-box-body">
+                    <div class="row align-items-center">
+                        <div class="col-lg-9 col-md-12 mb-3 mb-lg-0">
+                            <div style="position: relative; height: 260px; width: 100%;">
+                                <canvas id="enrollmentChart"></canvas>
+                            </div>
                         </div>
-                        <div class="col-lg-3">
-                            <ul class="stat-list">
-                                <li>
-                                    <h2 class="no-margins">@Model.TotalEnrollments</h2>
-                                    <small>Toplam kurs kaydı</small>
-                                    <div class="stat-percent"><i class="fa fa-level-up text-navy"></i></div>
-                                    <div class="progress progress-mini">
-                                        <div style="width: 100%;" class="progress-bar"></div>
-                                    </div>
-                                </li>
-                                <li>
-                                    <h2 class="no-margins">@Model.ActiveStudentsLast7Days</h2>
-                                    <small>Son 7 gün aktif öğrenci</small>
-                                    <div class="stat-percent"><i class="fa fa-bolt text-navy"></i></div>
-                                    <div class="progress progress-mini">
-                                        <div style="width: @(Model.ActiveStudentsLast7Days > 0 ? 65 : 5)%;" class="progress-bar"></div>
-                                    </div>
-                                </li>
-                                <li>
-                                    <h2 class="no-margins">@Model.AverageExamDurationMinutes dk</h2>
-                                    <small>Ortalama sınav süresi</small>
-                                    <div class="stat-percent"><i class="fa fa-clock-o text-navy"></i></div>
-                                    <div class="progress progress-mini">
-                                        <div style="width: @(Model.AverageExamDurationMinutes > 0 ? 45 : 5)%;" class="progress-bar"></div>
-                                    </div>
-                                </li>
-                            </ul>
+                        <div class="col-lg-3 col-md-12">
+                            <div class="mini-stat-item">
+                                <h4>@Model.TotalEnrollments</h4>
+                                <span>Kümülatif Kurs Kayıt Sayısı</span>
+                                <div class="mini-progress">
+                                    <div class="mini-progress-bar" style="width: 100%; background: #0d9488;"></div>
+                                </div>
+                            </div>
+                            <div class="mini-stat-item">
+                                <h4>@Model.ActiveStudentsLast7Days</h4>
+                                <span>Son 7 Gün Aktif Personel</span>
+                                <div class="mini-progress">
+                                    <div class="mini-progress-bar" style="width: @(Model.ActiveStudentsLast7Days > 0 ? 70 : 10)%; background: #0284c7;"></div>
+                                </div>
+                            </div>
+                            <div class="mini-stat-item">
+                                <h4>@Model.AverageExamDurationMinutes dk</h4>
+                                <span>Ortalama Sınav Tamamlama</span>
+                                <div class="mini-progress">
+                                    <div class="mini-progress-bar" style="width: @(Model.AverageExamDurationMinutes > 0 ? 50 : 10)%; background: #f59e0b;"></div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -162,116 +724,169 @@
         </div>
     </div>
 
+    <!-- 5. ALT İKİ BÖLÜM: EN BAŞARILI ÖĞRENCİLER & GRAFİKLER & SON SINAVLAR -->
     <div class="row">
-        <div class="col-lg-4">
-            <div class="ibox">
-                <div class="ibox-title">
-                    <h5>En Başarılı Öğrenciler</h5>
+        <!-- SOL: EN BAŞARILI ÖĞRENCİLER (LİDERLİK TABLOSU) -->
+        <div class="col-xl-4 col-lg-5 col-md-12">
+            <div class="modern-box">
+                <div class="modern-box-header">
+                    <div>
+                        <h4 class="modern-box-title">
+                            <i class="fa fa-trophy text-warning"></i> En Başarılı Personel
+                        </h4>
+                        <div class="modern-box-subtitle">Sınav ortalaması en yüksek ilk 5 personel</div>
+                    </div>
                 </div>
-                <div class="ibox-content ibox-heading">
-                    <h3><i class="fa fa-trophy"></i> Başarı Listesi</h3>
-                    <small>Sınav sonuçlarına göre en yüksek ortalamaya sahip öğrenciler.</small>
-                </div>
-                <div class="ibox-content">
-                    <div class="feed-activity-list">
-                        @if (Model.TopStudents != null && Model.TopStudents.Count > 0)
+                <div class="modern-box-body">
+                    @if (Model.TopStudents != null && Model.TopStudents.Count > 0)
+                    {
+                        var rank = 1;
+                        foreach (var student in Model.TopStudents)
                         {
-                            foreach (var student in Model.TopStudents)
-                            {
-                                <div class="feed-element">
-                                    <div>
-                                        <small class="float-right text-navy">@student.Avg%</small>
+                            var rankClass = rank == 1 ? "rank-gold" : (rank == 2 ? "rank-silver" : (rank == 3 ? "rank-bronze" : "rank-default"));
+                            var rankIcon = rank == 1 ? "🥇" : (rank == 2 ? "🥈" : (rank == 3 ? "🥉" : rank.ToString()));
+                            <div class="student-item">
+                                <div class="student-info">
+                                    <div class="student-rank-badge @rankClass">
+                                        @rankIcon
+                                    </div>
+                                    <div class="student-name">
                                         <strong>@student.Name</strong>
-                                        <div>Ortalama başarı puanı</div>
-                                        <small class="text-muted">Sınav performansı</small>
+                                        <small>Sınav Başarı Sıralaması</small>
                                     </div>
                                 </div>
-                            }
+                                <div class="student-score">
+                                    <span class="student-score-badge">%@student.Avg</span>
+                                </div>
+                            </div>
+                            rank++;
                         }
-                        else
-                        {
-                            <div class="text-muted">Veri yok.</div>
-                        }
-                    </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4 text-muted">
+                            <i class="fa fa-user-times fa-2x mb-2 text-muted" style="opacity:0.4;"></i>
+                            <p class="small mb-0">Henüz tamamlanmış sınav kaydı bulunmuyor.</p>
+                        </div>
+                    }
                 </div>
             </div>
         </div>
 
-        <div class="col-lg-8">
+        <!-- SAĞ: GRAFİKLER VE SON SINAV TABLOSU -->
+        <div class="col-xl-8 col-lg-7 col-md-12">
+            <!-- 2 Mini Grafik Yan Yana -->
             <div class="row">
-                <div class="col-lg-6">
-                    <div class="ibox">
-                        <div class="ibox-title">
-                            <h5>En Popüler Kurslar</h5>
+                <div class="col-lg-6 col-md-12">
+                    <div class="modern-box">
+                        <div class="modern-box-header">
+                            <div>
+                                <h4 class="modern-box-title">
+                                    <i class="fa fa-bar-chart text-info"></i> En Popüler Kurslar
+                                </h4>
+                                <div class="modern-box-subtitle">Kayıt sayısına göre ilk 5 eğitim</div>
+                            </div>
                         </div>
-                        <div class="ibox-content">
-                            <canvas id="popularCoursesChart" height="170"></canvas>
+                        <div class="modern-box-body" style="padding: 16px;">
+                            <div style="position: relative; height: 180px; width: 100%;">
+                                <canvas id="popularCoursesChart"></canvas>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-6">
-                    <div class="ibox">
-                        <div class="ibox-title">
-                            <h5>Sınav Başarı Oranları</h5>
+
+                <div class="col-lg-6 col-md-12">
+                    <div class="modern-box">
+                        <div class="modern-box-header">
+                            <div>
+                                <h4 class="modern-box-title">
+                                    <i class="fa fa-pie-chart text-success"></i> Sınav Başarı Oranları
+                                </h4>
+                                <div class="modern-box-subtitle">Başarılı vs Başarısız dağılımı</div>
+                            </div>
                         </div>
-                        <div class="ibox-content">
-                            <canvas id="examStatsChart" height="170"></canvas>
+                        <div class="modern-box-body" style="padding: 16px;">
+                            <div style="position: relative; height: 180px; width: 100%;">
+                                <canvas id="examStatsChart"></canvas>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="row">
-                <div class="col-lg-12">
-                    <div class="ibox">
-                        <div class="ibox-title">
-                            <h5>Son Sınav Sonuçları</h5>
-                        </div>
-                        <div class="ibox-content table-responsive">
-                            <table class="table table-hover no-margins">
-                                <thead>
-                                    <tr>
-                                        <th>Durum</th>
-                                        <th>Tarih</th>
-                                        <th>Öğrenci</th>
-                                        <th>Sınav</th>
-                                        <th class="text-right">Puan</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @if (Model.RecentActivities != null && Model.RecentActivities.Count > 0)
+            <!-- Son Sınav Sonuçları Tablosu -->
+            <div class="modern-box">
+                <div class="modern-box-header">
+                    <div>
+                        <h4 class="modern-box-title">
+                            <i class="fa fa-clock-o text-primary"></i> Son Tamamlanan Sınavlar
+                        </h4>
+                        <div class="modern-box-subtitle">En son sonuçlanan 10 personel değerlendirmesi</div>
+                    </div>
+                </div>
+                <div class="modern-box-body p-0">
+                    <div class="table-responsive">
+                        <table class="table custom-table">
+                            <thead>
+                                <tr>
+                                    <th>Durum</th>
+                                    <th>Tarih</th>
+                                    <th>Personel</th>
+                                    <th>Sınav Adı</th>
+                                    <th class="text-right">Puan & Başarı</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model.RecentActivities != null && Model.RecentActivities.Count > 0)
+                                {
+                                    foreach (var activity in Model.RecentActivities)
                                     {
-                                        foreach (var activity in Model.RecentActivities)
-                                        {
-                                            var finishedAtText = activity.FinishedAt.HasValue ? activity.FinishedAt.Value.ToString("dd.MM.yyyy HH:mm") : "—";
-                                            <tr>
-                                                <td><span class="label label-primary">Tamamlandı</span></td>
-                                                <td><i class="fa fa-clock-o"></i> @finishedAtText</td>
-                                                <td>@activity.UserName</td>
-                                                <td>@activity.ExamTitle</td>
-                                                <td class="text-right">
-                                                    <span class="label label-info">@activity.Score / @activity.MaxScore</span>
-                                                    <small class="text-navy">(@String.Format("{0:F1}%", activity.Percentage))</small>
-                                                </td>
-                                            </tr>
-                                        }
-                                    }
-                                    else
-                                    {
+                                        var finishedAtText = activity.FinishedAt.HasValue ? activity.FinishedAt.Value.ToString("dd.MM.yyyy HH:mm") : "—";
+                                        var isPassed = activity.Percentage >= 70;
                                         <tr>
-                                            <td colspan="5" class="text-center text-muted">Henüz sınav sonucu bulunmuyor.</td>
+                                            <td>
+                                                @if (isPassed)
+                                                {
+                                                    <span class="status-pill status-pill-success">
+                                                        <i class="fa fa-check-circle"></i> Başarılı
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="status-pill status-pill-warning">
+                                                        <i class="fa fa-clock-o"></i> Tekrar Gerekli
+                                                    </span>
+                                                }
+                                            </td>
+                                            <td><small class="text-muted">@finishedAtText</small></td>
+                                            <td><strong>@activity.UserName</strong></td>
+                                            <td><span class="text-dark">@activity.ExamTitle</span></td>
+                                            <td class="text-right">
+                                                <span class="font-weight-bold" style="font-size:13px;">@activity.Score / @activity.MaxScore</span>
+                                                <small class="text-muted ml-1">(%@String.Format("{0:F1}", activity.Percentage))</small>
+                                            </td>
                                         </tr>
                                     }
-                                </tbody>
-                            </table>
-                        </div>
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="5" class="text-center py-4 text-muted">
+                                            Henüz sınav sonucu bulunmuyor.
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
 </div>
 
+<!-- CHART.JS ENTEGRASYONU -->
 <script src="@Url.Content("~/AdminTemplate/js/plugins/chartjs/chart.min.js")"></script>
 
 <script>
@@ -280,43 +895,67 @@
             return;
         }
 
-        // Chart.js 2.x ve 3.x / 4.x tam geriye dönük uyumluluk
+        // Global Chart.js Font & Color
         if (Chart.defaults && Chart.defaults.global) {
-            Chart.defaults.global.defaultFontColor = '#6c757d';
-            Chart.defaults.global.defaultFontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
-            Chart.defaults.global.defaultFontSize = 13;
-        } else if (Chart.defaults && Chart.defaults.font) {
-            Chart.defaults.color = '#6c757d';
-            Chart.defaults.font.family = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
-            Chart.defaults.font.size = 13;
+            Chart.defaults.global.defaultFontColor = '#64748b';
+            Chart.defaults.global.defaultFontFamily = "'Segoe UI', system-ui, -apple-system, sans-serif";
+            Chart.defaults.global.defaultFontSize = 12;
         }
 
+        // 1. Son 30 Günlük Kayıt Çizgi Grafiği
         var enrollmentCanvas = document.getElementById('enrollmentChart');
         if (enrollmentCanvas) {
+            var ctxEnroll = enrollmentCanvas.getContext('2d');
             var enrollmentLabels = @Html.Raw(Model.EnrollmentDatesJson ?? "[]");
             var enrollmentData = @Html.Raw(Model.EnrollmentCountsJson ?? "[]");
             var hasEnrollments = enrollmentLabels && enrollmentLabels.length > 0;
 
-            new Chart(enrollmentCanvas.getContext('2d'), {
+            // Gradient arka plan
+            var gradientStroke = ctxEnroll.createLinearGradient(0, 0, 0, 240);
+            gradientStroke.addColorStop(0, 'rgba(13, 148, 136, 0.35)');
+            gradientStroke.addColorStop(1, 'rgba(13, 148, 136, 0.02)');
+
+            new Chart(ctxEnroll, {
                 type: 'line',
                 data: {
                     labels: hasEnrollments ? enrollmentLabels : ['Son 30 Gün (Kayıt Yok)'],
                     datasets: [{
-                        label: 'Kayıtlar',
+                        label: 'Kurs Kaydı',
                         data: hasEnrollments ? enrollmentData : [0],
-                        borderColor: 'rgb(26, 179, 148)',
-                        backgroundColor: 'rgba(26, 179, 148, 0.12)',
+                        borderColor: '#0d9488',
+                        backgroundColor: gradientStroke,
+                        pointBackgroundColor: '#0d9488',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
                         lineTension: 0.35,
                         fill: true
                     }]
                 },
                 options: {
                     responsive: true,
-                    maintainAspectRatio: false
+                    maintainAspectRatio: false,
+                    legend: { display: false },
+                    scales: {
+                        xAxes: [{
+                            gridLines: { display: false, color: '#f1f5f9' },
+                            ticks: { fontColor: '#94a3b8' }
+                        }],
+                        yAxes: [{
+                            gridLines: { color: '#f1f5f9', zeroLineColor: '#e2e8f0' },
+                            ticks: {
+                                beginAtZero: true,
+                                fontColor: '#94a3b8',
+                                stepSize: 1
+                            }
+                        }]
+                    }
                 }
             });
         }
 
+        // 2. En Popüler Kurslar Bar Grafiği
         var popularCanvas = document.getElementById('popularCoursesChart');
         if (popularCanvas) {
             var popularLabels = @Html.Raw(Model.PopularCourseTitlesJson ?? "[]");
@@ -330,17 +969,36 @@
                     datasets: [{
                         label: 'Kayıt Sayısı',
                         data: hasPopular ? popularData : [0],
-                        backgroundColor: 'rgba(28, 132, 198, 0.8)'
+                        backgroundColor: 'rgba(2, 132, 199, 0.85)',
+                        borderColor: '#0284c7',
+                        borderWidth: 1
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    legend: { display: false }
+                    legend: { display: false },
+                    scales: {
+                        xAxes: [{
+                            gridLines: { display: false },
+                            ticks: {
+                                fontColor: '#94a3b8',
+                                maxRotation: 20,
+                                callback: function(value) {
+                                    return value.length > 14 ? value.substring(0, 14) + '...' : value;
+                                }
+                            }
+                        }],
+                        yAxes: [{
+                            gridLines: { color: '#f1f5f9' },
+                            ticks: { beginAtZero: true, fontColor: '#94a3b8', stepSize: 1 }
+                        }]
+                    }
                 }
             });
         }
 
+        // 3. Sınav Başarı Oranları (Stacked Bar)
         var examCanvas = document.getElementById('examStatsChart');
         if (examCanvas) {
             var examLabels = @Html.Raw(Model.ExamTitlesJson ?? "[]");
@@ -351,23 +1009,45 @@
             new Chart(examCanvas.getContext('2d'), {
                 type: 'bar',
                 data: {
-                    labels: hasExams ? examLabels : ['Sınav Sonucu Yok'],
+                    labels: hasExams ? examLabels : ['Sınav Yok'],
                     datasets: [{
                         label: 'Başarılı',
                         data: hasExams ? examPassed : [0],
-                        backgroundColor: 'rgba(26, 179, 148, 0.8)'
+                        backgroundColor: 'rgba(16, 185, 129, 0.85)',
+                        borderColor: '#10b981',
+                        borderWidth: 1
                     }, {
                         label: 'Başarısız',
                         data: hasExams ? examFailed : [0],
-                        backgroundColor: 'rgba(237, 85, 101, 0.8)'
+                        backgroundColor: 'rgba(239, 68, 68, 0.85)',
+                        borderColor: '#ef4444',
+                        borderWidth: 1
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    legend: {
+                        position: 'top',
+                        labels: { boxWidth: 12, fontColor: '#64748b' }
+                    },
                     scales: {
-                        xAxes: [{ stacked: true }],
-                        yAxes: [{ stacked: true }]
+                        xAxes: [{
+                            stacked: true,
+                            gridLines: { display: false },
+                            ticks: {
+                                fontColor: '#94a3b8',
+                                maxRotation: 20,
+                                callback: function(value) {
+                                    return value.length > 14 ? value.substring(0, 14) + '...' : value;
+                                }
+                            }
+                        }],
+                        yAxes: [{
+                            stacked: true,
+                            gridLines: { color: '#f1f5f9' },
+                            ticks: { beginAtZero: true, fontColor: '#94a3b8', stepSize: 1 }
+                        }]
                     }
                 }
             });

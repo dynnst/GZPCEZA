@@ -3,6 +3,7 @@ using gzpegm.Models;
 using gzpegm.ViewModels;
 using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
@@ -310,6 +311,7 @@ namespace gzpegm.Controllers
                                where er.UserId == userId && er.Status == 1
                                select new
                                {
+                                   er.ExamResultId,
                                    er.ExamId,
                                    er.Score,
                                    er.FinishedAt,
@@ -333,10 +335,19 @@ namespace gzpegm.Controllers
                                  MaxScore = g.Sum(x => (int?)x.Points) ?? 1
                              }).ToDictionary(x => x.ExamId, x => x.MaxScore);
 
+            var enrolledCount = db.CourseEnrollments.Count(e => e.UserId == userId);
+
             var model = new StudentDashboardViewModel
             {
                 CurrentUserName = user.fldName,
-                EnrolledCoursesCount = db.CourseEnrollments.Count(e => e.UserId == userId),
+                CurrentUserFullName = (user.fldName + " " + user.fldLastName).Trim(),
+                Sicil = !string.IsNullOrEmpty(user.fldSicil) ? user.fldSicil : "-",
+                UserTitle = !string.IsNullOrEmpty(user.fldTitle) ? user.fldTitle : "Emniyet Personeli",
+                BorderUnit = !string.IsNullOrEmpty(user.fldBorder) ? user.fldBorder : "Hudut Kapıları Eğitim Merkezi",
+                Email = !string.IsNullOrEmpty(user.fldEmail) ? user.fldEmail : "-",
+                XP = user.XP,
+                Level = user.Level > 0 ? user.Level : Math.Max(1, (user.XP / 100) + 1),
+                EnrolledCoursesCount = enrolledCount,
                 CompletedExamsCount = examResults.Count
             };
 
@@ -350,6 +361,7 @@ namespace gzpegm.Controllers
 
                 examDetails.Add(new ExamDetail
                 {
+                    ExamResultId = er.ExamResultId,
                     ExamId = er.ExamId,
                     Score = (int)score,
                     MaxScore = maxScore,
@@ -367,7 +379,7 @@ namespace gzpegm.Controllers
                 ? (int)Math.Round(examDetails.Average(x => x.Percentage))
                 : 0;
 
-            // Süre hesaplamaları - DateTime? kontrolü düzeltilmiş
+            // Süre hesaplamaları
             var durations = examDetails
                 .Where(x => x.StartedAt.HasValue && x.FinishedAt != null)
                 .Select(x => (x.FinishedAt - x.StartedAt.Value).TotalMinutes)
@@ -383,6 +395,8 @@ namespace gzpegm.Controllers
                 .Take(5)
                 .Select(x => new RecentExamViewModel
                 {
+                    ExamResultId = x.ExamResultId,
+                    ExamId = x.ExamId,
                     ExamTitle = x.Title,
                     CourseTitle = x.CourseTitle,
                     Score = x.Score,
@@ -393,12 +407,107 @@ namespace gzpegm.Controllers
                 })
                 .ToList();
 
+            // Sertifika verileri
+            var userCerts = db.Certificate
+                .Include(c => c.Courses)
+                .Where(c => c.UserId == userId && c.IsActive)
+                .OrderByDescending(c => c.IssuedDate)
+                .ToList();
+
+            model.EarnedCertificatesCount = userCerts.Count;
+            model.PendingCertificatesCount = db.CertificateRequest.Count(r => r.UserId == userId && r.Status == 0);
+
+            model.RecentCertificates = userCerts
+                .Take(4)
+                .Select(c => new StudentCertificateSummaryViewModel
+                {
+                    CertificateId = c.CertificateId,
+                    CertificateNumber = c.CertificateNumber,
+                    CourseTitle = c.Courses != null ? c.Courses.CourseTitle : "Eğitim Sertifikası",
+                    IssuedDate = c.IssuedDate,
+                    Score = c.Score
+                })
+                .ToList();
+
+            // Kayıtlı kurslar (Son 6)
+            var enrollments = db.CourseEnrollments
+                .Include(e => e.Courses)
+                .Include(e => e.Courses.Categories)
+                .Include(e => e.Courses.CourseContents)
+                .Where(e => e.UserId == userId && e.Courses != null && e.Courses.IsActive && (e.Courses.IsDeleted == null || e.Courses.IsDeleted == false))
+                .OrderByDescending(e => e.EnrollmentDate ?? DateTime.MinValue)
+                .Take(6)
+                .ToList();
+
+            var enrolledCourseIds = enrollments.Select(e => e.CourseId).ToList();
+            var certCourseIds = new HashSet<int>(userCerts.Select(c => c.CourseId));
+            var examCourseIds = new HashSet<int>(db.Exam
+                .Where(e => enrolledCourseIds.Contains(e.CourseId) && e.IsActive && (e.IsArchived == null || e.IsArchived == false))
+                .Select(e => e.CourseId)
+                .Distinct());
+
+            model.EnrolledCourses = enrollments.Select(e => new StudentEnrolledCourseItemViewModel
+            {
+                CourseId = e.CourseId,
+                CourseTitle = e.Courses.CourseTitle,
+                CategoryName = e.Courses.Categories != null ? e.Courses.Categories.CategoryName : "Genel Eğitim",
+                CoverImage = e.Courses.CoverImage,
+                EnrolledDate = e.EnrollmentDate,
+                ContentCount = e.Courses.CourseContents != null ? e.Courses.CourseContents.Count : 0,
+                HasExam = examCourseIds.Contains(e.CourseId),
+                HasCertificate = certCourseIds.Contains(e.CourseId)
+            }).ToList();
+
+            // Katılabileceği Sınavlar (Aktif ve henüz tamamlanmamış)
+            var completedExamIds = new HashSet<int>(examResults.Select(r => r.ExamId));
+
+            var availableExamsData = (from e in db.Exam
+                                      join c in db.Courses on e.CourseId equals c.CourseId
+                                      where e.IsActive && (e.IsArchived == null || e.IsArchived == false)
+                                            && c.IsActive && (c.IsDeleted == null || c.IsDeleted == false)
+                                            && !completedExamIds.Contains(e.ExamId)
+                                      select new
+                                      {
+                                          e.ExamId,
+                                          e.CourseId,
+                                          e.Title,
+                                          c.CourseTitle,
+                                          e.DurationMinutes,
+                                          e.PassingScore
+                                      }).Take(4).ToList();
+
+            var availExamIds = availableExamsData.Select(x => x.ExamId).ToList();
+            var questionCountMap = (from q in db.Question
+                                    where availExamIds.Contains(q.ExamId)
+                                    group q by q.ExamId into g
+                                    select new { ExamId = g.Key, Count = g.Count() })
+                                    .ToDictionary(x => x.ExamId, x => x.Count);
+
+            model.AvailableExams = availableExamsData.Select(x => new StudentAvailableExamSummaryViewModel
+            {
+                ExamId = x.ExamId,
+                CourseId = x.CourseId,
+                Title = x.Title,
+                CourseTitle = x.CourseTitle,
+                DurationMinutes = x.DurationMinutes ?? 30,
+                PassingScore = x.PassingScore ?? 60,
+                QuestionCount = questionCountMap.ContainsKey(x.ExamId) ? questionCountMap[x.ExamId] : 0
+            }).ToList();
+
+            model.AvailableExamsCount = (from e in db.Exam
+                                         join c in db.Courses on e.CourseId equals c.CourseId
+                                         where e.IsActive && (e.IsArchived == null || e.IsArchived == false)
+                                               && c.IsActive && (c.IsDeleted == null || c.IsDeleted == false)
+                                               && !completedExamIds.Contains(e.ExamId)
+                                         select e.ExamId).Count();
+
             return View(model);
         }
 
         // Yardımcı class
         public class ExamDetail
         {
+            public int ExamResultId { get; set; }
             public int ExamId { get; set; }
             public int Score { get; set; }
             public int MaxScore { get; set; }

@@ -1,12 +1,21 @@
 ﻿@model gzpegm.Models.E_Sartli
+@{
+    Layout = null;
+}
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8" />
     <title>İkamet İzni Şartlı Giriş Formu</title>
+    <!-- Yerel / Çevrimdışı Karekod Motoru -->
+    <script src="@Url.Content("~/js/qrcode.min.js?v=3")"></script>
     <style>
-
+        @@page {
+            size: auto;
+            margin: 0mm; /* Tarayıcının varsayılan üst/alt IP, URL, Tarih ve Sayfa No alanını kaldırır */
+        }
         .nisan {
+            position: relative;
             transform: rotate(-90deg);
             margin-top: 350px;
             margin-bottom: 1px;
@@ -14,15 +23,44 @@
             width: 900px;
             font-size: 12px;
         }
+
+        .v84-qr-box {
+            position: absolute;
+            top: 0px;
+            right: 0px;
+            width: 64px;
+            height: 64px;
+            background: #ffffff;
+            padding: 2px;
+            border: 1px solid #cbd5e1;
+            z-index: 999;
+            line-height: 0;
+            box-sizing: border-box;
+        }
+
+        .v84-qr-box svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        @@media print {
+            .v84-qr-box {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
     </style>
 </head>
 <body>
     @for (int i = 0; i < 2; i++)
     {
         <div class="nisan">
-            <form>
-                <h2 style="text-align:center">180 GÜNDE 90 GÜN UYGULAMASI KAPSAMINDA İKAMET İZNİ ŞARTLI GİRİŞ BİLGİ FORMU</h2>
-                <h3 style="text-align:center">INFORMATION FORM ON RESIDENCE PERMIT CONDITIONAL ENTRY WITHIN THE SCOPE OF 90 DAYS IN 180 DAYS IMPLEMENTATION</h3>
+            <form style="position:relative; margin-bottom:8px;">
+                <h2 style="text-align:center; margin:0 80px 4px 80px;">180 GÜNDE 90 GÜN UYGULAMASI KAPSAMINDA İKAMET İZNİ ŞARTLI GİRİŞ BİLGİ FORMU</h2>
+                <h3 style="text-align:center; margin:0 80px 0 80px;">INFORMATION FORM ON RESIDENCE PERMIT CONDITIONAL ENTRY WITHIN THE SCOPE OF 90 DAYS IN 180 DAYS IMPLEMENTATION</h3>
+                <!-- Sıfır Satır / Sıfır Yükseklik Ekleyen Başlık İçi Güvenlik Karekodu -->
+                <div id="v84QrCode_@i" class="v84-qr-box" title="V-84 Şartlı Giriş Doğrulama Karekodu"></div>
             </form>
 
             <table style="border:solid" width="900px">
@@ -73,15 +111,15 @@
                 </tr>
                 <tr>
                     <td style="text-align: left"><strong>Tarihi(Date)</strong></td>
-                    <td style="text-align: left">@Model.fldDate.Value.ToString("dd.MM.yyyy")</td>
+                    <td style="text-align: left">@(Model.fldDate.HasValue ? Model.fldDate.Value.ToString("dd.MM.yyyy") : "-")</td>
                     <td style="text-align: left"><p><strong>Doğum Tarihi (</strong><em>Date</em><strong>)</strong></p></td>
-                    <td>@Model.fldBdate.Value.ToString("dd.MM.yyyy")</td>
+                    <td>@(Model.fldBdate.HasValue ? Model.fldBdate.Value.ToString("dd.MM.yyyy") : "-")</td>
                 </tr>
                 <tr>
                     <td style="text-align: left"><strong>İmza(Signature)</strong></td>
                     <td style="text-align: left">&nbsp;</td>
                     <td style="text-align: left"><p><strong>Tarih/İmza(</strong><em>Date/Signature</em><strong>)</strong></p></td>
-                    <td>@Model.fldDate.Value.ToString("dd.MM.yyyy")</td>
+                    <td>@(Model.fldDate.HasValue ? Model.fldDate.Value.ToString("dd.MM.yyyy") : "-")</td>
                 </tr>
             </table>
 
@@ -100,26 +138,54 @@
     }
 
     <script>
-        window.print();
+        // Karekodları eşzamanlı üret
+        (function () {
+            try {
+                var qrText = @Html.Raw(System.Web.Helpers.Json.Encode(
+                    "[V-84 SARTLI GIRIS FORMU]\n" +
+                    "Belge No: V84-" + (Model != null ? Model.fldId.ToString() : "-") + "\n" +
+                    "Yabanci: " + (Model != null && Model.fldName != null ? Model.fldName.Trim() : "-") + "\n" +
+                    "Uyruk: " + (Model != null && Model.fldOrgin != null ? Model.fldOrgin.Trim() : "-") + "\n" +
+                    "Dogum: " + (Model != null && Model.fldBdate.HasValue ? Model.fldBdate.Value.ToString("dd.MM.yyyy") : "-") + "\n" +
+                    "Giris: " + (Model != null && Model.fldDate.HasValue ? Model.fldDate.Value.ToString("dd.MM.yyyy") : "-") + "\n" +
+                    "Son Basvuru: " + (Model != null && Model.fldDate.HasValue ? Model.fldDate.Value.AddDays(10).ToString("dd.MM.yyyy") : "-") + "\n" +
+                    "Hudut Kapisi: " + (Model != null && Model.fldBorder != null ? Model.fldBorder.Trim() : "-") + "\n" +
+                    "Yasal Sure: 10 Gun Icinde Il Goc Idaresine Basvuru Zorunludur (6458 S.K. Md. 11)"
+                ));
+
+                if (typeof qrcode !== 'undefined') {
+                    if (qrcode.stringToBytesFuncs && qrcode.stringToBytesFuncs['UTF-8']) {
+                        qrcode.stringToBytes = qrcode.stringToBytesFuncs['UTF-8'];
+                    }
+                    for (var j = 0; j < 2; j++) {
+                        var el = document.getElementById("v84QrCode_" + j);
+                        if (el) {
+                            var qr = qrcode(0, 'M');
+                            qr.addData(qrText);
+                            qr.make();
+                            el.innerHTML = qr.createSvgTag({ cellSize: 2, margin: 3, scalable: true });
+                        }
+                    }
+                }
+            } catch (e) {
+                if (window.console) console.error("V84 QR render error:", e);
+            }
+        })();
+
+        // Yazdırmadan önce kullanıcıyı uyar
+        function printTwoCopies() {
+            var confirmPrint = confirm("Bu belge iki nüsha olarak yazdırılacaktır. Devam etmek istiyor musunuz?");
+            if (confirmPrint) {
+                window.print();
+            } else {
+                alert("Yazdırma işlemi iptal edildi.");
+            }
+        }
+
+        // Sayfa yüklendiğinde otomatik popup göstermek için
+        window.onload = function () {
+            printTwoCopies();
+        }
     </script>
 </body>
 </html>
-
-<script>
-    // Yazdırmadan önce kullanıcıyı uyar
-    function printTwoCopies() {
-        var confirmPrint = confirm("Bu belge iki nüsha olarak yazdırılacaktır. Devam etmek istiyor musunuz?");
-        if (confirmPrint) {
-            window.print(); // Kullanıcı onayladıysa yazdır
-        } else {
-            alert("Yazdırma işlemi iptal edildi."); // İptal ise bilgi ver
-        }
-    }
-
-    // Sayfa yüklendiğinde otomatik popup göstermek için
-    window.onload = function () {
-        printTwoCopies();
-    }
-</script>
-
-

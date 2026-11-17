@@ -1,5 +1,5 @@
 @{
-    ViewBag.Title = "Yardım Merkezi";
+    ViewBag.Title = "Yardım & Destek Merkezi";
 }
 
 <!DOCTYPE html>
@@ -7,266 +7,929 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Yardım Merkezi - Hudut Kapıları Eğitim Merkezi</title>
+    <title>Yardım & Destek Merkezi – EGM Hudut Kapıları Personel Portalı</title>
     <link href="/AdminTemplate/css/bootstrap.min.css" rel="stylesheet">
     <link href="/AdminTemplate/font-awesome/css/font-awesome.min.css" rel="stylesheet">
     <style>
+        :root {
+            --navy: #071426;
+            --navy-mid: #0d213f;
+            --navy-light: #15325b;
+            --gold: #f59e0b;
+            --gold-light: #fbbf24;
+            --teal: #1ab394;
+            --text: #1e293b;
+            --muted: #64748b;
+            --border: #e2e8f0;
+        }
+
+        * { box-sizing: border-box; }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #f8fafc;
+            color: var(--text);
+            line-height: 1.7;
+            margin: 0;
         }
 
-        .navbar {
-            background-color: #2f4050;
-            padding: 15px 0;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        /* NAV */
+        .prv-nav {
+            background: var(--navy);
+            padding: 12px 0;
+            border-bottom: 2px solid var(--gold);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
         }
 
-        .navbar-brand {
-            color: white !important;
-            font-weight: bold;
-            font-size: 18px;
+        .prv-nav-inner {
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
 
-        .page-header {
-            background: linear-gradient(135deg, #1ab394 0%, #0d8f73 100%);
-            color: white;
-            padding: 40px 0;
-            margin-bottom: 40px;
+        .prv-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .prv-brand-shield {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #1e3c72, #071739);
+            border: 2px solid var(--gold);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gold);
+            font-size: 16px;
+        }
+
+        .prv-brand-text strong {
+            display: block;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .prv-brand-text small {
+            color: var(--gold-light);
+            font-size: 10px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .prv-back {
+            color: rgba(255,255,255,0.85);
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border: 1px solid rgba(255,255,255,0.25);
+            border-radius: 20px;
+            transition: all 0.2s;
+        }
+
+        .prv-back:hover {
+            color: #fff;
+            background: rgba(255,255,255,0.12);
+            border-color: rgba(255,255,255,0.5);
+        }
+
+        /* HERO */
+        .prv-hero {
+            background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+            color: #fff;
+            padding: 52px 20px 44px;
             text-align: center;
+            position: relative;
+            overflow: hidden;
         }
 
-            .page-header h1 {
-                font-weight: 700;
-                margin: 0;
-                font-size: 2.5rem;
-            }
-
-        .help-category {
-            background: #fff;
-            padding: 25px;
-            margin-bottom: 20px;
-            border-radius: 5px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            border-left: 4px solid #1ab394;
+        .prv-hero::before {
+            content: '\f1cd';
+            font-family: FontAwesome;
+            position: absolute;
+            right: 8%;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 170px;
+            color: rgba(255,255,255,0.035);
+            pointer-events: none;
         }
 
-            .help-category h3 {
-                color: #1ab394;
-                font-weight: 600;
-                margin-bottom: 15px;
-                font-size: 1.3rem;
-            }
-
-        .help-item {
-            padding: 10px 0;
-            border-bottom: 1px solid #eee;
-        }
-
-            .help-item:last-child {
-                border-bottom: none;
-            }
-
-            .help-item h4 {
-                color: #2f4050;
-                font-weight: 600;
-                margin-bottom: 5px;
-                cursor: pointer;
-            }
-
-                .help-item h4:hover {
-                    color: #1ab394;
-                }
-
-        .help-answer {
-            color: #666;
-            display: none;
-            margin-top: 10px;
-            padding: 10px;
-            background: #f8f9fa;
-            border-radius: 3px;
-        }
-
-        .back-button {
+        .prv-hero-kicker {
             display: inline-block;
-            margin-bottom: 20px;
+            background: rgba(245,158,11,0.15);
+            border: 1px solid rgba(245,158,11,0.4);
+            color: var(--gold-light);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 4px 14px;
+            border-radius: 20px;
+            margin-bottom: 14px;
         }
 
-            .back-button a {
-                color: #1ab394;
-                text-decoration: none;
+        .prv-hero h1 {
+            font-size: 2.1rem;
+            font-weight: 800;
+            margin: 0 0 10px;
+            letter-spacing: -0.5px;
+        }
+
+        .prv-hero p {
+            font-size: 14.5px;
+            color: rgba(255,255,255,0.8);
+            margin: 0 auto;
+            max-width: 620px;
+        }
+
+        .prv-hero-meta {
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 22px;
+            flex-wrap: wrap;
+        }
+
+        .prv-hero-meta span {
+            font-size: 12.5px;
+            color: rgba(255,255,255,0.7);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .prv-hero-meta span i {
+            color: var(--gold);
+        }
+
+        /* LAYOUT */
+        .prv-layout {
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 40px 20px 64px;
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: 32px;
+            align-items: start;
+        }
+
+        /* SIDEBAR TOC */
+        .prv-toc {
+            position: sticky;
+            top: 72px;
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 18px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+        }
+
+        .prv-toc h5 {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--muted);
+            margin: 0 0 12px;
+        }
+
+        .prv-toc a {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: var(--muted);
+            text-decoration: none;
+            padding: 7px 10px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            margin-bottom: 3px;
+        }
+
+        .prv-toc a:hover {
+            color: var(--navy-mid);
+            background: #f1f5f9;
+        }
+
+        .prv-toc a i {
+            font-size: 12px;
+            width: 18px;
+            text-align: center;
+            color: var(--teal);
+        }
+
+        .sidebar-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 16px 0 12px;
+        }
+
+        .sidebar-btn {
+            display: block;
+            text-align: center;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            text-decoration: none;
+            transition: all 0.2s;
+            margin-top: 6px;
+        }
+
+        .sidebar-btn-primary {
+            background: #eff6ff;
+            color: #1d4ed8;
+            border: 1px solid #bfdbfe;
+        }
+
+        .sidebar-btn-primary:hover {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        /* SEARCH BAR */
+        .help-search-box {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 6px 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+            margin-bottom: 24px;
+        }
+
+        .help-search-box i {
+            color: var(--muted);
+            font-size: 15px;
+        }
+
+        .help-search-box input {
+            border: none;
+            outline: none;
+            width: 100%;
+            font-size: 13.5px;
+            color: var(--text);
+            padding: 8px 0;
+            background: transparent;
+        }
+
+        /* CONTENT CARDS */
+        .prv-content {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .prv-card {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 26px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+            border-left: 4px solid var(--teal);
+        }
+
+        .prv-card.card-gold   { border-left-color: var(--gold); }
+        .prv-card.card-navy   { border-left-color: var(--navy-light); }
+        .prv-card.card-blue   { border-left-color: #0284c7; }
+        .prv-card.card-purple { border-left-color: #8b5cf6; }
+        .prv-card.card-muted  { border-left-color: #94a3b8; background: #f8fafc; }
+
+        .prv-card-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .prv-card-title .icon-wrap {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 17px;
+            background: rgba(26, 179, 148, 0.12);
+            color: var(--teal);
+            flex-shrink: 0;
+        }
+
+        .card-gold .icon-wrap   { background: rgba(245,158,11,0.12);  color: var(--gold); }
+        .card-navy .icon-wrap   { background: rgba(21,50,91,0.12);    color: var(--navy-light); }
+        .card-blue .icon-wrap   { background: rgba(2,132,199,0.12);   color: #0284c7; }
+        .card-purple .icon-wrap { background: rgba(139,92,246,0.12);  color: #8b5cf6; }
+
+        .prv-card-title h2 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--navy);
+            margin: 0;
+        }
+
+        /* FAQ ACCORDION ITEMS */
+        .faq-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .faq-item {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            background: #fff;
+            transition: all 0.2s ease;
+        }
+
+        .faq-item:hover {
+            border-color: #cbd5e1;
+        }
+
+        .faq-question {
+            padding: 14px 18px;
+            background: #f8fafc;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            user-select: none;
+            transition: background 0.2s;
+        }
+
+        .faq-question:hover {
+            background: #f1f5f9;
+        }
+
+        .faq-question h4 {
+            font-size: 13.5px;
+            font-weight: 600;
+            color: var(--navy);
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        .faq-question .toggle-icon {
+            color: var(--muted);
+            font-size: 12px;
+            transition: transform 0.25s ease;
+            flex-shrink: 0;
+        }
+
+        .faq-item.active .faq-question {
+            background: #eef2ff;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .faq-item.active .faq-question h4 {
+            color: #1e40af;
+        }
+
+        .faq-item.active .toggle-icon {
+            transform: rotate(180deg);
+            color: #1e40af;
+        }
+
+        .faq-answer {
+            padding: 16px 18px;
+            font-size: 13px;
+            color: #334155;
+            line-height: 1.7;
+            display: none;
+            background: #fff;
+        }
+
+        .faq-answer ul {
+            margin: 8px 0 0;
+            padding-left: 20px;
+        }
+
+        .faq-answer li {
+            margin-bottom: 4px;
+        }
+
+        /* FAST LINK CARDS */
+        .help-grid-links {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-top: 14px;
+        }
+
+        .help-link-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            border-radius: 12px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .help-link-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            text-decoration: none;
+        }
+
+        .help-link-card .card-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        /* FOOTER */
+        .prv-footer {
+            background: var(--navy);
+            color: #94a3b8;
+            padding: 32px 20px;
+            text-align: center;
+            font-size: 12.5px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .prv-footer strong {
+            color: #e2e8f0;
+        }
+
+        /* RESPONSIVE */
+        @@media (max-width: 860px) {
+            .prv-layout {
+                grid-template-columns: 1fr;
+                padding: 24px 16px 48px;
             }
 
-                .back-button a:hover {
-                    text-decoration: underline;
-                }
+            .prv-toc {
+                position: static;
+                top: auto;
+            }
 
-        footer {
-            background: #2f4050;
-            color: #c7d0d9;
-            padding: 30px 0;
-            text-align: center;
-            margin-top: 50px;
-        }
+            .help-grid-links {
+                grid-template-columns: 1fr;
+            }
 
-        .contact-box {
-            background-color: #e8f5e9;
-            border: 1px solid #1ab394;
-            border-radius: 4px;
-            padding: 20px;
-            margin: 20px 0;
-            text-align: center;
+            .prv-hero h1 {
+                font-size: 1.6rem;
+            }
         }
     </style>
 </head>
 <body>
-    <nav class="navbar">
-        <div class="container">
-            <span class="navbar-brand"><i class="fa fa-life-ring"></i> Hudut Kapıları Eğitim Merkezi</span>
+
+    <!-- NAV -->
+    <nav class="prv-nav">
+        <div class="prv-nav-inner">
+            <a href="@Url.Action("Index", "Landing")" class="prv-brand">
+                <div class="prv-brand-shield">
+                    <i class="fa fa-shield"></i>
+                </div>
+                <div class="prv-brand-text">
+                    <strong>EGM Hudut Kapıları</strong>
+                    <small>Personel Eğitim & Simülasyon Portalı</small>
+                </div>
+            </a>
+            <a href="@Url.Action("Index", "Landing")" class="prv-back">
+                <i class="fa fa-arrow-left"></i> Ana Sayfaya Dön
+            </a>
         </div>
     </nav>
 
-    <div class="page-header">
-        <div class="container">
-            <h1><i class="fa fa-question-circle"></i> Yardım Merkezi</h1>
-            <p>Sık Sorulan Sorular ve Destek Bilgileri</p>
+    <!-- HERO -->
+    <header class="prv-hero">
+        <div class="container" style="max-width:800px; padding:0;">
+            <span class="prv-hero-kicker">Destek ve Kullanım Kılavuzu</span>
+            <h1><i class="fa fa-life-ring mr-2 text-warning"></i> Yardım & Destek Merkezi</h1>
+            <p>Hudut kapıları kontrol noktası işlemleri, vize-ceza hesaplama algoritması, optik okuyucu donanımları ve portal kullanımı hakkında aradığınız tüm yanıtlar.</p>
+            <div class="prv-hero-meta">
+                <span><i class="fa fa-check-circle"></i> Personel Rehberi</span>
+                <span><i class="fa fa-shield"></i> Mevzuat & Yasal Dayanak</span>
+                <span><i class="fa fa-bolt"></i> Donanım Entegrasyonu</span>
+                <span><i class="fa fa-comments"></i> Portal İçi Doğrudan Destek</span>
+            </div>
         </div>
+    </header>
+
+    <!-- LAYOUT -->
+    <div class="prv-layout">
+
+        <!-- SIDEBAR TOC -->
+        <aside>
+            <div class="prv-toc">
+                <h5>Konu Başlıkları</h5>
+                <a href="#sec-giris"><i class="fa fa-user"></i> Giriş & Hesap İşlemleri</a>
+                <a href="#sec-ceza"><i class="fa fa-calculator"></i> Ceza & Vize Hesaplama</a>
+                <a href="#sec-okuyucu"><i class="fa fa-camera"></i> Optik Pasaport Okuyucu</a>
+                <a href="#sec-inad"><i class="fa fa-id-card-alt"></i> İn-Ad & Resmi Tutanak</a>
+                <a href="#sec-egitim"><i class="fa fa-graduation-cap"></i> Kurslar & Sertifikasyon</a>
+                <a href="#sec-guvenlik"><i class="fa fa-lock"></i> Güvenlik & Oturum</a>
+                <a href="#sec-iletisim"><i class="fa fa-envelope"></i> İletişim & Koordinasyon</a>
+
+                <div class="sidebar-divider"></div>
+
+                <a href="@Url.Action("PublicMessage", "Landing")" class="sidebar-btn sidebar-btn-primary">
+                    <i class="fa fa-paper-plane mr-1"></i> Bize Mesaj Gönder
+                </a>
+                <a href="@Url.Action("FAQ", "Landing")" class="sidebar-btn" style="background:#f1f5f9; color:#334155;">
+                    <i class="fa fa-question-circle mr-1"></i> Sık Sorulan Sorular
+                </a>
+                <a href="@Url.Action("Terms", "Landing")" class="sidebar-btn" style="background:#f8fafc; color:#64748b;">
+                    <i class="fa fa-file-text-o mr-1"></i> Kullanım Koşulları
+                </a>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="prv-content">
+
+            <!-- CANLI ARAMA ÇUBUĞU -->
+            <div class="help-search-box">
+                <i class="fa fa-search"></i>
+                <input type="text" id="helpFilterInput" placeholder="Yardım konularında arama yapın (örn: okuyucu, 180 gün, ceza, şifre, sertifika)..." autocomplete="off" />
+            </div>
+
+            <!-- 1. GİRİŞ VE HESAP İŞLEMLERİ -->
+            <section class="prv-card card-navy" id="sec-giris">
+                <div class="prv-card-title">
+                    <div class="icon-wrap"><i class="fa fa-user"></i></div>
+                    <h2>1. Giriş, Hesap ve Rol Tanımları</h2>
+                </div>
+                <div class="faq-group">
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h4>Portala nasıl giriş yapabilirim ve hesap nasıl açılır?</h4>
+                            <i class="fa fa-chevron-down toggle-icon"></i>
+                        </div>
+                        <div class="faq-answer">
+                            Hudut Kapıları Eğitim ve Simülasyon Portalı, Emniyet Genel Müdürlüğü personeline tahsis edilmiş kapalı devre bir sistemdir.
+                            Hesap tanımlamaları sınır kapısı şube müdürlükleri ve sistem yöneticisi tarafından kurumsal sicil doğrulamasıyla yapılmaktadır.
+                            Giriş için kullanıcı adınız (sicil/e-posta) ve parolanız ile ana sayfadaki <strong>Giriş Yap</strong> butonunu kullanabilirsiniz.
+                        </div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h4>Şifremi unuttum veya hesabım kilitlendi, ne yapmalıyım?</h4>
+                            <i class="fa fa-chevron-down toggle-icon"></i>
+                        </div>
+                        <div class="faq-answer">
+                            Giriş ekranında yer alan <strong>"Şifremi Unuttum"</strong> bağlantısını tıklayarak kurumsal e-posta adresinize sıfırlama bağlantısı talep edebilirsiniz.
+                            Eğer bağlantı ulaşmazsa veya hesabınız pasife alınmışsa kapı amiriniz veya portal yöneticinizle irtibata geçerek şifrenizin sıfırlanmasını sağlayabilirsiniz.
+                        </div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h4>Görevli olduğum kapı (Sınır Kapısı) bilgim yanlış görünüyor?</h4>
+                            <i class="fa fa-chevron-down toggle-icon"></i>
+                        </div>
+                        <div class="faq-answer">
+                            Sistem üzerinde atandığınız hudut kapısı (Havalimanı, Deniz Limanı veya Kara Hudut Kapısı) unvan ve yetki rollerinize göre belirlenir.
+                            Kapı değişikliği için sol menüdeki <em>"Bize Mesaj Gönderin"</em> ekranından tayin/görev yeri belgenizi belirterek güncelleme talep edebilirsiniz.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. CEZA VE VİZE HESAPLAMA SİSTEMİ -->
+            <section class="prv-card card-gold" id="sec-ceza">
+                <div class="prv-card-title">
+                    <div class="icon-wrap"><i class="fa fa-calculator"></i></div>
+                    <h2>2. Vize İhlali ve Ceza Hesaplama Modülü</h2>
+                </div>
+                <div class="faq-group">
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h4>90/180 Gün Kuralı nasıl hesaplanmaktadır?</h4>
+                            <i class="fa fa-chevron-down toggle-icon"></i>
+                        </div>
+                        <div class="faq-answer">
+                            Yolcunun çıkış yaptığı tarihten geriye doğru son 180 günlük hareketli pencere (rolling window) taranır.
+                            Bu 180 gün içerisinde yolcunun Türkiye'de kaldığı toplam gün sayısı tespit edilir. Vizesiz ya da turistik kalış hakkı olan 90 günü aşan süreler
+                            otomatik olarak cezalı gün olarak hesaplanır ve ilgili ülke harç tarifesiyle çarpılarak tahakkuk ettirilir.
+                        </div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h4>Tahdit Kodları (V-69, V-84, V-137 vb.) sistemde nasıl belirlenir?</h4>
+                            <i class="fa fa-chevron-down toggle-icon"></i>
+                        </div>
+                        <div class="faq-answer">
+                            Yolcunun ihlal süresi, yaş grubu, kalış şekli (ikametli, vizeli, vizesiz) ve en önemlisi <strong>Ödeme Tercihi (Ödeyen / Ödemeyen)</strong> seçimine göre
+                            ilgili genelge hükümleri devreye girer:
+                            <ul>
+                                <li><strong>Ödeyen Yolcu:</strong> İhlal süresine bağlı olarak 3 ay – 5 yıl arası giriş yasağı veya süreye göre harç tahsili uygulanır.</li>
+                                <li><strong>Ödemeyen Yolcu:</strong> Cezayı ödemeden çıkış yapmak isteyen yabancılara 3 ay ile 5 yıl arası (V-69, Ç-114 vb.) tahdit kodları otomatik atanır.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h4>Döviz kuru ve harç tutarları güncel midir?</h4>
+                            <i class="fa fa-chevron-down toggle-icon"></i>
+                        </div>
+                        <div class="faq-answer">
+                            Sistem, T.C. Merkez Bankası (TCMB) gösterge kurlarını ve Maliye Bakanlığı tarafından yayımlanan güncel değerli kağıt (ikamet defter harcı), vize harcı ve idari para cezası katsayılarını otomatik olarak entegre eder.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. OPTİK OKUYUCU VE DONANIM KÖPRÜSÜ -->
+            <section class="prv-card card-blue" id="sec-okuyucu">
+                <div class="prv-card-title">
+                    <div class="icon-wrap"><i class="fa fa-camera"></i></div>
+                    <h2>3. Optik Pasaport Okuyucu Donanım Köprüsü</h2>
+                </div>
+                <div class="faq-group">
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h4>Masanızdaki optik okuyucu (3M, Gemalto, Regula, Thales, Desko) web sayfasına nasıl bağlanır?</h4>
+                            <i class="fa fa-chevron-down toggle-icon"></i>
+                        </div>
+                        <div class="faq-answer">
+                            Sayfanın üst kısmında bulunan <strong>"Köprüyü Başlat"</strong> butonuna tıklayarak masanızdaki okuyucu donanım servisini devreye alabilirsiniz.
+                            Eğer bilgisayarınızda kurulu değilse, <code>EgmReaderBridge.exe</code> yardımcı dosyasını bir defaya mahsus indirip çalıştırmanız yeterlidir.
+                            <strong>Yönetici (Admin) izni gerektirmez</strong>; sadece kendi Windows kullanıcı oturumunuza kurulur ve sonraki açılışlarda arka planda hazır bekler.
+                        </div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h4>"Cihazdan Pasaport Oku" butonuna basıldığında cihaz tepki vermiyor?</h4>
+                            <i class="fa fa-chevron-down toggle-icon"></i>
+                        </div>
+                        <div class="faq-answer">
+                            Şu adımları kontrol ediniz:
+                            <ul>
+                                <li>Okuyucu cihazının USB kablosunun takılı ve ışığının yanık olduğundan emin olun.</li>
+                                <li>Belgeyi (Pasaport veya Kimlik) okuyucu camına tam yerleştirin ve kapağını kapatın.</li>
+                                <li>Köprü durumu simgesinin yeşil (Aktif) olduğunu teyit edin. Sarı/kırmızı ise <em>"Köprüyü Başlat"</em> düğmesine tekrar basın.</li>
+                                <li>Hızlı okuma için <strong>F2 kısayol tuşunu</strong> kullanabilirsiniz.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h4>Desko PENTA ve Klavye (Wedge) okuyucular nasıl çalışır?</h4>
+                            <i class="fa fa-chevron-down toggle-icon"></i>
+                        </div>
+                        <div class="faq-answer">
+                            Desko PENTA gibi klavye modunda çalışan cihazlarda herhangi bir köprü programına ihtiyaç duyulmaz.
+                            Belgeyi okuyucuya sürdüğünüz anda MRZ satırları sayfadaki forma otomatik olarak çözümlenerek aktarılır.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 4. İN-AD VE YOLCU FORMLARI -->
+            <section class="prv-card card-purple" id="sec-inad">
+                <div class="prv-card-title">
+                    <div class="icon-wrap"><i class="fa fa-id-card-alt"></i></div>
+                    <h2>4. İn-Ad Yolcu İşlemleri ve Resmi Tebliğ Formları</h2>
+                </div>
+                <div class="faq-group">
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h4>Kabul Edilemez Yolcu (İn-Ad) Form 1 ve Form 2 nasıl düzenlenir?</h4>
+                            <i class="fa fa-chevron-down toggle-icon"></i>
+                        </div>
+                        <div class="faq-answer">
+                            Sol menüdeki <strong>E-İnad</strong> bölümünden "Yeni İn-Ad Kaydı" oluşturarak yolcunun uçuş, pasaport, taşıyıcı havayolu ve ret gerekçesi bilgilerini doldurabilirsiniz.
+                            Sistem otomatik olarak resmi formatta Form 1 (Taşıyıcı Tebliğ) ve Form 2 (Yolcu Bildirim) tutanaklarını hazırlar.
+                        </div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h4>Yabancı dillerde resmi tebliğ çıktısı alınabilir mi?</h4>
+                            <i class="fa fa-chevron-down toggle-icon"></i>
+                        </div>
+                        <div class="faq-answer">
+                            Evet, sistem uluslararası standartlarda 10 farklı dilde (İngilizce, Rusça, Farsça, Arapça, Fransızca, Almanca, Gürcüce, Bulgarca vb.) resmi tebliğ ve bilgilendirme metinlerini tek tıkla PDF olarak yazdırmayı destekler.
+                        </div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h4>Resmi Tebliğ Formunda memur sicili otomatik gelir mi?</h4>
+                            <i class="fa fa-chevron-down toggle-icon"></i>
+                        </div>
+                        <div class="faq-answer">
+                            Evet, oturum açmış olan personelin sicil numarası ve görev unvanı resmi tutanak formundaki <em>"Kontrol Memuru"</em> alanına sistem tarafından otomatik yansıtılır.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5. EĞİTİM VE SERTİFİKASYON -->
+            <section class="prv-card" id="sec-egitim">
+                <div class="prv-card-title">
+                    <div class="icon-wrap"><i class="fa fa-graduation-cap"></i></div>
+                    <h2>5. Personel Eğitimleri, Kurslar ve Sınavlar</h2>
+                </div>
+                <div class="faq-group">
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h4>Kurslara nasıl katılırım ve ilerlemem nasıl kaydedilir?</h4>
+                            <i class="fa fa-chevron-down toggle-icon"></i>
+                        </div>
+                        <div class="faq-answer">
+                            Kurs kataloğundan görev alanınıza uygun eğitimi seçip "Kursa Katıl" butonuna tıklayabilirsiniz.
+                            Video dersleri, mevzuat metinlerini ve pratik dokümanları tamamladıkça ilerleme çubuğunuz otomatik güncellenir.
+                            Yarıda bıraktığınız derslere dilediğiniz zaman kaldığınız dakikadan devam edebilirsiniz.
+                        </div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h4>Sınav değerlendirmesi ve sertifika alma şartları nelerdir?</h4>
+                            <i class="fa fa-chevron-down toggle-icon"></i>
+                        </div>
+                        <div class="faq-answer">
+                            Kurs sonu sınavlarında minimum başarı puanı <strong>%70</strong>'tir. Başarılı olan personel adına benzersiz doğrulama koduna (QR kodlu) sahip resmi sistem e-sertifikası üretilir.
+                            Sertifikalarınızı profilinizdeki <em>"Sertifikalarım"</em> sekmesinden dilediğiniz zaman PDF olarak indirebilirsiniz.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 6. GÜVENLİK VE PROTOKOLLER -->
+            <section class="prv-card card-navy" id="sec-guvenlik">
+                <div class="prv-card-title">
+                    <div class="icon-wrap"><i class="fa fa-lock"></i></div>
+                    <h2>6. Bilgi Güvenliği, Loglama ve Oturum Kuralları</h2>
+                </div>
+                <div class="faq-group">
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h4>Oturum güvenliği ve kabin nöbet değişimi nasıl sağlanır?</h4>
+                            <i class="fa fa-chevron-down toggle-icon"></i>
+                        </div>
+                        <div class="faq-answer">
+                            Pasaport kabinlerinde görev değişimi yapılırken mutlaka sağ üst köşedeki <strong>"Güvenli Çıkış"</strong> butonuna basılmalıdır.
+                            Sistem, yetkisiz erişimi engellemek için belirli bir süre hareketsiz kalan oturumları otomatik olarak kapatır.
+                            Yapılan tüm sorgulama ve hesaplama işlemleri ilgili mevzuat gereğince IP adresi ve kullanıcı sicili ile kayıt altına alınmaktadır.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 7. İLETİŞİM VE DESTEK KANALLARI -->
+            <section class="prv-card card-gold" id="sec-iletisim">
+                <div class="prv-card-title">
+                    <div class="icon-wrap"><i class="fa fa-envelope"></i></div>
+                    <h2>7. Destek ve Koordinasyon İletişimi</h2>
+                </div>
+                <p>Sorularınız, mevzuat tereddütleriniz, sistem önerileriniz veya teknik arıza bildirimleriniz için aşağıdaki resmi kanalları kullanabilirsiniz:</p>
+
+                <div class="help-grid-links">
+                    <a href="@Url.Action("PublicMessage", "Landing")" class="help-link-card" style="background:#f0fdf4; border:1px solid #bbf7d0;">
+                        <div class="card-icon" style="background:#dcfce7; color:#16a34a;">
+                            <i class="fa fa-paper-plane"></i>
+                        </div>
+                        <div>
+                            <strong style="display:block; font-size:13.5px; color:#15803d;">Yöneticiye Mesaj Gönder</strong>
+                            <span style="font-size:12px; color:#166534; opacity:0.85;">Portal içi doğrudan mesajlaşma</span>
+                        </div>
+                    </a>
+
+                    <a href="@Url.Action("FAQ", "Landing")" class="help-link-card" style="background:#eff6ff; border:1px solid #bfdbfe;">
+                        <div class="card-icon" style="background:#dbeafe; color:#1d4ed8;">
+                            <i class="fa fa-comments"></i>
+                        </div>
+                        <div>
+                            <strong style="display:block; font-size:13.5px; color:#1e40af;">Sık Sorulan Sorular</strong>
+                            <span style="font-size:12px; color:#1e40af; opacity:0.85;">Hızlı soru ve cevap rehberi</span>
+                        </div>
+                    </a>
+
+                    <a href="@Url.Action("Terms", "Landing")" class="help-link-card" style="background:#fafafa; border:1px solid #e2e8f0;">
+                        <div class="card-icon" style="background:#f1f5f9; color:#475569;">
+                            <i class="fa fa-file-text-o"></i>
+                        </div>
+                        <div>
+                            <strong style="display:block; font-size:13.5px; color:#334155;">Kullanım Koşulları</strong>
+                            <span style="font-size:12px; color:#64748b;">Yasal kurallar ve yükümlülükler</span>
+                        </div>
+                    </a>
+
+                    <a href="@Url.Action("Privacy", "Landing")" class="help-link-card" style="background:#fafafa; border:1px solid #e2e8f0;">
+                        <div class="card-icon" style="background:#f1f5f9; color:#475569;">
+                            <i class="fa fa-shield"></i>
+                        </div>
+                        <div>
+                            <strong style="display:block; font-size:13.5px; color:#334155;">Gizlilik Politikası</strong>
+                            <span style="font-size:12px; color:#64748b;">Kişisel verilerin korunması</span>
+                        </div>
+                    </a>
+                </div>
+            </section>
+
+            <!-- FOOTER NOTU -->
+            <div class="prv-card card-muted">
+                <p style="margin:0; font-size:13px; color: var(--muted);">
+                    <strong style="color: var(--text);">Son Güncelleme:</strong> @DateTime.Now.ToString("MMMM yyyy") &nbsp;·&nbsp;
+                    Bu yardım kılavuzu yürürlükteki EGM Hudut Kapıları mevzuat ve sistem güncellemeleri doğrultusunda düzenli olarak revize edilmektedir.
+                </p>
+            </div>
+
+        </main>
     </div>
 
-    <div class="container" style="max-width: 900px;">
-        <div class="back-button">
-            <a href="@Url.Action("Index", "Landing")"><i class="fa fa-arrow-left"></i> Ana Sayfaya Dön</a>
-        </div>
-
-        <div class="help-category">
-            <h3><i class="fa fa-user"></i> Hesap ve Giriş</h3>
-
-            <div class="help-item">
-                <h4><i class="fa fa-plus"></i> Nasıl hesap oluşturabilirim?</h4>
-                <div class="help-answer">
-                    Ana sayfanın sağ üst köşesindeki "GİRİŞ YAP" butonuna tıklayın. Orada hesap oluşturma seçeneğini bulacaksınız.
-                    Adınız, soyadınız, e-posta adresiniz ve güçlü bir şifre girerek kayıt olabilirsiniz.
-                </div>
-            </div>
-
-            <div class="help-item">
-                <h4><i class="fa fa-key"></i> Şifremi unuttum, ne yapmalıyım?</h4>
-                <div class="help-answer">
-                    Giriş sayfasında "Şifremi Unuttum" bağlantısına tıklayın. E-posta adresinizi girin ve sıfırlama talimatları
-                    içeren bir e-posta alacaksınız. Linki tıklayarak yeni bir şifre belirleyebilirsiniz.
-                </div>
-            </div>
-
-            <div class="help-item">
-                <h4><i class="fa fa-edit"></i> Profil bilgilerimi nasıl güncellerim?</h4>
-                <div class="help-answer">
-                    Giriş yaptıktan sonra, sağ üst köşedeki profil menüsünden "Profil Ayarları"na gidebilirsiniz.
-                    Adınız, soyadınız, e-posta adresiniz ve profil fotoğrafınızı güncelleyebilirsiniz.
-                </div>
-            </div>
-        </div>
-
-        <div class="help-category">
-            <h3><i class="fa fa-book"></i> Kurslar</h3>
-
-            <div class="help-item">
-                <h4><i class="fa fa-search"></i> Nasıl kurs bulabilirim?</h4>
-                <div class="help-answer">
-                    Ana sayfada "BÜTÜN KURSLAR" sekmesine tıklayın. Kategorilere göre filtreleme yapabilir veya arama çubuğunu kullanabilirsiniz.
-                    İlgilendiğiniz kursu bulup "Detayına Git" butonuna tıklayın.
-                </div>
-            </div>
-
-            <div class="help-item">
-                <h4><i class="fa fa-graduation-cap"></i> Bir kursa nasıl kaydolabilirim?</h4>
-                <div class="help-answer">
-                    Kurs detay sayfasında "Kursa Kaydol" butonuna tıklayın. Kursa kaydolduktan sonra dersleri izleyebilir ve
-                    sınavlara katılabilirsiniz. Dikkat: Bazı kurslar sınırlı kapasiteli olabilir.
-                </div>
-            </div>
-
-            <div class="help-item">
-                <h4><i class="fa fa-certificate"></i> Sertifika nasıl alırım?</h4>
-                <div class="help-answer">
-                    Kursu başarıyla tamamladıktan sonra ve sınavdan minimum %70 puan aldıktan sonra sertifika alabilirsiniz.
-                    Sertifika "Kurslarım" sekmesinden indirebilirsiniz.
-                </div>
-            </div>
-        </div>
-
-        <div class="help-category">
-            <h3><i class="fa fa-pencil"></i> Sınavlar</h3>
-
-            <div class="help-item">
-                <h4><i class="fa fa-clock-o"></i> Sınav süresi ne kadar?</h4>
-                <div class="help-answer">
-                    Sınav süreleri kurslar arasında değişiklik gösterebilir. Her sınav başlamadan önce süre hakkında bilgilendirilirsiniz.
-                    Genellikle sınavlar 30 dakika ile 2 saat arasında sürmektedir.
-                </div>
-            </div>
-
-            <div class="help-item">
-                <h4><i class="fa fa-redo"></i> Sınava tekrar girebilir miyim?</h4>
-                <div class="help-answer">
-                    Sınava katıldıktan sonra, daha sonra tekrar sınava girmek istiyorsanız, kursa geri dönerek "Sınava Gir" butonuna
-                    tıklayabilirsiniz. Ancak, önceki sonuçlarınız kaydedilir ve kaydedilen en yüksek puan dikkate alınır.
-                </div>
-            </div>
-
-            <div class="help-item">
-                <h4><i class="fa fa-calculator"></i> Sınav puanı nasıl hesaplanır?</h4>
-                <div class="help-answer">
-                    Sınav puanınız doğru cevaplarınızın sayısına göre hesaplanır. Her doğru cevap eşit puan değerinde olur.
-                    Sınav sonundaızı hemen görebilir, ayrıntılı rapor alabilirsiniz.
-                </div>
-            </div>
-        </div>
-
-        <div class="help-category">
-            <h3><i class="fa fa-shield"></i> Güvenlik ve Gizlilik</h3>
-
-            <div class="help-item">
-                <h4><i class="fa fa-lock"></i> Verilerim güvenli midir?</h4>
-                <div class="help-answer">
-                    Evet, Platform en yüksek seviye şifreleme ve güvenlik protokolleri kullanır. Kişisel verileriniz
-                    gizlilik politikasında belirtilen amaçlar dışında paylaşılmaz.
-                </div>
-            </div>
-
-            <div class="help-item">
-                <h4><i class="fa fa-trash"></i> Hesabımı nasıl silebilirim?</h4>
-                <div class="help-answer">
-                    Profil ayarlarınızda "Hesabı Sil" seçeneğini bulabilirsiniz. Hesap silinmeden önce onay talep edecektir.
-                    Lütfen dikkat edin: Bu işlem geri alınamaz.
-                </div>
-            </div>
-        </div>
-
-        <div class="contact-box">
-            <h3><i class="fa fa-envelope"></i> Daha Fazla Yardıma İhtiyacınız Var mı?</h3>
-            <p>Cevabını bulamadığınız bir sorunuz varsa, lütfen bizimle iletişime geçin:</p>
-            <p>
-                <strong>E-posta:</strong> <a href="mailto:nasit.dayan@egm.gov.tr">Naşit DAYAN</a><br>
-                <strong>Telefon:</strong> (553) 535-1560<br>
-                <strong>Çalışma Saatleri:</strong> Pazartesi - Cuma, 09:00 - 17:00 (Türkiye saati)
-            </p>
-        </div>
-    </div>
-
-    <footer>
-        <div class="container">
-            <p>&copy; 2026 Hudut Kapıları Eğitim Sistemi. Tüm Hakları Saklıdır.</p>
-        </div>
+    <!-- FOOTER -->
+    <footer class="prv-footer">
+        <p>&copy; @DateTime.Now.Year <strong>T.C. İçişleri Bakanlığı Emniyet Genel Müdürlüğü</strong></p>
+        <p style="margin:4px 0 0;">
+            @if (ViewBag.UserBorder != null)
+            {
+                @ViewBag.UserBorder<text> – Personel Eğitim ve Simülasyon Portalı</text>
+            }
+            else
+            {
+                <text>EGM Hudut Kapıları Personel Portalı – Personel Eğitim ve Simülasyon Portalı</text>
+            }
+        </p>
     </footer>
 
     <script src="/AdminTemplate/js/jquery-3.1.1.min.js"></script>
     <script src="/AdminTemplate/js/bootstrap.js"></script>
     <script>
         $(document).ready(function () {
-            $('.help-item h4').click(function () {
-                $(this).next('.help-answer').slideToggle(300);
-                $(this).toggleClass('active');
+            // Akordiyon açma/kapatma
+            $('.faq-question').on('click', function () {
+                var $item = $(this).closest('.faq-item');
+                $item.toggleClass('active');
+                $item.find('.faq-answer').slideToggle(220);
+            });
+
+            // Yan menü yumuşak kaydırma
+            $('.prv-toc a').on('click', function (e) {
+                var href = $(this).attr('href');
+                if (href && href.startsWith('#')) {
+                    var target = $(href);
+                    if (target.length) {
+                        e.preventDefault();
+                        $('html, body').animate({
+                            scrollTop: target.offset().top - 85
+                        }, 350);
+                    }
+                }
+            });
+
+            // Canlı yardım arama filtresi
+            $('#helpFilterInput').on('keyup', function () {
+                var query = $(this).val().toLowerCase().trim();
+
+                if (!query) {
+                    $('.faq-item').show();
+                    $('section.prv-card').show();
+                    return;
+                }
+
+                $('section.prv-card').each(function () {
+                    var $section = $(this);
+                    var sectionMatches = 0;
+
+                    $section.find('.faq-item').each(function () {
+                        var qText = $(this).find('.faq-question h4').text().toLowerCase();
+                        var aText = $(this).find('.faq-answer').text().toLowerCase();
+
+                        if (qText.indexOf(query) !== -1 || aText.indexOf(query) !== -1) {
+                            $(this).show();
+                            // Eşleşenleri açık göster
+                            $(this).addClass('active').find('.faq-answer').show();
+                            sectionMatches++;
+                        } else {
+                            $(this).hide();
+                        }
+                    });
+
+                    if (sectionMatches > 0) {
+                        $section.show();
+                    } else {
+                        $section.hide();
+                    }
+                });
             });
         });
     </script>

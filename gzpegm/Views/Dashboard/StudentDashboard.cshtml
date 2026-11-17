@@ -1,6 +1,8 @@
 @model gzpegm.ViewModels.StudentDashboardViewModel
+@using System
+@using gzpegm.ViewModels
 @{
-    ViewBag.Title = "Öğrenci Paneli";
+    ViewBag.Title = "Öğrenci & Kursiyer Paneli";
     Layout = "~/Views/Shared/_Master.cshtml";
 
     int successRate = 0;
@@ -9,216 +11,1248 @@
         successRate = (Model.PassedExamsCount * 100) / Model.CompletedExamsCount;
     }
 
-    var lastExamText = Model.LastExamAt.HasValue ? Model.LastExamAt.Value.ToString("dd.MM.yyyy HH:mm") : "Henüz sınav yok";
+    var lastExamText = Model.LastExamAt.HasValue
+        ? Model.LastExamAt.Value.ToString("dd.MM.yyyy HH:mm")
+        : "Henüz sınav kaydı yok";
+
+    var defaultCourseImg = Url.Content("~/files/Egitim/91a7dd7d-56dc-41d3-a9bf-296a421966e2_155.jpg");
+
+    // Öğrenci Adı ve Baş harfleri
+    var displayName = !string.IsNullOrEmpty(Model.CurrentUserFullName) ? Model.CurrentUserFullName : Model.CurrentUserName;
+    var initials = "ÖP";
+    if (!string.IsNullOrEmpty(displayName))
+    {
+        var parts = displayName.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length >= 2)
+        {
+            initials = (parts[0].Substring(0, 1) + parts[parts.Length - 1].Substring(0, 1)).ToUpper();
+        }
+        else if (parts.Length == 1 && parts[0].Length > 0)
+        {
+            initials = parts[0].Substring(0, Math.Min(2, parts[0].Length)).ToUpper();
+        }
+    }
+
+    // Seviye XP Hesaplama
+    var currentLevelXp = Model.XP % 100;
 }
 
 @section Styles {
-    <link rel="stylesheet" href="@Url.Content("~/Content/dashboard-v2.css")" />
+    <style>
+        .student-portal-wrapper {
+            padding: 10px 0 35px;
+            color: #1e293b;
+        }
+
+        /* HERO PROFILE BANNER */
+        .student-hero-banner {
+            background: linear-gradient(135deg, #071426 0%, #0f274a 55%, #0284c7 100%);
+            border-radius: 18px;
+            padding: 28px 32px;
+            color: #fff;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 30px rgba(7, 20, 38, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .student-hero-banner::after {
+            content: '\f19d';
+            font-family: FontAwesome;
+            position: absolute;
+            right: 25px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 150px;
+            color: rgba(255, 255, 255, 0.04);
+            pointer-events: none;
+        }
+
+        .hero-profile-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-left-meta {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .hero-avatar {
+            width: 72px;
+            height: 72px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, #38bdf8 0%, #2563eb 100%);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            font-weight: 800;
+            box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35);
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            flex-shrink: 0;
+        }
+
+        .hero-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(56, 189, 248, 0.18);
+            border: 1px solid rgba(56, 189, 248, 0.4);
+            color: #7dd3fc;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            padding: 3px 12px;
+            border-radius: 20px;
+            margin-bottom: 6px;
+        }
+
+        .hero-name {
+            font-size: 1.65rem;
+            font-weight: 800;
+            margin: 0 0 6px;
+            color: #fff;
+        }
+
+        .hero-pills-row {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 12.5px;
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        .hero-pill-item {
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(4px);
+            padding: 4px 12px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        /* GAMIFICATION & ACTIONS */
+        .hero-right-meta {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 12px;
+        }
+
+        .gamification-box {
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 10px 16px;
+            min-width: 220px;
+        }
+
+        .gamification-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            margin-bottom: 6px;
+        }
+
+        .gamification-level-badge {
+            background: #f59e0b;
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-weight: 800;
+            font-size: 11px;
+        }
+
+        .gamification-progress {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .gamification-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #38bdf8, #10b981);
+            border-radius: 10px;
+        }
+
+        .hero-action-buttons {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn-hero-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff !important;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(4px);
+            padding: 7px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            text-decoration: none !important;
+            transition: all 0.2s ease;
+        }
+
+        .btn-hero-action:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+        }
+
+        .btn-hero-action-primary {
+            background: #0284c7;
+            border-color: #38bdf8;
+        }
+
+        .btn-hero-action-primary:hover {
+            background: #0369a1;
+        }
+
+        /* KPI METRIC CARDS */
+        .kpi-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .kpi-card {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+        }
+
+        .kpi-card-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .kpi-card-icon {
+            width: 46px;
+            height: 46px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .icon-blue-soft {
+            background: #eff6ff;
+            color: #2563eb;
+        }
+
+        .icon-emerald-soft {
+            background: #ecfdf5;
+            color: #059669;
+        }
+
+        .icon-purple-soft {
+            background: #f5f3ff;
+            color: #7c3aed;
+        }
+
+        .icon-amber-soft {
+            background: #fffbeb;
+            color: #d97706;
+        }
+
+        .kpi-pill {
+            font-size: 11.5px;
+            font-weight: 700;
+            padding: 3px 9px;
+            border-radius: 20px;
+        }
+
+        .pill-success {
+            background: #ecfdf5;
+            color: #059669;
+            border: 1px solid #a7f3d0;
+        }
+
+        .pill-warning {
+            background: #fffbeb;
+            color: #b45309;
+            border: 1px solid #fde68a;
+        }
+
+        .kpi-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #0f172a;
+            line-height: 1.1;
+            margin-bottom: 4px;
+        }
+
+        .kpi-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #475569;
+            margin-bottom: 4px;
+        }
+
+        .kpi-desc {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-bottom: 12px;
+        }
+
+        .kpi-footer-link {
+            font-size: 12.5px;
+            font-weight: 700;
+            color: #0284c7;
+            text-decoration: none !important;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: color 0.2s;
+        }
+
+        .kpi-footer-link:hover {
+            color: #0369a1;
+        }
+
+        /* SECTION CARDS */
+        .portal-card {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+
+        .portal-card-header {
+            padding: 18px 22px;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .portal-card-title {
+            font-size: 15px;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .portal-card-body {
+            padding: 22px;
+        }
+
+        /* COURSE MINI CARDS */
+        .course-mini-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+            gap: 16px;
+        }
+
+        .course-mini-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #fff;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .course-mini-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+            border-color: #cbd5e1;
+        }
+
+        .course-mini-thumb {
+            height: 130px;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+            background-color: #0f172a;
+        }
+
+        .course-mini-cat {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(4px);
+            color: #fff;
+            padding: 3px 9px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .course-mini-body {
+            padding: 14px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .course-mini-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 8px;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .course-mini-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 12px;
+            font-size: 11.5px;
+        }
+
+        .course-badge-item {
+            background: #f1f5f9;
+            color: #475569;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .course-badge-cert {
+            background: #ecfdf5;
+            color: #059669;
+            font-weight: 700;
+        }
+
+        .btn-continue-course {
+            display: block;
+            text-align: center;
+            background: #0284c7;
+            color: #fff !important;
+            font-weight: 700;
+            font-size: 12.5px;
+            padding: 8px 14px;
+            border-radius: 8px;
+            text-decoration: none !important;
+            transition: background 0.2s;
+        }
+
+        .btn-continue-course:hover {
+            background: #0369a1;
+        }
+
+        /* EXAM TABLE */
+        .modern-table {
+            width: 100%;
+            margin-bottom: 0;
+        }
+
+        .modern-table th {
+            font-size: 11.5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #64748b;
+            font-weight: 700;
+            border-bottom: 2px solid #e2e8f0;
+            padding: 12px 16px;
+            background: #f8fafc;
+            white-space: nowrap;
+        }
+
+        .modern-table td {
+            padding: 13px 16px;
+            vertical-align: middle;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 13px;
+        }
+
+        .modern-table tbody tr:hover {
+            background-color: #fafbfd;
+        }
+
+        .status-badge {
+            padding: 4px 9px;
+            border-radius: 20px;
+            font-size: 11.5px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .status-pass {
+            background: #ecfdf5;
+            color: #059669;
+            border: 1px solid #a7f3d0;
+        }
+
+        .status-fail {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+
+        /* AVAILABLE EXAM ITEM */
+        .avail-exam-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 14px;
+            border-radius: 10px;
+            border: 1px solid #f1f5f9;
+            background: #fafbfd;
+            margin-bottom: 10px;
+            transition: background 0.2s;
+            gap: 12px;
+        }
+
+        .avail-exam-item:hover {
+            background: #f1f5f9;
+        }
+
+        .avail-exam-title {
+            font-weight: 700;
+            font-size: 13px;
+            color: #0f172a;
+            margin-bottom: 3px;
+        }
+
+        .avail-exam-meta {
+            font-size: 11.5px;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn-start-exam-sm {
+            background: #10b981;
+            color: #fff !important;
+            font-size: 11.5px;
+            font-weight: 700;
+            padding: 6px 12px;
+            border-radius: 6px;
+            text-decoration: none !important;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: background 0.2s;
+        }
+
+        .btn-start-exam-sm:hover {
+            background: #059669;
+        }
+
+        /* CERTIFICATE ITEM */
+        .cert-summary-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 14px;
+            border-radius: 10px;
+            border: 1px solid #fef3c7;
+            background: #fffdf5;
+            margin-bottom: 10px;
+            gap: 10px;
+        }
+
+        .cert-summary-no {
+            font-weight: 800;
+            font-size: 12px;
+            color: #b45309;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 2px;
+        }
+
+        .cert-summary-course {
+            font-size: 13px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .cert-summary-date {
+            font-size: 11.5px;
+            color: #78716c;
+        }
+
+        /* EMPTY STATES */
+        .empty-portal-box {
+            text-align: center;
+            padding: 36px 18px;
+            color: #64748b;
+        }
+
+        .empty-portal-box i {
+            font-size: 42px;
+            margin-bottom: 12px;
+            color: #cbd5e1;
+        }
+
+        .empty-portal-box h5 {
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+
+        .empty-portal-box p {
+            font-size: 12.5px;
+            margin-bottom: 14px;
+        }
+    </style>
 }
 
-<div class="wrapper wrapper-content animated fadeInRight dashboard-v2">
-    <div class="row">
-        <div class="col-lg-12">
-            <div class="ibox">
-                <div class="ibox-title">
-                    <span class="label label-primary float-right">Öğrenci</span>
-                    <h5>Öğrenci Paneli</h5>
+<div class="student-portal-wrapper">
+
+    <!-- HERO PROFILE BANNER -->
+    <div class="student-hero-banner">
+        <div class="hero-profile-row">
+            <div class="hero-left-meta">
+                <div class="hero-avatar">
+                    @initials
                 </div>
-                <div class="ibox-content ibox-heading">
-                    <h3><i class="fa fa-user"></i> Hoş geldiniz, @Model.CurrentUserName</h3>
-                    <small>Kurslarınızı, sınav performansınızı ve son sınav geçmişinizi buradan takip edebilirsiniz.</small>
+                <div>
+                    <span class="hero-kicker">
+                        <i class="fa fa-graduation-cap"></i> EGM Kursiyer Eğitim Portalı
+                    </span>
+                    <h1 class="hero-name">@displayName</h1>
+                    <div class="hero-pills-row">
+                        <span class="hero-pill-item">
+                            <i class="fa fa-id-badge text-warning"></i> Sicil: <strong>@Model.Sicil</strong>
+                        </span>
+                        <span class="hero-pill-item">
+                            <i class="fa fa-shield-alt text-info"></i> @Model.UserTitle
+                        </span>
+                        <span class="hero-pill-item">
+                            <i class="fa fa-map-marker-alt text-danger"></i> @Model.BorderUnit
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hero-right-meta">
+                <!-- GAMIFICATION XP & LEVEL -->
+                <div class="gamification-box">
+                    <div class="gamification-header">
+                        <span class="gamification-level-badge">
+                            <i class="fa fa-star mr-1"></i> Seviye @Model.Level
+                        </span>
+                        <span style="color: #7dd3fc; font-weight: 700;">
+                            @Model.XP XP
+                        </span>
+                    </div>
+                    <div class="gamification-progress" title="Sonraki Seviyeye: % @currentLevelXp">
+                        <div class="gamification-progress-bar" style="width: @currentLevelXp%;"></div>
+                    </div>
+                    <div class="d-flex justify-content-between text-muted" style="font-size: 10px; margin-top: 4px; color: rgba(255,255,255,0.7) !important;">
+                        <span>Seviye @Model.Level</span>
+                        <span>Seviye @(Model.Level + 1)</span>
+                    </div>
+                </div>
+
+                <!-- QUICK ACTIONS -->
+                <div class="hero-action-buttons">
+                    <a href="@Url.Action("StudentIndex", "Course")" class="btn-hero-action btn-hero-action-primary">
+                        <i class="fa fa-book-open"></i> Kurs Kataloğu
+                    </a>
+                    <a href="@Url.Action("AvailableExams", "StudentExam")" class="btn-hero-action">
+                        <i class="fa fa-pencil-alt"></i> Sınav Merkezi
+                    </a>
+                    <a href="@Url.Action("MyCertificates", "Certificate")" class="btn-hero-action">
+                        <i class="fa fa-award"></i> Sertifikalarım
+                    </a>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="row">
-        <div class="col-lg-3">
-            <div class="ibox">
-                <div class="ibox-title">
-                    <span class="label label-success float-right">Kayıtlı</span>
-                    <h5>Aktif Kurslar</h5>
+    <!-- 4 KPI SUMMARY CARDS -->
+    <div class="kpi-cards-grid">
+        <!-- 1. Kayıtlı Kurslar -->
+        <div class="kpi-card">
+            <div>
+                <div class="kpi-card-header">
+                    <div class="kpi-card-icon icon-blue-soft">
+                        <i class="fa fa-book-reader"></i>
+                    </div>
+                    <span class="kpi-pill" style="background:#eff6ff; color:#2563eb; border:1px solid #bfdbfe;">
+                        Eğitimlerim
+                    </span>
                 </div>
-                <div class="ibox-content">
-                    <h1 class="no-margins">@Model.EnrolledCoursesCount</h1>
-                    <div class="stat-percent font-bold text-success"><i class="fa fa-book"></i></div>
-                    <small>Kayıtlı olduğunuz kurslar</small>
-                </div>
+                <div class="kpi-value">@Model.EnrolledCoursesCount</div>
+                <div class="kpi-title">Kayıtlı Aktif Kurslar</div>
+                <div class="kpi-desc">Kayıt olduğunuz ve devam eden eğitimler</div>
+            </div>
+            <div>
+                <a href="@Url.Action("StudentIndex", "Course")" class="kpi-footer-link">
+                    Kurslarıma Git <i class="fa fa-arrow-right"></i>
+                </a>
             </div>
         </div>
-        <div class="col-lg-3">
-            <div class="ibox">
-                <div class="ibox-title">
-                    <span class="label label-info float-right">Ortalama</span>
-                    <h5>Başarı Oranı</h5>
+
+        <!-- 2. Tamamlanan Sınavlar -->
+        <div class="kpi-card">
+            <div>
+                <div class="kpi-card-header">
+                    <div class="kpi-card-icon icon-emerald-soft">
+                        <i class="fa fa-check-double"></i>
+                    </div>
+                    <span class="kpi-pill pill-success">
+                        %@successRate Başarı
+                    </span>
                 </div>
-                <div class="ibox-content">
-                    <h1 class="no-margins">@Model.AverageScore%</h1>
-                    <div class="stat-percent font-bold text-info"><i class="fa fa-line-chart"></i></div>
-                    <small>Tamamlanan sınav ortalaması</small>
-                </div>
+                <div class="kpi-value">@Model.CompletedExamsCount</div>
+                <div class="kpi-title">Tamamlanan Sınavlar</div>
+                <div class="kpi-desc">@Model.PassedExamsCount sınav barajı başarıyla geçildi</div>
+            </div>
+            <div>
+                <a href="@Url.Action("MyExamResults", "StudentExam")" class="kpi-footer-link" style="color:#059669;">
+                    Sınav Sonuçlarım <i class="fa fa-arrow-right"></i>
+                </a>
             </div>
         </div>
-        <div class="col-lg-3">
-            <div class="ibox">
-                <div class="ibox-title">
-                    <span class="label label-primary float-right">@successRate%</span>
-                    <h5>Geçilen Sınavlar</h5>
+
+        <!-- 3. Puan Ortalaması -->
+        <div class="kpi-card">
+            <div>
+                <div class="kpi-card-header">
+                    <div class="kpi-card-icon icon-purple-soft">
+                        <i class="fa fa-chart-line"></i>
+                    </div>
+                    <span class="kpi-pill" style="background:#f5f3ff; color:#7c3aed; border:1px solid #ddd6fe;">
+                        @Model.TotalExamTimeMinutes dk Sınav
+                    </span>
                 </div>
-                <div class="ibox-content">
-                    <h1 class="no-margins">@Model.PassedExamsCount</h1>
-                    <div class="stat-percent font-bold text-navy"><i class="fa fa-check"></i></div>
-                    <small>@Model.CompletedExamsCount toplam sınav içinden</small>
-                </div>
+                <div class="kpi-value">%@Model.AverageScore</div>
+                <div class="kpi-title">Genel Puan Ortalaması</div>
+                <div class="kpi-desc">Son sınav: @lastExamText</div>
+            </div>
+            <div>
+                <span class="text-muted" style="font-size: 12px; font-weight: 600;">
+                    <i class="fa fa-stopwatch mr-1"></i> Ort. Süre: @Model.AverageExamDurationMinutes dk
+                </span>
             </div>
         </div>
-        <div class="col-lg-3">
-            <div class="ibox">
-                <div class="ibox-title">
-                    <span class="label label-warning float-right">Dakika</span>
-                    <h5>Toplam Süre</h5>
+
+        <!-- 4. Sertifikalar -->
+        <div class="kpi-card">
+            <div>
+                <div class="kpi-card-header">
+                    <div class="kpi-card-icon icon-amber-soft">
+                        <i class="fa fa-award"></i>
+                    </div>
+                    @if (Model.PendingCertificatesCount > 0)
+                    {
+                        <span class="kpi-pill pill-warning">
+                            <i class="fa fa-clock-o mr-1"></i>@Model.PendingCertificatesCount Bekliyor
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="kpi-pill pill-success">
+                            Onaylı
+                        </span>
+                    }
                 </div>
-                <div class="ibox-content">
-                    <h1 class="no-margins">@Model.TotalExamTimeMinutes</h1>
-                    <div class="stat-percent font-bold text-warning"><i class="fa fa-clock-o"></i></div>
-                    <small>Sınavlarda geçirilen toplam süre</small>
+                <div class="kpi-value">@Model.EarnedCertificatesCount</div>
+                <div class="kpi-title">Kazanılan Sertifikalar</div>
+                <div class="kpi-desc">
+                    @(Model.PendingCertificatesCount > 0
+                        ? Model.PendingCertificatesCount + " sertifika talebiniz incelemede"
+                        : "Resmi e-imzalı başarı belgeleriniz")
                 </div>
+            </div>
+            <div>
+                <a href="@Url.Action("MyCertificates", "Certificate")" class="kpi-footer-link" style="color:#d97706;">
+                    Sertifikalarımı Gör <i class="fa fa-arrow-right"></i>
+                </a>
             </div>
         </div>
     </div>
 
+    <!-- MAIN TWO-COLUMN LAYOUT -->
     <div class="row">
-        <div class="col-lg-8">
-            <div class="ibox">
-                <div class="ibox-title">
-                    <h5>Son Sınav Geçmişi</h5>
+        <!-- SOL KOLON (Kayıtlı Kurslar & Sınav Geçmişi Tablosu) -->
+        <div class="col-lg-8 col-md-12">
+
+            <!-- 1. KAYITLI KURSLARIM -->
+            <div class="portal-card">
+                <div class="portal-card-header">
+                    <h4 class="portal-card-title">
+                        <i class="fa fa-book-reader text-primary"></i> Kayıtlı Eğitim Kurslarım
+                    </h4>
+                    <a href="@Url.Action("StudentIndex", "Course")" class="btn btn-outline-primary btn-sm font-weight-bold" style="border-radius: 6px;">
+                        Tüm Kursları Gör <i class="fa fa-arrow-right ml-1"></i>
+                    </a>
                 </div>
-                <div class="ibox-content table-responsive">
+                <div class="portal-card-body">
+                    @if (Model.EnrolledCourses != null && Model.EnrolledCourses.Count > 0)
+                    {
+                        <div class="course-mini-grid">
+                            @foreach (var course in Model.EnrolledCourses)
+                            {
+                                var imgUrl = !string.IsNullOrEmpty(course.CoverImage)
+                                    ? Url.Content(course.CoverImage)
+                                    : defaultCourseImg;
+
+                                <div class="course-mini-card">
+                                    <div class="course-mini-thumb" style="background-image: url('@imgUrl');">
+                                        <span class="course-mini-cat">@course.CategoryName</span>
+                                    </div>
+                                    <div class="course-mini-body">
+                                        <div>
+                                            <div class="course-mini-title" title="@course.CourseTitle">
+                                                @course.CourseTitle
+                                            </div>
+                                            <div class="course-mini-badges">
+                                                <span class="course-badge-item">
+                                                    <i class="fa fa-file-alt mr-1"></i>@course.ContentCount Ders
+                                                </span>
+                                                @if (course.HasExam)
+                                                {
+                                                    <span class="course-badge-item text-primary font-weight-bold">
+                                                        <i class="fa fa-pencil-alt mr-1"></i>Sınav Var
+                                                    </span>
+                                                }
+                                                @if (course.HasCertificate)
+                                                {
+                                                    <span class="course-badge-item course-badge-cert">
+                                                        <i class="fa fa-award mr-1"></i>Sertifikalı
+                                                    </span>
+                                                }
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <a href="@Url.Action("Details", "Course", new { id = course.CourseId })" class="btn-continue-course">
+                                                <i class="fa fa-play mr-1"></i> Eğitime Devam Et
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-portal-box">
+                            <i class="fa fa-book-open"></i>
+                            <h5>Henüz Kayıtlı Bir Kursunuz Bulunmuyor</h5>
+                            <p>Emniyet Genel Müdürlüğü eğitim kataloğundan dilediğiniz eğitime kaydolarak hemen öğrenmeye başlayabilirsiniz.</p>
+                            <a href="@Url.Action("StudentIndex", "Course")" class="btn btn-primary font-weight-bold btn-sm" style="border-radius: 8px;">
+                                <i class="fa fa-search mr-1"></i> Kurs Kataloğunu İncele
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- 2. SON SINAV GEÇMİŞİ TABLOSU -->
+            <div class="portal-card">
+                <div class="portal-card-header">
+                    <h4 class="portal-card-title">
+                        <i class="fa fa-history text-info"></i> Son Sınav Performansı
+                    </h4>
+                    @if (Model.CompletedExamsCount > 0)
+                    {
+                        <a href="@Url.Action("MyExamResults", "StudentExam")" class="text-primary font-weight-bold small">
+                            Tüm Sınav Geçmişi (@Model.CompletedExamsCount) <i class="fa fa-arrow-right ml-1"></i>
+                        </a>
+                    }
+                </div>
+                <div class="portal-card-body p-0">
                     @if (Model.RecentExams != null && Model.RecentExams.Count > 0)
                     {
-                        <table class="table table-hover no-margins">
-                            <thead>
-                                <tr>
-                                    <th>Durum</th>
-                                    <th>Tarih</th>
-                                    <th>Sınav</th>
-                                    <th>Kurs</th>
-                                    <th class="text-right">Puan</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var exam in Model.RecentExams)
-                                {
+                        <div class="table-responsive">
+                            <table class="table modern-table">
+                                <thead>
                                     <tr>
-                                        <td>
-                                            @if (exam.IsPassed)
-                                            {
-                                                <span class="label label-primary">Başarılı</span>
-                                            }
-                                            else
-                                            {
-                                                <span class="label label-danger">Başarısız</span>
-                                            }
-                                        </td>
-                                        <td><i class="fa fa-clock-o"></i> @exam.FinishedAt.ToString("dd.MM.yyyy HH:mm")</td>
-                                        <td><strong>@exam.ExamTitle</strong></td>
-                                        <td>@exam.CourseTitle</td>
-                                        <td class="text-right">
-                                            <span class="label label-info">@exam.Score / @exam.MaxScore</span>
-                                            <small class="text-navy">(@exam.Percentage.ToString("F0")%)</small>
-                                        </td>
+                                        <th>Durum</th>
+                                        <th>Sınav Adı</th>
+                                        <th>Kurs</th>
+                                        <th>Tarih</th>
+                                        <th class="text-right">Puan & Başarı</th>
+                                        <th class="text-right">İşlem</th>
                                     </tr>
-                                }
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    @foreach (var exam in Model.RecentExams)
+                                    {
+                                        <tr>
+                                            <td>
+                                                @if (exam.IsPassed)
+                                                {
+                                                    <span class="status-badge status-pass">
+                                                        <i class="fa fa-check"></i> Başarılı
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="status-badge status-fail">
+                                                        <i class="fa fa-times"></i> Tekrar Dene
+                                                    </span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <strong class="text-dark">@exam.ExamTitle</strong>
+                                            </td>
+                                            <td>
+                                                <span class="text-muted small">@exam.CourseTitle</span>
+                                            </td>
+                                            <td>
+                                                <span class="text-dark font-weight-bold small">
+                                                    @exam.FinishedAt.ToString("dd.MM.yyyy")
+                                                </span>
+                                                <div class="text-muted small">
+                                                    @exam.FinishedAt.ToString("HH:mm")
+                                                </div>
+                                            </td>
+                                            <td class="text-right">
+                                                <div class="font-weight-bold @(exam.IsPassed ? "text-success" : "text-danger")" style="font-size: 14px;">
+                                                    @exam.Score / @exam.MaxScore
+                                                </div>
+                                                <small class="text-muted font-weight-bold">
+                                                    (%@exam.Percentage.ToString("F0"))
+                                                </small>
+                                            </td>
+                                            <td class="text-right">
+                                                @if (exam.ExamResultId > 0)
+                                                {
+                                                    <a href="@Url.Action("ExamResult", "StudentExam", new { id = exam.ExamResultId })" class="btn btn-light btn-sm font-weight-bold" style="border: 1px solid #e2e8f0; border-radius: 6px;" title="Sınav Analizini İncele">
+                                                        <i class="fa fa-chart-pie mr-1"></i> İncele
+                                                    </a>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-portal-box">
+                            <i class="fa fa-clipboard-check"></i>
+                            <h5>Henüz Tamamlanmış Sınavınız Yok</h5>
+                            <p>Kayıtlı olduğunuz eğitimlerin sınavlarını tamamladıkça skorlarınız ve gelişim grafiğiniz burada listelenecektir.</p>
+                            <a href="@Url.Action("AvailableExams", "StudentExam")" class="btn btn-success font-weight-bold btn-sm" style="border-radius: 8px;">
+                                <i class="fa fa-play mr-1"></i> Sınavlara Katıl
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
 
-                        if (Model.CompletedExamsCount > 5)
+        </div>
+
+        <!-- SAĞ KOLON (Aktif Sınavlar, Trend Grafiği, Sertifikalar, Kısayollar) -->
+        <div class="col-lg-4 col-md-12">
+
+            <!-- 1. KATILABİLECEĞİNİZ SINAVLAR -->
+            <div class="portal-card">
+                <div class="portal-card-header">
+                    <h4 class="portal-card-title">
+                        <i class="fa fa-pencil-alt text-success"></i> Aktif Sınavlar
+                    </h4>
+                    @if (Model.AvailableExamsCount > 0)
+                    {
+                        <span class="badge badge-success p-1 px-2 font-weight-bold">
+                            @Model.AvailableExamsCount Sınav
+                        </span>
+                    }
+                </div>
+                <div class="portal-card-body">
+                    @if (Model.AvailableExams != null && Model.AvailableExams.Count > 0)
+                    {
+                        foreach (var exam in Model.AvailableExams)
                         {
-                            <div class="text-center m-t">
-                                <a href="@Url.Action("MyExamResults", "StudentExam")" class="btn btn-white btn-sm">
-                                    <i class="fa fa-list"></i> Tüm Sınav Geçmişi (@Model.CompletedExamsCount)
-                                </a>
+                            <div class="avail-exam-item">
+                                <div style="flex-grow: 1;">
+                                    <div class="avail-exam-title">@exam.Title</div>
+                                    <div class="avail-exam-meta">
+                                        <span><i class="fa fa-book mr-1 text-muted"></i>@exam.CourseTitle</span>
+                                        <span><i class="fa fa-clock-o mr-1 text-muted"></i>@exam.DurationMinutes dk</span>
+                                        <span><i class="fa fa-bullseye mr-1 text-muted"></i>Baraj: %@exam.PassingScore</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <a href="@Url.Action("StartExam", "StudentExam", new { id = exam.ExamId })" class="btn-start-exam-sm">
+                                        <i class="fa fa-play"></i> Başla
+                                    </a>
+                                </div>
+                            </div>
+                        }
+
+                        <div class="mt-3 text-center">
+                            <a href="@Url.Action("AvailableExams", "StudentExam")" class="text-primary font-weight-bold small">
+                                Tüm Sınav Merkezine Git <i class="fa fa-arrow-right ml-1"></i>
+                            </a>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-portal-box" style="padding: 24px 12px;">
+                            <i class="fa fa-check-circle text-success" style="font-size: 34px;"></i>
+                            <h5 style="margin-top: 8px;">Tebrikler!</h5>
+                            <p style="font-size: 12px; margin-bottom: 0;">Şu anda çözülmeyi bekleyen aktif sınavınız bulunmuyor. Yeni kurslar ekleyerek sınavlara katılabilirsiniz.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- 2. SINAV BAŞARI GRAFİĞİ -->
+            @if (Model.RecentExams != null && Model.RecentExams.Count > 1)
+            {
+                <div class="portal-card">
+                    <div class="portal-card-header">
+                        <h4 class="portal-card-title">
+                            <i class="fa fa-chart-area text-purple"></i> Başarı Trendi
+                        </h4>
+                        <span class="badge badge-light font-weight-bold" style="border: 1px solid #e2e8f0;">
+                            Son @Model.RecentExams.Count Sınav
+                        </span>
+                    </div>
+                    <div class="portal-card-body">
+                        <div style="height: 180px; position: relative;">
+                            <canvas id="studentExamChart"></canvas>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-2 pt-2" style="border-top: 1px solid #f1f5f9; font-size: 11.5px; color: #64748b;">
+                            <span><i class="fa fa-circle text-info mr-1"></i> Sınav Puanı (%)</span>
+                            <span><i class="fa fa-minus text-danger mr-1"></i> Baraj Puanı (60%)</span>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- 3. KAZANILAN SERTİFİKALAR -->
+            <div class="portal-card">
+                <div class="portal-card-header">
+                    <h4 class="portal-card-title">
+                        <i class="fa fa-award text-warning"></i> Sertifikalarım
+                    </h4>
+                    <a href="@Url.Action("MyCertificates", "Certificate")" class="text-primary font-weight-bold small">
+                        Tümü (@Model.EarnedCertificatesCount) <i class="fa fa-arrow-right ml-1"></i>
+                    </a>
+                </div>
+                <div class="portal-card-body">
+                    @if (Model.PendingCertificatesCount > 0)
+                    {
+                        <div class="p-2 px-3 mb-3" style="background:#fffbeb; border:1px solid #fde68a; border-radius:8px; font-size:12px; color:#b45309;">
+                            <i class="fa fa-clock-o mr-1 font-weight-bold"></i>
+                            <strong>@Model.PendingCertificatesCount</strong> adet sertifika başvurunuz admin onayındadır.
+                        </div>
+                    }
+
+                    @if (Model.RecentCertificates != null && Model.RecentCertificates.Count > 0)
+                    {
+                        foreach (var cert in Model.RecentCertificates)
+                        {
+                            <div class="cert-summary-item">
+                                <div>
+                                    <div class="cert-summary-no">
+                                        <i class="fa fa-certificate"></i> @cert.CertificateNumber
+                                    </div>
+                                    <div class="cert-summary-course">@cert.CourseTitle</div>
+                                    <div class="cert-summary-date">
+                                        <i class="fa fa-calendar-alt mr-1"></i> @cert.IssuedDate.ToString("dd.MM.yyyy")
+                                    </div>
+                                </div>
+                                <div class="d-flex flex-column" style="gap: 4px;">
+                                    <a href="@Url.Action("ViewCertificate", "Certificate", new { certificateId = cert.CertificateId })" class="btn btn-xs btn-outline-primary font-weight-bold" style="border-radius: 4px;" target="_blank">
+                                        Gör
+                                    </a>
+                                    <a href="@Url.Action("DownloadCertificate", "Certificate", new { certificateId = cert.CertificateId })" class="btn btn-xs btn-light font-weight-bold" style="border: 1px solid #cbd5e1; border-radius: 4px;">
+                                        İndir
+                                    </a>
+                                </div>
                             </div>
                         }
                     }
                     else
                     {
-                        <div class="empty-state">
-                            <i class="fa fa-inbox"></i>
-                            <h4>Henüz sınav sonucunuz bulunmamaktadır</h4>
-                            <p class="text-muted">İlk sınavınızı tamamladıktan sonra sonuçlarınız burada görünecek.</p>
+                        <div class="empty-portal-box" style="padding: 20px 10px;">
+                            <i class="fa fa-award" style="font-size: 32px; color: #fde68a;"></i>
+                            <h5 style="margin-top: 6px;">Henüz Sertifikanız Yok</h5>
+                            <p style="font-size: 12px; margin-bottom: 0;">Eğitimlerinizi tamamlayıp sınavları geçerek resmi sertifikalarınızı oluşturabilirsiniz.</p>
                         </div>
                     }
                 </div>
             </div>
-        </div>
 
-        <div class="col-lg-4">
-            <div class="ibox">
-                <div class="ibox-title">
-                    <h5>Performans Özeti</h5>
+            <!-- 4. HIZLI ERİŞİM KISAYOLLARI -->
+            <div class="portal-card">
+                <div class="portal-card-header">
+                    <h4 class="portal-card-title">
+                        <i class="fa fa-compass text-secondary"></i> Hızlı Kısayollar
+                    </h4>
                 </div>
-                <div class="ibox-content ibox-heading">
-                    <h3><i class="fa fa-bar-chart-o"></i> Genel Durum</h3>
-                    <small>Son sınav: @lastExamText</small>
-                </div>
-                <div class="ibox-content">
-                    <ul class="stat-list">
-                        <li>
-                            <h2 class="no-margins">@successRate%</h2>
-                            <small>Başarıyla geçilen sınav oranı</small>
-                            <div class="stat-percent">@successRate% <i class="fa fa-level-up text-navy"></i></div>
-                            <div class="progress progress-mini">
-                                <div style="width: @successRate%;" class="progress-bar"></div>
-                            </div>
-                        </li>
-                        <li>
-                            <h2 class="no-margins">@Model.AverageExamDurationMinutes dk</h2>
-                            <small>Ortalama sınav süresi</small>
-                            <div class="stat-percent"><i class="fa fa-clock-o text-navy"></i></div>
-                            <div class="progress progress-mini">
-                                <div style="width: @(Model.AverageExamDurationMinutes > 0 ? 50 : 5)%;" class="progress-bar"></div>
-                            </div>
-                        </li>
-                        <li>
-                            <h2 class="no-margins">@Model.CompletedExamsCount</h2>
-                            <small>Tamamlanan toplam sınav</small>
-                            <div class="stat-percent"><i class="fa fa-check text-navy"></i></div>
-                            <div class="progress progress-mini">
-                                <div style="width: @(Model.CompletedExamsCount > 0 ? 75 : 5)%;" class="progress-bar"></div>
-                            </div>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-
-            <div class="ibox">
-                <div class="ibox-title">
-                    <h5>Hızlı Erişim</h5>
-                </div>
-                <div class="ibox-content">
-                    <div class="row">
-                        <div class="col-sm-12">
-                            <a href="@Url.Action("StudentIndex", "Course")" class="btn btn-primary student-action">
-                                <i class="fa fa-book"></i>
-                                Kurslarım
-                            </a>
-                        </div>
-                        <div class="col-sm-12 m-t">
-                            <a href="@Url.Action("AvailableExams", "StudentExam")" class="btn btn-success student-action">
-                                <i class="fa fa-play-circle"></i>
-                                Sınavlara Başla
-                            </a>
-                        </div>
-                        <div class="col-sm-12 m-t">
-                            <a href="@Url.Action("Index", "Profile")" class="btn btn-info student-action">
-                                <i class="fa fa-user"></i>
-                                Profilim
-                            </a>
-                        </div>
+                <div class="portal-card-body p-2">
+                    <div class="list-group list-group-flush">
+                        <a href="@Url.Action("StudentIndex", "Course")" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between p-3" style="border: none; border-bottom: 1px solid #f1f5f9;">
+                            <span class="font-weight-bold text-dark" style="font-size: 13px;">
+                                <i class="fa fa-book text-primary mr-2"></i> Eğitim Kataloğu
+                            </span>
+                            <i class="fa fa-chevron-right text-muted small"></i>
+                        </a>
+                        <a href="@Url.Action("AvailableExams", "StudentExam")" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between p-3" style="border: none; border-bottom: 1px solid #f1f5f9;">
+                            <span class="font-weight-bold text-dark" style="font-size: 13px;">
+                                <i class="fa fa-pencil-alt text-success mr-2"></i> Katılabileceğim Sınavlar
+                            </span>
+                            <i class="fa fa-chevron-right text-muted small"></i>
+                        </a>
+                        <a href="@Url.Action("MyExamResults", "StudentExam")" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between p-3" style="border: none; border-bottom: 1px solid #f1f5f9;">
+                            <span class="font-weight-bold text-dark" style="font-size: 13px;">
+                                <i class="fa fa-history text-info mr-2"></i> Tüm Sınav Geçmişim
+                            </span>
+                            <i class="fa fa-chevron-right text-muted small"></i>
+                        </a>
+                        <a href="@Url.Action("MyCertificates", "Certificate")" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between p-3" style="border: none; border-bottom: 1px solid #f1f5f9;">
+                            <span class="font-weight-bold text-dark" style="font-size: 13px;">
+                                <i class="fa fa-award text-warning mr-2"></i> Resmi Sertifikalarım
+                            </span>
+                            <i class="fa fa-chevron-right text-muted small"></i>
+                        </a>
+                        <a href="@Url.Action("Help", "Landing")" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between p-3" style="border: none;">
+                            <span class="font-weight-bold text-dark" style="font-size: 13px;">
+                                <i class="fa fa-question-circle text-danger mr-2"></i> Yardım & Rehber Merkezi
+                            </span>
+                            <i class="fa fa-chevron-right text-muted small"></i>
+                        </a>
                     </div>
                 </div>
             </div>
+
         </div>
     </div>
+
 </div>
+
+<!-- CHART.JS KÜTÜPHANESİ -->
+<script src="@Url.Content("~/AdminTemplate/js/plugins/chartjs/chart.min.js")"></script>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Sınav Başarı Trendi Grafiği
+            var chartCanvas = document.getElementById('studentExamChart');
+            if (chartCanvas && typeof Chart !== 'undefined') {
+                @{
+                    var orderedExams = Model.RecentExams != null
+                        ? Model.RecentExams.OrderBy(x => x.FinishedAt).ToList()
+                        : new List<RecentExamViewModel>();
+
+                    var examLabels = orderedExams.Select(x => x.ExamTitle.Length > 14 ? x.ExamTitle.Substring(0, 14) + "..." : x.ExamTitle).ToArray();
+                    var examScores = orderedExams.Select(x => Math.Round(x.Percentage, 0)).ToArray();
+                }
+
+                var labels = @Html.Raw(System.Web.Helpers.Json.Encode(examLabels));
+                var dataScores = @Html.Raw(System.Web.Helpers.Json.Encode(examScores));
+
+                if (labels && labels.length > 0) {
+                    var ctx = chartCanvas.getContext('2d');
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [
+                                {
+                                    label: 'Puanım (%)',
+                                    data: dataScores,
+                                    borderColor: '#0284c7',
+                                    backgroundColor: 'rgba(2, 132, 199, 0.1)',
+                                    pointBackgroundColor: '#0284c7',
+                                    pointBorderColor: '#fff',
+                                    pointHoverRadius: 6,
+                                    borderWidth: 2.5,
+                                    fill: true,
+                                    tension: 0.3
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            legend: {
+                                display: false
+                            },
+                            scales: {
+                                yAxes: [{
+                                    ticks: {
+                                        beginAtZero: true,
+                                        max: 100,
+                                        stepSize: 20,
+                                        fontSize: 11
+                                    },
+                                    gridLines: {
+                                        color: '#f1f5f9'
+                                    }
+                                }],
+                                xAxes: [{
+                                    ticks: {
+                                        fontSize: 10
+                                    },
+                                    gridLines: {
+                                        display: false
+                                    }
+                                }]
+                            },
+                            tooltips: {
+                                callbacks: {
+                                    label: function (tooltipItem) {
+                                        return 'Puan: %' + tooltipItem.yLabel;
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+        });
+    </script>
+}

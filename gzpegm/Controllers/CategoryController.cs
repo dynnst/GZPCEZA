@@ -2,6 +2,7 @@ using gzpegm.Cont;
 using gzpegm.Helpers;
 using gzpegm.Models;
 using System;
+using System.Data.Entity;
 using System.IO;
 using System.Linq;
 using System.Web.Mvc;
@@ -16,7 +17,10 @@ namespace gzpegm.Controllers
         // Listeleme
         public ActionResult Index()
         {
-            var categories = db.Categories.OrderBy(x => x.CategoryName).ToList();
+            var categories = db.Categories
+                .Include(c => c.Courses)
+                .OrderBy(x => x.CategoryName)
+                .ToList();
             return View(categories);
         }
 
@@ -121,23 +125,30 @@ namespace gzpegm.Controllers
                 return RedirectToAction("Index");
             }
 
-            // Kategoriye bağlı aktif kurs var mı kontrol et
-            var hasActiveCourses = db.Courses.Any(c => c.CategoryId == id && c.IsActive);
-            if (hasActiveCourses)
+            // Eğer pasif yapılmak isteniyorsa, bağlı aktif kurs var mı kontrol et
+            if (cat.IsActive)
             {
-                TempData["msgError"] = "Bu kategoriye bağlı aktif kurslar bulunduğu için silinemez. Önce kursları silin veya başka kategoriye taşıyın.";
-                return RedirectToAction("Index");
+                var hasActiveCourses = db.Courses.Any(c => c.CategoryId == id && c.IsActive && (c.IsDeleted == null || c.IsDeleted == false));
+                if (hasActiveCourses)
+                {
+                    TempData["msgError"] = "Bu kategoriye bağlı aktif kurslar bulunduğu için pasife alınamaz. Önce kursları pasife alınız.";
+                    return RedirectToAction("Index");
+                }
+                cat.IsActive = false;
+                db.SaveChanges();
+                TempData["msgSuccess"] = "Kategori başarıyla pasife alındı.";
+            }
+            else
+            {
+                cat.IsActive = true;
+                db.SaveChanges();
+                TempData["msgSuccess"] = "Kategori başarıyla aktifleştirildi.";
             }
 
-            // Fiziksel silme yerine pasife çek
-            cat.IsActive = false;
-            db.SaveChanges();
-
-            TempData["msgSuccess"] = "Kategori pasife alındı.";
             return RedirectToAction("Index");
         }
 
-        // Kategoriyi ve bağlı kursları tamamen sil (DİKKATLİ KULLANIN!)
+        // Kategoriyi ve bağlı tüm kursları ilişkili verileriyle birlikte tamamen sil
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult ForceDeleteCategory(int id)
@@ -149,51 +160,117 @@ namespace gzpegm.Controllers
                 return RedirectToAction("Index");
             }
 
-            try
+            using (var transaction = db.Database.BeginTransaction())
             {
-                // Önce kategoriye bağlı kursları sil
-                var coursesToDelete = db.Courses.Where(c => c.CategoryId == id).ToList();
-
-                foreach (var course in coursesToDelete)
+                try
                 {
-                    // Kurs içeriklerini sil
-                    var contents = db.CourseContents.Where(cc => cc.CourseId == course.CourseId).ToList();
-                    db.CourseContents.RemoveRange(contents);
+                    var coursesToDelete = db.Courses.Where(c => c.CategoryId == id).ToList();
+                    var courseIds = coursesToDelete.Select(c => c.CourseId).ToList();
 
-                    // Kurs kayıtlarını sil
-                    var enrollments = db.CourseEnrollments.Where(ce => ce.CourseId == course.CourseId).ToList();
-                    db.CourseEnrollments.RemoveRange(enrollments);
-
-                    // Kurs değerlendirmelerini sil
-                    var reviews = db.CourseReviews.Where(cr => cr.CourseId == course.CourseId).ToList();
-                    db.CourseReviews.RemoveRange(reviews);
-
-                    // Dosyaları sil
-                    string uploadPath = FileStorageHelper.MapPath(Server, "~/files/Egitim/");
-                    if (!string.IsNullOrEmpty(course.CoverImage))
+                    if (courseIds.Any())
                     {
-                        string coverPath = Path.Combine(uploadPath, course.CoverImage);
-                        if (System.IO.File.Exists(coverPath)) System.IO.File.Delete(coverPath);
+                        // A. Sertifikaları temizle
+                        var certs = db.Certificate.Where(c => courseIds.Contains(c.CourseId)).ToList();
+                        if (certs.Any()) db.Certificate.RemoveRange(certs);
+
+                        var certReqs = db.CertificateRequest.Where(r => courseIds.Contains(r.CourseId)).ToList();
+                        if (certReqs.Any()) db.CertificateRequest.RemoveRange(certReqs);
+
+                        // B. Sınavları temizle
+                        var exams = db.Exam.Where(e => courseIds.Contains(e.CourseId)).ToList();
+                        var examIds = exams.Select(e => e.ExamId).ToList();
+
+                        if (examIds.Any())
+                        {
+                            var examResults = db.ExamResult.Where(er => examIds.Contains(er.ExamId)).ToList();
+                            var examResultIds = examResults.Select(er => er.ExamResultId).ToList();
+
+                            if (examResultIds.Any())
+                            {
+                                var answers = db.Answer.Where(a => examResultIds.Contains(a.ExamResultId)).ToList();
+                                if (answers.Any()) db.Answer.RemoveRange(answers);
+                                db.ExamResult.RemoveRange(examResults);
+                            }
+
+                            var questions = db.Question.Where(q => examIds.Contains(q.ExamId)).ToList();
+                            var questionIds = questions.Select(q => q.QuestionId).ToList();
+
+                            if (questionIds.Any())
+                            {
+                                var media = db.QuestionMedia.Where(m => questionIds.Contains(m.QuestionId)).ToList();
+                                foreach (var m in media)
+                                {
+                                    if (!string.IsNullOrWhiteSpace(m.MediaPath))
+                                    {
+                                        var p = m.MediaPath.StartsWith("~/", StringComparison.Ordinal)
+                                            ? FileStorageHelper.MapPath(Server, m.MediaPath)
+                                            : FileStorageHelper.MapUrlToPhysicalPath(Server, m.MediaPath);
+                                        try { if (System.IO.File.Exists(p)) System.IO.File.Delete(p); } catch { }
+                                    }
+                                }
+                                db.QuestionMedia.RemoveRange(media);
+
+                                var options = db.QuestionOption.Where(o => questionIds.Contains(o.QuestionId)).ToList();
+                                db.QuestionOption.RemoveRange(options);
+
+                                db.Question.RemoveRange(questions);
+                            }
+
+                            db.Exam.RemoveRange(exams);
+                        }
+
+                        // C. Yorumlar
+                        var reviews = db.CourseReviews.Where(cr => courseIds.Contains(cr.CourseId)).ToList();
+                        if (reviews.Any()) db.CourseReviews.RemoveRange(reviews);
+
+                        // D. Kayıtlar
+                        var enrollments = db.CourseEnrollments.Where(ce => courseIds.Contains(ce.CourseId)).ToList();
+                        if (enrollments.Any()) db.CourseEnrollments.RemoveRange(enrollments);
+
+                        // E. İçerikler
+                        string uploadPath = FileStorageHelper.MapPath(Server, "~/files/Egitim/");
+                        var contents = db.CourseContents.Where(cc => courseIds.Contains(cc.CourseId)).ToList();
+                        foreach (var cc in contents)
+                        {
+                            if (!string.IsNullOrEmpty(cc.FilePath))
+                            {
+                                var p = Path.Combine(uploadPath, cc.FilePath);
+                                try { if (System.IO.File.Exists(p)) System.IO.File.Delete(p); } catch { }
+                            }
+                        }
+                        if (contents.Any()) db.CourseContents.RemoveRange(contents);
+
+                        // F. Kurs dosyaları
+                        foreach (var course in coursesToDelete)
+                        {
+                            if (!string.IsNullOrEmpty(course.CoverImage))
+                            {
+                                var p = Path.Combine(uploadPath, course.CoverImage);
+                                try { if (System.IO.File.Exists(p)) System.IO.File.Delete(p); } catch { }
+                            }
+                            if (!string.IsNullOrEmpty(course.ResourceFile))
+                            {
+                                var p = Path.Combine(uploadPath, course.ResourceFile);
+                                try { if (System.IO.File.Exists(p)) System.IO.File.Delete(p); } catch { }
+                            }
+                        }
+
+                        db.Courses.RemoveRange(coursesToDelete);
                     }
-                    if (!string.IsNullOrEmpty(course.ResourceFile))
-                    {
-                        string resourcePath = Path.Combine(uploadPath, course.ResourceFile);
-                        if (System.IO.File.Exists(resourcePath)) System.IO.File.Delete(resourcePath);
-                    }
+
+                    // G. Kategoriyi sil
+                    db.Categories.Remove(cat);
+                    db.SaveChanges();
+
+                    transaction.Commit();
+
+                    TempData["msgSuccess"] = $"Kategori ve bağlı {coursesToDelete.Count} ders kalıcı olarak başarıyla silindi.";
                 }
-
-                // Kursları sil
-                db.Courses.RemoveRange(coursesToDelete);
-
-                // Kategoriyi sil
-                db.Categories.Remove(cat);
-                db.SaveChanges();
-
-                TempData["msgSuccess"] = $"Kategori ve bağlı {coursesToDelete.Count} kurs tamamen silindi.";
-            }
-            catch (Exception ex)
-            {
-                TempData["msgError"] = "Silme işlemi sırasında hata oluştu: " + ex.Message;
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    TempData["msgError"] = "Kategori silinirken bir hata oluştu: " + ex.Message;
+                }
             }
 
             return RedirectToAction("Index");

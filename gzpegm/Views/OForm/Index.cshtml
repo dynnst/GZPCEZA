@@ -1,11 +1,7 @@
-﻿
+﻿@using Newtonsoft.Json
 @{
     Layout = null;
 }
-
-
-
-
 <!DOCTYPE html>
 
 <html>
@@ -14,24 +10,158 @@
     <meta name="title" content="T.C. İçişleri Bakanlığı Emniyet Genel Müdürlüğü">
     <meta name="description" content="T.C. İçişleri Bakanlığı Emniyet Genel Müdürlüğü">
     <meta name="keywords" content="Polis, Emniyet, Özel harekat, Terör,Asayiş, trafik, narkotik, interpol, suç, hırsızlık, kapkaç, dolandırıcılık, ruhsat, ceza, ihbar, suçlu, güvenlik, göçmen, kaçakçılık, ">
-    <!-- Web Fonts: internet bağımlılığı olmaması için sistem fontları kullanılmaktadır. -->
 
     <!-- Vendor CSS -->
     <link rel="stylesheet" href="/css/bootstrap.css">
 
     <!-- Invoice Print Style -->
-    <link rel="stylesheet" href="/css/invoice-print.css">
+    <link rel="stylesheet" href="/css/invoice-print.css?v=@DateTime.Now.Ticks">
+
+    <style>
+        /* ==========================================================================
+           A4 STANDART BASKI VE SAYFA KONTROL STİLLERİ
+           ========================================================================== */
+        @@page {
+            size: A4 portrait;
+            margin: 7mm 10mm;
+        }
+
+        body, table, td, th, p, span, li, a {
+            font-family: "Times New Roman", Times, serif !important;
+        }
+
+        body {
+            font-size: 12px !important;
+            line-height: 1.25 !important;
+            color: #000 !important;
+            background: #fff !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .invoice {
+            position: relative !important;
+            width: 100% !important;
+            max-width: 800px !important;
+            margin: 0 auto !important;
+            padding: 0 !important;
+        }
+
+        /* Kesin sayfa ayrımı (Ç ve N kodlu formlar için) */
+        .page-break {
+            display: block !important;
+            page-break-before: always !important;
+            break-before: page !important;
+            clear: both !important;
+            height: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+        }
+
+        h3 {
+            margin-top: 0 !important;
+            margin-bottom: 4px !important;
+            font-size: 15px !important;
+            font-weight: bold !important;
+        }
+
+        p {
+            margin-top: 1.5px !important;
+            margin-bottom: 3px !important;
+            font-size: 12px !important;
+            line-height: 1.25 !important;
+        }
+
+        table {
+            border-collapse: collapse !important;
+            margin-bottom: 3px !important;
+        }
+
+        table td, table th {
+            padding: 2px 4px !important;
+            font-size: 12px !important;
+            line-height: 1.25 !important;
+            vertical-align: middle !important;
+        }
+
+        .invoice br {
+            line-height: 6px !important;
+        }
+
+        /* Karekod Alanı (Sayfanın sağ üst köşesine sabitlenir, sayfa düzenini ve tabloları aşağı itmez) */
+        #cezaQrCode {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            width: 68px;
+            height: 68px;
+            z-index: 9999;
+            background: #fff;
+            padding: 2px;
+            text-align: center;
+        }
+
+        @@media print {
+            body {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            #cezaQrCode {
+                display: block !important;
+                position: absolute !important;
+                top: 10px !important;
+                right: 15px !important;
+            }
+        }
+    </style>
+    <script src="/js/qrious.min.js"></script>
 </head>
 <body>
     <div class="invoice" style="page-break-after:always">
-   @Html.Raw(ViewBag.Form) 
+        <div id="cezaQrCode">
+            <canvas id="qrCanvas" width="64" height="64" style="width: 64px; height: 64px;"></canvas>
+        </div>
+        @Html.Raw(ViewBag.Form) 
     </div>
-   
 
     <script>
+        (function () {
+            try {
+                var qrText = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.QrText ?? ""));
+                if (!qrText || qrText.length === 0) {
+                    var bodyText = document.body.innerText || "";
+                    var nameMatch = bodyText.match(/(?:Adı Soyadı|Name\/Surname|姓名)[^\n:]*[:\t\s]+([^\n\r]+)/i);
+                    var passMatch = bodyText.match(/(?:Pasaport No|Passport No|护照号码)[^\n:]*[:\t\s]+([^\n\r]+)/i);
+                    var name = nameMatch ? nameMatch[1].trim() : "-";
+                    var pass = passMatch ? passMatch[1].trim() : "-";
+                    qrText = "T.C. ICISLERI BAKANLIGI EGM\n" +
+                             "Yolcu: " + name + "\n" +
+                             "Pasaport: " + pass + "\n" +
+                             "Tarih: " + new Date().toLocaleDateString('tr-TR');
+                }
+                if (window.QRious) {
+                    new QRious({
+                        element: document.getElementById('qrCanvas'),
+                        value: qrText,
+                        size: 64,
+                        level: 'M'
+                    });
+                }
+            } catch (e) {
+                console.error("QR Code oluşturulamadı:", e);
+            }
+        })();
+
+        // Ç Kodlu veya N Kodlu formların 1. sayfa dibinden başlamasını engellemek için JS güvencesi
+        document.querySelectorAll('.page-break').forEach(function(el) {
+            el.style.display = 'block';
+            el.style.pageBreakBefore = 'always';
+            el.style.breakBefore = 'page';
+            el.style.clear = 'both';
+        });
+
         window.print();
     </script>
 </body>
 </html>
-
-

@@ -19,7 +19,7 @@
         border-radius: 8px;
         background:
             linear-gradient(135deg, rgba(255,255,255,.94), rgba(244,248,252,.92)),
-            url('@Url.Content("~/img/kapak.png")') center right / cover no-repeat;
+            url('../img/kapak.png') center right / cover no-repeat;
         box-shadow: 0 12px 28px rgba(36, 49, 67, .08);
         overflow: hidden;
     }

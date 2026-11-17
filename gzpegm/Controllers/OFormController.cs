@@ -17,7 +17,18 @@ namespace gzpegm.Controllers
             string Result = "";
             Isk Isk = new Isk();
             var data = Isk.GetdatabyId(Id);
-            if (data != null) Result = data.fldForm;
+            if (data != null)
+            {
+                Result = data.fldForm;
+                ViewBag.QrText = "T.C. ICISLERI BAKANLIGI EGM\n" +
+                                 "Yolcu: " + (data.fldName ?? "-") + "\n" +
+                                 "Pasaport: " + (data.fldPassport ?? "-") + "\n" +
+                                 "Uyruk: " + (data.fldOrgin ?? "-") + "\n" +
+                                 "Ceza Tutari: " + (data.fldPMoney ?? "-") + " TL\n" +
+                                 "Hudut Kapisi: " + (data.fldBorder ?? "-") + "\n" +
+                                 "Gorevli Memur: " + (data.fldPassControl ?? "-") + "\n" +
+                                 "Tarih: " + (data.fldDatetime.HasValue ? data.fldDatetime.Value.ToString("dd.MM.yyyy HH:mm") : "-");
+            }
             ViewBag.Form = Result;
             return View();
         }
@@ -39,7 +50,10 @@ namespace gzpegm.Controllers
             if (UserCookie != null)
             {
                 var tokendata = token.GetToken(UserCookie.Value.ToString());
-                int.TryParse(tokendata.fldUserId.ToString(), out UserId);
+                if (tokendata != null)
+                {
+                    int.TryParse(tokendata.fldUserId.ToString(), out UserId);
+                }
             }
             var Data = user.GetUserById(UserId);
             ContFormT formT = new ContFormT();
@@ -84,441 +98,180 @@ namespace gzpegm.Controllers
                     else FINET += " Toplam=" + FinePriceCFORM;
                 }
             }
-            if (OrginCFORM == "Rusya Federasyonu" || OrginCFORM == "Ukrayna")
+            bool isPaid = (PaymentTypeCFORM == "1" || PaymentTypeCFORM == "2" || PaymentTypeCFORM == "10" || PaymentTypeCFORM == "8" || PaymentTypeCFORM == "6" || PaymentTypeCFORM == "14" || PaymentTypeCFORM == "4");
+            var allForms = formT.GetAllForms();
+            string template = "";
+
+            if (OrginCFORM == "Rusya Federasyonu" || OrginCFORM == "Ukrayna" || OrginCFORM == "Rusya" || OrginCFORM == "Russia" || OrginCFORM == "Ukraine")
             {
-                if (PaymentTypeCFORM == "1" || PaymentTypeCFORM == "2" || PaymentTypeCFORM == "10" || PaymentTypeCFORM == "8" || PaymentTypeCFORM == "6" || PaymentTypeCFORM == "14" || PaymentTypeCFORM == "4")
-                {
-                    result = formT.GetAllForms().fldRUC;
-                    result = result.Replace("{{GATE}}", Data.fldBorder?.Split(' ')[0] ?? "");
-
-                    result = result.Replace("{{TCODE}}", codeFORM).Replace("{{NAME}}", NameCFORM).Replace("{{ORGIN}}", OrginCFORM).Replace("{{PASSPORT}}", PassportCFORM).Replace("{{EDATE}}", EntryDateCFORM).Replace("{{TODAY}}", DateTime.Now.ToString("dd.MM.yyyy")).Replace("{{SEDATE}}", ShouldExitCFORM).Replace("{{VDAY}}", VisaDistanceCFORM).Replace("{{FINETIME}}", ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)).ToString()).Replace("{{FINET}}", FINET).Replace("{{POLICE}}", PoliceCFORM).Replace("{{USER}}", Data.fldSicil).Replace("{{CANENT}}", DateTime.Now.AddDays(Convert.ToInt32(DDayCFORM)).ToString("dd.MM.yyyy")).Replace("{{FINEDAY}}", DDayCFORM).Replace("{{FIRSTNAME}}", Adı).Replace("{{LASTNAME}}", Soyadı).Replace("{{FATHERNAME}}", FatherCFORM).Replace("{{MOTHERNAME}}", MotherCFORM).Replace("{{BIRTHDATE}}", BirthdateCFORM.ToString("dd.MM.yyyy")).Replace("{{TOTIME}}", DateTime.Now.ToShortTimeString());
-
-                    if (((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 90 && PaymentTypeCFORM != "2" && PaymentTypeCFORM != "3" && PaymentTypeCFORM != "6" || (PaymentTypeCFORM == "6" && ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 11) || adult == false)
-
-                        if (((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 90 && PaymentTypeCFORM != "8" || (PaymentTypeCFORM == "8" && ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 11) || adult == false)
-                            if (((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 90 && PaymentTypeCFORM != "14" || (PaymentTypeCFORM == "14" && ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 11) || adult == false)
-                            {
-                                int start = result.IndexOf("{{S}}"),
-                                    finish = result.IndexOf("{{F}}");
-
-                                result = result.Remove(start, (finish - start) + 5);
-                                int start1 = result.IndexOf("{{S1}}"),
-                                    finish1 = result.IndexOf("{{F1}}");
-                                result = result.Trim().Remove(start1, (finish1 - start1)).Trim();
-                                result = result.Replace("{{S}}", "").Replace("{{F}}", "");
-                                result = result.Replace("{{S1}}", "").Replace("{{F1}}", "");
-                            }
-                            else if (!codeFORM.Contains("Ç"))
-                            {
-                                result = result.Replace("{{S}}", "").Replace("{{F}}", "");
-                                result = result.Replace("{{S1}}", "").Replace("{{F1}}", "");
-                            }
-                    result = result.Trim();
-                }
-                else
-                {
-                    result = formT.GetAllForms().fldRU;
-                    result = result.Replace("{{GATE}}", Data.fldBorder?.Split(' ')[0] ?? "");
-
-                    if (adult)
-                    {
-                        result = result.Replace("{{TCODE}}", codeFORM).Replace("{{NAME}}", NameCFORM).Replace("{{ORGIN}}", OrginCFORM).Replace("{{PASSPORT}}", PassportCFORM).Replace("{{EDATE}}", EntryDateCFORM).Replace("{{TODAY}}", DateTime.Now.ToString("dd.MM.yyyy")).Replace("{{SEDATE}}", ShouldExitCFORM).Replace("{{VDAY}}", VisaDistanceCFORM).Replace("{{FINETIME}}", ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)).ToString()).Replace("{{FINET}}", FINET).Replace("{{POLICE}}", PoliceCFORM).Replace("{{USER}}", Data.fldSicil).Replace("{{CANENT}}", DateTime.Now.AddDays(Convert.ToInt32(DDayCFORM)).ToString("dd.MM.yyyy")).Replace("{{FINEDAY}}", DDayCFORM).Replace("{{FIRSTNAME}}", Adı).Replace("{{LASTNAME}}", Soyadı).Replace("{{FATHERNAME}}", FatherCFORM).Replace("{{MOTHERNAME}}", MotherCFORM).Replace("{{BIRTHDATE}}", BirthdateCFORM.ToString("dd.MM.yyyy")).Replace("{{TOTIME}}", DateTime.Now.ToShortTimeString()).Replace("{{S1}}", "").Replace("{{F1}}", "").Replace("{{S}}", "").Replace("{{F}}", "");
-                        if (!codeFORM.Contains("Ç"))
-                        {
-
-                            int start3 = result.IndexOf("{{ÇS}}");
-                            result = result.Trim().Remove(start3);
-                        }
-                        else result.Replace("{{ÇS}}", "");
-                    }
-                    else
-                    {
-                        Adı = FatherCFORM + ", " + MotherCFORM + " çocuğu " + Adı;
-                        result = result.Replace("{{TCODE}}", codeFORM).Replace("{{NAME}}", NameCFORM).Replace("{{ORGIN}}", OrginCFORM).Replace("{{PASSPORT}}", PassportCFORM).Replace("{{EDATE}}", EntryDateCFORM).Replace("{{TODAY}}", DateTime.Now.ToString("dd.MM.yyyy")).Replace("{{SEDATE}}", ShouldExitCFORM).Replace("{{VDAY}}", VisaDistanceCFORM).Replace("{{FINETIME}}", ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)).ToString()).Replace("{{FINET}}", FINET).Replace("{{POLICE}}", PoliceCFORM).Replace("{{USER}}", Data.fldSicil).Replace("{{CANENT}}", DateTime.Now.AddDays(Convert.ToInt32(DDayCFORM)).ToString("dd.MM.yyyy")).Replace("{{FINEDAY}}", DDayCFORM).Replace("{{FIRSTNAME}}", Adı).Replace("{{LASTNAME}}", Soyadı).Replace("{{FATHERNAME}}", FatherCFORM).Replace("{{MOTHERNAME}}", MotherCFORM).Replace("{{BIRTHDATE}}", BirthdateCFORM.ToString("dd.MM.yyyy")).Replace("{{TOTIME}}", DateTime.Now.ToShortTimeString());
-                        int start = result.IndexOf("{{S}}"),
-                                finish = result.IndexOf("{{F}}");
-                        result = result.Trim().Remove(start, (finish - start)).Trim();
-                        result = result.Replace("{{S}}", "").Replace("{{F}}", "");
-                        int start1 = result.IndexOf("{{S1}}"),
-                                finish1 = result.IndexOf("{{F1}}");
-                        result = result.Trim().Remove(start1, (finish1 - start1)).Trim();
-                        result = result.Replace("{{S1}}", "").Replace("{{F1}}", "");
-                        int start3 = result.IndexOf("{{ÇS}}");
-                        result = result.Trim().Remove(start3);
-                    }
-                }
+                template = isPaid ? allForms.fldRUC : allForms.fldRU;
             }
-
-            else if (OrginCFORM == "Fransa")
+            else if (OrginCFORM == "Fransa" || OrginCFORM == "France")
             {
-                if (PaymentTypeCFORM == "1" || PaymentTypeCFORM == "2" || PaymentTypeCFORM == "10" || PaymentTypeCFORM == "8" || PaymentTypeCFORM == "6" || PaymentTypeCFORM == "14" || PaymentTypeCFORM == "4")
-                {
-                    result = formT.GetAllForms().fldFransizca;
-                    result = result.Replace("{{GATE}}", Data.fldBorder?.Split(' ')[0] ?? "");
-                    result = result.Replace("{{TCODE}}", codeFORM).Replace("{{NAME}}", NameCFORM).Replace("{{ORGIN}}", OrginCFORM).Replace("{{PASSPORT}}", PassportCFORM).Replace("{{EDATE}}", EntryDateCFORM).Replace("{{TODAY}}", DateTime.Now.ToString("dd.MM.yyyy")).Replace("{{SEDATE}}", ShouldExitCFORM).Replace("{{VDAY}}", VisaDistanceCFORM).Replace("{{FINETIME}}", ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)).ToString()).Replace("{{FINET}}", FINET).Replace("{{POLICE}}", PoliceCFORM).Replace("{{USER}}", Data.fldSicil).Replace("{{CANENT}}", DateTime.Now.AddDays(Convert.ToInt32(DDayCFORM)).ToString("dd.MM.yyyy")).Replace("{{FINEDAY}}", DDayCFORM).Replace("{{FIRSTNAME}}", Adı).Replace("{{LASTNAME}}", Soyadı).Replace("{{FATHERNAME}}", FatherCFORM).Replace("{{MOTHERNAME}}", MotherCFORM).Replace("{{BIRTHDATE}}", BirthdateCFORM.ToString("dd.MM.yyyy")).Replace("{{TOTIME}}", DateTime.Now.ToShortTimeString());
-                    if (((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 90 && PaymentTypeCFORM != "2" && PaymentTypeCFORM != "3" && PaymentTypeCFORM != "6" || (PaymentTypeCFORM == "6" && ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 11) || adult == false)
-                        if (((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 90 && PaymentTypeCFORM != "8" || (PaymentTypeCFORM == "8" && ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 11) || adult == false)
-                            if (((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 90 && PaymentTypeCFORM != "14" || (PaymentTypeCFORM == "14" && ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 11) || adult == false)
-                            {
-                                int start = result.IndexOf("{{S}}"),
-                                    finish = result.IndexOf("{{F}}");
-                                if (start < 0) start = 0;
-                                if (finish < 0) finish = 0;
-                                result = result.Remove(start, (finish - start) + 5);
-                                int start1 = result.IndexOf("{{S1}}"),
-                                    finish1 = result.IndexOf("{{F1}}");
-                                if (start1 < 0) start1 = 0;
-                                if (finish1 < 0) finish1 = 0;
-
-                                result = result.Trim().Remove(start1, (finish1 - start1)).Trim();
-                                result = result.Replace("{{S}}", "").Replace("{{F}}", "");
-                                result = result.Replace("{{S1}}", "").Replace("{{F1}}", "");
-                            }
-                            else if (!codeFORM.Contains("Ç"))
-                            {
-                                result = result.Replace("{{S}}", "").Replace("{{F}}", "");
-                                result = result.Replace("{{S1}}", "").Replace("{{F1}}", "");
-                            }
-                    result = result.Trim();
-                }
-                else
-                {
-                    result = formT.GetAllForms().fldFransizcaC;
-                    result = result.Replace("{{GATE}}", Data.fldBorder?.Split(' ')[0] ?? "");
-
-                    if (adult)
-                    {
-                        result = result.Replace("{{TCODE}}", codeFORM).Replace("{{NAME}}", NameCFORM).Replace("{{ORGIN}}", OrginCFORM).Replace("{{PASSPORT}}", PassportCFORM).Replace("{{EDATE}}", EntryDateCFORM).Replace("{{TODAY}}", DateTime.Now.ToString("dd.MM.yyyy")).Replace("{{SEDATE}}", ShouldExitCFORM).Replace("{{VDAY}}", VisaDistanceCFORM).Replace("{{FINETIME}}", ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)).ToString()).Replace("{{FINET}}", FINET).Replace("{{POLICE}}", PoliceCFORM).Replace("{{USER}}", Data.fldSicil).Replace("{{CANENT}}", DateTime.Now.AddDays(Convert.ToInt32(DDayCFORM)).ToString("dd.MM.yyyy")).Replace("{{FINEDAY}}", DDayCFORM).Replace("{{FIRSTNAME}}", Adı).Replace("{{LASTNAME}}", Soyadı).Replace("{{FATHERNAME}}", FatherCFORM).Replace("{{MOTHERNAME}}", MotherCFORM).Replace("{{BIRTHDATE}}", BirthdateCFORM.ToString("dd.MM.yyyy")).Replace("{{TOTIME}}", DateTime.Now.ToShortTimeString()).Replace("{{S1}}", "").Replace("{{F1}}", "").Replace("{{S}}", "").Replace("{{F}}", "");
-                        if (!codeFORM.Contains("Ç"))
-                        {
-                            int start3 = result.IndexOf("{{ÇS}}");
-                            result = result.Trim().Remove(start3);
-                        }
-                        else result.Replace("{{ÇS}}", "");
-                    }
-                    else
-                    {
-                        Adı = FatherCFORM + ", " + MotherCFORM + " çocuğu " + Adı;
-                        result = result.Replace("{{TCODE}}", codeFORM).Replace("{{NAME}}", NameCFORM).Replace("{{ORGIN}}", OrginCFORM).Replace("{{PASSPORT}}", PassportCFORM).Replace("{{EDATE}}", EntryDateCFORM).Replace("{{TODAY}}", DateTime.Now.ToString("dd.MM.yyyy")).Replace("{{SEDATE}}", ShouldExitCFORM).Replace("{{VDAY}}", VisaDistanceCFORM).Replace("{{FINETIME}}", ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)).ToString()).Replace("{{FINET}}", FINET).Replace("{{POLICE}}", PoliceCFORM).Replace("{{USER}}", Data.fldSicil).Replace("{{CANENT}}", DateTime.Now.AddDays(Convert.ToInt32(DDayCFORM)).ToString("dd.MM.yyyy")).Replace("{{FINEDAY}}", DDayCFORM).Replace("{{FIRSTNAME}}", Adı).Replace("{{LASTNAME}}", Soyadı).Replace("{{FATHERNAME}}", FatherCFORM).Replace("{{MOTHERNAME}}", MotherCFORM).Replace("{{BIRTHDATE}}", BirthdateCFORM.ToString("dd.MM.yyyy")).Replace("{{TOTIME}}", DateTime.Now.ToShortTimeString());
-                        int start = result.IndexOf("{{S}}"),
-                                finish = result.IndexOf("{{F}}");
-                        result = result.Trim().Remove(start, (finish - start)).Trim();
-                        result = result.Replace("{{S}}", "").Replace("{{F}}", "");
-                        int start1 = result.IndexOf("{{S1}}"),
-                                finish1 = result.IndexOf("{{F1}}");
-                        result = result.Trim().Remove(start1, (finish1 - start1)).Trim();
-                        result = result.Replace("{{S1}}", "").Replace("{{F1}}", "");
-                        int start3 = result.IndexOf("{{ÇS}}");
-                        result = result.Trim().Remove(start3);
-                    }
-                }
+                template = isPaid ? allForms.fldFransizca : allForms.fldFransizcaC;
             }
-
-            else if (OrginCFORM == "Almanya")
+            else if (OrginCFORM == "Almanya" || OrginCFORM == "Germany")
             {
-                if (PaymentTypeCFORM == "1" || PaymentTypeCFORM == "2" || PaymentTypeCFORM == "10" || PaymentTypeCFORM == "8" || PaymentTypeCFORM == "6" || PaymentTypeCFORM == "14" || PaymentTypeCFORM == "4")
-                {
-                    result = formT.GetAllForms().fldDEC;
-                    result = result.Replace("{{GATE}}", Data.fldBorder?.Split(' ')[0] ?? "");
-                    result = result.Replace("{{TCODE}}", codeFORM).Replace("{{NAME}}", NameCFORM).Replace("{{ORGIN}}", OrginCFORM).Replace("{{PASSPORT}}", PassportCFORM).Replace("{{EDATE}}", EntryDateCFORM).Replace("{{TODAY}}", DateTime.Now.ToString("dd.MM.yyyy")).Replace("{{SEDATE}}", ShouldExitCFORM).Replace("{{VDAY}}", VisaDistanceCFORM).Replace("{{FINETIME}}", ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)).ToString()).Replace("{{FINET}}", FINET).Replace("{{POLICE}}", PoliceCFORM).Replace("{{USER}}", Data.fldSicil).Replace("{{CANENT}}", DateTime.Now.AddDays(Convert.ToInt32(DDayCFORM)).ToString("dd.MM.yyyy")).Replace("{{FINEDAY}}", DDayCFORM).Replace("{{FIRSTNAME}}", Adı).Replace("{{LASTNAME}}", Soyadı).Replace("{{FATHERNAME}}", FatherCFORM).Replace("{{MOTHERNAME}}", MotherCFORM).Replace("{{BIRTHDATE}}", BirthdateCFORM.ToString("dd.MM.yyyy")).Replace("{{TOTIME}}", DateTime.Now.ToShortTimeString());
-                    if (((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 90 && PaymentTypeCFORM != "2" && PaymentTypeCFORM != "3" && PaymentTypeCFORM != "6" || (PaymentTypeCFORM == "6" && ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 11) || adult == false)
-                        if (((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 90 && PaymentTypeCFORM != "8" || (PaymentTypeCFORM == "8" && ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 11) || adult == false)
-                            if (((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 90 && PaymentTypeCFORM != "14" || (PaymentTypeCFORM == "14" && ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 11) || adult == false)
-                            {
-                                int start = result.IndexOf("{{S}}"),
-                                    finish = result.IndexOf("{{F}}");
-                                if (start < 0) start = 0;
-                                if (finish < 0) finish = 0;
-                                result = result.Remove(start, (finish - start) + 5);
-                                int start1 = result.IndexOf("{{S1}}"),
-                                    finish1 = result.IndexOf("{{F1}}");
-                                if (start1 < 0) start1 = 0;
-                                if (finish1 < 0) finish1 = 0;
-
-                                result = result.Trim().Remove(start1, (finish1 - start1)).Trim();
-                                result = result.Replace("{{S}}", "").Replace("{{F}}", "");
-                                result = result.Replace("{{S1}}", "").Replace("{{F1}}", "");
-                            }
-                            else if (!codeFORM.Contains("Ç"))
-                            {
-                                result = result.Replace("{{S}}", "").Replace("{{F}}", "");
-                                result = result.Replace("{{S1}}", "").Replace("{{F1}}", "");
-                            }
-                    result = result.Trim();
-                }
-                else
-                {
-                    result = formT.GetAllForms().fldDE;
-                    result = result.Replace("{{GATE}}", Data.fldBorder?.Split(' ')[0] ?? "");
-                    if (adult)
-                    {
-                        result = result.Replace("{{TCODE}}", codeFORM).Replace("{{NAME}}", NameCFORM).Replace("{{ORGIN}}", OrginCFORM).Replace("{{PASSPORT}}", PassportCFORM).Replace("{{EDATE}}", EntryDateCFORM).Replace("{{TODAY}}", DateTime.Now.ToString("dd.MM.yyyy")).Replace("{{SEDATE}}", ShouldExitCFORM).Replace("{{VDAY}}", VisaDistanceCFORM).Replace("{{FINETIME}}", ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)).ToString()).Replace("{{FINET}}", FINET).Replace("{{POLICE}}", PoliceCFORM).Replace("{{USER}}", Data.fldSicil).Replace("{{CANENT}}", DateTime.Now.AddDays(Convert.ToInt32(DDayCFORM)).ToString("dd.MM.yyyy")).Replace("{{FINEDAY}}", DDayCFORM).Replace("{{FIRSTNAME}}", Adı).Replace("{{LASTNAME}}", Soyadı).Replace("{{FATHERNAME}}", FatherCFORM).Replace("{{MOTHERNAME}}", MotherCFORM).Replace("{{BIRTHDATE}}", BirthdateCFORM.ToString("dd.MM.yyyy")).Replace("{{TOTIME}}", DateTime.Now.ToShortTimeString()).Replace("{{S1}}", "").Replace("{{F1}}", "").Replace("{{S}}", "").Replace("{{F}}", "");
-                        if (!codeFORM.Contains("Ç"))
-                        {
-                            int start3 = result.IndexOf("{{ÇS}}");
-                            result = result.Trim().Remove(start3);
-                        }
-                        else result.Replace("{{ÇS}}", "");
-                    }
-                    else
-                    {
-                        Adı = FatherCFORM + ", " + MotherCFORM + " çocuğu " + Adı;
-                        result = result.Replace("{{TCODE}}", codeFORM).Replace("{{NAME}}", NameCFORM).Replace("{{ORGIN}}", OrginCFORM).Replace("{{PASSPORT}}", PassportCFORM).Replace("{{EDATE}}", EntryDateCFORM).Replace("{{TODAY}}", DateTime.Now.ToString("dd.MM.yyyy")).Replace("{{SEDATE}}", ShouldExitCFORM).Replace("{{VDAY}}", VisaDistanceCFORM).Replace("{{FINETIME}}", ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)).ToString()).Replace("{{FINET}}", FINET).Replace("{{POLICE}}", PoliceCFORM).Replace("{{USER}}", Data.fldSicil).Replace("{{CANENT}}", DateTime.Now.AddDays(Convert.ToInt32(DDayCFORM)).ToString("dd.MM.yyyy")).Replace("{{FINEDAY}}", DDayCFORM).Replace("{{FIRSTNAME}}", Adı).Replace("{{LASTNAME}}", Soyadı).Replace("{{FATHERNAME}}", FatherCFORM).Replace("{{MOTHERNAME}}", MotherCFORM).Replace("{{BIRTHDATE}}", BirthdateCFORM.ToString("dd.MM.yyyy")).Replace("{{TOTIME}}", DateTime.Now.ToShortTimeString());
-                        int start = result.IndexOf("{{S}}"),
-                                finish = result.IndexOf("{{F}}");
-                        result = result.Trim().Remove(start, (finish - start)).Trim();
-                        result = result.Replace("{{S}}", "").Replace("{{F}}", "");
-                        int start1 = result.IndexOf("{{S1}}"),
-                                finish1 = result.IndexOf("{{F1}}");
-                        result = result.Trim().Remove(start1, (finish1 - start1)).Trim();
-                        result = result.Replace("{{S1}}", "").Replace("{{F1}}", "");
-                        int start3 = result.IndexOf("{{ÇS}}");
-                        result = result.Trim().Remove(start3);
-                    }
-                }
+                template = isPaid ? allForms.fldDEC : allForms.fldDE;
             }
-            else if (OrginCFORM == "İran")
+            else if (OrginCFORM == "İran" || OrginCFORM == "Iran")
             {
-                if (PaymentTypeCFORM == "1" || PaymentTypeCFORM == "2" || PaymentTypeCFORM == "10" || PaymentTypeCFORM == "8" || PaymentTypeCFORM == "6" || PaymentTypeCFORM == "14" || PaymentTypeCFORM == "4")
-                {
-                    result = formT.GetAllForms().fldIRC;
-                    result = result.Replace("{{GATE}}", Data.fldBorder?.Split(' ')[0] ?? "");
-
-                    result = result.Replace("{{TCODE}}", codeFORM)
-                                   .Replace("{{NAME}}", NameCFORM)
-                                   .Replace("{{ORGIN}}", OrginCFORM)
-                                   .Replace("{{PASSPORT}}", PassportCFORM)
-                                   .Replace("{{EDATE}}", EntryDateCFORM)
-                                   .Replace("{{TODAY}}", DateTime.Now.ToString("dd.MM.yyyy"))
-                                   .Replace("{{SEDATE}}", ShouldExitCFORM)
-                                   .Replace("{{VDAY}}", VisaDistanceCFORM)
-                                   .Replace("{{FINETIME}}", ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)).ToString())
-                                   .Replace("{{FINET}}", FINET)
-                                   .Replace("{{POLICE}}", PoliceCFORM)
-                                   .Replace("{{USER}}", Data.fldSicil)
-                                   .Replace("{{CANENT}}", DateTime.Now.AddDays(Convert.ToInt32(DDayCFORM)).ToString("dd.MM.yyyy"))
-                                   .Replace("{{FINEDAY}}", DDayCFORM)
-                                   .Replace("{{FIRSTNAME}}", Adı)
-                                   .Replace("{{LASTNAME}}", Soyadı)
-                                   .Replace("{{FATHERNAME}}", FatherCFORM)
-                                   .Replace("{{MOTHERNAME}}", MotherCFORM)
-                                   .Replace("{{BIRTHDATE}}", BirthdateCFORM.ToString("dd.MM.yyyy"))
-                                   .Replace("{{TOTIME}}", DateTime.Now.ToShortTimeString());
-
-                    if (((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 90 && PaymentTypeCFORM != "2" && PaymentTypeCFORM != "3" && PaymentTypeCFORM != "6" || (PaymentTypeCFORM == "6" && ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 11) || adult == false)
-                        if (((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 90 && PaymentTypeCFORM != "8" || (PaymentTypeCFORM == "8" && ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 11) || adult == false)
-                            if (((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 90 && PaymentTypeCFORM != "14" || (PaymentTypeCFORM == "14" && ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 11) || adult == false)
-                            {
-                                int start = result.IndexOf("{{S}}"),
-                                    finish = result.IndexOf("{{F}}");
-                                result = result.Remove(start, (finish - start) + 5);
-                                int start1 = result.IndexOf("{{S1}}"),
-                                    finish1 = result.IndexOf("{{F1}}");
-                                result = result.Trim().Remove(start1, (finish1 - start1)).Trim();
-                                result = result.Replace("{{S}}", "").Replace("{{F}}", "");
-                                result = result.Replace("{{S1}}", "").Replace("{{F1}}", "");
-                            }
-                            else if (!codeFORM.Contains("Ç"))
-                            {
-                                result = result.Replace("{{S}}", "").Replace("{{F}}", "");
-                                result = result.Replace("{{S1}}", "").Replace("{{F1}}", "");
-                            }
-                    result = result.Trim();
-                }
-                else
-                {
-                    result = formT.GetAllForms().fldIR;
-                    result = result.Replace("{{GATE}}", Data.fldBorder?.Split(' ')[0] ?? "");
-
-
-                    if (adult)
-                    {
-                        result = result.Replace("{{TCODE}}", codeFORM)
-                                       .Replace("{{NAME}}", NameCFORM)
-                                       .Replace("{{ORGIN}}", OrginCFORM)
-                                       .Replace("{{PASSPORT}}", PassportCFORM)
-                                       .Replace("{{EDATE}}", EntryDateCFORM)
-                                       .Replace("{{TODAY}}", DateTime.Now.ToString("dd.MM.yyyy"))
-                                       .Replace("{{SEDATE}}", ShouldExitCFORM)
-                                       .Replace("{{VDAY}}", VisaDistanceCFORM)
-                                       .Replace("{{FINETIME}}", ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)).ToString())
-                                       .Replace("{{FINET}}", FINET)
-                                       .Replace("{{POLICE}}", PoliceCFORM)
-                                       .Replace("{{USER}}", Data.fldSicil)
-                                       .Replace("{{CANENT}}", DateTime.Now.AddDays(Convert.ToInt32(DDayCFORM)).ToString("dd.MM.yyyy"))
-                                       .Replace("{{FINEDAY}}", DDayCFORM)
-                                       .Replace("{{FIRSTNAME}}", Adı)
-                                       .Replace("{{LASTNAME}}", Soyadı)
-                                       .Replace("{{FATHERNAME}}", FatherCFORM)
-                                       .Replace("{{MOTHERNAME}}", MotherCFORM)
-                                       .Replace("{{BIRTHDATE}}", BirthdateCFORM.ToString("dd.MM.yyyy"))
-                                       .Replace("{{TOTIME}}", DateTime.Now.ToShortTimeString())
-                                       .Replace("{{S1}}", "").Replace("{{F1}}", "").Replace("{{S}}", "").Replace("{{F}}", "");
-                        if (!codeFORM.Contains("Ç"))
-                        {
-                            int start3 = result.IndexOf("{{ÇS}}");
-                            result = result.Trim().Remove(start3);
-                        }
-                        else result.Replace("{{ÇS}}", "");
-                    }
-                    else
-                    {
-                        Adı = FatherCFORM + ", " + MotherCFORM + " çocuğu " + Adı;
-                        result = result.Replace("{{TCODE}}", codeFORM)
-                                       .Replace("{{NAME}}", NameCFORM)
-                                       .Replace("{{ORGIN}}", OrginCFORM)
-                                       .Replace("{{PASSPORT}}", PassportCFORM)
-                                       .Replace("{{EDATE}}", EntryDateCFORM)
-                                       .Replace("{{TODAY}}", DateTime.Now.ToString("dd.MM.yyyy"))
-                                       .Replace("{{SEDATE}}", ShouldExitCFORM)
-                                       .Replace("{{VDAY}}", VisaDistanceCFORM)
-                                       .Replace("{{FINETIME}}", ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)).ToString())
-                                       .Replace("{{FINET}}", FINET)
-                                       .Replace("{{POLICE}}", PoliceCFORM)
-                                       .Replace("{{USER}}", Data.fldSicil)
-                                       .Replace("{{CANENT}}", DateTime.Now.AddDays(Convert.ToInt32(DDayCFORM)).ToString("dd.MM.yyyy"))
-                                       .Replace("{{FINEDAY}}", DDayCFORM)
-                                       .Replace("{{FIRSTNAME}}", Adı)
-                                       .Replace("{{LASTNAME}}", Soyadı)
-                                       .Replace("{{FATHERNAME}}", FatherCFORM)
-                                       .Replace("{{MOTHERNAME}}", MotherCFORM)
-                                       .Replace("{{BIRTHDATE}}", BirthdateCFORM.ToString("dd.MM.yyyy"))
-                                       .Replace("{{TOTIME}}", DateTime.Now.ToShortTimeString());
-
-                        int start = result.IndexOf("{{S}}"),
-                            finish = result.IndexOf("{{F}}");
-                        result = result.Trim().Remove(start, (finish - start)).Trim();
-                        result = result.Replace("{{S}}", "").Replace("{{F}}", "");
-
-                        int start1 = result.IndexOf("{{S1}}"),
-                            finish1 = result.IndexOf("{{F1}}");
-                        result = result.Trim().Remove(start1, (finish1 - start1)).Trim();
-                        result = result.Replace("{{S1}}", "").Replace("{{F1}}", "");
-
-                        int start3 = result.IndexOf("{{ÇS}}");
-                        result = result.Trim().Remove(start3);
-                    }
-                }
+                template = isPaid ? allForms.fldIRC : allForms.fldIR;
             }
-
-
-            else if (OrginCFORM == "Irak")
+            else if (OrginCFORM == "Irak" || OrginCFORM == "Iraq")
             {
-                if (PaymentTypeCFORM == "1" || PaymentTypeCFORM == "2" || PaymentTypeCFORM == "10" || PaymentTypeCFORM == "8" || PaymentTypeCFORM == "6" || PaymentTypeCFORM == "14" || PaymentTypeCFORM == "4")
-                {
-
-                    result = formT.GetAllForms().fldIRKC;
-                    result = result.Replace("{{GATE}}", Data.fldBorder?.Split(' ')[0] ?? "");
-                    result = result.Replace("{{TCODE}}", codeFORM).Replace("{{NAME}}", NameCFORM).Replace("{{ORGIN}}", OrginCFORM).Replace("{{PASSPORT}}", PassportCFORM).Replace("{{EDATE}}", EntryDateCFORM).Replace("{{TODAY}}", DateTime.Now.ToString("dd.MM.yyyy")).Replace("{{SEDATE}}", ShouldExitCFORM).Replace("{{VDAY}}", VisaDistanceCFORM).Replace("{{FINETIME}}", ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)).ToString()).Replace("{{FINET}}", FINET).Replace("{{POLICE}}", PoliceCFORM).Replace("{{USER}}", Data.fldSicil).Replace("{{CANENT}}", DateTime.Now.AddDays(Convert.ToInt32(DDayCFORM)).ToString("dd.MM.yyyy")).Replace("{{FINEDAY}}", DDayCFORM).Replace("{{FIRSTNAME}}", Adı).Replace("{{LASTNAME}}", Soyadı).Replace("{{FATHERNAME}}", FatherCFORM).Replace("{{MOTHERNAME}}", MotherCFORM).Replace("{{BIRTHDATE}}", BirthdateCFORM.ToString("dd.MM.yyyy")).Replace("{{TOTIME}}", DateTime.Now.ToShortTimeString());
-                    if (((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 90 && PaymentTypeCFORM != "2" && PaymentTypeCFORM != "3" && PaymentTypeCFORM != "6" || (PaymentTypeCFORM == "6" && ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 11) || adult == false)
-                        if (((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 90 && PaymentTypeCFORM != "8" || (PaymentTypeCFORM == "8" && ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 11) || adult == false)
-                            if (((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 90 && PaymentTypeCFORM != "14" || (PaymentTypeCFORM == "14" && ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 11) || adult == false)
-                            {
-                                int start = result.IndexOf("{{S}}"),
-                                    finish = result.IndexOf("{{F}}");
-                                result = result.Remove(start, (finish - start) + 5);
-                                int start1 = result.IndexOf("{{S1}}"),
-                                    finish1 = result.IndexOf("{{F1}}");
-                                result = result.Trim().Remove(start1, (finish1 - start1)).Trim();
-                                result = result.Replace("{{S}}", "").Replace("{{F}}", "");
-                                result = result.Replace("{{S1}}", "").Replace("{{F1}}", "");
-                            }
-                            else if (!codeFORM.Contains("Ç"))
-                            {
-                                result = result.Replace("{{S}}", "").Replace("{{F}}", "");
-                                result = result.Replace("{{S1}}", "").Replace("{{F1}}", "");
-                            }
-                    result = result.Trim();
-                }
-                else
-                {
-                    result = formT.GetAllForms().fldIRK;
-                    result = result.Replace("{{GATE}}", Data.fldBorder?.Split(' ')[0] ?? "");
-                    if (adult)
-                    {
-                        result = result.Replace("{{TCODE}}", codeFORM).Replace("{{NAME}}", NameCFORM).Replace("{{ORGIN}}", OrginCFORM).Replace("{{PASSPORT}}", PassportCFORM).Replace("{{EDATE}}", EntryDateCFORM).Replace("{{TODAY}}", DateTime.Now.ToString("dd.MM.yyyy")).Replace("{{SEDATE}}", ShouldExitCFORM).Replace("{{VDAY}}", VisaDistanceCFORM).Replace("{{FINETIME}}", ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)).ToString()).Replace("{{FINET}}", FINET).Replace("{{POLICE}}", PoliceCFORM).Replace("{{USER}}", Data.fldSicil).Replace("{{CANENT}}", DateTime.Now.AddDays(Convert.ToInt32(DDayCFORM)).ToString("dd.MM.yyyy")).Replace("{{FINEDAY}}", DDayCFORM).Replace("{{FIRSTNAME}}", Adı).Replace("{{LASTNAME}}", Soyadı).Replace("{{FATHERNAME}}", FatherCFORM).Replace("{{MOTHERNAME}}", MotherCFORM).Replace("{{BIRTHDATE}}", BirthdateCFORM.ToString("dd.MM.yyyy")).Replace("{{TOTIME}}", DateTime.Now.ToShortTimeString()).Replace("{{S1}}", "").Replace("{{F1}}", "").Replace("{{S}}", "").Replace("{{F}}", "");
-                        if (!codeFORM.Contains("Ç"))
-                        {
-                            int start3 = result.IndexOf("{{ÇS}}");
-                            result = result.Trim().Remove(start3);
-                        }
-                        else result.Replace("{{ÇS}}", "");
-                    }
-                    else
-                    {
-                        Adı = FatherCFORM + ", " + MotherCFORM + " çocuğu " + Adı;
-                        result = result.Replace("{{TCODE}}", codeFORM).Replace("{{NAME}}", NameCFORM).Replace("{{ORGIN}}", OrginCFORM).Replace("{{PASSPORT}}", PassportCFORM).Replace("{{EDATE}}", EntryDateCFORM).Replace("{{TODAY}}", DateTime.Now.ToString("dd.MM.yyyy")).Replace("{{SEDATE}}", ShouldExitCFORM).Replace("{{VDAY}}", VisaDistanceCFORM).Replace("{{FINETIME}}", ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)).ToString()).Replace("{{FINET}}", FINET).Replace("{{POLICE}}", PoliceCFORM).Replace("{{USER}}", Data.fldSicil).Replace("{{CANENT}}", DateTime.Now.AddDays(Convert.ToInt32(DDayCFORM)).ToString("dd.MM.yyyy")).Replace("{{FINEDAY}}", DDayCFORM).Replace("{{FIRSTNAME}}", Adı).Replace("{{LASTNAME}}", Soyadı).Replace("{{FATHERNAME}}", FatherCFORM).Replace("{{MOTHERNAME}}", MotherCFORM).Replace("{{BIRTHDATE}}", BirthdateCFORM.ToString("dd.MM.yyyy")).Replace("{{TOTIME}}", DateTime.Now.ToShortTimeString());
-                        int start = result.IndexOf("{{S}}"),
-                                finish = result.IndexOf("{{F}}");
-                        result = result.Trim().Remove(start, (finish - start)).Trim();
-                        result = result.Replace("{{S}}", "").Replace("{{F}}", "");
-                        int start1 = result.IndexOf("{{S1}}"),
-                                finish1 = result.IndexOf("{{F1}}");
-                        result = result.Trim().Remove(start1, (finish1 - start1)).Trim();
-                        result = result.Replace("{{S1}}", "").Replace("{{F1}}", "");
-                        int start3 = result.IndexOf("{{ÇS}}");
-                        result = result.Trim().Remove(start3);
-                    }
-                }
+                template = isPaid ? allForms.fldIRKC : allForms.fldIRK;
+            }
+            else if (OrginCFORM == "Çin" || OrginCFORM == "China" || OrginCFORM == "Çin Halk Cumhuriyeti")
+            {
+                template = isPaid ? allForms.fldCinC : allForms.fldCin;
+            }
+            else if (OrginCFORM == "Yunanistan" || OrginCFORM == "Greece")
+            {
+                template = isPaid ? allForms.fldYunanC : allForms.fldYunan;
             }
             else
             {
-                if (PaymentTypeCFORM == "1" || PaymentTypeCFORM == "2" || PaymentTypeCFORM == "10" || PaymentTypeCFORM == "8" || PaymentTypeCFORM == "6" || PaymentTypeCFORM == "14" || PaymentTypeCFORM == "4")
-                {
+                template = isPaid ? allForms.fldGBC : allForms.fldGB;
+            }
 
-                    result = formT.GetAllForms().fldGBC;
-                    result = result.Replace("{{GATE}}", Data.fldBorder?.Split(' ')[0] ?? "");
-                    result = result.Replace("{{TCODE}}", codeFORM).Replace("{{NAME}}", NameCFORM).Replace("{{ORGIN}}", OrginCFORM).Replace("{{PASSPORT}}", PassportCFORM).Replace("{{EDATE}}", EntryDateCFORM).Replace("{{TODAY}}", DateTime.Now.ToString("dd.MM.yyyy")).Replace("{{SEDATE}}", ShouldExitCFORM).Replace("{{VDAY}}", VisaDistanceCFORM).Replace("{{FINETIME}}", ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)).ToString()).Replace("{{FINET}}", FINET).Replace("{{POLICE}}", PoliceCFORM).Replace("{{USER}}", Data.fldSicil).Replace("{{CANENT}}", DateTime.Now.AddDays(Convert.ToInt32(DDayCFORM)).ToString("dd.MM.yyyy")).Replace("{{FINEDAY}}", DDayCFORM).Replace("{{FIRSTNAME}}", Adı).Replace("{{LASTNAME}}", Soyadı).Replace("{{FATHERNAME}}", FatherCFORM).Replace("{{MOTHERNAME}}", MotherCFORM).Replace("{{BIRTHDATE}}", BirthdateCFORM.ToString("dd.MM.yyyy")).Replace("{{TOTIME}}", DateTime.Now.ToShortTimeString());
-                    if (((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 90 && PaymentTypeCFORM != "2" && PaymentTypeCFORM != "3" && PaymentTypeCFORM != "6" || (PaymentTypeCFORM == "6" && ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 11) || adult == false)
-                        if (((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 90 && PaymentTypeCFORM != "8" || (PaymentTypeCFORM == "8" && ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 11) || adult == false)
-                            if (((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 90 && PaymentTypeCFORM != "14" || (PaymentTypeCFORM == "14" && ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 11) || adult == false)
-                            {
-                                int start = result.IndexOf("{{S}}"),
-                                    finish = result.IndexOf("{{F}}");
-                                result = result.Remove(start, (finish - start) + 5);
-                                int start1 = result.IndexOf("{{S1}}"),
-                                    finish1 = result.IndexOf("{{F1}}");
-                                result = result.Trim().Remove(start1, (finish1 - start1)).Trim();
-                                result = result.Replace("{{S}}", "").Replace("{{F}}", "");
-                                result = result.Replace("{{S1}}", "").Replace("{{F1}}", "");
-                            }
-                            else if (!codeFORM.Contains("Ç"))
-                            {
-                                result = result.Replace("{{S}}", "").Replace("{{F}}", "");
-                                result = result.Replace("{{S1}}", "").Replace("{{F1}}", "");
-                            }
-                    result = result.Trim();
+            result = template ?? "";
+            result = result.Replace("{{GATE}}", Data?.fldBorder?.Split(' ')[0] ?? "");
+
+            if (isPaid)
+            {
+                result = result.Replace("{{TCODE}}", codeFORM)
+                               .Replace("{{NAME}}", NameCFORM)
+                               .Replace("{{ORGIN}}", OrginCFORM)
+                               .Replace("{{PASSPORT}}", PassportCFORM)
+                               .Replace("{{EDATE}}", EntryDateCFORM)
+                               .Replace("{{TODAY}}", DateTime.Now.ToString("dd.MM.yyyy"))
+                               .Replace("{{SEDATE}}", ShouldExitCFORM)
+                               .Replace("{{VDAY}}", VisaDistanceCFORM)
+                               .Replace("{{FINETIME}}", ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)).ToString())
+                               .Replace("{{FINET}}", FINET)
+                               .Replace("{{POLICE}}", PoliceCFORM)
+                               .Replace("{{USER}}", Data?.fldSicil ?? "")
+                               .Replace("{{CANENT}}", DateTime.Now.AddDays(Convert.ToInt32(DDayCFORM)).ToString("dd.MM.yyyy"))
+                               .Replace("{{FINEDAY}}", DDayCFORM)
+                               .Replace("{{FIRSTNAME}}", Adı)
+                               .Replace("{{LASTNAME}}", Soyadı)
+                               .Replace("{{FATHERNAME}}", FatherCFORM)
+                               .Replace("{{MOTHERNAME}}", MotherCFORM)
+                               .Replace("{{BIRTHDATE}}", BirthdateCFORM.ToString("dd.MM.yyyy"))
+                               .Replace("{{TOTIME}}", DateTime.Now.ToShortTimeString());
+
+                bool isUnder90 = (((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 90 && PaymentTypeCFORM != "2" && PaymentTypeCFORM != "3" && PaymentTypeCFORM != "6")
+                              || (PaymentTypeCFORM == "6" && ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 11)
+                              || (PaymentTypeCFORM == "8" && ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 11)
+                              || (PaymentTypeCFORM == "14" && ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)) < 11)
+                              || adult == false;
+
+                if (isUnder90 || !codeFORM.Contains("Ç"))
+                {
+                    int start = result.IndexOf("{{S}}"),
+                        finish = result.IndexOf("{{F}}");
+                    if (start >= 0 && finish > start)
+                        result = result.Remove(start, (finish - start) + 5);
+                    int start1 = result.IndexOf("{{S1}}"),
+                        finish1 = result.IndexOf("{{F1}}");
+                    if (start1 >= 0 && finish1 > start1)
+                        result = result.Remove(start1, (finish1 - start1) + 6);
+                    result = result.Replace("{{S}}", "").Replace("{{F}}", "").Replace("{{S1}}", "").Replace("{{F1}}", "");
                 }
                 else
                 {
-                    result = formT.GetAllForms().fldGB;
-                    result = result.Replace("{{GATE}}", Data.fldBorder?.Split(' ')[0] ?? "");
-                    if (adult)
+                    result = result.Replace("{{S}}", "").Replace("{{F}}", "");
+                    result = result.Replace("{{S1}}", "<div class=\"page-break\" style=\"display:block; page-break-before:always !important; break-before:page !important; clear:both;\"></div>");
+                    result = result.Replace("{{F1}}", "");
+                }
+                result = result.Trim();
+            }
+            else
+            {
+                if (!adult)
+                {
+                    Adı = FatherCFORM + ", " + MotherCFORM + " çocuğu " + Adı;
+                }
+
+                result = result.Replace("{{TCODE}}", codeFORM)
+                               .Replace("{{NAME}}", NameCFORM)
+                               .Replace("{{ORGIN}}", OrginCFORM)
+                               .Replace("{{PASSPORT}}", PassportCFORM)
+                               .Replace("{{EDATE}}", EntryDateCFORM)
+                               .Replace("{{TODAY}}", DateTime.Now.ToString("dd.MM.yyyy"))
+                               .Replace("{{SEDATE}}", ShouldExitCFORM)
+                               .Replace("{{VDAY}}", VisaDistanceCFORM)
+                               .Replace("{{FINETIME}}", ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)).ToString())
+                               .Replace("{{FINET}}", FINET)
+                               .Replace("{{POLICE}}", PoliceCFORM)
+                               .Replace("{{USER}}", Data?.fldSicil ?? "")
+                               .Replace("{{CANENT}}", DateTime.Now.AddDays(Convert.ToInt32(DDayCFORM)).ToString("dd.MM.yyyy"))
+                               .Replace("{{FINEDAY}}", DDayCFORM)
+                               .Replace("{{FIRSTNAME}}", Adı)
+                               .Replace("{{LASTNAME}}", Soyadı)
+                               .Replace("{{FATHERNAME}}", FatherCFORM)
+                               .Replace("{{MOTHERNAME}}", MotherCFORM)
+                               .Replace("{{BIRTHDATE}}", BirthdateCFORM.ToString("dd.MM.yyyy"))
+                               .Replace("{{TOTIME}}", DateTime.Now.ToShortTimeString());
+
+                result = result.Replace("{{S}}", "").Replace("{{F}}", "").Replace("{{S1}}", "").Replace("{{F1}}", "");
+
+                int nKodluPos = result.IndexOf("N Kodlu");
+                if (nKodluPos > 0)
+                {
+                    int imgBeforeN = result.LastIndexOf("<img", nKodluPos);
+                    int targetPos = -1;
+                    if (imgBeforeN > 0)
                     {
-                        result = result.Replace("{{TCODE}}", codeFORM).Replace("{{NAME}}", NameCFORM).Replace("{{ORGIN}}", OrginCFORM).Replace("{{PASSPORT}}", PassportCFORM).Replace("{{EDATE}}", EntryDateCFORM).Replace("{{TODAY}}", DateTime.Now.ToString("dd.MM.yyyy")).Replace("{{SEDATE}}", ShouldExitCFORM).Replace("{{VDAY}}", VisaDistanceCFORM).Replace("{{FINETIME}}", ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)).ToString()).Replace("{{FINET}}", FINET).Replace("{{POLICE}}", PoliceCFORM).Replace("{{USER}}", Data.fldSicil).Replace("{{CANENT}}", DateTime.Now.AddDays(Convert.ToInt32(DDayCFORM)).ToString("dd.MM.yyyy")).Replace("{{FINEDAY}}", DDayCFORM).Replace("{{FIRSTNAME}}", Adı).Replace("{{LASTNAME}}", Soyadı).Replace("{{FATHERNAME}}", FatherCFORM).Replace("{{MOTHERNAME}}", MotherCFORM).Replace("{{BIRTHDATE}}", BirthdateCFORM.ToString("dd.MM.yyyy")).Replace("{{TOTIME}}", DateTime.Now.ToShortTimeString()).Replace("{{S1}}", "").Replace("{{F1}}", "").Replace("{{S}}", "").Replace("{{F}}", "");
-                        if (!codeFORM.Contains("Ç"))
-                        {
-                            int start3 = result.IndexOf("{{ÇS}}");
-                            result = result.Trim().Remove(start3);
-                        }
-                        else result.Replace("{{ÇS}}", "");
+                        int pBefore = result.LastIndexOf("<p", imgBeforeN);
+                        targetPos = (pBefore > 0 && (imgBeforeN - pBefore) < 100) ? pBefore : imgBeforeN;
                     }
                     else
                     {
-                        Adı = FatherCFORM + ", " + MotherCFORM + " çocuğu " + Adı;
-                        result = result.Replace("{{TCODE}}", codeFORM).Replace("{{NAME}}", NameCFORM).Replace("{{ORGIN}}", OrginCFORM).Replace("{{PASSPORT}}", PassportCFORM).Replace("{{EDATE}}", EntryDateCFORM).Replace("{{TODAY}}", DateTime.Now.ToString("dd.MM.yyyy")).Replace("{{SEDATE}}", ShouldExitCFORM).Replace("{{VDAY}}", VisaDistanceCFORM).Replace("{{FINETIME}}", ((Convert.ToInt32(CAyCFORM) * 30) + Convert.ToInt32(CGunCFORM)).ToString()).Replace("{{FINET}}", FINET).Replace("{{POLICE}}", PoliceCFORM).Replace("{{USER}}", Data.fldSicil).Replace("{{CANENT}}", DateTime.Now.AddDays(Convert.ToInt32(DDayCFORM)).ToString("dd.MM.yyyy")).Replace("{{FINEDAY}}", DDayCFORM).Replace("{{FIRSTNAME}}", Adı).Replace("{{LASTNAME}}", Soyadı).Replace("{{FATHERNAME}}", FatherCFORM).Replace("{{MOTHERNAME}}", MotherCFORM).Replace("{{BIRTHDATE}}", BirthdateCFORM.ToString("dd.MM.yyyy")).Replace("{{TOTIME}}", DateTime.Now.ToShortTimeString());
-                        int start = result.IndexOf("{{S}}"),
-                                finish = result.IndexOf("{{F}}");
-                        result = result.Trim().Remove(start, (finish - start)).Trim();
-                        result = result.Replace("{{S}}", "").Replace("{{F}}", "");
-                        int start1 = result.IndexOf("{{S1}}"),
-                                finish1 = result.IndexOf("{{F1}}");
-                        result = result.Trim().Remove(start1, (finish1 - start1)).Trim();
-                        result = result.Replace("{{S1}}", "").Replace("{{F1}}", "");
-                        int start3 = result.IndexOf("{{ÇS}}");
-                        result = result.Trim().Remove(start3);
+                        targetPos = result.LastIndexOf("<table", nKodluPos);
+                    }
+                    if (targetPos > 0)
+                    {
+                        result = result.Insert(targetPos, "<div class=\"page-break\" style=\"display:block; page-break-before:always !important; break-before:page !important; clear:both;\"></div>");
                     }
                 }
+
+                if (!codeFORM.Contains("Ç") || !adult)
+                {
+                    int start3 = result.IndexOf("{{ÇS}}");
+                    if (start3 >= 0)
+                    {
+                        int pBefore = result.LastIndexOf("<p", start3);
+                        if (pBefore > 0 && (start3 - pBefore) < 150)
+                            result = result.Substring(0, pBefore).Trim();
+                        else
+                            result = result.Substring(0, start3).Trim();
+                    }
+                }
+                else
+                {
+                    int start3 = result.IndexOf("{{ÇS}}");
+                    if (start3 >= 0)
+                    {
+                        int pBefore = result.LastIndexOf("<p", start3);
+                        int cKodluPos = result.IndexOf("Ç Kodlu", start3);
+                        int imgBeforeC = cKodluPos > 0 ? result.LastIndexOf("<img", cKodluPos) : -1;
+                        int targetEnd = imgBeforeC > 0 ? result.LastIndexOf("<p", imgBeforeC) : -1;
+                        if (targetEnd < 0) targetEnd = imgBeforeC > 0 ? imgBeforeC : (start3 + 6);
+
+                        int cutStart = (pBefore >= 0 && (start3 - pBefore) < 150) ? pBefore : start3;
+                        if (targetEnd > cutStart)
+                        {
+                            result = result.Remove(cutStart, targetEnd - cutStart).Insert(cutStart, "<div class=\"page-break\" style=\"display:block; page-break-before:always !important; break-before:page !important; clear:both;\"></div>");
+                        }
+                        else
+                        {
+                            result = result.Replace("{{ÇS}}", "<div class=\"page-break\" style=\"display:block; page-break-before:always !important; break-before:page !important; clear:both;\"></div>");
+                        }
+                    }
+                }
+                result = result.Trim();
             }
             //if (DefterCFORM == "0") result = result.Replace("+Def", "");
             Isk Isk = new Isk();
@@ -534,6 +287,15 @@ namespace gzpegm.Controllers
             //if (coverinputpd != "") coverinputpd = $@"{DateTime.Now.Ticks}."+coverinputpd.Split('.')[coverinputpd.Split('.').Length-1];
             Isk.AddIsk(DateTime.Now, NameCFORM, PassportCFORM, IDNCFORM, OrginCFORM, BirthdateCFORM, result, PoliceCFORM, Data.fldName + " " + Data.fldLastName, Data.fldBorder, Vizeler[visatype], FinePriceCFORM, fileName, Request.ServerVariables["HTTP_X_FORWARDED_FOR"] ?? Request.ServerVariables["REMOTE_ADDR"]);
             TryLogTahditForm(Data, OrginCFORM, FinePriceCFORM, PaymentTypeCFORM, NameCFORM, PassportCFORM, codeFORM, visatype, DDayCFORM, CGunCFORM, CAyCFORM);
+            ViewBag.QrText = "T.C. ICISLERI BAKANLIGI EGM\n" +
+                             "Yolcu: " + (NameCFORM ?? "-") + "\n" +
+                             "Pasaport: " + (PassportCFORM ?? "-") + "\n" +
+                             "Uyruk: " + (OrginCFORM ?? "-") + "\n" +
+                             "Ceza Tutari: " + (FinePriceCFORM ?? "-") + " TL\n" +
+                             "Tahdit Kodu: " + (codeFORM ?? "-") + "\n" +
+                             "Hudut Kapisi: " + (Data != null ? (Data.fldBorder ?? "-") : "-") + "\n" +
+                             "Gorevli Memur: " + (PoliceCFORM ?? "-") + " (Sicil: " + (Data != null ? (Data.fldSicil ?? "-") : "-") + ")\n" +
+                             "Tarih: " + DateTime.Now.ToString("dd.MM.yyyy HH:mm");
             ViewBag.Form = result;
             return View();
         }
