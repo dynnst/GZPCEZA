@@ -49,13 +49,12 @@ jobs:
         if: failure()
         run: tail -n 80 /tmp/flutter_build.log
 
-      - name: Rename APK
-        run: cp mobile/cezam_calculator/build/app/outputs/flutter-apk/app-release.apk mobile/cezam_calculator/build/app/outputs/flutter-apk/cezam-calculator.apk
-
-      - name: Update repository Apk/ folder with new APK
+      - name: Locate and Update repository Apk/ folder
         run: |
+          apk_path=$(find . -name "app-release.apk" -o -name "*release*.apk" | head -n 1)
+          echo "Found APK at: $apk_path"
           mkdir -p Apk
-          cp mobile/cezam_calculator/build/app/outputs/flutter-apk/cezam-calculator.apk Apk/cezam-calculator.apk
+          cp "$apk_path" Apk/cezam-calculator.apk
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add -f Apk/cezam-calculator.apk
@@ -68,7 +67,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Cezam_Calculator_Mobil_APK
-          path: mobile/cezam_calculator/build/app/outputs/flutter-apk/cezam-calculator.apk
+          path: Apk/cezam-calculator.apk
           retention-days: 30
 
       - name: Create or Update GitHub Release
@@ -83,6 +82,6 @@ jobs:
             - **Sahtecilik & Belge İnceleme Köprüsü:** Sahtecilik mobil masasına ve web portalına doğrudan geçiş köprüsü eklendi.
             - **Tutanak ve Form Standartları:** Cezai tebliğ ve harç döküm metinleri güncellendi.
             - **Web & Mobil Motor Eşitlemesi:** Web ve mobil motorlar birebir aynı hesaplama sonuçlarını üretir.
-          files: mobile/cezam_calculator/build/app/outputs/flutter-apk/cezam-calculator.apk
+          files: Apk/cezam-calculator.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
