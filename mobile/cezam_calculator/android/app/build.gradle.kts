@@ -6,12 +6,12 @@ plugins {
 
 android {
     namespace = "com.example.cezam_calculator"
-    compileSdk = 36
+    compileSdk = flutter.compileSdkVersion
 
     defaultConfig {
         applicationId = "com.example.cezam_calculator"
         minSdk = flutter.minSdkVersion
-        targetSdk = 36
+        targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
