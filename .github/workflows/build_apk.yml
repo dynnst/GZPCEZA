@@ -49,19 +49,13 @@ jobs:
         if: failure()
         run: tail -n 80 /tmp/flutter_build.log
 
-      - name: Locate and Update repository Apk/ folder
+      - name: Locate and Prepare APK
         run: |
-          apk_path=$(find . -name "app-release.apk" -o -name "*release*.apk" | head -n 1)
-          echo "Found APK at: $apk_path"
+          APK_FILE=$(find /home/runner/work -name "*.apk" | head -n 1)
+          echo "Found APK at: $APK_FILE"
           mkdir -p Apk
-          cp "$apk_path" Apk/cezam-calculator.apk
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add -f Apk/cezam-calculator.apk
-          if ! git diff --staged --quiet; then
-            git commit -m "chore(apk): update release APK to latest build [skip ci]"
-            git push origin main
-          fi
+          cp "$APK_FILE" Apk/cezam-calculator.apk
+          ls -lh Apk/cezam-calculator.apk
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
