@@ -6,7 +6,7 @@ Bu klasör, Pasaport Kontrol ve Sınır Kapıları için geliştirilen **CEZAM V
 
 ### 📦 Dosya Bilgileri
 * **Dosya Adı:** `cezam-calculator.apk`
-* **Sürüm:** `0.3.2 (Build 5)`
+* **Sürüm:** `0.3.3 (Build 6)`
 * **Boyut:** ~65.5 MB
 * **Desteklenen Platform:** Android 7.0 (API 24) ve üzeri
 * **Çalışma Modu:** %100 Çevrimdışı (İnternetsiz / Yerel Hesaplama Motoru)
@@ -23,7 +23,15 @@ Bu klasör, Pasaport Kontrol ve Sınır Kapıları için geliştirilen **CEZAM V
 
 ---
 
-### 🌟 Temel ve Güncel Özellikler (v0.3.2)
+### 🌟 Temel ve Güncel Özellikler (v0.3.3)
+* **Genelgeler & Mevzuat Rehberi (Güvenli Çevrim İçi Okuma Modu):**
+  - Göç İdaresi Başkanlığı'nın 2020/17 sayılı Genelgesi (Madde 6 Vize İhlali Kısıtlama Esasları) ve 6458 sayılı YUKK rehberi mobil arayüze entegre edildi.
+  - Sınır kapısı personeli için tüm tebliğ, kısıtlama süreleri ve Ç/N tahdit kodları nezaketli ve kurumsal terimlerle sunulur.
+* **Sahtecilik & Belge İnceleme Masası Entegrasyonu:**
+  - Sol çekmece menüsünden (Drawer) kardeş "Pasaport ve Adli Belge İnceleme" modülüne ve web portalına doğrudan geçiş köprüsü eklendi.
+* **Resmi Tutanak & Tebliğ Metinlerinde Kurumsal İyileştirme:**
+  - Tebliğ formlarında yer alan "giriş yasağı" ibareleri mevzuat gereği kurumsal ve nezaketli "giriş kısıtlama kararı" diliyle güncellendi.
+  - PDF yazdırma dökümünde ceza ve defter bedeli alanları yüksek kontrastlı okunabilir biçime getirildi.
 * **Çoklu Girişte Otomatik 180 Gün Kuralı Seçimi:**
   - Kullanıcı yeni bir giriş-çıkış seferi eklediğinde (`_addEntryExitRow`), hesaplama türü arayüzde ve motorda otomatik olarak **"180 Gün Kuralı (180/90)"** moduna geçer.
 * **180/90 Kuralı Veri Eksikliği ve Normal Hesaplama Fallback Koruması:**

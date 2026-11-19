@@ -1314,7 +1314,7 @@ class _CalculatorPageState extends State<CalculatorPage> {
                   icon: Icons.block,
                   iconColor: Colors.redAccent,
                   title: 'Tahdit Kodları (TKOD)',
-                  subtitle: 'Ç-113, V-84 vb. giriş yasakları',
+                  subtitle: 'Ç-113, V-84 vb. giriş kısıtlama kararları',
                   onTap: () {
                     Navigator.pop(context);
                     _openAdminSettingsDirectly(initialTab: 3);
@@ -1390,6 +1390,28 @@ class _CalculatorPageState extends State<CalculatorPage> {
                   onTap: () {
                     Navigator.pop(context);
                     _showAccountDialog();
+                  },
+                ),
+                const Divider(),
+                _drawerSectionHeader('KURUMSAL MODÜLLER & MEVZUAT'),
+                _drawerItem(
+                  icon: Icons.shield,
+                  iconColor: Colors.indigo,
+                  title: 'Sahtecilik & Belge İnceleme',
+                  subtitle: 'Pasaport ve adli mikroskop analizi',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showSahtecilikBridgeDialog();
+                  },
+                ),
+                _drawerItem(
+                  icon: Icons.menu_book,
+                  iconColor: Colors.teal,
+                  title: 'Genelgeler & Mevzuat Rehberi',
+                  subtitle: '2020/17 Genelgesi & 6458 Sayılı Kanun',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showGenelgelerMevzuatDialog();
                   },
                 ),
               ],
@@ -1472,6 +1494,207 @@ class _CalculatorPageState extends State<CalculatorPage> {
       dense: true,
       visualDensity: const VisualDensity(vertical: -1),
       onTap: onTap,
+    );
+  }
+
+  void _showSahtecilikBridgeDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.indigo.withAlpha(30),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.shield, color: Colors.indigo, size: 24),
+            ),
+            const SizedBox(width: 10),
+            const Expanded(
+              child: Text(
+                'Pasaport & Adli Belge İnceleme',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Sahtecilik ve Adli Belge İnceleme Otomasyonu, sınır kapılarında sahte pasaport, kimlik ve vize tespitleri için 5 katmanlı spektral analiz (VIS, UV, IR, Filigran, Mikro Baskı) sunar.',
+                style: TextStyle(fontSize: 12, height: 1.4),
+              ),
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.withAlpha(20),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.grey.withAlpha(60)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('🌐 Web Portalı & Merkezi Sunucu:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                    const SizedBox(height: 4),
+                    SelectableText(
+                      'http://10.7.202.76:8080/Sahtecilik',
+                      style: TextStyle(fontSize: 12, color: Colors.blue.shade700, fontWeight: FontWeight.w600),
+                    ),
+                    const Divider(height: 16),
+                    const Text('📱 Kardeş Mobil Uygulama Paketi:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                    const SizedBox(height: 4),
+                    const SelectableText(
+                      'com.sahtecilik.inspector.sahtecilik_mobile',
+                      style: TextStyle(fontSize: 12, fontFamily: 'monospace'),
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      '• Cihazınızda kuruluysa ana ekrandan "Pasaport İnceleme" simgesine dokunarak doğrudan açabilirsiniz.\n• %100 Çevrimdışı çalışır; telefon belleğinde adli vaka arşivi oluşturur.',
+                      style: TextStyle(fontSize: 11, color: Colors.black87),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton.icon(
+            onPressed: () {
+              Clipboard.setData(const ClipboardData(text: 'http://10.7.202.76:8080/Sahtecilik'));
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Sahtecilik portal adresi panoya kopyalandı.')),
+              );
+              Navigator.pop(ctx);
+            },
+            icon: const Icon(Icons.copy, size: 16),
+            label: const Text('Adresi Kopyala'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Kapat'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showGenelgelerMevzuatDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.teal.withAlpha(30),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.menu_book, color: Colors.teal, size: 24),
+            ),
+            const SizedBox(width: 10),
+            const Expanded(
+              child: Text(
+                'Genelgeler & Mevzuat Rehberi',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.teal.withAlpha(20),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.verified_user, color: Colors.teal, size: 16),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Güvenli İnceleme Modu: Hudut kapıları personelinin mevzuat referanslarına çevrim içi ve hızlı erişimi içindir.',
+                          style: TextStyle(fontSize: 11, color: Colors.teal, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _mevzuatSection(
+                  '📌 2020/17 Sayılı Göç İdaresi Genelgesi (Madde 6)',
+                  '• 3 aya kadar vize ihlalinde bulunan ve çıkışta harç/cezasını ödeyen yabancılar hakkında Türkiye\'ye giriş kısıtlama kararı tesis edilmez (Madde 6/A).\n'
+                  '• İdari para cezasını ödemeden çıkan veya 3 aydan fazla ihlalde bulunan yabancılar hakkında ihlal süresine göre 1 aydan 5 yıla kadar giriş kısıtlama kararı uygulanır (Madde 6/B).\n'
+                  '• Yurt dışında iken cezasını ödeyen ve kısıtlama süresi dolan yabancılar, vize veya vize muafiyetiyle (180/90 kuralı dahilinde) giriş yapabilir.',
+                ),
+                const SizedBox(height: 10),
+                _mevzuatSection(
+                  '⚖️ 6458 Sayılı Kanun (YUKK) Kapsamı',
+                  '• Madde 9: Türkiye\'ye giriş kısıtlama kararlarının tesis edilmesi ve kaldırılması yetkisi.\n'
+                  '• Madde 15: Vize verilmeyecek yabancılar ve sınır dışı kararı olanlar.\n'
+                  '• Madde 102: Vize, vize muafiyeti ve ikamet ihlallerinde uygulanan idari para cezaları.',
+                ),
+                const SizedBox(height: 10),
+                _mevzuatSection(
+                  '🏷️ Ç ve N Tahdit / Kısıtlama Kodları',
+                  '• Ç-113: Yasa dışı giriş/çıkış yapan yabancılar (2 Yıl Kısıtlama Süresi)\n'
+                  '• Ç-114: Hakkında adli işlem yapılan yabancılar (1 Yıl Kısıtlama Süresi)\n'
+                  '• Ç-115: Cezaevinden tahliye olan yabancılar (1 Yıl Kısıtlama Süresi)\n'
+                  '• Ç-117: Kaçak çalıştığı tespit edilen yabancılar (1 Yıl Kısıtlama Süresi)\n'
+                  '• N-99: Kolluk ve sınır kapıları özel denetim kodu.',
+                ),
+                const SizedBox(height: 10),
+                _mevzuatSection(
+                  '💰 492 Sayılı Harçlar Kanunu (6 Sayılı Tarife)',
+                  '• Vize Harcı: Karşılıklılık ilkesi ve ülke tarifelerine göre tek veya çift giriş harcı.\n'
+                  '• İkamet Harcı: İlk ay ve takip eden her ay için belirlenen kanuni harç tarifesi.\n'
+                  '• Değerli Kağıt Bedeli: 210 sayılı kanun kapsamında güncel defter bedeli.',
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Anladım'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _mevzuatSection(String title, String content) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.grey.withAlpha(15),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.withAlpha(50)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black87)),
+          const SizedBox(height: 4),
+          Text(content, style: const TextStyle(fontSize: 11, height: 1.35, color: Colors.black87)),
+        ],
+      ),
     );
   }
 
@@ -2084,10 +2307,10 @@ class _CalculatorPageState extends State<CalculatorPage> {
   pw.Widget _legalNotes({required bool paid}) {
     final notes = [
       'İkamet Harçları 492 sayılı Harçlar kanununun 6 sayılı tarifesine göre her yıl Maliye Bakanlığınca Belirlenmektedir./Residence Fees are determined by the Ministry of Finance every year according to the tariff no. 6 of the Fees Law No. 492.',
-      'Hakkınızda konulmuşsa, konulan ülkemize giriş yasağının kaldırılması için Türkiye Cumhuriyeti dış temsilciliklerine özel amaçlı vize için müracaat ediniz./If it has been placed about you, apply for a special purpose visa to the foreign representatives of the Republic of Turkey in order to lift the ban on entry to our country.',
+      'Hakkınızda tesis edilmişse, ülkemize giriş kısıtlama kararının kaldırılması amacıyla Türkiye Cumhuriyeti dış temsilciliklerine özel meşruhatlı vize için müracaat ediniz./If an entry restriction decision has been taken against you, apply for an annotated visa to the foreign representations of the Republic of Turkey in order to lift the entry restriction to our country.',
       'Vize ihlali nedeniyle hakkınızda uygulanan "N" veya "Ç" tahdit kodlarıyla ilgili , 60(altmış) gün içerisinde İdare mahkemesine başvuru yapmanız gerekmektedir./You must apply to the Administrative Court within 60 (sixty) days regarding the "N" or "C" restriction codes applied to you due to visa violation.',
       'Tahdit iş ve işlemler ile ilgili uygulamalar Göç İdaresi Genel Müdürlüğü\'nün 22/07/2020 tarih ve 2020/17 sayılı genelgeye istinaden yapılmaktadır./Applications related to the restriction works and transactions are made in accordance with the circular numbered 2020/17 dated 22/07/2020 of the General Directorate of Migration Management.',
-      'Vize ihlalinde bulunan yolcularla ilgili yurda giriş yasaklarına ilişkin uygulama 2020/17 sayılı genelgenin Madde 6\'nın "A" ve "B" bendlerine istinaden uygulanır./Implementation of bans on entry to the dormitory for passengers violating a visa is applied pursuant to subparagraphs "A" and "B" of Article 6 of the circular numbered 2020/17.',
+      'Vize ihlalinde bulunan yolcularla ilgili yurda giriş kısıtlama kararlarına ilişkin uygulama 2020/17 sayılı genelgenin Madde 6\'nın "A" ve "B" bentlerine istinaden uygulanır./Implementation regarding entry restriction decisions for passengers with visa violations is applied pursuant to subparagraphs "A" and "B" of Article 6 of circular numbered 2020/17.',
       '6458 Sayılı Yabancılar ve Uluslararası Koruma Kanununun "9","15","102" Maddeleri./Articles "9","15","102" of the Foreigners and International Protection Law No. 6458',
       '17/03/2016 tarihli ve 29656 sayılı Yabancılar ve Uluslararası Koruma Kanununun Uygulamasına İlişkin Yönetmeliğin 8. ve 9. Maddeleri./Articles 8 and 9 of the Regulation on the Implementation of the Law on Foreigners and International Protection dated 17/03/2016 and numbered 29656',
       'Göç İdaresi Başkanlığı\'nın 06.01.2022 tarih ve V-157 İdari Takip Kodu Görüş Talebi Konulu Yazısı.Letter of the Directorate of Migration Management, dated 06.01.2022, on V-157 Administrative Tracking Code, Request for Opinion',
