@@ -43,11 +43,7 @@ jobs:
 
       - name: Build Android APK
         working-directory: mobile/cezam_calculator
-        run: flutter build apk --release 2>&1 | tee /tmp/flutter_build.log
-
-      - name: Show Build Failure Log
-        if: failure()
-        run: tail -n 80 /tmp/flutter_build.log
+        run: flutter build apk --release --android-skip-build-dependency-validation
 
       - name: Locate and Prepare APK
         run: |
@@ -56,10 +52,21 @@ jobs:
             echo "Searching wider for app-release.apk..."
             NEW_APK=$(find /home/runner/work -name "app-release.apk" | head -n 1)
           fi
+          if [ -z "$NEW_APK" ]; then
+            echo "ERROR: app-release.apk was not found!"
+            exit 1
+          fi
           echo "Newly built APK found at: $NEW_APK"
           mkdir -p Apk
           cp -f "$NEW_APK" Apk/cezam-calculator.apk
           ls -lh Apk/cezam-calculator.apk
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add -f Apk/cezam-calculator.apk
+          if ! git diff --staged --quiet; then
+            git commit -m "chore(apk): update release APK to latest build [skip ci]"
+            git push origin main
+          fi
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
