@@ -441,8 +441,8 @@ namespace gzpegm.Controllers
         [HttpGet]
         public ActionResult Download(string path)
         {
-            // İNDİRME KESİNLİKLE YASAKLANDI
-            return Content("<script>alert('EGM Güvenlik ve Bilgi Güvenliği Politikası: Mevzuat ve genelge belgelerinin yerel diske indirilmesi kesinlikle yasaklanmıştır.'); window.close(); history.back();</script>");
+            // Doğrudan indirme yerine güvenli portal görüntüleyicisine yönlendirme uyarısı
+            return Content("<script>alert('EGM Bilgi Güvenliği: Mevzuat ve genelge belgeleri güvenli inceleme amacıyla yalnızca portal üzerinden görüntülenebilmektedir.'); window.close(); history.back();</script>");
         }
 
         #endregion

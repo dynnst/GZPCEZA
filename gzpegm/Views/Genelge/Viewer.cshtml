@@ -502,7 +502,7 @@
         // =====================================================================
         document.addEventListener('contextmenu', function (e) {
             e.preventDefault();
-            showDlpToast('EGM Güvenlik Uyarısı: Mevzuat belgelerinde sağ tık menüsü güvenlik nedeniyle engellenmiştir.');
+            showDlpToast('EGM Bilgi Güvenliği: Mevzuat belgeleri korumalı okuma modunda sunulmaktadır.');
             return false;
         });
 
@@ -519,14 +519,14 @@
             if (isCtrl && (key === 's' || keyCode === 83)) { // Ctrl + S (Kaydet)
                 e.preventDefault();
                 e.stopPropagation();
-                showDlpToast('EGM Bilgi Güvenliği: Belgenin yerel diske indirilmesi veya kaydedilmesi yasaklanmıştır.');
+                showDlpToast('EGM Bilgi Güvenliği: Mevzuat belgeleri sistem üzerinden güvenli şekilde incelenebilir.');
                 return false;
             }
 
             if (isCtrl && (key === 'p' || keyCode === 80)) { // Ctrl + P (Yazdır / PDF)
                 e.preventDefault();
                 e.stopPropagation();
-                showDlpToast('EGM Bilgi Güvenliği: Belgenin yazdırılması veya PDF olarak dışa aktarılması engellenmiştir.');
+                showDlpToast('EGM Bilgi Güvenliği: Resmi belgeler dijital ortamda korunmakta olup doğrudan portal üzerinden okunmalıdır.');
                 return false;
             }
         });
@@ -534,7 +534,7 @@
         function showDlpToast(msg) {
             var toast = $('#dlpSecurityToast');
             if (!toast.length) {
-                toast = $('<div id="dlpSecurityToast" style="position:fixed; top:70px; left:50%; transform:translateX(-50%); z-index:99999; background:rgba(220,53,69,0.95); color:#fff; font-weight:bold; font-size:13px; padding:10px 22px; border-radius:30px; box-shadow:0 8px 24px rgba(0,0,0,0.5); display:none; pointer-events:none;"><i class="fas fa-shield-alt mr-2"></i><span></span></div>');
+                toast = $('<div id="dlpSecurityToast" style="position:fixed; top:70px; left:50%; transform:translateX(-50%); z-index:99999; background:rgba(15,23,42,0.92); color:#f8fafc; border:1px solid rgba(59,130,246,0.35); font-weight:600; font-size:13px; padding:10px 24px; border-radius:30px; box-shadow:0 10px 25px rgba(0,0,0,0.35); display:none; pointer-events:none;"><i class="fas fa-shield-alt text-info mr-2"></i><span></span></div>');
                 $('body').append(toast);
             }
             toast.find('span').text(msg);
