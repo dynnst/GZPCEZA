@@ -43,7 +43,13 @@ jobs:
 
       - name: Build Android APK
         working-directory: mobile/cezam_calculator
-        run: flutter build apk --release --verbose
+        run: |
+          set -o pipefail
+          flutter build apk --release 2>&1 | tee /tmp/flutter_build.log || {
+            echo "::error::$(tail -n 60 /tmp/flutter_build.log)"
+            tail -n 100 /tmp/flutter_build.log
+            exit 1
+          }
 
       - name: Rename APK
         run: cp mobile/cezam_calculator/build/app/outputs/flutter-apk/app-release.apk mobile/cezam_calculator/build/app/outputs/flutter-apk/cezam-calculator.apk
