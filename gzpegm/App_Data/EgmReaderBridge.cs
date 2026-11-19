@@ -22,6 +22,17 @@ namespace Sahtecilik.ReaderBridge
         private static dynamic _regulaReader = null;
         private static readonly object _logFileLock = new object();
 
+        [System.Runtime.InteropServices.DllImport("kernel32.dll")]
+        private static extern IntPtr GetConsoleWindow();
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+        [System.Runtime.InteropServices.DllImport("kernel32.dll")]
+        private static extern bool FreeConsole();
+
+        private const int SW_HIDE = 0;
+
         private static void Log(string message)
         {
             try
@@ -52,6 +63,18 @@ namespace Sahtecilik.ReaderBridge
 
         static void Main(string[] args)
         {
+            // Komut penceresini (CMD siyah ekranını) arka planda tamamen gizle - Kullanıcıyı tedirgin etmez
+            try
+            {
+                IntPtr hWnd = GetConsoleWindow();
+                if (hWnd != IntPtr.Zero)
+                {
+                    ShowWindow(hWnd, SW_HIDE);
+                }
+                FreeConsole();
+            }
+            catch { }
+
             AppDomain.CurrentDomain.UnhandledException += (s, e) =>
             {
                 try
