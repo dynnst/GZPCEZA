@@ -51,10 +51,14 @@ jobs:
 
       - name: Locate and Prepare APK
         run: |
-          APK_FILE=$(find /home/runner/work -name "*.apk" | head -n 1)
-          echo "Found APK at: $APK_FILE"
+          NEW_APK=$(find . -name "app-release.apk" | head -n 1)
+          if [ -z "$NEW_APK" ]; then
+            echo "Searching wider for app-release.apk..."
+            NEW_APK=$(find /home/runner/work -name "app-release.apk" | head -n 1)
+          fi
+          echo "Newly built APK found at: $NEW_APK"
           mkdir -p Apk
-          cp "$APK_FILE" Apk/cezam-calculator.apk
+          cp -f "$NEW_APK" Apk/cezam-calculator.apk
           ls -lh Apk/cezam-calculator.apk
 
       - name: Upload APK Artifact
