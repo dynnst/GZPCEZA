@@ -1093,7 +1093,7 @@ class _CalculatorPageState extends State<CalculatorPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: isActive ? color.withValues(alpha: 0.2) : Colors.transparent,
+        color: isActive ? color.withOpacity(0.2) : Colors.transparent,
         borderRadius: BorderRadius.circular(6),
         border: Border.all(
           color: isActive ? color : Colors.white12,
@@ -1147,7 +1147,7 @@ class _CalculatorPageState extends State<CalculatorPage> {
                       height: 52,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.white.withValues(alpha: 0.12),
+                        color: Colors.white.withOpacity(0.12),
                         border: Border.all(color: Colors.amber, width: 2),
                       ),
                       child: ClipOval(
@@ -1196,7 +1196,7 @@ class _CalculatorPageState extends State<CalculatorPage> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.25),
+                    color: Colors.black.withOpacity(0.25),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: Colors.white24, width: 0.8),
                   ),
@@ -1232,8 +1232,8 @@ class _CalculatorPageState extends State<CalculatorPage> {
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: _isAdmin
-                        ? Colors.amber.withValues(alpha: 0.2)
-                        : Colors.white.withValues(alpha: 0.1),
+                        ? Colors.amber.withOpacity(0.2)
+                        : Colors.white.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
                       color: _isAdmin ? Colors.amber : Colors.white30,
@@ -1419,7 +1419,7 @@ class _CalculatorPageState extends State<CalculatorPage> {
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            color: Colors.grey.withValues(alpha: 0.06),
+            color: Colors.grey.withOpacity(0.06),
             child: Row(
               children: [
                 Expanded(
@@ -1478,7 +1478,7 @@ class _CalculatorPageState extends State<CalculatorPage> {
       leading: Container(
         padding: const EdgeInsets.all(7),
         decoration: BoxDecoration(
-          color: iconColor.withValues(alpha: 0.12),
+          color: iconColor.withOpacity(0.12),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(icon, color: iconColor, size: 20),

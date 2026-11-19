@@ -43,7 +43,7 @@ jobs:
 
       - name: Build Android APK
         working-directory: mobile/cezam_calculator
-        run: flutter build apk --release
+        run: flutter build apk --release --verbose
 
       - name: Rename APK
         run: cp mobile/cezam_calculator/build/app/outputs/flutter-apk/app-release.apk mobile/cezam_calculator/build/app/outputs/flutter-apk/cezam-calculator.apk
