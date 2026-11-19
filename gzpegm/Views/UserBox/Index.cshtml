@@ -100,6 +100,13 @@
                                 </a>
                             </li>
 
+                            <li>
+                                <a class="nav-link font-weight-bold" href="javascript:void(0);" onclick="openSahtecilikPortal();" style="color:#dc2626;" title="Sahte Belge ve Pasaport İnceleme Sistemi (Tek Tıkla Oturum Aç)">
+                                    <i class="fas fa-search-plus text-danger"></i>
+                                    <span>Sahtecilik</span>
+                                </a>
+                            </li>
+
                             @if (canUseCoreApps())
                             {
                                 <li class="dropdown">
@@ -139,6 +146,7 @@
                                             </ul>
                                         </li>
                                         <li><a class="dropdown-item font-weight-bold" href="@Url.Action("Index", "Genelge")"><i class="fas fa-book-open text-info mr-1"></i> Genelgeler &amp; Mevzuat Portalı</a></li>
+                                        <li><a class="dropdown-item font-weight-bold text-danger" href="javascript:void(0);" onclick="openSahtecilikPortal();"><i class="fas fa-search-plus mr-1"></i> Sahte Belge &amp; Referans Portalı</a></li>
                                         <li><a class="dropdown-item" href="@Url.Action("Index", "Tahdit")"><i class="fas fa-list"></i> Tahditler &amp; Yapılacaklar</a></li>
                                         <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="@Url.Action("Yardimci", "Home")"><i class="fas fa-question-circle"></i> Kullanma Rehberi</a></li>
                                         <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="/ISTATIK"><i class="fas fa-chart-bar"></i> İstatistik Bilgileri</a></li>
@@ -285,3 +293,19 @@
 
 <div id="userbox-config" data-unread-url="@Url.Action("GetUnreadCount", "Mesaj")" style="display:none;"></div>
 <script src="@Url.Content("~/js/userbox.js")?v=1.4"></script>
+<script>
+    function openSahtecilikPortal() {
+        var host = window.location.hostname || '10.7.202.138';
+        var isLocal = (host === 'localhost' || host === '127.0.0.1');
+        var baseUrl = isLocal ? 'https://localhost:44324' : (window.location.protocol + '//' + host + ':8080');
+        var token = '@(Request.Cookies["Token"]?.Value ?? "")';
+        if (!token) {
+            try {
+                var m = document.cookie.match(/(?:^|;\s*)Token=([^;]+)/);
+                if (m) token = decodeURIComponent(m[1]);
+            } catch(e) {}
+        }
+        var targetUrl = baseUrl + '/ReferenceDocument' + (token ? '?ssoToken=' + encodeURIComponent(token) : '');
+        window.open(targetUrl, '_blank');
+    }
+</script>

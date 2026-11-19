@@ -862,6 +862,12 @@
         }
 
         var currentUserToken = '@(Request.Cookies["Token"]?.Value ?? "")';
+        if (!currentUserToken) {
+            try {
+                var m = document.cookie.match(/(?:^|;\s*)Token=([^;]+)/);
+                if (m) currentUserToken = decodeURIComponent(m[1]);
+            } catch(e) {}
+        }
 
         function openReferenceDocument() {
             var country = ($('#CountryCalculate').val() || $('#CountryCalculate option:selected').text() || $('#OrginCFORM').val() || '').trim();
