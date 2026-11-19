@@ -24,9 +24,7 @@ namespace gzpegm.Controllers
             var currentUser = GetUser();
             if (currentUser != null)
             {
-                string fullName = ((currentUser.fldName ?? "").Trim() + " " + (currentUser.fldLastName ?? "").Trim()).Trim();
-                string sicil = (currentUser.fldSicil ?? "").Trim();
-                ViewBag.OfficerName = !string.IsNullOrEmpty(sicil) ? fullName + " (" + sicil + ")" : fullName;
+                ViewBag.OfficerName = "";
                 ViewBag.OfficerBorder = currentUser.fldBorder;
             }
             return View();
@@ -40,9 +38,7 @@ namespace gzpegm.Controllers
             var currentUser = GetUser();
             if (currentUser != null)
             {
-                string fullName = ((currentUser.fldName ?? "").Trim() + " " + (currentUser.fldLastName ?? "").Trim()).Trim();
-                string sicil = (currentUser.fldSicil ?? "").Trim();
-                ViewBag.OfficerName = !string.IsNullOrEmpty(sicil) ? fullName + " (" + sicil + ")" : fullName;
+                ViewBag.OfficerName = "";
                 ViewBag.OfficerBorder = currentUser.fldBorder;
             }
             return View();

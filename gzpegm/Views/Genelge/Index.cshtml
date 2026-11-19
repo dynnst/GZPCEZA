@@ -1,0 +1,2115 @@
+@model gzpegm.Models.Genelge.GenelgePortalViewModel
+@{
+    ViewBag.Title = "Genelgeler & Mevzuat Bilgi Bankası";
+    Layout = "~/Views/Shared/_Master.cshtml";
+}
+
+@section Styles {
+    <style>
+        .genelge-hero {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0b1f3a 100%);
+            border-radius: 12px;
+            padding: 24px 28px;
+            color: #ffffff;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .genelge-hero::after {
+            content: "\f02d";
+            font-family: "Font Awesome 5 Free";
+            font-weight: 900;
+            position: absolute;
+            right: 20px;
+            bottom: -25px;
+            font-size: 150px;
+            opacity: 0.05;
+            color: #ffffff;
+            pointer-events: none;
+        }
+
+        .genelge-stat-box {
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(8px);
+            border-radius: 10px;
+            padding: 12px 18px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            transition: all 0.25s ease;
+        }
+
+        .genelge-stat-box:hover {
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateY(-2px);
+        }
+
+        .genelge-stat-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .search-container {
+            position: relative;
+            margin-top: 18px;
+        }
+
+        .search-input-lg {
+            height: 52px;
+            border-radius: 28px;
+            padding-left: 48px;
+            padding-right: 120px;
+            font-size: 16px;
+            background: #ffffff;
+            border: 2px solid #3b82f6;
+            box-shadow: 0 4px 14px rgba(59, 130, 246, 0.25);
+            transition: all 0.2s ease;
+        }
+
+        .search-input-lg:focus {
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.45);
+            border-color: #2563eb;
+            outline: none;
+        }
+
+        .search-icon-pos {
+            position: absolute;
+            left: 18px;
+            top: 16px;
+            font-size: 18px;
+            color: #64748b;
+        }
+
+        .search-clear-btn {
+            position: absolute;
+            right: 42px;
+            top: 14px;
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            display: none;
+        }
+
+        .search-spinner {
+            position: absolute;
+            right: 16px;
+            top: 16px;
+            display: none;
+            color: #3b82f6;
+        }
+
+        .filter-chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+            margin-right: 6px;
+            margin-bottom: 8px;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .filter-chip:hover {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+
+        .filter-chip.active {
+            background: #2563eb;
+            color: #ffffff;
+            border-color: #2563eb;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+        }
+
+        .category-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 16px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .category-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 20px -3px rgba(0, 0, 0, 0.1);
+            border-color: #93c5fd;
+        }
+
+        .category-card.is-confidential {
+            border-left: 4px solid #ef4444;
+            background: #fff8f8;
+        }
+
+        .category-card-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1e293b;
+            line-height: 1.4;
+            margin-bottom: 8px;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .category-badge-tag {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 12px;
+            display: inline-block;
+            margin-bottom: 8px;
+        }
+
+        .tag-tahdit { background-color: #fee2e2; color: #991b1b; }
+        .tag-vize { background-color: #dbeafe; color: #1e40af; }
+        .tag-ikamet { background-color: #fef3c7; color: #92400e; }
+        .tag-kihbi { background-color: #e0e7ff; color: #3730a3; }
+        .tag-silah { background-color: #ffedd5; color: #9a3412; }
+        .tag-siber { background-color: #ccfbf1; color: #115e59; }
+        .tag-country { background-color: #e0f2fe; color: #0369a1; }
+        .tag-genel { background-color: #f3f4f6; color: #374151; }
+
+        .doc-item-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .doc-item-row:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+        }
+
+        .doc-item-row.is-confidential {
+            border-left: 4px solid #ef4444;
+            background: #fffafa;
+        }
+
+        .doc-icon-large {
+            font-size: 28px;
+            width: 40px;
+            text-align: center;
+            margin-right: 14px;
+        }
+
+        .doc-title {
+            font-weight: 600;
+            font-size: 14px;
+            color: #1e293b;
+            margin-bottom: 2px;
+            word-break: break-word;
+        }
+
+        .doc-meta {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .doc-actions {
+            display: flex;
+            gap: 6px;
+            flex-shrink: 0;
+            margin-left: 12px;
+            align-items: center;
+        }
+
+        .modal-viewer-dialog {
+            max-width: 92vw;
+            margin: 20px auto;
+        }
+
+        .viewer-iframe-wrapper {
+            position: relative;
+            width: 100%;
+            height: 80vh;
+            background: #1e293b;
+            border-radius: 0 0 8px 8px;
+            overflow: hidden;
+        }
+
+        /* Nav Bar for PDF & TIFF */
+        .viewer-navbar {
+            background: #0f172a;
+            color: #ffffff;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* Canvas Styles */
+        .pdf-page-canvas {
+            display: block;
+            margin: 0 auto 15px auto;
+            max-width: 100%;
+            border-radius: 4px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            user-select: none;
+            -webkit-user-select: none;
+            pointer-events: none; /* Doğrudan sağ tık/kaydetmeyi engeller */
+        }
+
+        /* DLP Korumalı Canvas (Resim, TIFF ve PDF) */
+        .dlp-protected-canvas {
+            display: block;
+            margin: 0 auto;
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            user-select: none !important;
+            -webkit-user-select: none !important;
+            -webkit-user-drag: none !important;
+            -khtml-user-drag: none !important;
+            -moz-user-drag: none !important;
+            -o-user-drag: none !important;
+            user-drag: none !important;
+            -webkit-touch-callout: none !important;
+            pointer-events: none; /* Doğrudan sağ tık ve fareyle masaüstüne sürükleyip kaydetmeyi kesin engeller */
+        }
+
+        .modal-watermark-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 999;
+            opacity: 0.13;
+            background-repeat: repeat;
+        }
+
+        /* Modal Katmanlama Çözümü: Belge Okuyucu her zaman üstte olmalı */
+        #modalDocViewer {
+            z-index: 1060 !important;
+            user-select: none !important;
+            -webkit-user-select: none !important;
+        }
+
+        /* Yazdırma ve Print-to-PDF İle Belge Çalınmasını Engelleme */
+        @media print {
+            #modalDocViewer, #modalDocViewer * {
+                display: none !important;
+                visibility: hidden !important;
+            }
+        }
+        #modalCategoryFiles {
+            z-index: 1045 !important;
+        }
+
+        /* Office (Word, Excel, PPTX) A4 Sayfa Görünümü */
+        .office-doc-paper {
+            max-width: 860px;
+            margin: 0 auto;
+            background: #ffffff;
+            color: #1e293b;
+            padding: 40px;
+            border-radius: 4px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            font-size: 14px;
+            line-height: 1.7;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .office-doc-paper table {
+            width: 100%;
+            margin-bottom: 1rem;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .office-doc-paper table td, .office-doc-paper table th {
+            padding: 8px 10px;
+            border: 1px solid #cbd5e1;
+            vertical-align: top;
+        }
+
+        .office-doc-paper p {
+            margin-bottom: 0.75rem;
+        }
+    </style>
+}
+
+<div class="row">
+    <div class="col-lg-12">
+        <!-- Hero Header -->
+        <div class="genelge-hero">
+            <div class="row align-items-center">
+                <div class="col-lg-7 col-md-12">
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="badge badge-primary px-3 py-1 mr-2" style="font-size:12px; font-weight:700; letter-spacing:0.5px;">EGM MEVZUAT</span>
+                        <span class="badge badge-success px-2 py-1 mr-2"><i class="fas fa-shield-alt mr-1"></i> DLP Korumalı</span>
+                        <span class="badge badge-danger px-2 py-1"><i class="fas fa-lock mr-1"></i> İndirme Yasaklı</span>
+                    </div>
+                    <h2 class="font-weight-bold text-white mb-1" style="font-size: 26px; letter-spacing: 0.5px;">
+                        <i class="fas fa-book-open text-info mr-2"></i> Genelgeler &amp; Mevzuat Bilgi Bankası
+                    </h2>
+                    <p class="text-white-50 mb-0" style="font-size: 13.5px;">
+                        Havalimanı Şube Müdürlüğü görev talimatları, uygulama esasları ve resmi yazışmalar arşivi.
+                        <span class="text-warning font-weight-bold">Tüm belgeler Sicil (@Model.UserSicil) ve IP (@Model.UserIp) filigranı ile korunmaktadır.</span>
+                    </p>
+                </div>
+                <div class="col-lg-5 col-md-12 mt-3 mt-lg-0">
+                    <div class="row">
+                        <div class="col-6 mb-2">
+                            <div class="genelge-stat-box">
+                                <div class="genelge-stat-icon bg-primary text-white">
+                                    <i class="fas fa-folder"></i>
+                                </div>
+                                <div>
+                                    <div class="font-weight-bold text-white" style="font-size: 20px; line-height:1.2;">@Model.TotalFolderCount</div>
+                                    <div class="text-white-50" style="font-size: 12px;">Konu Başlığı</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-2">
+                            <div class="genelge-stat-box">
+                                <div class="genelge-stat-icon bg-info text-white">
+                                    <i class="fas fa-file-alt"></i>
+                                </div>
+                                <div>
+                                    <div class="font-weight-bold text-white" style="font-size: 20px; line-height:1.2;">@Model.TotalDocumentCount.ToString("N0")</div>
+                                    <div class="text-white-50" style="font-size: 12px;">Mevzuat Belgesi</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Instant Search Bar -->
+            <div class="search-container">
+                <i class="fas fa-search search-icon-pos"></i>
+                <input type="text" id="genelgeSearchInput" class="form-control search-input-lg" 
+                       placeholder="Genelge konusu, kelime veya tarih arayın... (Örn: 180 gün, pasaport, tahdit, kaşe vize, silah)" 
+                       autocomplete="off" />
+                <button type="button" id="btnClearSearch" class="search-clear-btn" title="Temizle">
+                    <i class="fas fa-times-circle font-size-lg"></i>
+                </button>
+                <div id="searchSpinner" class="search-spinner">
+                    <i class="fas fa-spinner fa-spin font-size-lg"></i>
+                </div>
+            </div>
+
+            <!-- Admin / Teacher Action Toolbar -->
+            @if (Model.CanManage)
+            {
+                <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 pt-2" style="border-top: 1px solid rgba(255,255,255,0.1);">
+                    <small class="text-white-50">
+                        <i class="fas fa-user-shield mr-1 text-warning"></i> Yönetici/Eğitimci Paneli: <strong class="text-white">@Model.UserDisplayName</strong>
+                    </small>
+                    <div class="mt-2 mt-md-0">
+                        @if (Model.PendingRequestCount > 0)
+                        {
+                            <button type="button" class="btn btn-sm btn-danger mr-1" data-toggle="modal" data-target="#modalAccessRequests">
+                                <i class="fas fa-bell mr-1"></i> Erişim Talepleri <span class="badge badge-light text-danger ml-1">@Model.PendingRequestCount</span>
+                            </button>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn-sm btn-outline-light mr-1" data-toggle="modal" data-target="#modalAccessRequests">
+                                <i class="fas fa-key mr-1"></i> Erişim Talepleri
+                            </button>
+                        }
+                        <button type="button" class="btn btn-sm btn-outline-light mr-1" id="btnRescan" title="Klasörü yeniden tara ve önbelleği tazele">
+                            <i class="fas fa-sync-alt mr-1"></i> Klasörü Eşitle
+                        </button>
+                        <button type="button" class="btn btn-sm btn-primary" data-toggle="modal" data-target="#modalUploadGenelge">
+                            <i class="fas fa-plus-circle mr-1"></i> Yeni Genelge Yükle
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Filter Chips & Chronological Sorting Bar -->
+        <div class="card mb-3">
+            <div class="card-body py-2 px-3">
+                <div class="d-flex flex-wrap align-items-center justify-content-between">
+                    <div id="categoryFilterChips">
+                        <span class="filter-chip active" data-category="all"><i class="fas fa-layer-group mr-1"></i> Tümü</span>
+                        <span class="filter-chip text-primary" data-category="Ülke Mevzuatı & Yazıları"><i class="fas fa-globe-americas mr-1"></i> Ülke Yazıları</span>
+                        <span class="filter-chip" data-category="Pasaport & Vize"><i class="fas fa-passport mr-1"></i> Pasaport &amp; Vize</span>
+                        <span class="filter-chip" data-category="Tahditler"><i class="fas fa-ban mr-1"></i> Tahditler</span>
+                        <span class="filter-chip" data-category="İkamet & Harçlar"><i class="fas fa-receipt mr-1"></i> İkamet &amp; Harçlar</span>
+                        <span class="filter-chip" data-category="KİHBİ Bilgi Sistemi"><i class="fas fa-database mr-1"></i> KİHBİ</span>
+                        <span class="filter-chip" data-category="Silah Mevzuatı"><i class="fas fa-shield-alt mr-1"></i> Silah Mevzuatı</span>
+                        <span class="filter-chip" data-category="Siber & Bilişim"><i class="fas fa-network-wired mr-1"></i> Siber &amp; Bilişim</span>
+                        <span class="filter-chip" data-category="İnad & İSK"><i class="fas fa-user-times mr-1"></i> İnad &amp; İSK</span>
+                        <span class="filter-chip" data-category="Arşiv Genelgeleri"><i class="fas fa-archive mr-1"></i> Arşiv</span>
+                    </div>
+                    <div class="d-flex align-items-center mt-2 mt-md-0">
+                        <div id="typeFilterChips" class="mr-3">
+                            <span class="filter-chip active" data-type="all">Tümü</span>
+                            <span class="filter-chip text-danger" data-type="pdf"><i class="fas fa-file-pdf mr-1"></i> PDF</span>
+                            <span class="filter-chip text-info" data-type="tiff"><i class="fas fa-file-alt mr-1"></i> TIFF / Taranmış</span>
+                            <span class="filter-chip text-primary" data-type="office"><i class="fas fa-file-word mr-1"></i> Word / Excel / PPT</span>
+                            <span class="filter-chip text-warning" data-type="image"><i class="fas fa-file-image mr-1"></i> Görseller</span>
+                            <span class="filter-chip text-danger" data-type="gizli"><i class="fas fa-lock mr-1"></i> Gizli</span>
+                        </div>
+                        <div>
+                            <select id="sortSelect" class="form-control form-control-sm font-weight-bold text-dark border-primary" style="height:32px; border-radius:16px;">
+                                <option value="date_desc" selected>📅 En Yeniler (Kronolojik)</option>
+                                <option value="date_asc">📅 En Eskiler</option>
+                                <option value="name_asc">🔤 İsme Göre (A-Z)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search Results Container -->
+        <div id="searchResultsSection" style="display:none;" class="mb-4">
+            <div class="card">
+                <header class="card-header d-flex justify-content-between align-items-center py-2 px-3">
+                    <h5 class="card-title mb-0 font-weight-bold" style="font-size:15px;">
+                        <i class="fas fa-search text-primary mr-2"></i> <span id="searchResultsTitle">Arama Sonuçları</span>
+                        <span id="searchResultCountBadge" class="badge badge-primary ml-2">0</span>
+                    </h5>
+                    <button type="button" class="btn btn-xs btn-outline-secondary" id="btnCloseSearchResults">
+                        <i class="fas fa-times mr-1"></i> Sonuçları Kapat
+                    </button>
+                </header>
+                <div class="card-body p-3">
+                    <div id="searchResultsList"></div>
+                    <div id="searchPagination" class="text-center mt-3" style="display:none;">
+                        <button type="button" id="btnPrevPage" class="btn btn-sm btn-default mr-1"><i class="fas fa-chevron-left"></i> Önceki</button>
+                        <span id="pageInfoText" class="font-weight-bold mx-2" style="font-size:13px;"></span>
+                        <button type="button" id="btnNextPage" class="btn btn-sm btn-default ml-1">Sonraki <i class="fas fa-chevron-right"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Categories & Topics Grid (Chronological) -->
+        <div id="categoriesSection">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="font-weight-bold mb-0 text-dark" style="font-size:18px;">
+                    <i class="fas fa-calendar-alt text-primary mr-2"></i> Genelge &amp; Mevzuat Konuları
+                    <small id="categorySortNotice" class="text-muted ml-1" style="font-size:13px;">(Tarih sırasına göre listelenmiştir - <span class="text-primary font-weight-bold">En Yeniler</span>)</small>
+                </h4>
+                <button type="button" class="btn btn-sm btn-outline-primary" id="btnShowAllDocuments" title="Tüm mevzuat belgelerini tek liste olarak kronolojik göster">
+                    <i class="fas fa-list-ul mr-1"></i> Tüm Belgeleri Listele (@Model.TotalDocumentCount.ToString("N0"))
+                </button>
+            </div>
+
+            <div class="row" id="categoriesGrid">
+                @foreach (var cat in Model.TopCategories)
+                {
+                    var tagClass = "tag-genel";
+                    if (cat.CategoryTag == "Tahditler") { tagClass = "tag-tahdit"; }
+                    else if (cat.CategoryTag == "Pasaport & Vize") { tagClass = "tag-vize"; }
+                    else if (cat.CategoryTag == "İkamet & Harçlar") { tagClass = "tag-ikamet"; }
+                    else if (cat.CategoryTag == "KİHBİ Bilgi Sistemi") { tagClass = "tag-kihbi"; }
+                    else if (cat.CategoryTag == "Silah Mevzuatı") { tagClass = "tag-silah"; }
+                    else if (cat.CategoryTag == "Siber & Bilişim") { tagClass = "tag-siber"; }
+                    else if (cat.CategoryTag != null && cat.CategoryTag.Contains("Ülke")) { tagClass = "tag-country"; }
+
+                    var catDate = cat.ParsedDate ?? cat.LatestFileDate ?? DateTime.MinValue;
+
+                    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-3 category-item-col" 
+                         data-folder="@cat.FolderPath" 
+                         data-tag="@cat.CategoryTag"
+                         data-date="@catDate.ToString("yyyy-MM-dd")"
+                         data-timestamp="@catDate.Ticks"
+                         data-title="@cat.CleanTitle">
+                        <div class="category-card @(cat.IsConfidential ? "is-confidential" : "")" onclick="openCategoryModal('@Html.Raw(HttpUtility.JavaScriptStringEncode(cat.FolderPath))')">
+                            <div>
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="category-badge-tag @tagClass">@cat.CategoryTag</span>
+                                    <div>
+                                        @if (cat.IsConfidential)
+                                        {
+                                            <span class="badge badge-danger mr-1" title="Gizli / Hizmete Özel"><i class="fas fa-lock"></i> GİZLİ</span>
+                                        }
+                                        <span class="badge badge-light border text-muted" style="font-size:11px;">
+                                            <i class="fas fa-file mr-1"></i> @cat.FileCount Belge
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="category-card-title" title="@cat.CleanTitle">
+                                    <i class="fas fa-folder text-warning mr-1"></i> @cat.CleanTitle
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center pt-2 mt-2" style="border-top:1px dashed #e2e8f0; font-size:11px; color:#94a3b8;">
+                                <span class="font-weight-bold text-dark">
+                                    <i class="far fa-calendar-alt text-primary mr-1"></i>
+                                    @(cat.ParsedDate.HasValue ? cat.ParsedDate.Value.ToString("dd.MM.yyyy") : (cat.LatestFileDate.HasValue ? cat.LatestFileDate.Value.ToString("dd.MM.yyyy") : "Mevzuat"))
+                                </span>
+                                <span class="text-primary font-weight-bold">
+                                    İncele <i class="fas fa-arrow-right ml-1"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Recent Documents Preview Card (Chronological) -->
+        <div class="card mt-4">
+            <header class="card-header py-2 px-3 d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0 font-weight-bold" style="font-size:15px;">
+                    <i class="fas fa-history text-info mr-2"></i> En Güncel Mevzuat Belgeleri (Kronolojik Sıra)
+                </h5>
+                <span class="badge badge-info"><i class="fas fa-shield-alt mr-1"></i> İndirme Korumalı</span>
+            </header>
+            <div class="card-body p-3">
+                <div class="row" id="recentDocumentsGrid">
+                    @foreach (var doc in Model.RecentDocuments.Take(12))
+                    {
+                        <div class="col-lg-6 col-md-12 mb-2 recent-doc-col"
+                             data-date="@doc.Date.ToString("yyyy-MM-dd")"
+                             data-timestamp="@doc.Date.Ticks"
+                             data-title="@doc.Title">
+                            <div class="doc-item-row @(doc.IsConfidential ? "is-confidential" : "")">
+                                <div class="d-flex align-items-center" style="min-width:0; flex:1;">
+                                    <div class="doc-icon-large">
+                                        <i class="@doc.IconClass"></i>
+                                    </div>
+                                    <div style="min-width:0;">
+                                        <div class="doc-title text-truncate" title="@doc.Title">
+                                            @if (doc.IsConfidential)
+                                            {
+                                                <span class="badge badge-danger mr-1" title="Gizli Belge"><i class="fas fa-lock"></i> GİZLİ</span>
+                                            }
+                                            @doc.Title
+                                        </div>
+                                        <div class="doc-meta">
+                                            <span class="badge badge-light border mr-1">@doc.CategoryTag</span>
+                                            <span class="mr-2 font-weight-bold text-dark"><i class="far fa-calendar-alt text-primary mr-1"></i> @doc.FormattedDate</span>
+                                            <span><i class="fas fa-weight-hanging mr-1"></i> @doc.FormattedSize</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="doc-actions">
+                                    @if (doc.UserHasAccess)
+                                    {
+                                        string docType = doc.IsPdf ? "pdf" : (doc.IsTiff ? "tiff" : (doc.IsOffice ? "office" : "image"));
+                                        <button type="button" class="btn btn-sm btn-primary mr-1" onclick="previewDoc('@doc.Id', '@Html.Raw(HttpUtility.JavaScriptStringEncode(doc.Title))', '@docType')" title="Sayfa içi okuyucuda aç">
+                                            <i class="fas fa-eye mr-1"></i> Oku
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-info" onclick="openDocInNewWindow('@doc.Id')" title="Ayrı sekmede / tam ekran pencerede aç">
+                                            <i class="fas fa-external-link-alt mr-1"></i> Ayrı Pencere
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        if (doc.HasPendingRequest)
+                                        {
+                                            <button type="button" class="btn btn-sm btn-warning" disabled title="Erişim talebiniz inceleniyor">
+                                                <i class="fas fa-hourglass-half mr-1"></i> İnceleniyor
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="openAccessRequestModal('@doc.Id', '@Html.Raw(HttpUtility.JavaScriptStringEncode(doc.Title))')" title="Erişim İzni Talep Et">
+                                                <i class="fas fa-key mr-1"></i> Talep Et
+                                            </button>
+                                        }
+                                    }
+
+                                    @if (Model.CanManage)
+                                    {
+                                        if (doc.IsConfidential)
+                                        {
+                                            if (doc.CanCurrentUserUnlock)
+                                            {
+                                                <button type="button" class="btn btn-sm btn-danger" onclick="toggleConfidential('@doc.Id')" title="Gizlilik kilidini kaldır (Herkese Açık Yap)">
+                                                    <i class="fas fa-lock"></i>
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button type="button" class="btn btn-sm btn-secondary" disabled title="Admin tarafından kilitlendi (Eğitimciler açamaz)">
+                                                    <i class="fas fa-lock text-warning"></i>
+                                                </button>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleConfidential('@doc.Id')" title="Belgeyi Gizli olarak kilitle">
+                                                <i class="fas fa-lock-open"></i>
+                                            </button>
+                                        }
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL: Güvenli Belge Görüntüleyici (PDF Canvas, Çok Sayfalı TIFF & Görsel)-->
+<!-- ========================================================================= -->
+<div class="modal fade" id="modalDocViewer" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="static">
+    <div class="modal-dialog modal-viewer-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white py-2 px-3 d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center text-truncate mr-3">
+                    <span class="badge badge-danger mr-2"><i class="fas fa-shield-alt mr-1"></i> DLP Korumalı</span>
+                    <h5 class="modal-title font-weight-bold text-truncate text-white mb-0" id="docViewerTitle" style="font-size:15px;">
+                        Belge Önizleme
+                    </h5>
+                </div>
+                <div class="d-flex align-items-center">
+                    <button type="button" class="btn btn-sm btn-outline-warning mr-2" id="btnBackToCategory" onclick="returnToCategoryModal()" style="display:none;" title="Klasör listesine geri dön">
+                        <i class="fas fa-chevron-left mr-1"></i> Klasöre Dön
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-info mr-2 font-weight-bold" id="btnPopoutViewer" onclick="openCurrentDocInNewWindow()" title="Belgeyi tam ekran ayrı pencerede / yeni sekmede aç">
+                        <i class="fas fa-external-link-alt mr-1"></i> Ayrı Pencerede Aç
+                    </button>
+                    <span class="badge badge-warning mr-3 d-none d-md-inline" style="font-size:12px;">
+                        <i class="fas fa-user mr-1"></i> Sicil: @Model.UserSicil | IP: @Model.UserIp
+                    </span>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Kapat" style="font-size:24px;">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- PDF Gezinme Çubuğu -->
+            <div id="pdfNavBar" class="viewer-navbar" style="display:none;">
+                <button type="button" class="btn btn-xs btn-outline-light" id="btnPdfPrevPage" onclick="changePdfPage(-1)">
+                    <i class="fas fa-chevron-left mr-1"></i> Önceki Sayfa
+                </button>
+                <span class="font-weight-bold" style="font-size:13px;">
+                    Sayfa <span id="currentPdfPageNum" class="text-warning">1</span> / <span id="totalPdfPagesNum">1</span>
+                </span>
+                <button type="button" class="btn btn-xs btn-outline-light" id="btnPdfNextPage" onclick="changePdfPage(1)">
+                    Sonraki Sayfa <i class="fas fa-chevron-right ml-1"></i>
+                </button>
+            </div>
+
+            <!-- TIFF Sayfa Gezinme Çubuğu -->
+            <div id="tiffNavBar" class="viewer-navbar" style="display:none;">
+                <button type="button" class="btn btn-xs btn-outline-light" id="btnTiffPrevPage" onclick="changeTiffPage(-1)">
+                    <i class="fas fa-chevron-left mr-1"></i> Önceki Sayfa
+                </button>
+                <span class="font-weight-bold" style="font-size:13px;">
+                    Sayfa <span id="currentTiffPageNum" class="text-warning">1</span> / <span id="totalTiffPageNum">1</span>
+                </span>
+                <button type="button" class="btn btn-xs btn-outline-light" id="btnTiffNextPage" onclick="changeTiffPage(1)">
+                    Sonraki Sayfa <i class="fas fa-chevron-right ml-1"></i>
+                </button>
+            </div>
+
+            <div class="modal-body p-0 position-relative">
+                <div class="viewer-iframe-wrapper" id="viewerWrapper">
+                    <!-- Dinamik Filigran Kaplaması -->
+                    <div id="modalWatermarkOverlay" class="modal-watermark-overlay"></div>
+
+                    <!-- PDF.js HTML5 Canvas Okuyucusu (Chromium PDF Yok, İndirme Butonu Yok) -->
+                    <div id="pdfViewerWrapper" style="display:none; height:100%; overflow:auto; padding:15px; text-align:center;">
+                        <div id="pdfLoadingIndicator" class="text-white py-5">
+                            <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
+                            <p class="mt-2 font-weight-bold">Güvenli Belge Yükleniyor ve Filigran İşleniyor...</p>
+                        </div>
+                        <div id="pdfCanvasContainer"></div>
+                    </div>
+
+                    <!-- Resim ve TIFF Güvenli Canvas Görüntüleyici (Kaydetme / Sürükleme / Sağ Tık İmkansız) -->
+                    <div id="docViewerImageWrapper" class="text-center p-3 position-relative" style="display:none; height:100%; overflow:auto;">
+                        <div id="imageLoadingIndicator" class="text-white py-5" style="display:none;">
+                            <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
+                            <p class="mt-2 font-weight-bold">Görsel güvenli canvas ortamında hazırlanıyor...</p>
+                        </div>
+                        <canvas id="docViewerImageCanvas" class="dlp-protected-canvas" oncontextmenu="return false;" ondragstart="return false;"></canvas>
+                    </div>
+
+                    <!-- Office Belge Görüntüleyici (Word, Excel, PPTX - Çevrimdışı HTML Dönüşümü) -->
+                    <div id="officeViewerWrapper" style="display:none; height:100%; overflow-y:auto; padding:25px 15px; background:#1e293b;">
+                        <div id="officeLoadingIndicator" class="text-white py-5 text-center">
+                            <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
+                            <p class="mt-2 font-weight-bold">Belge metin içeriği dönüştürülüyor ve hazırlanıyor...</p>
+                        </div>
+                        <div id="officeDocContent" class="office-doc-paper" style="display:none;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL: Kategori Klasörü İçi Belgeler                                      -->
+<!-- ========================================================================= -->
+<div class="modal fade" id="modalCategoryFiles" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-light py-2 px-3">
+                <h5 class="modal-title font-weight-bold" id="categoryModalTitle" style="font-size:16px;">
+                    <i class="fas fa-folder-open text-warning mr-2"></i> Klasör İçeriği
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Kapat">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body p-3">
+                <div id="categoryModalLoading" class="text-center py-4">
+                    <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
+                    <p class="mt-2 text-muted">Belgeler yükleniyor...</p>
+                </div>
+                <div id="categoryModalFilesList" style="display:none; max-height:65vh; overflow-y:auto;"></div>
+            </div>
+            <div class="modal-footer py-2 px-3">
+                <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal">Kapat</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL: Gizli Belge Erişim İzni Talebi                                      -->
+<!-- ========================================================================= -->
+<div class="modal fade" id="modalRequestAccess" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form id="formRequestAccess">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="requestDocPath" name="path" value="" />
+                <input type="hidden" id="requestDocTitle" name="title" value="" />
+
+                <div class="modal-header bg-danger text-white py-2 px-3">
+                    <h5 class="modal-title font-weight-bold" style="font-size:16px;">
+                        <i class="fas fa-lock mr-2"></i> Gizli Belge Erişim İzni Talebi
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Kapat">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body p-3">
+                    <div class="alert alert-warning py-2 mb-3" style="font-size:13px;">
+                        <i class="fas fa-exclamation-triangle mr-1"></i> Bu belge <strong>GİZLİ / HİZMETE ÖZEL</strong> olarak sınıflandırılmıştır. İnceleyebilmek için görev gerekçenizi belirterek yönetici onayına göndermelisiniz.
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="font-weight-bold text-dark">Talep Edilen Belge</label>
+                        <input type="text" id="displayRequestDocTitle" class="form-control" readonly />
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="font-weight-bold text-dark">Gereken Görev Gerekçesi / Notunuz</label>
+                        <textarea id="requestReason" name="reason" class="form-control" rows="3" placeholder="Örn: 18.11.2026 tarihli nöbette pasaport tahdit incelemesi amacıyla incelemem gerekmektedir." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer py-2 px-3">
+                    <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-sm btn-danger" id="btnSubmitAccessRequest">
+                        <i class="fas fa-paper-plane mr-1"></i> Talebi İlet
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL: Bekleyen Erişim Talepleri (Yönetici ve Eğitimciler İçin)            -->
+<!-- ========================================================================= -->
+@if (Model.CanManage)
+{
+    <div class="modal fade" id="modalAccessRequests" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-xl" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white py-2 px-3">
+                    <h5 class="modal-title font-weight-bold" style="font-size:16px;">
+                        <i class="fas fa-user-shield text-warning mr-2"></i> Gizli Belge Erişim İzin Talepleri Yönetimi
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Kapat">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body p-3">
+                    @if (Model.AccessRequests == null || !Model.AccessRequests.Any())
+                    {
+                        <div class="alert alert-info text-center mb-0">
+                            <i class="fas fa-check-circle mr-2"></i> Şu anda incelenmeyi bekleyen herhangi bir gizli belge erişim talebi bulunmamaktadır.
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped table-hover mb-0" style="font-size:13px;">
+                                <thead class="thead-dark">
+                                    <tr>
+                                        <th>Personel</th>
+                                        <th>Sicil</th>
+                                        <th>Talep Edilen Belge</th>
+                                        <th>Tarih</th>
+                                        <th>Görev Gerekçesi</th>
+                                        <th style="width:230px;">İşlem</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var req in Model.AccessRequests)
+                                    {
+                                        <tr>
+                                            <td class="font-weight-bold">@req.UserName</td>
+                                            <td><span class="badge badge-light border">@req.UserSicil</span></td>
+                                            <td class="text-truncate" style="max-width:250px;" title="@req.ItemTitle">@req.ItemTitle</td>
+                                            <td>@req.FormattedRequestDate</td>
+                                            <td>@req.Reason</td>
+                                            <td>
+                                                <button type="button" class="btn btn-xs btn-success" onclick="reviewRequestAction(@req.Id, 'Onaylandi', 24)" title="24 Saatlik İzin Ver">
+                                                    <i class="fas fa-check mr-1"></i> 24 Saat Onayla
+                                                </button>
+                                                <button type="button" class="btn btn-xs btn-primary" onclick="reviewRequestAction(@req.Id, 'Onaylandi', null)" title="Süresiz İzin Ver">
+                                                    Süresiz
+                                                </button>
+                                                <button type="button" class="btn btn-xs btn-danger" onclick="reviewRequestAction(@req.Id, 'Reddedildi', null)" title="Reddet">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer py-2 px-3">
+                    <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal">Kapat</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- ========================================================================= -->
+<!-- MODAL: Yeni Genelge Yükle (Admin & Eğitimci)                               -->
+<!-- ========================================================================= -->
+@if (Model.CanManage)
+{
+    <div class="modal fade" id="modalUploadGenelge" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white py-2 px-3">
+                    <h5 class="modal-title font-weight-bold" style="font-size:16px;">
+                        <i class="fas fa-plus-circle mr-2"></i> Yeni Genelge Ekle (Yönetici &amp; Eğitimci)
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Kapat">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body p-3">
+                    <!-- Sekmeler: Dosya Yükle vs İç Ağdan Çek -->
+                    <ul class="nav nav-pills nav-fill mb-3" id="uploadMethodTabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active font-weight-bold" id="tab-upload-file" data-toggle="pill" href="#pane-upload-file" role="tab" style="font-size:13px;">
+                                <i class="fas fa-folder-open mr-1"></i> Bilgisayardan Dosya Yükle
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link font-weight-bold text-info" id="tab-fetch-url" data-toggle="pill" href="#pane-fetch-url" role="tab" style="font-size:13px;">
+                                <i class="fas fa-network-wired mr-1"></i> İç Ağ / Web Bağlantısından Çek
+                            </a>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content border rounded p-3 bg-light">
+                        <!-- SEKME 1: Bilgisayardan Dosya Yükle -->
+                        <div class="tab-pane fade show active" id="pane-upload-file" role="tabpanel">
+                            <form id="uploadGenelgeForm" enctype="multipart/form-data">
+                                @Html.AntiForgeryToken()
+                                <div class="form-group mb-3">
+                                    <label class="font-weight-bold text-dark">Kategori / Konu Seçin</label>
+                                    <select id="uploadCategorySelect" name="category" class="form-control">
+                                        <option value="Pasaport ve Vize">Pasaport &amp; Vize</option>
+                                        <option value="Tahditler ve Kodlar">Tahditler ve Kodlar</option>
+                                        <option value="İkametgah ve Harçlar">İkametgah ve Harçlar</option>
+                                        <option value="KİHBİ Projesi">KİHBİ Projesi</option>
+                                        <option value="Silah ve Mühimmat">Silah ve Mühimmat</option>
+                                        <option value="Siber ve EBYS">Siber ve EBYS</option>
+                                        <option value="İnad ve İSK">İnad ve İSK</option>
+                                        <option value="Genel Mevzuat" selected>Genel Mevzuat</option>
+                                        <option value="__NEW__">+ Yeni Bir Kategori / Klasör Adı Yaz...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group mb-3" id="customCategoryGroup" style="display:none;">
+                                    <label class="font-weight-bold text-dark">Yeni Klasör / Konu Adı</label>
+                                    <input type="text" id="customCategoryInput" name="customCategory" class="form-control" placeholder="Örn: 2026 Hudut Güvenlik Tedbirleri" />
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label class="font-weight-bold text-dark">
+                                        <i class="fas fa-globe-americas mr-1 text-primary"></i> İlişkili Ülke (İsteğe Bağlı)
+                                    </label>
+                                    <select name="country" class="form-control">
+                                        <option value="">-- Genel Mevzuat (Tüm Ülkeler / Ülke Ayrımı Yok) --</option>
+                                        @if (ViewBag.UvrCountries != null)
+                                        {
+                                            foreach (var countryName in (IEnumerable<string>)ViewBag.UvrCountries)
+                                            {
+                                                <option value="@countryName">@countryName</option>
+                                            }
+                                        }
+                                    </select>
+                                    <small class="text-muted d-block mt-1">Eğer bu belge belirli bir ülkeye (Örn: Ukrayna, Suriye vb.) aitse seçiniz; anasayfada ve Kaşe Vize modülünde bu ülkeye özel olarak anında listelenecektir.</small>
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label class="font-weight-bold text-dark">Belge Dosyası (PDF, Word, Görsel, TIFF)</label>
+                                    <input type="file" id="uploadFileInput" name="file" class="form-control-file border p-2 rounded bg-white" required />
+                                    <small class="text-muted d-block mt-1">Desteklenen: .pdf, .doc, .docx, .xls, .xlsx, .pptx, .jpg, .png, .tif, .tiff (Maks: 100 MB)</small>
+                                </div>
+                                <div class="form-group mb-3 p-3 rounded" style="background:#f1f5f9; border:1px solid #cbd5e1;">
+                                    <label class="font-weight-bold text-dark d-block mb-2" style="font-size:13.5px;">
+                                        <i class="fas fa-shield-alt text-primary mr-1"></i> Gizlilik Sınıflandırması
+                                    </label>
+                                    <div class="custom-control custom-radio mb-2">
+                                        <input type="radio" id="uploadConfidentialYes" name="isConfidential" class="custom-control-input" value="true" checked>
+                                        <label class="custom-control-label font-weight-bold text-danger" for="uploadConfidentialYes" style="cursor:pointer;">
+                                            <i class="fas fa-lock mr-1"></i> 🔒 GİZLİ Belge (Önerilen)
+                                        </label>
+                                        <small class="text-muted d-block pl-4" style="font-size:12px;">Portalda "GİZLİ" rozetiyle listelenir, personele Sicil + IP filigranıyla sunulur ve erişim izin kurallarına tabidir.</small>
+                                    </div>
+                                    <div class="custom-control custom-radio">
+                                        <input type="radio" id="uploadConfidentialNo" name="isConfidential" class="custom-control-input" value="false">
+                                        <label class="custom-control-label font-weight-bold text-success" for="uploadConfidentialNo" style="cursor:pointer;">
+                                            <i class="fas fa-lock-open mr-1"></i> 🔓 AÇIK / Genel Belge
+                                        </label>
+                                        <small class="text-muted d-block pl-4" style="font-size:12px;">Tüm personel herhangi bir onay veya talep gerekmeden doğrudan okuyabilir.</small>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-end mt-3">
+                                    <button type="button" class="btn btn-sm btn-secondary mr-2" data-dismiss="modal">İptal</button>
+                                    <button type="submit" class="btn btn-sm btn-success" id="btnUploadSubmit">
+                                        <i class="fas fa-check mr-1"></i> Yükle ve Yayınla
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- SEKME 2: İç Ağ / Web Bağlantısından Belge Çek (10.55.0.193 vb.) -->
+                        <div class="tab-pane fade" id="pane-fetch-url" role="tabpanel">
+                            <form id="fetchUrlGenelgeForm">
+                                @Html.AntiForgeryToken()
+                                <div class="alert alert-info py-2 mb-3" style="font-size:12.5px;">
+                                    <i class="fas fa-shield-alt mr-1"></i> <strong>Kapalı Ağ Entegrasyonu:</strong> İç ağda yayımlanan kalıcı bağlantı adresini (Örn: <code>http://10.55.0.193/cikisiptal.pdf</code>) girdiğinizde, dosya sunucudan sunucuya anında indirilip portala güvenli ve filigranlı genelge olarak eklenir.
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label class="font-weight-bold text-dark">İç Ağ Bağlantı Adresi (URL) <span class="text-danger">*</span></label>
+                                    <input type="url" id="fetchSourceUrl" name="sourceUrl" class="form-control" placeholder="Örn: http://10.55.0.193/cikisiptal.pdf veya http://10.55.0.193/belgeler/talimat.docx" required />
+                                    <small class="text-muted">Desteklenen: .pdf, .doc, .docx, .xls, .xlsx, .pptx, .jpg, .png, .tif, .tiff</small>
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label class="font-weight-bold text-dark">Özel Belge Adı / Konusu (İsteğe Bağlı)</label>
+                                    <input type="text" id="fetchCustomFileName" name="customFileName" class="form-control" placeholder="Boş bırakılırsa linkteki orijinal dosya adı kullanılır (Örn: Çıkış İptali Uygulama Talimatı.pdf)" />
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label class="font-weight-bold text-dark">Kategori / Konu Seçin</label>
+                                    <select id="fetchCategorySelect" name="category" class="form-control">
+                                        <option value="Pasaport ve Vize">Pasaport &amp; Vize</option>
+                                        <option value="Tahditler ve Kodlar">Tahditler ve Kodlar</option>
+                                        <option value="İkametgah ve Harçlar">İkametgah ve Harçlar</option>
+                                        <option value="KİHBİ Projesi">KİHBİ Projesi</option>
+                                        <option value="Silah ve Mühimmat">Silah ve Mühimmat</option>
+                                        <option value="Siber ve EBYS">Siber ve EBYS</option>
+                                        <option value="İnad ve İSK">İnad ve İSK</option>
+                                        <option value="Genel Mevzuat" selected>Genel Mevzuat</option>
+                                        <option value="__NEW__">+ Yeni Bir Kategori / Klasör Adı Yaz...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group mb-3" id="fetchCustomCategoryGroup" style="display:none;">
+                                    <label class="font-weight-bold text-dark">Yeni Klasör / Konu Adı</label>
+                                    <input type="text" id="fetchCustomCategoryInput" name="customCategory" class="form-control" placeholder="Örn: 2026 Hudut Güvenlik Tedbirleri" />
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label class="font-weight-bold text-dark">
+                                        <i class="fas fa-globe-americas mr-1 text-primary"></i> İlişkili Ülke (İsteğe Bağlı)
+                                    </label>
+                                    <select name="country" class="form-control">
+                                        <option value="">-- Genel Mevzuat (Tüm Ülkeler / Ülke Ayrımı Yok) --</option>
+                                        @if (ViewBag.UvrCountries != null)
+                                        {
+                                            foreach (var countryName in (IEnumerable<string>)ViewBag.UvrCountries)
+                                            {
+                                                <option value="@countryName">@countryName</option>
+                                            }
+                                        }
+                                    </select>
+                                    <small class="text-muted d-block mt-1">Eğer bu belge belirli bir ülkeye (Örn: Ukrayna, Suriye vb.) aitse seçiniz; anasayfada ve Kaşe Vize modülünde bu ülkeye özel olarak anında listelenecektir.</small>
+                                </div>
+                                <div class="form-group mb-3 p-3 rounded" style="background:#f1f5f9; border:1px solid #cbd5e1;">
+                                    <label class="font-weight-bold text-dark d-block mb-2" style="font-size:13.5px;">
+                                        <i class="fas fa-shield-alt text-primary mr-1"></i> Gizlilik Sınıflandırması
+                                    </label>
+                                    <div class="custom-control custom-radio mb-2">
+                                        <input type="radio" id="fetchConfidentialYes" name="isConfidential" class="custom-control-input" value="true" checked>
+                                        <label class="custom-control-label font-weight-bold text-danger" for="fetchConfidentialYes" style="cursor:pointer;">
+                                            <i class="fas fa-lock mr-1"></i> 🔒 GİZLİ Belge (Önerilen)
+                                        </label>
+                                        <small class="text-muted d-block pl-4" style="font-size:12px;">Portalda "GİZLİ" rozetiyle listelenir, personele Sicil + IP filigranıyla sunulur ve erişim izin kurallarına tabidir.</small>
+                                    </div>
+                                    <div class="custom-control custom-radio">
+                                        <input type="radio" id="fetchConfidentialNo" name="isConfidential" class="custom-control-input" value="false">
+                                        <label class="custom-control-label font-weight-bold text-success" for="fetchConfidentialNo" style="cursor:pointer;">
+                                            <i class="fas fa-lock-open mr-1"></i> 🔓 AÇIK / Genel Belge
+                                        </label>
+                                        <small class="text-muted d-block pl-4" style="font-size:12px;">Tüm personel herhangi bir onay veya talep gerekmeden doğrudan okuyabilir.</small>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-end mt-3">
+                                    <button type="button" class="btn btn-sm btn-secondary mr-2" data-dismiss="modal">İptal</button>
+                                    <button type="submit" class="btn btn-sm btn-info font-weight-bold" id="btnFetchUrlSubmit">
+                                        <i class="fas fa-cloud-download-alt mr-1"></i> Bağlantıdan İndir ve Arşive Ekle
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <!-- PDF.js Lokal Kütüphanesi -->
+    <script src="@Url.Content("~/vendor/pdfjs/pdf.min.js")"></script>
+
+    <script>
+        // PDF.js Worker Tanımı
+        if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = '@Url.Content("~/vendor/pdfjs/pdf.worker.min.js")';
+        }
+
+        var searchDebounceTimer = null;
+        var currentPage = 1;
+        var currentQuery = '';
+        var currentCategory = 'all';
+        var currentType = 'all';
+        var currentSort = 'date_desc';
+
+        // TIFF Sayfalama Değişkenleri
+        var activeTiffDocId = '';
+        var currentTiffPage = 0;
+        var totalTiffPages = 1;
+
+        // PDF.js Sayfalama Değişkenleri
+        var activePdfDoc = null;
+        var currentPdfPage = 1;
+        var totalPdfPages = 1;
+
+        var userSicil = '@Model.UserSicil';
+        var userIp = '@Model.UserIp';
+        var openedFromCategory = false;
+
+        $(document).ready(function () {
+            setupModalWatermark();
+
+            $('#genelgeSearchInput').on('input', function () {
+                var q = $(this).val();
+                if (q.trim().length > 0) {
+                    $('#btnClearSearch').show();
+                    clearTimeout(searchDebounceTimer);
+                    searchDebounceTimer = setTimeout(function () {
+                        executeSearch(1);
+                    }, 300);
+                } else {
+                    $('#btnClearSearch').hide();
+                    if (currentCategory === 'all' && currentType === 'all') {
+                        $('#searchResultsSection').slideUp();
+                        $('#categoriesSection').slideDown();
+                    } else {
+                        executeSearch(1);
+                    }
+                }
+            });
+
+            $('#btnClearSearch').on('click', function () {
+                $('#genelgeSearchInput').val('');
+                $(this).hide();
+                $('#searchResultsSection').slideUp();
+                $('#categoriesSection').slideDown();
+            });
+
+            $('#btnCloseSearchResults').on('click', function () {
+                $('#searchResultsSection').slideUp();
+                $('#categoriesSection').slideDown();
+            });
+
+            $('#btnShowAllDocuments').on('click', function () {
+                executeSearch(1, true);
+            });
+
+            $('#categoryFilterChips .filter-chip').on('click', function () {
+                $('#categoryFilterChips .filter-chip').removeClass('active');
+                $(this).addClass('active');
+                currentCategory = $(this).data('category');
+
+                filterCategoryCards(currentCategory);
+
+                if ($('#genelgeSearchInput').val().trim().length > 0 || currentCategory !== 'all') {
+                    executeSearch(1);
+                }
+            });
+
+            $('#typeFilterChips .filter-chip').on('click', function () {
+                $('#typeFilterChips .filter-chip').removeClass('active');
+                $(this).addClass('active');
+                currentType = $(this).data('type');
+                executeSearch(1);
+            });
+
+            $('#sortSelect').on('change', function () {
+                currentSort = $(this).val();
+                applySort();
+            });
+
+            $('#btnPrevPage').on('click', function () {
+                if (currentPage > 1) { executeSearch(currentPage - 1); }
+            });
+
+            $('#btnNextPage').on('click', function () {
+                executeSearch(currentPage + 1);
+            });
+
+            $('#uploadCategorySelect').on('change', function () {
+                if ($(this).val() === '__NEW__') {
+                    $('#customCategoryGroup').slideDown();
+                    $('#customCategoryInput').focus();
+                } else {
+                    $('#customCategoryGroup').slideUp();
+                }
+            });
+
+            $('#formRequestAccess').on('submit', function (e) {
+                e.preventDefault();
+                var btn = $('#btnSubmitAccessRequest');
+                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Gönderiliyor...');
+
+                $.ajax({
+                    url: '@Url.Action("RequestAccess", "Genelge")',
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    success: function (res) {
+                        btn.prop('disabled', false).html('<i class="fas fa-paper-plane mr-1"></i> Talebi İlet');
+                        if (res.success) {
+                            alert(res.message);
+                            $('#modalRequestAccess').modal('hide');
+                            location.reload();
+                        } else {
+                            alert('Hata: ' + res.message);
+                        }
+                    },
+                    error: function () {
+                        btn.prop('disabled', false).html('<i class="fas fa-paper-plane mr-1"></i> Talebi İlet');
+                        alert('Talep iletilirken sunucu hatası oluştu.');
+                    }
+                });
+            });
+
+            $('#uploadGenelgeForm').on('submit', function (e) {
+                e.preventDefault();
+                var formData = new FormData(this);
+                var btn = $('#btnUploadSubmit');
+                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Yükleniyor...');
+
+                $.ajax({
+                    url: '@Url.Action("Upload", "Genelge")',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (res) {
+                        btn.prop('disabled', false).html('<i class="fas fa-check mr-1"></i> Yükle ve Yayınla');
+                        if (res.success) {
+                            alert(res.message);
+                            $('#modalUploadGenelge').modal('hide');
+                            location.reload();
+                        } else {
+                            alert('Hata: ' + res.message);
+                        }
+                    },
+                    error: function () {
+                        btn.prop('disabled', false).html('<i class="fas fa-check mr-1"></i> Yükle ve Yayınla');
+                        alert('Dosya yüklenirken sunucu hatası oluştu.');
+                    }
+                });
+            });
+
+            $('#fetchCategorySelect').on('change', function () {
+                if ($(this).val() === '__NEW__') {
+                    $('#fetchCustomCategoryGroup').slideDown();
+                    $('#fetchCustomCategoryInput').focus();
+                } else {
+                    $('#fetchCustomCategoryGroup').slideUp();
+                }
+            });
+
+            $('#fetchUrlGenelgeForm').on('submit', function (e) {
+                e.preventDefault();
+                var btn = $('#btnFetchUrlSubmit');
+                var originalHtml = btn.html();
+                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> İndiriliyor...');
+
+                $.ajax({
+                    url: '@Url.Action("FetchFromUrl", "Genelge")',
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    success: function (res) {
+                        btn.prop('disabled', false).html(originalHtml);
+                        if (res && res.success) {
+                            alert(res.message);
+                            $('#modalUploadGenelge').modal('hide');
+                            location.reload();
+                        } else {
+                            alert('Hata: ' + (res.message || 'Bağlantıdan dosya indirilemedi.'));
+                        }
+                    },
+                    error: function (xhr) {
+                        btn.prop('disabled', false).html(originalHtml);
+                        var msg = 'Sunucu veya iç ağ bağlantı hatası oluştu.';
+                        if (xhr && xhr.status === 403) msg = 'Bu işlem için yetkiniz (Yönetici/Eğitimci) bulunmamaktadır.';
+                        alert(msg);
+                    }
+                });
+            });
+
+            $('#btnRescan').on('click', function () {
+                if (!confirm('Tüm genelge dizini taranarak önbellek tazelensin mi? Bu işlem belge sayısına bağlı olarak birkaç saniye sürebilir.')) return;
+                var btn = $(this);
+                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Taranıyor...');
+
+                $.ajax({
+                    url: '@Url.Action("Rescan", "Genelge")',
+                    type: 'POST',
+                    timeout: 120000,
+                    success: function (res) {
+                        btn.prop('disabled', false).html('<i class="fas fa-sync-alt mr-1"></i> Klasörü Eşitle');
+                        if (res && res.success) {
+                            alert(res.message);
+                            location.reload();
+                        } else {
+                            alert('Hata: ' + ((res && res.message) || 'Bilinmeyen bir hata oluştu.'));
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        btn.prop('disabled', false).html('<i class="fas fa-sync-alt mr-1"></i> Klasörü Eşitle');
+                        var msg = 'Dizin taranırken sunucu hatası oluştu.';
+                        if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
+                            msg = xhr.responseJSON.message;
+                        } else if (xhr && xhr.status === 403) {
+                            msg = 'Bu işlem için yetkiniz (Yönetici/Eğitimci) bulunmamaktadır.';
+                        } else if (status === 'timeout') {
+                            msg = 'Zaman Aşımı: Dizin boyutu büyük olduğu için tarama arka planda devam ediyor. Lütfen 10-15 saniye sonra sayfayı yenileyiniz.';
+                        } else if (xhr && xhr.status) {
+                            msg += ' (HTTP ' + xhr.status + ': ' + (xhr.statusText || error) + ')';
+                        }
+                        alert(msg);
+                    }
+                });
+            });
+        });
+
+        // Sıralama ve Arama Fonksiyonları
+        function applySort() {
+            // 1. Kategori Kartlarını Sırala
+            sortElements('#categoriesGrid', '.category-item-col', currentSort);
+
+            // 2. En Son Belgeler Listesini Sırala
+            sortElements('#recentDocumentsGrid', '.recent-doc-col', currentSort);
+
+            // 3. Görsel Bildirim Metnini Güncelle
+            var sortText = "En Yeniler (Kronolojik)";
+            if (currentSort === 'date_asc') {
+                sortText = "En Eskiler (Kronolojik)";
+            } else if (currentSort === 'name_asc') {
+                sortText = "İsme Göre (A-Z)";
+            }
+            $('#categorySortNotice').html('(Sıralama: <span class="text-primary font-weight-bold">' + sortText + '</span>)');
+
+            // 4. Eğer Arama Sonuçları Bölümü Açıksa veya Filtre Aktifse Arama Sonuçlarını da Yeniden Çek
+            if ($('#searchResultsSection').is(':visible') || $('#genelgeSearchInput').val().trim().length > 0 || currentCategory !== 'all' || currentType !== 'all') {
+                executeSearch(1, true);
+            }
+        }
+
+        function sortElements(containerSelector, itemSelector, sortType) {
+            var $container = $(containerSelector);
+            if ($container.length === 0) return;
+
+            var $items = $container.children(itemSelector).get();
+            if ($items.length === 0) return;
+
+            $items.sort(function (a, b) {
+                if (sortType === 'name_asc') {
+                    var titleA = ($(a).attr('data-title') || '').trim();
+                    var titleB = ($(b).attr('data-title') || '').trim();
+                    return titleA.localeCompare(titleB, 'tr', { sensitivity: 'base', numeric: true });
+                } else if (sortType === 'date_asc') {
+                    var timeA = parseInt($(a).attr('data-timestamp') || '0', 10);
+                    var timeB = parseInt($(b).attr('data-timestamp') || '0', 10);
+                    return timeA - timeB;
+                } else {
+                    // date_desc (varsayılan: en yeniden en eskiye)
+                    var timeA = parseInt($(a).attr('data-timestamp') || '0', 10);
+                    var timeB = parseInt($(b).attr('data-timestamp') || '0', 10);
+                    return timeB - timeA;
+                }
+            });
+
+            // Animasyonlu sıralama: elemanları yeniden diz
+            $container.css('transition', 'opacity 0.12s ease').css('opacity', '0.4');
+            setTimeout(function () {
+                $.each($items, function (idx, item) {
+                    $container.append(item);
+                });
+                $container.css('opacity', '1');
+            }, 60);
+        }
+
+        // Arama Fonksiyonu
+        function executeSearch(page, force) {
+            var q = $('#genelgeSearchInput').val().trim();
+            if (!force && q.length === 0 && currentCategory === 'all' && currentType === 'all') {
+                $('#searchResultsSection').slideUp();
+                $('#categoriesSection').slideDown();
+                return;
+            }
+
+            $('#searchSpinner').show();
+            currentPage = page || 1;
+
+            $.ajax({
+                url: '@Url.Action("Search", "Genelge")',
+                type: 'GET',
+                data: {
+                    q: q,
+                    category: currentCategory,
+                    type: currentType,
+                    page: currentPage,
+                    pageSize: 30,
+                    sort: currentSort
+                },
+                success: function (res) {
+                    $('#searchSpinner').hide();
+                    if (!res || !res.Success) return;
+                    renderSearchResults(res);
+                },
+                error: function () {
+                    $('#searchSpinner').hide();
+                }
+            });
+        }
+
+        // Arama Sonuçlarını Çizme
+        function renderSearchResults(data) {
+            var q = $('#genelgeSearchInput').val().trim();
+            if (q.length > 0) {
+                $('#searchResultsTitle').text('"' + q + '" Arama Sonuçları');
+            } else if (currentCategory !== 'all') {
+                $('#searchResultsTitle').text(currentCategory + ' Belgeleri');
+            } else if (currentType !== 'all') {
+                $('#searchResultsTitle').text(currentType.toUpperCase() + ' Mevzuat Belgeleri');
+            } else {
+                $('#searchResultsTitle').text('Tüm Mevzuat Belgeleri (Kronolojik Sıra)');
+            }
+
+            $('#searchResultCountBadge').text(data.TotalMatches + ' Belge');
+            var container = $('#searchResultsList');
+            container.empty();
+
+            if (data.TotalMatches === 0) {
+                container.html('<div class="alert alert-warning text-center mb-0"><i class="fas fa-search mr-2"></i> Aradığınız kriterlere uygun genelge bulunamadı.</div>');
+                $('#searchPagination').hide();
+                $('#searchResultsSection').slideDown();
+                $('#categoriesSection').slideUp();
+                return;
+            }
+
+            var html = '<div class="row">';
+            for (var i = 0; i < data.Items.length; i++) {
+                var doc = data.Items[i];
+                var isConfClass = doc.IsConfidential ? 'is-confidential' : '';
+
+                html += '<div class="col-lg-6 col-md-12 mb-2">' +
+                    '<div class="doc-item-row ' + isConfClass + '">' +
+                        '<div class="d-flex align-items-center" style="min-width:0; flex:1;">' +
+                            '<div class="doc-icon-large"><i class="' + doc.IconClass + '"></i></div>' +
+                            '<div style="min-width:0;">' +
+                                '<div class="doc-title text-truncate" title="' + escapeHtml(doc.Title) + '">';
+
+                if (doc.IsConfidential) {
+                    html += '<span class="badge badge-danger mr-1"><i class="fas fa-lock"></i> GİZLİ</span>';
+                }
+
+                html += escapeHtml(doc.Title) + '</div>' +
+                                '<div class="doc-meta">' +
+                                    '<span class="badge badge-light border mr-1">' + escapeHtml(doc.CategoryTag) + '</span>' +
+                                    '<span class="mr-2 font-weight-bold text-dark"><i class="far fa-calendar-alt text-primary mr-1"></i> ' + doc.FormattedDate + '</span>' +
+                                    '<span><i class="fas fa-weight-hanging mr-1"></i> ' + doc.FormattedSize + '</span>' +
+                                '</div>' +
+                            '</div>' +
+                        '</div>' +
+                        '<div class="doc-actions">';
+
+                if (doc.UserHasAccess) {
+                    var docType = doc.IsPdf ? 'pdf' : (doc.IsTiff ? 'tiff' : (doc.IsOffice ? 'office' : 'image'));
+                    html += '<button type="button" class="btn btn-sm btn-primary mr-1" onclick="previewDoc(\'' + doc.Id + '\', \'' + escapeJs(doc.Title) + '\', \'' + docType + '\')" title="Sayfa içi okuyucuda aç"><i class="fas fa-eye mr-1"></i> Oku</button>';
+                    html += '<button type="button" class="btn btn-sm btn-outline-info" onclick="openDocInNewWindow(\'' + doc.Id + '\')" title="Ayrı sekmede / tam ekran pencerede aç"><i class="fas fa-external-link-alt mr-1"></i> Ayrı Pencere</button>';
+                } else {
+                    if (doc.HasPendingRequest) {
+                        html += '<button type="button" class="btn btn-sm btn-warning" disabled><i class="fas fa-hourglass-half mr-1"></i> İnceleniyor</button>';
+                    } else {
+                        html += '<button type="button" class="btn btn-sm btn-outline-danger" onclick="openAccessRequestModal(\'' + doc.Id + '\', \'' + escapeJs(doc.Title) + '\')"><i class="fas fa-key mr-1"></i> Talep Et</button>';
+                    }
+                }
+
+                @if (Model.CanManage)
+                {
+                    <text>
+                    if (doc.IsConfidential) {
+                        if (doc.CanCurrentUserUnlock) {
+                            html += '<button type="button" class="btn btn-sm btn-danger" onclick="toggleConfidential(\'' + doc.Id + '\')" title="Gizlilik kilidini kaldır"><i class="fas fa-lock"></i></button>';
+                        } else {
+                            html += '<button type="button" class="btn btn-sm btn-secondary" disabled title="Admin tarafından kilitlendi (Eğitimciler açamaz)"><i class="fas fa-lock text-warning"></i></button>';
+                        }
+                    } else {
+                        html += '<button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleConfidential(\'' + doc.Id + '\')" title="Belgeyi kilitle"><i class="fas fa-lock-open"></i></button>';
+                    }
+                    </text>
+                }
+
+                html += '</div>' +
+                    '</div>' +
+                '</div>';
+            }
+            html += '</div>';
+
+            container.html(html);
+
+            if (data.TotalPages > 1) {
+                $('#pageInfoText').text(data.Page + ' / ' + data.TotalPages);
+                $('#btnPrevPage').prop('disabled', data.Page <= 1);
+                $('#btnNextPage').prop('disabled', data.Page >= data.TotalPages);
+                $('#searchPagination').show();
+            } else {
+                $('#searchPagination').hide();
+            }
+
+            $('#searchResultsSection').slideDown();
+            $('#categoriesSection').slideUp();
+        }
+
+        function filterCategoryCards(tag) {
+            if (!tag || tag === 'all') {
+                $('.category-item-col').show();
+                return;
+            }
+            $('.category-item-col').each(function () {
+                var itemTag = $(this).data('tag');
+                if (itemTag === tag) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+        }
+
+        function openCategoryModal(folderPath) {
+            $('#modalCategoryFiles').modal('show');
+            $('#categoryModalLoading').show();
+            $('#categoryModalFilesList').hide().empty();
+            $('#categoryModalTitle').html('<i class="fas fa-folder-open text-warning mr-2"></i> ' + escapeHtml(folderPath));
+
+            $.ajax({
+                url: '@Url.Action("CategoryFiles", "Genelge")',
+                type: 'GET',
+                data: { folder: folderPath, sort: currentSort },
+                success: function (res) {
+                    $('#categoryModalLoading').hide();
+                    if (!res || !res.success || !res.files || res.files.length === 0) {
+                        $('#categoryModalFilesList').html('<div class="alert alert-info mb-0">Bu klasörde görüntülenebilecek mevzuat belgesi bulunamadı.</div>').show();
+                        return;
+                    }
+
+                    var files = res.files || [];
+                    if (currentSort === 'date_asc') {
+                        files.sort(function (a, b) {
+                            var tA = a.Timestamp || (new Date(a.Date || 0)).getTime();
+                            var tB = b.Timestamp || (new Date(b.Date || 0)).getTime();
+                            return tA - tB;
+                        });
+                    } else if (currentSort === 'name_asc') {
+                        files.sort(function (a, b) {
+                            return (a.Title || '').localeCompare(b.Title || '', 'tr', { sensitivity: 'base', numeric: true });
+                        });
+                    } else {
+                        // date_desc
+                        files.sort(function (a, b) {
+                            var tA = a.Timestamp || (new Date(a.Date || 0)).getTime();
+                            var tB = b.Timestamp || (new Date(b.Date || 0)).getTime();
+                            return tB - tA;
+                        });
+                    }
+
+                    var html = '';
+                    for (var i = 0; i < files.length; i++) {
+                        var doc = files[i];
+                        var isConfClass = doc.IsConfidential ? 'is-confidential' : '';
+
+                        html += '<div class="doc-item-row ' + isConfClass + '">' +
+                            '<div class="d-flex align-items-center" style="min-width:0; flex:1;">' +
+                                '<div class="doc-icon-large"><i class="' + doc.IconClass + '"></i></div>' +
+                                '<div style="min-width:0;">' +
+                                    '<div class="doc-title text-truncate" title="' + escapeHtml(doc.Title) + '">';
+
+                        if (doc.IsConfidential) {
+                            html += '<span class="badge badge-danger mr-1"><i class="fas fa-lock"></i> GİZLİ</span>';
+                        }
+
+                        html += escapeHtml(doc.Title) + '</div>' +
+                                    '<div class="doc-meta">' +
+                                        '<span class="mr-2 font-weight-bold text-dark"><i class="far fa-calendar-alt text-primary mr-1"></i> ' + doc.FormattedDate + '</span>' +
+                                        '<span><i class="fas fa-weight-hanging mr-1"></i> ' + doc.FormattedSize + '</span>' +
+                                    '</div>' +
+                                '</div>' +
+                            '</div>' +
+                            '<div class="doc-actions">';
+
+                        if (doc.UserHasAccess) {
+                            var docType = doc.IsPdf ? 'pdf' : (doc.IsTiff ? 'tiff' : (doc.IsOffice ? 'office' : 'image'));
+                            html += '<button type="button" class="btn btn-sm btn-primary mr-1" onclick="previewDocFromCategory(\'' + doc.Id + '\', \'' + escapeJs(doc.Title) + '\', \'' + docType + '\')" title="Sayfa içi okuyucuda aç"><i class="fas fa-eye mr-1"></i> Oku</button>';
+                            html += '<button type="button" class="btn btn-sm btn-outline-info" onclick="openDocInNewWindow(\'' + doc.Id + '\')" title="Ayrı sekmede / tam ekran pencerede aç"><i class="fas fa-external-link-alt mr-1"></i> Ayrı Pencere</button>';
+                        } else {
+                            if (doc.HasPendingRequest) {
+                                html += '<button type="button" class="btn btn-sm btn-warning" disabled><i class="fas fa-hourglass-half mr-1"></i> İnceleniyor</button>';
+                            } else {
+                                html += '<button type="button" class="btn btn-sm btn-outline-danger" onclick="openAccessRequestModal(\'' + doc.Id + '\', \'' + escapeJs(doc.Title) + '\')"><i class="fas fa-key mr-1"></i> Talep Et</button>';
+                            }
+                        }
+
+                        @if (Model.CanManage)
+                        {
+                            <text>
+                            if (doc.IsConfidential) {
+                                if (doc.CanCurrentUserUnlock) {
+                                    html += '<button type="button" class="btn btn-sm btn-danger" onclick="toggleConfidential(\'' + doc.Id + '\')" title="Gizlilik kilidini kaldır"><i class="fas fa-lock"></i></button>';
+                                } else {
+                                    html += '<button type="button" class="btn btn-sm btn-secondary" disabled title="Admin tarafından kilitlendi (Eğitimciler açamaz)"><i class="fas fa-lock text-warning"></i></button>';
+                                }
+                            } else {
+                                html += '<button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleConfidential(\'' + doc.Id + '\')" title="Belgeyi kilitle"><i class="fas fa-lock-open"></i></button>';
+                            }
+                            </text>
+                        }
+
+                        html += '</div>' +
+                        '</div>';
+                    }
+
+                    $('#categoryModalFilesList').html(html).show();
+                },
+                error: function () {
+                    $('#categoryModalLoading').hide();
+                    $('#categoryModalFilesList').html('<div class="alert alert-danger mb-0">Belgeler yüklenirken hata oluştu.</div>').show();
+                }
+            });
+        }
+
+        // Klasör listesi modalından bir belge açıldığında liste modalını gizleyip belgeyi açar
+        function previewDocFromCategory(docId, docTitle, docType) {
+            openedFromCategory = true;
+            $('#modalCategoryFiles').modal('hide');
+            setTimeout(function () {
+                previewDoc(docId, docTitle, docType, true);
+            }, 300);
+        }
+
+        // Belge okuyucudan klasör listesine geri dönme
+        function returnToCategoryModal() {
+            $('#modalDocViewer').modal('hide');
+            setTimeout(function () {
+                $('#modalCategoryFiles').modal('show');
+            }, 300);
+        }
+
+        var currentActiveDocId = '';
+
+        function openDocInNewWindow(docId) {
+            var targetId = docId || currentActiveDocId;
+            if (!targetId) return;
+            var url = '@Url.Action("Viewer", "Genelge")?path=' + encodeURIComponent(targetId);
+            window.open(url, '_blank');
+        }
+
+        function openCurrentDocInNewWindow() {
+            if (currentActiveDocId) {
+                openDocInNewWindow(currentActiveDocId);
+            }
+        }
+
+        // =====================================================================
+        // BELGE ÖNİZLEME (PDF Canvas, Word, Excel, PPTX, TIFF & Görsel)
+        // =====================================================================
+        function previewDoc(docId, docTitle, docType, fromCategory) {
+            currentActiveDocId = docId;
+            $('#docViewerTitle').html('<i class="fas fa-file-alt mr-2 text-info"></i> ' + escapeHtml(docTitle));
+
+            // Klasör listesinden gelinmişse "Klasöre Dön" butonunu göster
+            if (fromCategory || openedFromCategory) {
+                $('#btnBackToCategory').show();
+            } else {
+                $('#btnBackToCategory').hide();
+            }
+
+            // Önceki durumları sıfırla
+            $('#pdfNavBar').hide();
+            $('#tiffNavBar').hide();
+            $('#docViewerImageWrapper').hide();
+            $('#pdfViewerWrapper').hide();
+            $('#officeViewerWrapper').hide();
+
+            if (docType === 'pdf') {
+                // KESİN GÜVENLİK: Iframe yerine HTML5 Canvas PDF.js Okuyucusu
+                $('#pdfViewerWrapper').show();
+                loadPdfWithCanvas(docId);
+            } else if (docType === 'office') {
+                // Word (.doc, .docx), Excel (.xls, .xlsx) ve PPTX Çevrimdışı HTML Okuyucu
+                $('#officeViewerWrapper').show();
+                loadOfficeDocument(docId);
+            } else if (docType === 'tiff') {
+                // Çok Sayfalı TIFF Dönüştürücü
+                activeTiffDocId = docId;
+                currentTiffPage = 0;
+
+                $.ajax({
+                    url: '@Url.Action("GetTiffInfo", "Genelge")',
+                    type: 'GET',
+                    data: { path: docId },
+                    success: function (info) {
+                        totalTiffPages = (info && info.pageCount) ? info.pageCount : 1;
+                        $('#totalTiffPageNum').text(totalTiffPages);
+                        $('#currentTiffPageNum').text(1);
+
+                        if (totalTiffPages > 1) {
+                            $('#tiffNavBar').show();
+                        } else {
+                            $('#tiffNavBar').hide();
+                        }
+                        loadTiffPage(0);
+                    },
+                    error: function () {
+                        loadTiffPage(0);
+                    }
+                });
+
+                $('#docViewerImageWrapper').show();
+            } else {
+                // Normal Görsel (JPG, PNG) - Güvenli HTML5 Canvas & DLP Korumalı
+                var imgUrl = '@Url.Action("ViewDocument", "Genelge")?path=' + encodeURIComponent(docId) + '&t=' + new Date().getTime();
+                $('#docViewerImageWrapper').show();
+                renderModalImageOnCanvas(imgUrl);
+            }
+
+            $('#modalDocViewer').modal('show');
+        }
+
+        // =====================================================================
+        // Word, Excel, PPTX (Office) HTML Okuyucu (İndirme Kesinlikle Yasak)
+        // =====================================================================
+        function loadOfficeDocument(docId) {
+            $('#officeLoadingIndicator').show();
+            $('#officeDocContent').empty().hide();
+
+            $.ajax({
+                url: '@Url.Action("ViewOfficeHtml", "Genelge")',
+                type: 'GET',
+                data: { path: docId },
+                success: function (res) {
+                    $('#officeLoadingIndicator').hide();
+                    if (res && res.success && res.html) {
+                        $('#officeDocContent').html(res.html).show();
+                    } else {
+                        var msg = (res && res.message) ? res.message : 'Belge metin içeriği okunamadı veya dosya boş.';
+                        $('#officeDocContent').html('<div class="alert alert-warning text-center"><i class="fas fa-exclamation-triangle mr-2"></i> ' + escapeHtml(msg) + '</div>').show();
+                    }
+                },
+                error: function () {
+                    $('#officeLoadingIndicator').hide();
+                    $('#officeDocContent').html('<div class="alert alert-danger text-center"><i class="fas fa-times-circle mr-2"></i> Belge sunucudan yüklenirken hata oluştu.</div>').show();
+                }
+            });
+        }
+
+        // =====================================================================
+        // PDF.js Canvas Render Motoru (Kaydetme / İndirme Butonu Yok)
+        // =====================================================================
+        function loadPdfWithCanvas(docId) {
+            $('#pdfLoadingIndicator').show();
+            $('#pdfCanvasContainer').empty().hide();
+
+            var pdfStreamUrl = '@Url.Action("ViewPdfData", "Genelge")?path=' + encodeURIComponent(docId);
+
+            pdfjsLib.getDocument({
+                url: pdfStreamUrl,
+                withCredentials: true
+            }).promise.then(function (pdf) {
+                activePdfDoc = pdf;
+                totalPdfPages = pdf.numPages;
+                currentPdfPage = 1;
+
+                $('#pdfLoadingIndicator').hide();
+                $('#pdfCanvasContainer').show();
+
+                $('#totalPdfPagesNum').text(totalPdfPages);
+                $('#currentPdfPageNum').text(1);
+
+                if (totalPdfPages > 1) {
+                    $('#pdfNavBar').show();
+                } else {
+                    $('#pdfNavBar').hide();
+                }
+
+                renderPdfPage(1);
+            }).catch(function (error) {
+                $('#pdfLoadingIndicator').hide();
+                $('#pdfCanvasContainer').html('<div class="alert alert-danger p-3 text-center my-4"><i class="fas fa-shield-alt mr-2"></i> Belge güvenli akıştan yüklenemedi veya erişim kısıtlandı.</div>').show();
+            });
+        }
+
+        function renderPdfPage(pageNum) {
+            if (!activePdfDoc) return;
+
+            currentPdfPage = pageNum;
+            $('#currentPdfPageNum').text(currentPdfPage);
+            $('#btnPdfPrevPage').prop('disabled', currentPdfPage <= 1);
+            $('#btnPdfNextPage').prop('disabled', currentPdfPage >= totalPdfPages);
+
+            activePdfDoc.getPage(pageNum).then(function (page) {
+                var container = $('#pdfCanvasContainer');
+                container.empty();
+
+                var containerWidth = $('#viewerWrapper').width() - 50;
+                var viewport = page.getViewport({ scale: 1 });
+                var scale = (containerWidth > 0 && viewport.width > 0) ? (containerWidth / viewport.width) : 1.35;
+                if (scale > 2.0) scale = 2.0;
+                if (scale < 0.8) scale = 0.8;
+
+                var scaledViewport = page.getViewport({ scale: scale });
+
+                var canvas = document.createElement('canvas');
+                canvas.className = 'pdf-page-canvas';
+                var ctx = canvas.getContext('2d');
+                canvas.height = scaledViewport.height;
+                canvas.width = scaledViewport.width;
+
+                // Canvas'tan resim kaydetmeyi engelle
+                canvas.oncontextmenu = function () { return false; };
+
+                var renderContext = {
+                    canvasContext: ctx,
+                    viewport: scaledViewport
+                };
+
+                page.render(renderContext).promise.then(function () {
+                    // Sayfa üzerine KALICI FİLİGRAN çiz
+                    drawWatermarkOnCanvas(ctx, canvas.width, canvas.height);
+                    container.append(canvas);
+                });
+            });
+        }
+
+        function changePdfPage(delta) {
+            var target = currentPdfPage + delta;
+            if (target >= 1 && target <= totalPdfPages) {
+                renderPdfPage(target);
+            }
+        }
+
+        // =====================================================================
+        // TIFF Sayfa Yükleme (HTML5 Canvas Üzerine Güvenli Render)
+        // =====================================================================
+        function loadTiffPage(page) {
+            currentTiffPage = page;
+            $('#currentTiffPageNum').text(currentTiffPage + 1);
+            $('#btnTiffPrevPage').prop('disabled', currentTiffPage <= 0);
+            $('#btnTiffNextPage').prop('disabled', currentTiffPage >= totalTiffPages - 1);
+
+            var tiffUrl = '@Url.Action("RenderTiff", "Genelge")?path=' + encodeURIComponent(activeTiffDocId) + '&page=' + currentTiffPage + '&t=' + new Date().getTime();
+            renderModalImageOnCanvas(tiffUrl);
+        }
+
+        function changeTiffPage(delta) {
+            var target = currentTiffPage + delta;
+            if (target >= 0 && target < totalTiffPages) {
+                loadTiffPage(target);
+            }
+        }
+
+        // =====================================================================
+        // Görsel / TIFF'leri HTML5 Canvas'a DLP Korumalı Yükleme Motoru
+        // (Tarayıcının "Resmi Farklı Kaydet" ve Masaüstüne Sürükleme Açığını Tamamen Kapatır)
+        // =====================================================================
+        function renderModalImageOnCanvas(url, callback) {
+            $('#imageLoadingIndicator').show();
+            $('#docViewerImageCanvas').hide();
+            var canvas = document.getElementById('docViewerImageCanvas');
+            if (!canvas) return;
+            var ctx = canvas.getContext('2d');
+            var img = new Image();
+            img.onload = function () {
+                $('#imageLoadingIndicator').hide();
+                canvas.width = img.naturalWidth || img.width;
+                canvas.height = img.naturalHeight || img.height;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0);
+
+                // Ekstra DLP Güvenliği: Sicil ve IP damgasını canvas piksel matrisine de bas
+                drawWatermarkOnCanvas(ctx, canvas.width, canvas.height);
+
+                $('#docViewerImageCanvas').show();
+                if (callback) callback();
+            };
+            img.onerror = function () {
+                $('#imageLoadingIndicator').hide();
+                alert('Görsel sunucudan yüklenirken bir hata oluştu.');
+                if (callback) callback();
+            };
+            img.src = url;
+        }
+
+        $('#modalDocViewer').on('hidden.bs.modal', function () {
+            var canvas = document.getElementById('docViewerImageCanvas');
+            if (canvas) {
+                var ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                canvas.width = 1;
+                canvas.height = 1;
+            }
+            $('#pdfCanvasContainer').empty();
+            $('#officeDocContent').empty();
+            activePdfDoc = null;
+            $('#pdfNavBar').hide();
+            $('#tiffNavBar').hide();
+            $('#officeViewerWrapper').hide();
+            setTimeout(function () {
+                if (!$('#modalCategoryFiles').hasClass('show')) {
+                    openedFromCategory = false;
+                    $('#btnBackToCategory').hide();
+                }
+            }, 350);
+        });
+
+        // =====================================================================
+        // EGM DLP Güvenlik Kalkanı: Sağ Tık, Sürükle-Bırak, Ctrl+S ve Ctrl+P Engelleme
+        // =====================================================================
+        $(document).on('contextmenu', '#modalDocViewer, #modalDocViewer *', function (e) {
+            e.preventDefault();
+            showDlpToast('EGM Güvenlik Uyarısı: Mevzuat belgelerinde sağ tık ve indirme menüsü güvenlik nedeniyle engellenmiştir.');
+            return false;
+        });
+
+        $(document).on('dragstart', '#modalDocViewer, #modalDocViewer *', function (e) {
+            e.preventDefault();
+            return false;
+        });
+
+        $(document).on('keydown', function (e) {
+            var isModalOpen = $('#modalDocViewer').hasClass('show');
+            if (!isModalOpen) return;
+
+            var isCtrl = e.ctrlKey || e.metaKey;
+            var key = e.key ? e.key.toLowerCase() : '';
+            var keyCode = e.keyCode || e.which;
+
+            if (isCtrl && (key === 's' || keyCode === 83)) { // Ctrl + S (Kaydet)
+                e.preventDefault();
+                e.stopPropagation();
+                showDlpToast('EGM Bilgi Güvenliği: Resmi mevzuat belgelerinin yerel diske kaydedilmesi yasaklanmıştır.');
+                return false;
+            }
+
+            if (isCtrl && (key === 'p' || keyCode === 80)) { // Ctrl + P (Yazdır / PDF)
+                e.preventDefault();
+                e.stopPropagation();
+                showDlpToast('EGM Bilgi Güvenliği: Belgenin yazdırılması veya PDF olarak dışa aktarılması engellenmiştir.');
+                return false;
+            }
+        });
+
+        function showDlpToast(msg) {
+            var toast = $('#dlpSecurityToast');
+            if (!toast.length) {
+                toast = $('<div id="dlpSecurityToast" style="position:fixed; top:25px; left:50%; transform:translateX(-50%); z-index:99999; background:rgba(220,53,69,0.95); color:#fff; font-weight:bold; font-size:13px; padding:10px 22px; border-radius:30px; box-shadow:0 8px 24px rgba(0,0,0,0.5); display:none; pointer-events:none;"><i class="fas fa-shield-alt mr-2"></i><span></span></div>');
+                $('body').append(toast);
+            }
+            toast.find('span').text(msg);
+            toast.stop(true, true).fadeIn(150).delay(2500).fadeOut(350);
+        }
+
+        // Çoklu modal açılışlarında z-index ve backdrop karmaşasını engelleme
+        $(document).on('show.bs.modal', '.modal', function () {
+            var zIndex = 1040 + (10 * $('.modal:visible').length);
+            $(this).css('z-index', zIndex);
+            setTimeout(function () {
+                $('.modal-backdrop').not('.modal-stack').css('z-index', zIndex - 1).addClass('modal-stack');
+            }, 0);
+        });
+
+        $(document).on('hidden.bs.modal', '.modal', function () {
+            if ($('.modal:visible').length) {
+                $('body').addClass('modal-open');
+            }
+        });
+
+        // =====================================================================
+        // Canvas Üzerine Kalıcı Filigran Çizimi
+        // =====================================================================
+        function drawWatermarkOnCanvas(ctx, width, height) {
+            var text = 'T.C. EGM • SİCİL: ' + userSicil + ' • IP: ' + userIp;
+            ctx.save();
+            ctx.rotate(-28 * Math.PI / 180);
+            var fontSize = Math.max(16, Math.floor(width / 34));
+            ctx.font = 'bold ' + fontSize + 'px -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif';
+            ctx.fillStyle = 'rgba(220, 38, 38, 0.20)'; // Yarı şeffaf kırmızı filigran
+            ctx.textAlign = 'center';
+
+            var stepX = 420;
+            var stepY = 220;
+            var maxDim = Math.max(width, height) * 2;
+
+            for (var x = -maxDim; x < maxDim; x += stepX) {
+                for (var y = -maxDim; y < maxDim; y += stepY) {
+                    ctx.fillText(text, x, y);
+                }
+            }
+            ctx.restore();
+        }
+
+        function openAccessRequestModal(docId, docTitle) {
+            $('#requestDocPath').val(docId);
+            $('#requestDocTitle').val(docTitle);
+            $('#displayRequestDocTitle').val(docTitle);
+            $('#requestReason').val('');
+            $('#modalRequestAccess').modal('show');
+        }
+
+        function reviewRequestAction(reqId, status, validHours) {
+            var actionText = status === 'Onaylandi' ? (validHours ? '24 Saatlik Onay' : 'Süresiz Onay') : 'Reddet';
+            if (!confirm('Bu talep için ' + actionText + ' işlemi yapılsın mı?')) return;
+
+            var token = $('input[name="__RequestVerificationToken"]').val();
+            $.ajax({
+                url: '@Url.Action("ReviewRequest", "Genelge")',
+                type: 'POST',
+                data: {
+                    __RequestVerificationToken: token,
+                    requestId: reqId,
+                    status: status,
+                    validHours: validHours,
+                    note: actionText + ' verildi.'
+                },
+                success: function (res) {
+                    if (res.success) {
+                        alert(res.message);
+                        location.reload();
+                    } else {
+                        alert('Hata: ' + res.message);
+                    }
+                },
+                error: function () {
+                    alert('İşlem sırasında sunucu hatası oluştu.');
+                }
+            });
+        }
+
+        function toggleConfidential(docId) {
+            var token = $('input[name="__RequestVerificationToken"]').val();
+            $.ajax({
+                url: '@Url.Action("ToggleConfidential", "Genelge")',
+                type: 'POST',
+                data: {
+                    __RequestVerificationToken: token,
+                    path: docId
+                },
+                success: function (res) {
+                    if (res.success) {
+                        alert(res.message);
+                        location.reload();
+                    } else {
+                        alert('Hata: ' + res.message);
+                    }
+                },
+                error: function () {
+                    alert('Gizlilik durumu güncellenirken hata oluştu.');
+                }
+            });
+        }
+
+        function setupModalWatermark() {
+            var text = 'T.C. EGM • SİCİL: ' + userSicil + ' • IP: ' + userIp;
+            var svgWidth = 460;
+            var svgHeight = 240;
+            var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + svgWidth + '" height="' + svgHeight + '">' +
+                '<text x="50%" y="50%" fill="#dc2626" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" ' +
+                'font-weight="bold" font-size="14" text-anchor="middle" ' +
+                'transform="rotate(-28 ' + (svgWidth / 2) + ' ' + (svgHeight / 2) + ')">' +
+                escapeXml(text) +
+                '</text>' +
+                '</svg>';
+            var encodedSvg = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+            $('#modalWatermarkOverlay').css('background-image', 'url("' + encodedSvg + '")');
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return $('<div>').text(text).html();
+        }
+
+        function escapeJs(text) {
+            if (!text) return '';
+            return text.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        }
+
+        function escapeXml(unsafe) {
+            return unsafe.replace(/[<>&'"]/g, function (c) {
+                switch (c) {
+                    case '<': return '&lt;';
+                    case '>': return '&gt;';
+                    case '&': return '&amp;';
+                    case '\'': return '&apos;';
+                    case '"': return '&quot;';
+                }
+            });
+        }
+    </script>
+}

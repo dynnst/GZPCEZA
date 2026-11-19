@@ -239,8 +239,8 @@
         $('#KurCalculate').text('');
         $('#lastalert').html('');
 
-        // PDF form alanlarını temizle (Memur sicili hariç)
-        $('#form').find('input:not(#PoliceCFORM)').val('');
+        // PDF form alanlarını temizle (Kontrol memuru dahil boş gelsin)
+        $('#form').find('input').val('');
 
         // Üst kabin pasaport barını temizle
         $('#topPassengerName, #topPassportNumber, #topCountryDisplay, #topBirthDate, #topPersonalNumber').val('');

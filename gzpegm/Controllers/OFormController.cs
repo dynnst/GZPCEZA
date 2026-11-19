@@ -20,15 +20,22 @@ namespace gzpegm.Controllers
             var data = Isk.GetdatabyId(Id);
             if (data != null)
             {
-                Result = data.fldForm;
-                ViewBag.QrText = "T.C. ICISLERI BAKANLIGI EGM\n" +
+                Result = data.fldForm ?? "";
+                string qrText = "T.C. İÇİŞLERİ BAKANLIĞI EGM\n" +
                                  "Yolcu: " + (data.fldName ?? "-") + "\n" +
                                  "Pasaport: " + (data.fldPassport ?? "-") + "\n" +
                                  "Uyruk: " + (data.fldOrgin ?? "-") + "\n" +
-                                 "Ceza Tutari: " + (data.fldPMoney ?? "-") + " TL\n" +
-                                 "Hudut Kapisi: " + (data.fldBorder ?? "-") + "\n" +
-                                 "Gorevli Memur: " + (data.fldPassControl ?? "-") + "\n" +
+                                 "Ceza Tutarı: " + (data.fldPMoney ?? "-") + " TL\n" +
+                                 "Hudut Kapısı: " + (data.fldBorder ?? "-") + "\n" +
                                  "Tarih: " + (data.fldDatetime.HasValue ? data.fldDatetime.Value.ToString("dd.MM.yyyy HH:mm") : "-");
+                ViewBag.QrText = qrText;
+
+                // Veritabanındaki eski formları (qrious / 64px canvas) anında modern yüksek çözünürlüklü vektörel QR koduna yükselt
+                if (!string.IsNullOrEmpty(Result) && (Result.Contains("<!DOCTYPE") || Result.Contains("<html")))
+                {
+                    Result = UpgradeLegacyFormHtml(Result, qrText);
+                    return Content(Result, "text/html", System.Text.Encoding.UTF8);
+                }
             }
             ViewBag.Form = Result;
             return View((gzpegm.Models.ViewModels.FormPrintViewModel)null);
@@ -71,6 +78,13 @@ namespace gzpegm.Controllers
             var payType = (PaymentTypeCFORM ?? "").Trim();
             var nonPaying = new HashSet<string> { "0", "3", "5", "7", "9", "11", "15" };
 
+            string fineBreakdown = "";
+            string fineTotalText = "";
+
+            double baseFineAmount = 0;
+            double.TryParse(FINET, out baseFineAmount);
+            string baseFineStr = baseFineAmount > 0 ? baseFineAmount.ToString("0.##") : FINET;
+
             if (nonPaying.Contains(payType))
             {
                 // Ödemeyen grubu: sadece temel ceza + DEF gösterilsin. Örneğin: "1324,8+DEF"
@@ -84,20 +98,40 @@ namespace gzpegm.Controllers
                 {
                     FINET += "+N-96(6458/56/1-102/1-c)";
                 }
+
+                fineTotalText = FINET + " TL";
             }
             else
             {
                 // Diğer ödeme türleri mevcut davranışı korur (Toplam=... eklenir)
                 if (Convert.ToDouble(DefterCFORM) != 0)
                 {
-                    if (payType == "4") FINET += "+ DEF" + DefterCFORM + "TL İdari para cezası: " + Idari.ToString() + " TL, Toplam=" + FinePriceCFORM;
-                    else FINET += "+ DEF" + DefterCFORM + "TL Toplam=" + FinePriceCFORM;
+                    if (payType == "4")
+                    {
+                        FINET += "+ DEF" + DefterCFORM + "TL İdari para cezası: " + Idari.ToString() + " TL, Toplam=" + FinePriceCFORM;
+                        fineBreakdown = baseFineStr + " + DEF " + DefterCFORM + " TL + İdari Para Cezası: " + Idari.ToString() + " TL";
+                    }
+                    else
+                    {
+                        FINET += "+ DEF" + DefterCFORM + "TL Toplam=" + FinePriceCFORM;
+                        fineBreakdown = baseFineStr + " + DEF " + DefterCFORM + " TL";
+                    }
                 }
                 else
                 {
-                    if (payType == "4") FINET += " İdari para cezası: " + Idari.ToString() + " TL, Toplam=" + FinePriceCFORM;
-                    else FINET += " Toplam=" + FinePriceCFORM;
+                    if (payType == "4")
+                    {
+                        FINET += " İdari para cezası: " + Idari.ToString() + " TL, Toplam=" + FinePriceCFORM;
+                        fineBreakdown = baseFineStr + " TL + İdari Para Cezası: " + Idari.ToString() + " TL";
+                    }
+                    else
+                    {
+                        FINET += " Toplam=" + FinePriceCFORM;
+                        fineBreakdown = "";
+                    }
                 }
+
+                fineTotalText = "Toplam = " + FinePriceCFORM + " TL";
             }
             int cGun = 0, cAy = 0;
             int.TryParse(CGunCFORM, out cGun);
@@ -112,9 +146,10 @@ namespace gzpegm.Controllers
                           || (payType == "14" && totalDays < 11)
                           || !adult;
 
-            if (!adult && !isPaid)
+            if (!adult && !isPaid && (!string.IsNullOrWhiteSpace(FatherCFORM) || !string.IsNullOrWhiteSpace(MotherCFORM)))
             {
-                Adı = FatherCFORM + ", " + MotherCFORM + " çocuğu " + Adı;
+                var parents = string.Join(", ", new[] { FatherCFORM, MotherCFORM }.Where(s => !string.IsNullOrWhiteSpace(s)));
+                Adı = parents + " çocuğu " + Adı;
             }
 
             string lang = "GB";
@@ -163,6 +198,10 @@ namespace gzpegm.Controllers
             {
                 lang = "GE";
             }
+            else if (origin == "Polonya" || origin == "Poland" || origin == "Polska")
+            {
+                lang = "PL";
+            }
 
             bool hasCKodlu = (codeFORM ?? "").Contains("Ç");
             bool hasNKodlu = !isPaid;
@@ -170,14 +209,13 @@ namespace gzpegm.Controllers
             int dDay = 0;
             int.TryParse(DDayCFORM, out dDay);
 
-            string qrText = "T.C. ICISLERI BAKANLIGI EGM\n" +
+            string qrText = "T.C. İÇİŞLERİ BAKANLIĞI EGM\n" +
                             "Yolcu: " + (NameCFORM ?? "-") + "\n" +
                             "Pasaport: " + (PassportCFORM ?? "-") + "\n" +
                             "Uyruk: " + (OrginCFORM ?? "-") + "\n" +
-                            "Ceza Tutari: " + (FinePriceCFORM ?? "-") + " TL\n" +
+                            "Ceza Tutarı: " + (FinePriceCFORM ?? "-") + " TL\n" +
                             "Tahdit Kodu: " + (codeFORM ?? "-") + "\n" +
-                            "Hudut Kapisi: " + (Data != null ? (Data.fldBorder ?? "-") : "-") + "\n" +
-                            "Gorevli Memur: " + (PoliceCFORM ?? "-") + " (Sicil: " + (Data != null ? (Data.fldSicil ?? "-") : "-") + ")\n" +
+                            "Hudut Kapısı: " + (Data != null ? (Data.fldBorder ?? "-") : "-") + "\n" +
                             "Tarih: " + DateTime.Now.ToString("dd.MM.yyyy HH:mm");
 
             var model = new gzpegm.Models.ViewModels.FormPrintViewModel
@@ -200,6 +238,8 @@ namespace gzpegm.Controllers
                 FineAmount = FINET,
                 FinePriceTotal = FinePriceCFORM,
                 DefterPrice = DefterCFORM,
+                FineBreakdown = fineBreakdown,
+                FineTotalAmount = fineTotalText,
                 TahditCode = codeFORM,
                 EntryBanDays = DDayCFORM,
                 PoliceOfficer = PoliceCFORM,
@@ -279,15 +319,7 @@ namespace gzpegm.Controllers
                 Isk.AddIsk(DateTime.Now, NameCFORM, PassportCFORM, IDNCFORM, OrginCFORM, BirthdateCFORM, result, PoliceCFORM, Data.fldName + " " + Data.fldLastName, Data.fldBorder, Vizeler[visatype], FinePriceCFORM, fileName, Request.ServerVariables["HTTP_X_FORWARDED_FOR"] ?? Request.ServerVariables["REMOTE_ADDR"]);
                 TryLogTahditForm(Data, OrginCFORM, FinePriceCFORM, PaymentTypeCFORM, NameCFORM, PassportCFORM, codeFORM, visatype, DDayCFORM, CGunCFORM, CAyCFORM);
             }
-            ViewBag.QrText = "T.C. ICISLERI BAKANLIGI EGM\n" +
-                             "Yolcu: " + (NameCFORM ?? "-") + "\n" +
-                             "Pasaport: " + (PassportCFORM ?? "-") + "\n" +
-                             "Uyruk: " + (OrginCFORM ?? "-") + "\n" +
-                             "Ceza Tutari: " + (FinePriceCFORM ?? "-") + " TL\n" +
-                             "Tahdit Kodu: " + (codeFORM ?? "-") + "\n" +
-                             "Hudut Kapisi: " + (Data != null ? (Data.fldBorder ?? "-") : "-") + "\n" +
-                             "Gorevli Memur: " + (PoliceCFORM ?? "-") + " (Sicil: " + (Data != null ? (Data.fldSicil ?? "-") : "-") + ")\n" +
-                             "Tarih: " + DateTime.Now.ToString("dd.MM.yyyy HH:mm");
+            ViewBag.QrText = qrText;
             ViewBag.Form = result;
             return View(model);
         }
@@ -461,6 +493,171 @@ namespace gzpegm.Controllers
             }
 
             return "Antalya";
+        }
+
+        private static string UpgradeLegacyFormHtml(string html, string qrText)
+        {
+            if (string.IsNullOrEmpty(html)) return html;
+
+            try
+            {
+                // 1. Eski qrious script referansını modern qrcode.min.js ile değiştir
+                if (html.Contains("qrious.min.js"))
+                {
+                    html = html.Replace("/js/qrious.min.js", "/js/qrcode.min.js?v=4");
+                }
+                else if (!html.Contains("qrcode.min.js"))
+                {
+                    html = html.Replace("</head>", "<script src=\"/js/qrcode.min.js?v=4\"></script>\n</head>");
+                }
+
+                // 2. SVG stillerini ekle veya güncelle
+                if (!html.Contains("#cezaQrCode svg"))
+                {
+                    string modernQrCss = @"
+        #cezaQrCode {
+            position: absolute !important;
+            top: 0px !important;
+            right: 5px !important;
+            width: 82px !important;
+            height: 82px !important;
+            z-index: 9999 !important;
+            background: #fff !important;
+            padding: 2px !important;
+            text-align: center !important;
+            box-sizing: border-box !important;
+            border: 1px solid #ddd !important;
+            border-radius: 4px !important;
+        }
+        #cezaQrCode svg, #cezaQrCode img, #cezaQrCode canvas, #cezaQrCode table {
+            display: block !important;
+            width: 76px !important;
+            height: 76px !important;
+            margin: 0 auto !important;
+        }";
+                    if (html.Contains("</style>"))
+                    {
+                        html = html.Replace("</style>", modernQrCss + "\n</style>");
+                    }
+                }
+
+                // 3. Eski canvas elemanını temizle ve cezaQrCode divi sağla
+                if (html.Contains("<canvas id=\"qrCanvas\""))
+                {
+                    html = System.Text.RegularExpressions.Regex.Replace(
+                        html,
+                        @"<canvas\s+id=""qrCanvas""[^>]*></canvas>",
+                        ""
+                    );
+                }
+
+                if (!html.Contains("id=\"cezaQrCode\""))
+                {
+                    html = html.Replace("<div class=\"violation-form-container\">", "<div id=\"cezaQrCode\" title=\"T.C. EGM Ceza Formu Doğrulama Karekodu\"></div>\n<div class=\"violation-form-container\">");
+                }
+
+                // 4. Eski QRious render fonksiyonunu modern renderCezaQr ile güncelle
+                string qrJson = Newtonsoft.Json.JsonConvert.SerializeObject(qrText);
+                string newQrScript = @"
+    <script>
+        function renderCezaQr() {
+            try {
+                var qrTextData = " + qrJson + @";
+                var targetBox = document.getElementById('cezaQrCode');
+                if (typeof qrcode !== 'undefined' && targetBox) {
+                    if (qrcode.stringToBytesFuncs && qrcode.stringToBytesFuncs['UTF-8']) {
+                        qrcode.stringToBytes = qrcode.stringToBytesFuncs['UTF-8'];
+                    }
+                    var qr = qrcode(0, 'M');
+                    qr.addData(qrTextData);
+                    qr.make();
+                    targetBox.innerHTML = qr.createSvgTag({
+                        cellSize: 2,
+                        margin: 1,
+                        scalable: true
+                    });
+                }
+            } catch (e) {
+                if (window.console) console.error('Karekod render hatası:', e);
+            }
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', renderCezaQr);
+        } else {
+            renderCezaQr();
+        }
+    </script>";
+
+                if (html.Contains("new QRious") || html.Contains("id=\"qrCanvas\""))
+                {
+                    // Eski script bloğunu regex ile modern blokla değiştir
+                    html = System.Text.RegularExpressions.Regex.Replace(
+                        html,
+                        @"<script>\s*\(function\s*\(\)\s*\{[\s\S]*?new\s+QRious[\s\S]*?\}\)\(\);\s*",
+                        newQrScript + "\n"
+                    );
+                }
+                else if (!html.Contains("renderCezaQr"))
+                {
+                    html = html.Replace("</body>", newQrScript + "\n</body>");
+                }
+
+                // 5. Ceza toplam tutarını belirginleştirme stillerini ekle
+                if (!html.Contains(".fine-total-badge"))
+                {
+                    string fineCss = @"
+        .violation-data-table td .fine-amount-wrap,
+        .fine-amount-wrap {
+            display: block !important;
+            text-align: left !important;
+            line-height: 1.25 !important;
+        }
+        .violation-data-table td .fine-breakdown,
+        .fine-breakdown {
+            display: block !important;
+            font-size: 11pt !important;
+            font-weight: 600 !important;
+            color: #333 !important;
+            line-height: 1.2 !important;
+            margin-bottom: 2px !important;
+            letter-spacing: 0.2px !important;
+        }
+        .violation-data-table td .fine-total-badge,
+        .violation-data-table td strong.fine-total-badge,
+        .fine-total-badge {
+            display: block !important;
+            font-size: 17pt !important;
+            font-weight: 900 !important;
+            color: #000 !important;
+            line-height: 1.25 !important;
+            letter-spacing: 0.5px !important;
+            white-space: nowrap !important;
+        }";
+                    if (html.Contains("</style>"))
+                    {
+                        html = html.Replace("</style>", fineCss + "\n</style>");
+                    }
+                }
+
+                // 6. Eski HTML içindeki sıkışık toplam tutarı modern belirgin formata yükselt
+                if ((html.Contains("Toplam=") || html.Contains("Toplam:")) && !html.Contains("fine-total-badge"))
+                {
+                    html = System.Text.RegularExpressions.Regex.Replace(
+                        html,
+                        @"(<td[^>]*border:\s*1px\s*solid\s*#000[^>]*>\s*<strong>)([^<]*Toplam\s*[=:][^<]*)(</strong>\s*</td>)",
+                        match => {
+                            string content = match.Groups[2].Value;
+                            return "<td style=\"border: 1px solid #000; padding: 3px 6px; font-size: 11.5pt; vertical-align: middle;\">" + 
+                                   gzpegm.Models.ViewModels.FormPrintViewModel.ParseLegacyFineAmount(content, "") + 
+                                   "</td>";
+                        },
+                        System.Text.RegularExpressions.RegexOptions.IgnoreCase
+                    );
+                }
+            }
+            catch { }
+
+            return html;
         }
     }
 }

@@ -21,11 +21,11 @@
 
     <style>
         /* ==========================================================================
-           A4 STANDART BASKI VE SAYFA KONTROL STİLLERİ (12pt Times New Roman)
+           A4 STANDART BASKI VE SAYFA KONTROL STİLLERİ (Tam Sayfa Dengeli Düzen)
            ========================================================================== */
         @@page {
             size: A4 portrait;
-            margin: 5mm 4mm;
+            margin: 8mm 8mm 6mm 8mm;
         }
 
         body, table, td, th, p, span, li, a {
@@ -33,8 +33,8 @@
         }
 
         body {
-            font-size: 12pt !important;
-            line-height: 1.2 !important;
+            font-size: 13pt !important;
+            line-height: 1.3 !important;
             color: #000 !important;
             background: #fff !important;
             margin: 0 !important;
@@ -61,206 +61,540 @@
             border: none !important;
         }
 
-        .violation-title {
+        table, tr {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+        }
+
+        /* Karekod Alanı (Sayfanın sağ üst köşesine sabitlenir - Yüksek Çözünürlüklü Vektörel SVG) */
+        #cezaQrCode {
+            position: absolute;
+            top: 0px;
+            right: 5px;
+            width: 82px;
+            height: 82px;
+            z-index: 9999;
+            background: #fff;
+            padding: 2px;
+            text-align: center;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        #cezaQrCode svg,
+        #cezaQrCode img,
+        #cezaQrCode canvas,
+        #cezaQrCode table {
+            display: block !important;
+            width: 76px !important;
+            height: 76px !important;
+            margin: 0 auto !important;
+        }
+
+        /* ==========================================================================
+           1. VİZE İHLALİ İŞLEM FORMU / VISA VIOLATION FORM (SAYFA 1)
+           ========================================================================== */
+        .violation-form-container {
+            width: 100% !important;
+            box-sizing: border-box !important;
+        }
+
+        .violation-title,
+        .violation-form-container .violation-title,
+        .violation-form-container h3.violation-title,
+        .violation-form-container > h3 {
             margin-top: 0 !important;
-            margin-bottom: 6px !important;
-            font-size: 16pt !important;
+            margin-bottom: 12px !important;
+            font-size: 18pt !important;
             font-weight: bold !important;
             text-align: center !important;
             line-height: 1.25 !important;
-        }
-
-        .passenger-info-table {
-            width: 520px !important;
-            max-width: 70% !important;
-            margin-bottom: 6px !important;
-        }
-
-        .passenger-info-table td {
-            font-size: 12.5pt !important;
-            padding: 2px 4px !important;
-            line-height: 1.25 !important;
-        }
-
-        .passenger-val {
-            font-weight: bold !important;
-            font-size: 12.5pt !important;
-            color: #000 !important;
+            letter-spacing: 0.5px !important;
+            padding: 0 88px !important;
         }
 
         .violation-data-table {
             width: 100% !important;
+            border: 1.5px solid #000 !important;
+            border-collapse: collapse !important;
+            margin-bottom: 12px !important;
+        }
+
+        .violation-data-table td,
+        .violation-data-table th {
             border: 1px solid #000 !important;
+            padding: 4.5px 8px !important;
+            font-size: 13pt !important;
+            line-height: 1.3 !important;
+            vertical-align: middle !important;
+        }
+
+        .violation-data-table td strong,
+        .violation-data-table .passenger-val {
+            font-weight: bold !important;
+            font-size: 13.5pt !important;
+            color: #000 !important;
+        }
+
+        /* Vize İhlali Toplam Ödenecek Tutar Vurgusu (Personel İçin Belirgin) */
+        .violation-data-table td .fine-amount-wrap,
+        .fine-amount-wrap {
+            display: block !important;
+            text-align: left !important;
+            line-height: 1.25 !important;
+        }
+
+        .violation-data-table td .fine-breakdown,
+        .fine-breakdown {
+            display: block !important;
+            font-size: 11pt !important;
+            font-weight: 600 !important;
+            color: #333 !important;
+            line-height: 1.2 !important;
+            margin-bottom: 2px !important;
+            letter-spacing: 0.2px !important;
+        }
+
+        .violation-data-table td .fine-total-badge,
+        .violation-data-table td strong.fine-total-badge,
+        .fine-total-badge {
+            display: block !important;
+            font-size: 17pt !important;
+            font-weight: 900 !important;
+            color: #000 !important;
+            line-height: 1.25 !important;
+            letter-spacing: 0.5px !important;
+            white-space: nowrap !important;
+        }
+
+        .violation-form-container p,
+        .violation-form-container p span,
+        .violation-form-container table[border="0"] p,
+        .violation-form-container table[border="0"] span {
+            font-size: 13pt !important;
+            line-height: 1.35 !important;
+        }
+
+        .violation-form-container hr {
+            margin: 8px 0 !important;
+            border: none !important;
+            border-top: 1px solid #000 !important;
+        }
+
+        .violation-form-container table {
+            width: 100% !important;
             border-collapse: collapse !important;
             margin-bottom: 6px !important;
         }
 
-        .violation-data-table td {
-            border: 1px solid #000 !important;
-            padding: 1.5px 4px !important;
-            font-size: 11.5pt !important;
-            line-height: 1.2 !important;
+        .violation-form-container table td,
+        .violation-form-container table th {
+            font-size: 13pt !important;
+            line-height: 1.3 !important;
+            padding: 2.5px 5px !important;
             vertical-align: middle !important;
         }
 
-        h3 {
-            margin-top: 0 !important;
-            margin-bottom: 2px !important;
+        .violation-form-container table[width="400"],
+        .violation-form-container table[align="center"][width="400"] {
+            width: 50% !important;
+            max-width: 450px !important;
+            margin: 8px auto !important;
+        }
+
+        .violation-form-container table[width="400"] td,
+        .violation-form-container table[align="center"][width="400"] td {
+            font-size: 13pt !important;
+            padding: 3px 6px !important;
+        }
+
+        .violation-form-container table[width="400"] strong {
             font-size: 13.5pt !important;
+        }
+
+        .violation-form-container table tr[align="center"] td {
+            padding: 2px 6px !important;
+        }
+
+        .violation-form-container table tr[align="center"]:first-child td {
+            font-size: 13pt !important;
             font-weight: bold !important;
         }
 
-        p {
-            margin-top: 1px !important;
-            margin-bottom: 2px !important;
-            font-size: 12pt !important;
-            line-height: 1.2 !important;
+        .violation-form-container table tr[align="center"]:nth-child(2) td {
+            font-size: 11.5pt !important;
         }
 
-        table {
+        .violation-form-container table tr[align="center"]:nth-child(3) td {
+            font-size: 13.5pt !important;
+            font-weight: bold !important;
+            padding-top: 22px !important;
+        }
+
+        .violation-form-container table tr[align="center"] td strong {
+            font-size: 14pt !important;
+            letter-spacing: 2px !important;
+        }
+
+        .violation-form-container table:last-of-type,
+        .violation-form-container table:last-child {
+            margin-top: 8px !important;
+            margin-bottom: 0 !important;
+            border-top: 0.5px solid #ccc !important;
+            padding-top: 4px !important;
+        }
+
+        .violation-form-container table:last-of-type td,
+        .violation-form-container table:last-of-type th,
+        .violation-form-container table:last-of-type span,
+        .violation-form-container table:last-child td,
+        .violation-form-container table:last-child th,
+        .violation-form-container table:last-child span,
+        .violation-form-container span[style*="font-size: 10px"],
+        .violation-form-container span[style*="font-size:10px"] {
+            font-size: 10.5pt !important;
+            line-height: 1.25 !important;
+            padding: 2px 4px !important;
+        }
+
+        /* ==========================================================================
+           2. İDARİ PARA CEZALARINA İLİŞKİN N KODLU ÖN İZİN KARARI TEBLİĞ FORMU (SAYFA 2)
+           ========================================================================== */
+        .n-form-container {
             width: 100% !important;
-            border-collapse: collapse !important;
-            margin-bottom: 2px !important;
+            box-sizing: border-box !important;
         }
 
-        table td, table th {
-            padding: 1.5px 3px !important;
-            font-size: 12pt !important;
-            line-height: 1.2 !important;
-            vertical-align: middle !important;
-        }
-
-        ul, ol {
-            margin: 1px 0 !important;
-            padding-left: 18px !important;
-        }
-
-        li {
-            margin: 1px 0 !important;
-            font-size: 12pt !important;
-            line-height: 1.15 !important;
-        }
-
-        .invoice br {
-            line-height: 3px !important;
-        }
-
-        /* Ç ve N Kodlu Form Üst Başlık ve Logo Düzeni */
-        .form-header-table {
+        .n-form-container .form-header-table {
             width: 100% !important;
             border: none !important;
             border-collapse: collapse !important;
-            margin-bottom: 6px !important;
+            margin-bottom: 8px !important;
         }
 
-        .form-header-table td {
+        .n-form-container .form-header-table td {
             padding: 0 !important;
             border: none !important;
         }
 
-        .form-header-logo-cell {
-            width: 175px !important;
+        .n-form-container .form-header-logo-cell {
+            width: 165px !important;
             vertical-align: middle !important;
             text-align: left !important;
         }
 
-        .form-header-logo-cell img {
-            width: 165px !important;
+        .n-form-container .form-header-logo-cell img {
+            width: 155px !important;
             height: auto !important;
-            max-height: 80px !important;
+            max-height: 72px !important;
             display: block !important;
         }
 
-        .form-header-title-cell {
+        .n-form-container .form-header-title-cell {
             vertical-align: middle !important;
             text-align: center !important;
             padding: 0 4px !important;
         }
 
-        .form-main-title {
-            font-size: 13pt !important;
+        .n-form-container .form-main-title {
+            font-size: 16pt !important;
             font-weight: bold !important;
             line-height: 1.25 !important;
             margin-bottom: 4px !important;
             text-align: center !important;
         }
 
-        .form-sub-title {
-            font-size: 11pt !important;
+        .n-form-container .form-sub-title {
+            font-size: 13pt !important;
             font-weight: bold !important;
             margin-top: 2px !important;
             text-align: center !important;
         }
 
-        /* N-Kodlu Form Sizing & Page Fit */
         .n-form-container table {
-            margin-bottom: 2.5px !important;
+            width: 100% !important;
+            border-collapse: collapse !important;
+            margin-bottom: 4px !important;
         }
 
-        .n-form-container td,
-        .n-form-container th {
-            font-size: 10.2pt !important;
-            line-height: 1.16 !important;
-            padding: 2px 3px !important;
+        .n-form-container table[border="1"] {
+            border: 1px solid #000 !important;
         }
 
-        .n-form-container .form-main-title {
-            font-size: 13pt !important;
-            line-height: 1.2 !important;
-            margin-bottom: 2px !important;
+        .n-form-container table[border="1"] td,
+        .n-form-container table[border="1"] th {
+            border: 1px solid #000 !important;
+            font-size: 12pt !important;
+            line-height: 1.25 !important;
+            padding: 3px 6px !important;
+            vertical-align: middle !important;
         }
 
-        .n-form-container .form-sub-title {
-            font-size: 11pt !important;
-            margin-top: 1px !important;
+        .n-form-container table[border="1"] strong {
+            font-size: 12.5pt !important;
+            font-weight: bold !important;
+            color: #000 !important;
+        }
+
+        .n-form-container table[border="0"] th,
+        .n-form-container table[border="0"] td {
+            border: none !important;
+            padding: 2px 4px !important;
+        }
+
+        .n-form-container ul,
+        .n-form-container ol {
+            margin: 2px 0 !important;
+            padding-left: 18px !important;
         }
 
         .n-form-container li {
-            font-size: 10.2pt !important;
-            line-height: 1.16 !important;
-            margin: 0.5px 0 !important;
+            font-size: 11.5pt !important;
+            line-height: 1.25 !important;
+            margin: 2px 0 !important;
+            font-weight: normal !important;
+        }
+
+        .n-form-container li strong {
+            font-size: 11.5pt !important;
+            line-height: 1.25 !important;
+        }
+
+        .n-form-container li a {
+            color: inherit !important;
+            text-decoration: none !important;
+        }
+
+        .n-form-container li[style*="text-align:center"],
+        .n-form-container li[style*="text-align: center"] {
+            font-size: 13pt !important;
+            font-weight: bold !important;
+            margin: 5px 0 2px 0 !important;
+            text-align: center !important;
+            list-style-type: none !important;
+        }
+
+        .n-form-container li[style*="text-align:center"] strong,
+        .n-form-container li[style*="text-align: center"] strong {
+            font-size: 13pt !important;
+            font-weight: bold !important;
         }
 
         .n-signature-table {
-            margin-top: 18px !important;
+            width: 100% !important;
+            border: none !important;
+            margin-top: 14px !important;
         }
 
-        /* Karekod Alanı (Sayfanın sağ üst köşesine sabitlenir, sayfa düzenini ve tabloları aşağı itmez) */
-        #cezaQrCode {
-            position: absolute;
-            top: 5px;
-            right: 10px;
-            width: 68px;
-            height: 68px;
-            z-index: 9999;
-            background: #fff;
-            padding: 2px;
-            text-align: center;
+        .n-signature-table td,
+        .n-signature-table th {
+            border: none !important;
+            padding: 2px 4px !important;
+            text-align: center !important;
         }
 
+        .n-signature-table tr:first-child th,
+        .n-signature-table tr:first-child td {
+            font-size: 13pt !important;
+            font-weight: bold !important;
+        }
+
+        .n-signature-table tr:nth-child(2) th,
+        .n-signature-table tr:nth-child(2) td {
+            font-size: 11pt !important;
+            font-weight: bold !important;
+        }
+
+        .n-signature-table tr:nth-child(3) td {
+            height: 32px !important;
+            vertical-align: bottom !important;
+            font-size: 10.5pt !important;
+            font-style: italic !important;
+        }
+
+        .n-signature-table tr:nth-child(4) th,
+        .n-signature-table tr:nth-child(4) td {
+            font-size: 13.5pt !important;
+            font-weight: bold !important;
+            padding-top: 4px !important;
+        }
+
+        /* ==========================================================================
+           3. Ç KODLU GİRİŞ YASAĞI KARARI TEBLİĞ FORMU (SAYFA 3)
+           ========================================================================== */
+        .c-form-container {
+            width: 100% !important;
+            box-sizing: border-box !important;
+        }
+
+        .c-form-container .form-header-table {
+            width: 100% !important;
+            border: none !important;
+            border-collapse: collapse !important;
+            margin-bottom: 8px !important;
+        }
+
+        .c-form-container .form-header-table td {
+            padding: 0 !important;
+            border: none !important;
+        }
+
+        .c-form-container .form-header-logo-cell {
+            width: 165px !important;
+            vertical-align: middle !important;
+            text-align: left !important;
+        }
+
+        .c-form-container .form-header-logo-cell img {
+            width: 155px !important;
+            height: auto !important;
+            max-height: 72px !important;
+            display: block !important;
+        }
+
+        .c-form-container .form-header-title-cell {
+            vertical-align: middle !important;
+            text-align: center !important;
+            padding: 0 4px !important;
+        }
+
+        .c-form-container .form-main-title {
+            font-size: 16pt !important;
+            font-weight: bold !important;
+            line-height: 1.25 !important;
+            margin-bottom: 4px !important;
+            text-align: center !important;
+        }
+
+        .c-form-container .form-sub-title {
+            font-size: 13pt !important;
+            font-weight: bold !important;
+            margin-top: 2px !important;
+            text-align: center !important;
+        }
+
+        .c-form-container table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+            margin-bottom: 4px !important;
+        }
+
+        .c-form-container table[border="1"] {
+            border: 1px solid #000 !important;
+        }
+
+        .c-form-container table[border="1"] td,
+        .c-form-container table[border="1"] th {
+            border: 1px solid #000 !important;
+            font-size: 12pt !important;
+            line-height: 1.25 !important;
+            padding: 3px 6px !important;
+            vertical-align: middle !important;
+        }
+
+        .c-form-container table[border="1"] strong {
+            font-size: 12.5pt !important;
+            font-weight: bold !important;
+        }
+
+        .c-form-container ul,
+        .c-form-container ol {
+            margin: 2px 0 !important;
+            padding-left: 18px !important;
+        }
+
+        .c-form-container li {
+            font-size: 11.5pt !important;
+            line-height: 1.25 !important;
+            margin: 2px 0 !important;
+            font-weight: normal !important;
+        }
+
+        .c-form-container li strong {
+            font-size: 11.5pt !important;
+            line-height: 1.25 !important;
+        }
+
+        .c-form-container table:last-of-type,
+        .c-form-container table:last-child {
+            border: none !important;
+            margin-top: 14px !important;
+        }
+
+        .c-form-container table:last-of-type td,
+        .c-form-container table:last-of-type th,
+        .c-form-container table:last-child td,
+        .c-form-container table:last-child th {
+            border: none !important;
+            padding: 2px 4px !important;
+            text-align: center !important;
+        }
+
+        /* ==========================================================================
+           YAZDIRMA (@@media print) AYARLARI
+           ========================================================================== */
         @@media print {
             body {
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
             }
+            .page-break {
+                display: block !important;
+                page-break-before: always !important;
+                break-before: page !important;
+                height: 0 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                border: none !important;
+            }
+            table, tr {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
             #cezaQrCode {
                 display: block !important;
+                visibility: visible !important;
                 position: absolute !important;
-                top: 5px !important;
-                right: 10px !important;
+                top: 0px !important;
+                right: 5px !important;
+                border: none !important;
+            }
+            #cezaQrCode svg,
+            #cezaQrCode img,
+            #cezaQrCode canvas,
+            #cezaQrCode table {
+                display: block !important;
+                width: 76px !important;
+                height: 76px !important;
+                margin: 0 auto !important;
+            }
+            .violation-data-table td .fine-total-badge,
+            .violation-data-table td strong.fine-total-badge,
+            .fine-total-badge {
+                font-size: 17pt !important;
+                font-weight: 900 !important;
+                color: #000 !important;
+                white-space: nowrap !important;
+            }
+            .violation-data-table td .fine-breakdown,
+            .fine-breakdown {
+                font-size: 11pt !important;
+                font-weight: 600 !important;
+                color: #222 !important;
             }
         }
     </style>
-    <script src="/js/qrious.min.js"></script>
+    <script src="@Url.Content("~/js/qrcode.min.js?v=4")"></script>
 </head>
 <body>
     <div class="invoice" style="page-break-after:always">
-        <div id="cezaQrCode">
-            <canvas id="qrCanvas" width="64" height="64" style="width: 64px; height: 64px;"></canvas>
-        </div>
         @if (Model != null)
         {
-            @Html.Partial("Languages/" + lang + "/_ViolationForm", Model)
+            <div id="cezaQrCode" title="T.C. EGM Ceza Formu Doğrulama Karekodu"></div>
+            <div class="violation-form-container">
+                @Html.Partial("Languages/" + lang + "/_ViolationForm", Model)
+            </div>
 
             if (Model.HasNKodlu)
             {
@@ -276,37 +610,60 @@
         }
         else
         {
+            if (ViewBag.Form != null && !((string)ViewBag.Form).Contains("id=\"cezaQrCode\""))
+            {
+                <div id="cezaQrCode" title="T.C. EGM Ceza Formu Doğrulama Karekodu"></div>
+            }
             @Html.Raw(ViewBag.Form) 
         }
     </div>
 
     <script>
-        (function () {
+        function renderCezaQr() {
             try {
-                var qrText = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model != null ? Model.QrText : (ViewBag.QrText ?? "")));
-                if (!qrText || qrText.length === 0) {
+                var qrTextData = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model != null ? Model.QrText : (ViewBag.QrText ?? "")));
+                if (!qrTextData || qrTextData.length === 0) {
                     var bodyText = document.body.innerText || "";
-                    var nameMatch = bodyText.match(/(?:Adı Soyadı|Name\/Surname|姓名)[^\n:]*[:\t\s]+([^\n\r]+)/i);
-                    var passMatch = bodyText.match(/(?:Pasaport No|Passport No|护照号码)[^\n:]*[:\t\s]+([^\n\r]+)/i);
+                    var nameMatch = bodyText.match(/(?:Adı Soyadı|Name\/Surname|Имя; Фамилия|姓名)[^\n:]*[:\t\s]+([^\n\r]+)/i);
+                    var passMatch = bodyText.match(/(?:Pasaport No|Passport No|Номер паспорта|护照号码)[^\n:]*[:\t\s]+([^\n\r]+)/i);
                     var name = nameMatch ? nameMatch[1].trim() : "-";
                     var pass = passMatch ? passMatch[1].trim() : "-";
-                    qrText = "T.C. ICISLERI BAKANLIGI EGM\n" +
-                             "Yolcu: " + name + "\n" +
-                             "Pasaport: " + pass + "\n" +
-                             "Tarih: " + new Date().toLocaleDateString('tr-TR');
+                    qrTextData = "T.C. İÇİŞLERİ BAKANLIĞI EGM\n" +
+                                 "Yolcu: " + name + "\n" +
+                                 "Pasaport: " + pass + "\n" +
+                                 "Tarih: " + new Date().toLocaleDateString('tr-TR');
                 }
-                if (window.QRious) {
-                    new QRious({
-                        element: document.getElementById('qrCanvas'),
-                        value: qrText,
-                        size: 64,
-                        level: 'M'
+                var targetBox = document.getElementById("cezaQrCode");
+                if (typeof qrcode !== 'undefined' && targetBox) {
+                    if (qrcode.stringToBytesFuncs && qrcode.stringToBytesFuncs['UTF-8']) {
+                        qrcode.stringToBytes = qrcode.stringToBytesFuncs['UTF-8'];
+                    }
+                    var qr = qrcode(0, 'M');
+                    qr.addData(qrTextData);
+                    qr.make();
+                    targetBox.innerHTML = qr.createSvgTag({
+                        cellSize: 2,
+                        margin: 1,
+                        scalable: true
                     });
                 }
             } catch (e) {
                 console.error("QR Code oluşturulamadı:", e);
+                try {
+                    var qrFallback = qrcode(0, 'L');
+                    qrFallback.addData(qrTextData);
+                    qrFallback.make();
+                    var tb = document.getElementById("cezaQrCode");
+                    if (tb) tb.innerHTML = qrFallback.createTableTag(2, 0);
+                } catch(e2) {}
             }
-        })();
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', renderCezaQr);
+        } else {
+            renderCezaQr();
+        }
 
         // Ç Kodlu veya N Kodlu formların 1. sayfa dibinden başlamasını engellemek için JS güvencesi
         document.querySelectorAll('.page-break').forEach(function(el) {
@@ -315,6 +672,40 @@
             el.style.breakBefore = 'page';
             el.style.clear = 'both';
         });
+
+        // Vize ihlali toplam ödenecek tutarını personelin hemen fark edebileceği şekilde belirginleştirme güvencesi
+        function enhanceFineAmount() {
+            try {
+                var fineCells = document.querySelectorAll('.violation-data-table td');
+                fineCells.forEach(function(td) {
+                    if (td.querySelector('.fine-total-badge')) return;
+                    var text = (td.innerText || '').trim();
+                    if (text.indexOf('Toplam=') >= 0 || text.indexOf('Toplam:') >= 0) {
+                        var topMatch = text.match(/(.*?)(Toplam\s*[=:]\s*[\d.,]+(?:\s*TL)?)(.*)/i);
+                        if (topMatch) {
+                            var detail = topMatch[1].trim();
+                            var total = topMatch[2].trim();
+                            if (!total.match(/TL$/i)) total += " TL";
+                            detail = detail.replace(/\+\s*DEF\s*(\d+)\s*(?:TL)?/gi, ' + DEF $1 TL')
+                                           .replace(/\s+/g, ' ')
+                                           .trim()
+                                           .replace(/^[+,;]+|[+,;]+$/g, '')
+                                           .trim();
+                            var html = '<div class="fine-amount-wrap">';
+                            if (detail.length > 0) {
+                                html += '<span class="fine-breakdown">' + detail + '</span>';
+                            }
+                            html += '<strong class="fine-total-badge">' + total + '</strong>';
+                            html += '</div>';
+                            td.innerHTML = html;
+                        }
+                    }
+                });
+            } catch(e) {
+                console.error("enhanceFineAmount error:", e);
+            }
+        }
+        enhanceFineAmount();
 
         window.print();
     </script>

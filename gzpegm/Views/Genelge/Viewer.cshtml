@@ -1,0 +1,547 @@
+@{
+    Layout = null;
+    string docPath = ViewBag.DocPath as string ?? "";
+    string docTitle = ViewBag.DocTitle as string ?? "Resmi Belge / Genelge";
+    string docType = ViewBag.DocType as string ?? "image";
+    string userSicil = ViewBag.UserSicil as string ?? "000000";
+    string userIp = ViewBag.UserIp as string ?? "127.0.0.1";
+}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@docTitle - EGM Güvenli Belge Okuyucu</title>
+    <link rel="icon" href="@Url.Content("~/files/logo/favicon-egm-32.png")" type="image/x-icon">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="@Url.Content("~/vendor/bootstrap/css/bootstrap.css")" />
+    <link rel="stylesheet" href="@Url.Content("~/vendor/font-awesome/css/fontawesome-all.min.css")" />
+
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #1e293b;
+            color: #f1f5f9;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        /* Üst Kontrol Çubuğu */
+        .viewer-topbar {
+            height: 54px;
+            background: #0f172a;
+            border-bottom: 1px solid #334155;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            position: relative;
+            z-index: 100;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .viewer-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            max-width: 45%;
+        }
+
+        .viewer-brand-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #f8fafc;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin: 0;
+        }
+
+        .viewer-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Ana İçerik Görüntüleyici Alanı */
+        .viewer-content-area {
+            position: absolute;
+            top: 54px;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            overflow: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #1e293b;
+            padding: 24px;
+        }
+
+        /* Güvenlik Filigranı Katmanı (DLP Watermark) */
+        .watermark-overlay {
+            position: fixed;
+            top: 54px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 50;
+            opacity: 0.16;
+            background-repeat: repeat;
+        }
+
+        /* PDF Sayfa Canvasları */
+        .pdf-page-container {
+            margin-bottom: 24px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+            background: #ffffff;
+            border-radius: 4px;
+            overflow: hidden;
+            max-width: 100%;
+        }
+
+        .pdf-page-container canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+
+        /* Görsel ve TIFF Görüntüleyici (DLP Korumalı Canvas) */
+        .doc-image-display {
+            display: block;
+            margin: 0 auto;
+            max-width: 96%;
+            height: auto;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+            border-radius: 4px;
+            background: #ffffff;
+            user-select: none !important;
+            -webkit-user-select: none !important;
+            -webkit-user-drag: none !important;
+            -khtml-user-drag: none !important;
+            -moz-user-drag: none !important;
+            -o-user-drag: none !important;
+            user-drag: none !important;
+            -webkit-touch-callout: none !important;
+            pointer-events: none; /* Doğrudan sağ tık ve fareyle sürüklemeyi kesin olarak engeller */
+        }
+
+        /* Office HTML Görüntüleyici */
+        .office-html-wrapper {
+            background: #ffffff;
+            color: #0f172a;
+            padding: 36px 48px;
+            border-radius: 6px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+            max-width: 980px;
+            width: 100%;
+            user-select: text;
+            -webkit-user-select: text;
+        }
+
+        /* Ekran Yakalama / Yazdırma Engelleme */
+        @@media print {
+            body { display: none !important; }
+        }
+    </style>
+</head>
+<body oncontextmenu="return false;">
+
+    <!-- 1. ÜST KONTROL ARAÇ ÇUBUĞU -->
+    <header class="viewer-topbar">
+        <div class="viewer-brand">
+            <span class="badge badge-danger text-uppercase font-weight-bold px-2 py-1" style="letter-spacing:0.5px;">
+                <i class="fas fa-shield-alt mr-1"></i> DLP Korumalı
+            </span>
+            <h1 class="viewer-brand-title" title="@docTitle">
+                <i class="fas fa-file-alt mr-1 text-info"></i> @docTitle
+            </h1>
+        </div>
+
+        <div class="viewer-controls">
+            <!-- PDF Sayfa Kontrolleri -->
+            <div id="pdfControls" style="display:none;" class="d-flex align-items-center mr-2">
+                <button type="button" class="btn btn-sm btn-dark border-secondary text-light mr-1" id="btnPrevPage" onclick="changePdfPage(-1)">
+                    <i class="fas fa-chevron-left mr-1"></i> Önceki
+                </button>
+                <span class="text-light small font-weight-bold px-2">
+                    Sayfa <span id="currentPdfPage" class="text-warning font-weight-bold">1</span> / <span id="totalPdfPages">1</span>
+                </span>
+                <button type="button" class="btn btn-sm btn-dark border-secondary text-light ml-1" id="btnNextPage" onclick="changePdfPage(1)">
+                    Sonraki <i class="fas fa-chevron-right ml-1"></i>
+                </button>
+            </div>
+
+            <!-- TIFF Sayfa Kontrolleri -->
+            <div id="tiffControls" style="display:none;" class="d-flex align-items-center mr-2">
+                <button type="button" class="btn btn-sm btn-dark border-secondary text-light mr-1" onclick="changeTiffPage(-1)">
+                    <i class="fas fa-chevron-left mr-1"></i> Önceki
+                </button>
+                <span class="text-light small font-weight-bold px-2">
+                    Sayfa <span id="currentTiffPage" class="text-warning font-weight-bold">1</span> / <span id="totalTiffPages">1</span>
+                </span>
+                <button type="button" class="btn btn-sm btn-dark border-secondary text-light ml-1" onclick="changeTiffPage(1)">
+                    Sonraki <i class="fas fa-chevron-right ml-1"></i>
+                </button>
+            </div>
+
+            <!-- Zoom Kontrolleri -->
+            <div class="btn-group btn-group-sm mr-2">
+                <button type="button" class="btn btn-dark border-secondary text-light" onclick="zoomDoc(-0.15)" title="Küçült">
+                    <i class="fas fa-search-minus"></i>
+                </button>
+                <button type="button" class="btn btn-dark border-secondary text-light" onclick="resetZoom()" title="Varsayılan Boyut">
+                    <span id="lblZoomLevel">100%</span>
+                </button>
+                <button type="button" class="btn btn-dark border-secondary text-light" onclick="zoomDoc(0.15)" title="Büyüt">
+                    <i class="fas fa-search-plus"></i>
+                </button>
+            </div>
+
+            <!-- Sicil ve IP Bilgisi -->
+            <span class="badge badge-warning py-1 px-2 mr-2 font-weight-bold d-none d-md-inline" style="font-size:11px;">
+                <i class="fas fa-user-lock mr-1"></i> Sicil: @userSicil | IP: @userIp
+            </span>
+
+            <!-- Pencereyi Kapat -->
+            <button type="button" class="btn btn-sm btn-outline-danger font-weight-bold" onclick="window.close();" title="Pencereyi Kapat">
+                <i class="fas fa-times mr-1"></i> Kapat
+            </button>
+        </div>
+    </header>
+
+    <!-- 2. GÜVENLİK FİLİGRANI (T.C. EGM Sicil ve IP Damgası) -->
+    <div id="watermarkOverlay" class="watermark-overlay"></div>
+
+    <!-- 3. ANA İÇERİK OKUMA ALANI -->
+    <main class="viewer-content-area" id="viewerContentArea">
+        <div id="loadingIndicator" class="text-center py-5 text-light">
+            <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;"></div>
+            <h5 class="font-weight-bold">Belge Güvenli Olarak Yükleniyor...</h5>
+            <p class="text-muted small">EGM DLP Güvenlik protokolleri uygulanıyor.</p>
+        </div>
+
+        <!-- PDF.js Canvas Konteyneri -->
+        <div id="pdfContainer" style="display:none; width:100%; max-width:960px; text-align:center;"></div>
+
+        <!-- TIFF ve Normal Görsel Konteyneri (DLP Korumalı Canvas) -->
+        <div id="imageContainer" style="display:none; text-align:center; position:relative; width:100%; max-width:1100px;">
+            <canvas id="docImageCanvas" class="doc-image-display" oncontextmenu="return false;" ondragstart="return false;"></canvas>
+        </div>
+
+        <!-- Office HTML Konteyneri -->
+        <div id="officeContainer" style="display:none; width:100%; display:flex; justify-content:center;">
+            <div id="officeHtmlContent" class="office-html-wrapper"></div>
+        </div>
+    </main>
+
+    <!-- SCRIPTS -->
+    <script src="@Url.Content("~/vendor/jquery/jquery.js")"></script>
+    <script src="@Url.Content("~/vendor/bootstrap/js/bootstrap.js")"></script>
+    <script src="@Url.Content("~/vendor/pdfjs/pdf.min.js")"></script>
+
+    <script>
+        var docPath = '@Html.Raw(HttpUtility.JavaScriptStringEncode(docPath))';
+        var docType = '@docType';
+        var userSicil = '@userSicil';
+        var userIp = '@userIp';
+
+        var zoomScale = 1.0;
+        var activePdfDoc = null;
+        var currentPdfPage = 1;
+        var totalPdfPages = 1;
+        var currentTiffPage = 0;
+        var totalTiffPages = 1;
+
+        if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = '@Url.Content("~/vendor/pdfjs/pdf.worker.min.js")';
+        }
+
+        $(document).ready(function () {
+            setupWatermark();
+
+            if (docType === 'pdf') {
+                loadPdf();
+            } else if (docType === 'tiff') {
+                loadTiff();
+            } else if (docType === 'office') {
+                loadOffice();
+            } else {
+                loadImage();
+            }
+        });
+
+        // -------------------------------------------------------------
+        // 1. Filigran Üretici (SVG Tile)
+        // -------------------------------------------------------------
+        function setupWatermark() {
+            var nowStr = new Date().toLocaleDateString('tr-TR') + ' ' + new Date().toLocaleTimeString('tr-TR');
+            var text = 'T.C. EGM • SİCİL: ' + userSicil + ' • IP: ' + userIp;
+            var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="480" height="260">' +
+                '<text x="240" y="130" fill="#94a3b8" font-size="14" font-family="sans-serif" font-weight="bold" ' +
+                'transform="rotate(-28 240 130)" text-anchor="middle" letter-spacing="1">' +
+                text + '</text>' +
+                '</svg>';
+            var encoded = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+            $('#watermarkOverlay').css('background-image', 'url("' + encoded + '")');
+        }
+
+        // -------------------------------------------------------------
+        // 2. PDF Yükleyici (HTML5 Canvas)
+        // -------------------------------------------------------------
+        function loadPdf() {
+            var streamUrl = '@Url.Action("ViewPdfData", "Genelge")?path=' + encodeURIComponent(docPath);
+            $('#pdfControls').show();
+
+            pdfjsLib.getDocument({
+                url: streamUrl,
+                withCredentials: true
+            }).promise.then(function (pdf) {
+                activePdfDoc = pdf;
+                totalPdfPages = pdf.numPages;
+                $('#totalPdfPages').text(totalPdfPages);
+                $('#loadingIndicator').hide();
+                $('#pdfContainer').show();
+                renderAllPdfPages();
+            }).catch(function (err) {
+                $('#loadingIndicator').html('<div class="alert alert-danger font-weight-bold">PDF yüklenirken hata oluştu: ' + (err.message || err) + '</div>');
+            });
+        }
+
+        function renderAllPdfPages() {
+            if (!activePdfDoc) return;
+            $('#pdfContainer').empty();
+
+            for (var p = 1; p <= totalPdfPages; p++) {
+                (function (pageNumber) {
+                    activePdfDoc.getPage(pageNumber).then(function (page) {
+                        var baseViewport = page.getViewport({ scale: 1.0 });
+                        var containerWidth = Math.min($('#viewerContentArea').width() - 80, 1080);
+                        var fitScale = (containerWidth / baseViewport.width) * zoomScale;
+                        var viewport = page.getViewport({ scale: fitScale });
+
+                        var pageDiv = $('<div class="pdf-page-container" id="pdfPageWrapper_' + pageNumber + '"></div>');
+                        var canvas = document.createElement('canvas');
+                        var ctx = canvas.getContext('2d');
+                        canvas.height = viewport.height;
+                        canvas.width = viewport.width;
+
+                        pageDiv.append(canvas);
+                        $('#pdfContainer').append(pageDiv);
+
+                        page.render({
+                            canvasContext: ctx,
+                            viewport: viewport
+                        });
+                    });
+                })(p);
+            }
+        }
+
+        function changePdfPage(delta) {
+            var target = currentPdfPage + delta;
+            if (target >= 1 && target <= totalPdfPages) {
+                currentPdfPage = target;
+                $('#currentPdfPage').text(currentPdfPage);
+                var el = document.getElementById('pdfPageWrapper_' + currentPdfPage);
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        // -------------------------------------------------------------
+        // 3. TIFF Yükleyici
+        // -------------------------------------------------------------
+        function loadTiff() {
+            $('#tiffControls').show();
+            $.ajax({
+                url: '@Url.Action("GetTiffInfo", "Genelge")',
+                type: 'GET',
+                data: { path: docPath },
+                success: function (res) {
+                    totalTiffPages = (res && res.pageCount) ? res.pageCount : 1;
+                    $('#totalTiffPages').text(totalTiffPages);
+                    renderTiffPage(0);
+                },
+                error: function () {
+                    renderTiffPage(0);
+                }
+            });
+        }
+
+        // -------------------------------------------------------------
+        // Görsel ve TIFF İçin HTML5 Canvas Render Motoru (Kaydetme & Sürükleme İmkansız)
+        // -------------------------------------------------------------
+        function renderImageToCanvas(url, callback) {
+            var canvas = document.getElementById('docImageCanvas');
+            if (!canvas) return;
+            var ctx = canvas.getContext('2d');
+            var img = new Image();
+            img.onload = function () {
+                canvas.width = img.naturalWidth || img.width;
+                canvas.height = img.naturalHeight || img.height;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0);
+
+                // Ekstra DLP filigranı (canvas piksellerine gömülü)
+                drawWatermarkOnCanvas(ctx, canvas.width, canvas.height);
+
+                $('#loadingIndicator').hide();
+                $('#imageContainer').show();
+                if (callback) callback();
+            };
+            img.onerror = function () {
+                $('#loadingIndicator').html('<div class="alert alert-danger font-weight-bold">Görsel yüklenirken hata oluştu.</div>');
+                if (callback) callback();
+            };
+            img.src = url;
+        }
+
+        function drawWatermarkOnCanvas(ctx, width, height) {
+            ctx.save();
+            ctx.rotate(-28 * Math.PI / 180);
+            var fontSize = Math.max(16, Math.floor(width / 34));
+            ctx.font = 'bold ' + fontSize + 'px -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif';
+            ctx.fillStyle = 'rgba(220, 38, 38, 0.22)';
+            ctx.textAlign = 'center';
+            var text = 'T.C. EGM • SİCİL: ' + userSicil + ' • IP: ' + userIp;
+            var stepX = 420;
+            var stepY = 220;
+            var maxDim = Math.max(width, height) * 2;
+            for (var x = -maxDim; x < maxDim; x += stepX) {
+                for (var y = -maxDim; y < maxDim; y += stepY) {
+                    ctx.fillText(text, x, y);
+                }
+            }
+            ctx.restore();
+        }
+
+        function renderTiffPage(idx) {
+            currentTiffPage = idx;
+            $('#currentTiffPage').text(currentTiffPage + 1);
+            var url = '@Url.Action("RenderTiff", "Genelge")?path=' + encodeURIComponent(docPath) + '&page=' + idx + '&t=' + new Date().getTime();
+            renderImageToCanvas(url);
+        }
+
+        function changeTiffPage(delta) {
+            var target = currentTiffPage + delta;
+            if (target >= 0 && target < totalTiffPages) {
+                renderTiffPage(target);
+            }
+        }
+
+        // -------------------------------------------------------------
+        // 4. Standart Görsel (JPG / PNG)
+        // -------------------------------------------------------------
+        function loadImage() {
+            var url = '@Url.Action("ViewDocument", "Genelge")?path=' + encodeURIComponent(docPath) + '&t=' + new Date().getTime();
+            renderImageToCanvas(url);
+        }
+
+        // -------------------------------------------------------------
+        // 5. Office Belgeleri (Word / Excel / PPTX)
+        // -------------------------------------------------------------
+        function loadOffice() {
+            $.ajax({
+                url: '@Url.Action("ViewOfficeHtml", "Genelge")',
+                type: 'GET',
+                data: { path: docPath },
+                success: function (res) {
+                    $('#loadingIndicator').hide();
+                    $('#officeContainer').show();
+                    if (res && res.success) {
+                        $('#officeHtmlContent').html(res.html);
+                    } else {
+                        $('#officeHtmlContent').html('<div class="alert alert-danger font-weight-bold">' + ((res && res.message) || 'Belge dönüştürülemedi.') + '</div>');
+                    }
+                },
+                error: function () {
+                    $('#loadingIndicator').hide();
+                    $('#officeContainer').show();
+                    $('#officeHtmlContent').html('<div class="alert alert-danger font-weight-bold">Office belgesi yüklenirken sunucu hatası oluştu.</div>');
+                }
+            });
+        }
+
+        // -------------------------------------------------------------
+        // 6. Zoom Kontrolleri
+        // -------------------------------------------------------------
+        function zoomDoc(delta) {
+            zoomScale = Math.max(0.5, Math.min(2.5, zoomScale + delta));
+            $('#lblZoomLevel').text(Math.round(zoomScale * 100) + '%');
+
+            if (docType === 'pdf') {
+                renderAllPdfPages();
+            } else {
+                $('#docImageCanvas').css('transform', 'scale(' + zoomScale + ')').css('transform-origin', 'top center');
+            }
+        }
+
+        function resetZoom() {
+            zoomScale = 1.0;
+            $('#lblZoomLevel').text('100%');
+            if (docType === 'pdf') {
+                renderAllPdfPages();
+            } else {
+                $('#docImageCanvas').css('transform', 'scale(1)').css('transform-origin', 'top center');
+            }
+        }
+
+        // =====================================================================
+        // DLP Engelleme (Sağ Tık, Sürükle-Bırak, Ctrl+S, Ctrl+P)
+        // =====================================================================
+        document.addEventListener('contextmenu', function (e) {
+            e.preventDefault();
+            showDlpToast('EGM Güvenlik Uyarısı: Mevzuat belgelerinde sağ tık menüsü güvenlik nedeniyle engellenmiştir.');
+            return false;
+        });
+
+        document.addEventListener('dragstart', function (e) {
+            e.preventDefault();
+            return false;
+        });
+
+        document.addEventListener('keydown', function (e) {
+            var isCtrl = e.ctrlKey || e.metaKey;
+            var key = e.key ? e.key.toLowerCase() : '';
+            var keyCode = e.keyCode || e.which;
+
+            if (isCtrl && (key === 's' || keyCode === 83)) { // Ctrl + S (Kaydet)
+                e.preventDefault();
+                e.stopPropagation();
+                showDlpToast('EGM Bilgi Güvenliği: Belgenin yerel diske indirilmesi veya kaydedilmesi yasaklanmıştır.');
+                return false;
+            }
+
+            if (isCtrl && (key === 'p' || keyCode === 80)) { // Ctrl + P (Yazdır / PDF)
+                e.preventDefault();
+                e.stopPropagation();
+                showDlpToast('EGM Bilgi Güvenliği: Belgenin yazdırılması veya PDF olarak dışa aktarılması engellenmiştir.');
+                return false;
+            }
+        });
+
+        function showDlpToast(msg) {
+            var toast = $('#dlpSecurityToast');
+            if (!toast.length) {
+                toast = $('<div id="dlpSecurityToast" style="position:fixed; top:70px; left:50%; transform:translateX(-50%); z-index:99999; background:rgba(220,53,69,0.95); color:#fff; font-weight:bold; font-size:13px; padding:10px 22px; border-radius:30px; box-shadow:0 8px 24px rgba(0,0,0,0.5); display:none; pointer-events:none;"><i class="fas fa-shield-alt mr-2"></i><span></span></div>');
+                $('body').append(toast);
+            }
+            toast.find('span').text(msg);
+            toast.stop(true, true).fadeIn(150).delay(2500).fadeOut(350);
+        }
+            }
+        }
+    </script>
+</body>
+</html>

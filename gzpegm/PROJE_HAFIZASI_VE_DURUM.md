@@ -76,6 +76,15 @@ Kullanıcılar doğrudan yedek sunucuya (76) girdiklerinde yapılan işlemler an
 5. **Mesajlaşma Modülü (`/Mesaj/Inbox`, `/Mesaj/Compose`):**
    - Görüntülenen `GÃ¶nderen` gibi UTF-8 karakter bozulmaları (mojibake) giderildi.
    - CSS ve mobil uyumluluk sorunları düzeltildi.
+6. **Ceza Formu Yazdırma Sayfasında Toplam Ödenecek Miktar Vurgusu (`/Formolustur` & `/Formyazdir`):**
+   - Vize ihlali tebliğ formundaki `* Vize ihlali için ödenecek ücret / Penalty for visa violation` alanında harç ve defter bedeli kırılımı (`5564,4 + DEF 964 TL`) üst satırda temiz gösterilirken, nöbetçi personelin/veznenin anında ve hatasız fark edebilmesi için tahsil edilecek nihai tutar (`Toplam = 6528,4 TL`) **17pt, 900 bold ve belirgin** fontla büyütüldü.
+   - 13 farklı dildeki resmi tebliğ formları (`_ViolationForm.cshtml`), `FormPrintViewModel.RenderFineAmountHtml()`, baskı CSS kuralları (`invoice-print.css` & `Index.cshtml`) ve arşivlenmiş eski formları dönüştüren `UpgradeLegacyFormHtml` motoru tam uyumlu hale getirildi. Mobil Flutter uygulaması da eşleştirildi.
+7. **Ceza Hesaplama Sayfası Üst Araçlar Şeridi Açılır-Kapanır Modülü (`/Calculate/Index`):**
+   - Sayfa başlığındaki kalabalık oluşturan ve personelin kafasını karıştırabilecek donanım butonları (`Köprüyü Başlat`, `Cihazdan Pasaport Oku`, `Referans Belgeyi İncele`, `İlgili Mevzuat & Algoritmalar`) varsayılan olarak gizlenip açılır-kapanır (`collapse`) şerit içerisine alındı.
+   - Başlıkta yalnızca sade ve doğrudan erişilebilir `Yeni Yolcu` butonu ile şık bir `Donanım & Hızlı Araçlar ▼` butonu bırakıldı. İstenildiği zaman tek tıkla açılarak donanım araçlarına erişilebilmesi ve tercihin `localStorage` ile hatırlanması sağlandı.
+8. **Resmi Tebliğ Formu Panelinde Yazdırma Odaklı Sadeleştirme (`/Calculate/Index`):**
+   - 'Resmi Tebliğ Formu ve Yolcu Kimlik Bilgileri' panelinde personelin gözüne sokulan parlak sarı/yeşil butonlar (`Köprüyü Başlat`, `Optik Okuyucudan Doldur`, `Referans Belgeyi İncele`) kaldırılarak sade bir `Donanım Seçenekleri ▾` açılır menüsü altına toplandı.
+   - Panel başlığına ve alt kısmına 1. planda güçlü ve belirgin **`Resmi Formu Yazdır`** butonları konumlandırıldı.
 
 ---
 

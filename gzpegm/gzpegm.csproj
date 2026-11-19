@@ -4857,6 +4857,7 @@
     <Content Include="css\ckfinder\skins\v1\uipanel.css" />
     <Content Include="css\ckfinder\translations.txt" />
     <Content Include="css\custom.css" />
+    <Content Include="css\dlp-watermark.css" />
     <Content Include="css\Examall.min.css" />
     <Content Include="css\exambootstrap.min.css" />
     <Content Include="js\Egitim.zip" />
@@ -6765,6 +6766,8 @@
     <Content Include="vendor\owl.carousel\owl.carousel.min.js" />
     <Content Include="vendor\pnotify\pnotify.custom.css" />
     <Content Include="vendor\pnotify\pnotify.custom.js" />
+    <Content Include="vendor\pdfjs\pdf.min.js" />
+    <Content Include="vendor\pdfjs\pdf.worker.min.js" />
     <Content Include="vendor\popper\esm\popper-utils.js" />
     <Content Include="vendor\popper\esm\popper-utils.min.js" />
     <Content Include="vendor\popper\esm\popper.js" />
@@ -6939,6 +6942,7 @@
     <Content Include="vendor\summernote\summernote.js" />
     <Content Include="vendor\summernote\summernote.min.js" />
     <Content Include="js\custom.js" />
+    <Content Include="js\dlp-watermark.js" />
     <Content Include="js\examples\examples.advanced.form.js" />
     <Content Include="js\examples\examples.ajax.made.easy.js" />
     <Content Include="js\examples\examples.calendar.js" />
@@ -7257,10 +7261,15 @@
     <Compile Include="Models\PCInfo\DeviceEntity.cs" />
     <Compile Include="Services\PCInfoService.cs" />
     <Compile Include="Controllers\PCInfoController.cs" />
+    <Compile Include="Models\Genelge\GenelgeModels.cs" />
+    <Compile Include="Services\GenelgeService.cs" />
+    <Compile Include="Controllers\GenelgeController.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Views\web.config" />
     <Content Include="Views\PCInfo\Index.cshtml" />
+    <Content Include="Views\Genelge\Index.cshtml" />
+    <Content Include="Views\Genelge\Viewer.cshtml" />
     <Content Include="ajax\ajax-datatables-sample.json" />
     <Content Include="ajax\ajax-treeview-children.json" />
     <Content Include="ajax\ajax-treeview-roots.json" />
@@ -7456,6 +7465,9 @@
     <Content Include="Views\OForm\Languages\GE\_ViolationForm.cshtml" />
     <Content Include="Views\OForm\Languages\GE\_NKodluForm.cshtml" />
     <Content Include="Views\OForm\Languages\GE\_CKodluForm.cshtml" />
+    <Content Include="Views\OForm\Languages\PL\_ViolationForm.cshtml" />
+    <Content Include="Views\OForm\Languages\PL\_NKodluForm.cshtml" />
+    <Content Include="Views\OForm\Languages\PL\_CKodluForm.cshtml" />
     <Content Include="Views\Isk\Index.cshtml" />
     <Content Include="Views\Kosullar\Index.cshtml" />
     <Content Include="Views\Giris\Index.cshtml" />

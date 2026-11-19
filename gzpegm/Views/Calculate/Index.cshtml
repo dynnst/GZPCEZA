@@ -21,42 +21,62 @@
                 </div>
             </div>
             <div class="d-flex align-items-center mt-2 mt-md-0">
-                <a href="@Url.Action("Mevzuat", "Calculate")" target="_blank" class="btn btn-outline-info mr-2 shadow-sm font-weight-bold" id="btnMevzuat" style="border-radius:6px; font-size:0.86rem; padding:6px 14px; border:1.5px solid #0284c7; background-color:#f0f9ff; color:#0369a1;" title="Hesaplama Algoritmaları ve Yasal Dayanaklar Rehberi"><i class="fas fa-balance-scale mr-1 text-primary"></i> İlgili Mevzuat & Algoritmalar</a>
-                <a href="@Url.Action("DownloadBridgeExe", "Calculate")" id="btnLaunchBridgeDirect" onclick="handleStartBridgeClick(event)" class="btn btn-warning font-weight-bold mr-2 shadow-sm text-dark btn-launch-bridge" style="border-radius:6px; font-size:0.86rem; padding:6px 14px; background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:#1f2937 !important; border:none;" title="Masanızdaki Optik Okuyucu Donanım Köprüsünü Başlat veya İndir (Yönetici Yetkisi Gerekmez)">
-                    <i class="fas fa-bolt text-danger mr-1"></i> <span id="lblBridgeStatusText" class="lblBridgeStatusText">Köprüyü Başlat</span>
-                </a>
-                <div class="btn-group mr-2 shadow-sm" role="group">
-                    <button type="button" id="btnDirectOpticalScan" onclick="scanPassportDirect('auto');" class="btn btn-success font-weight-bold" style="border-radius:6px 0 0 6px; font-size:0.86rem; padding:6px 14px; background:linear-gradient(135deg, #059669 0%, #047857 100%); border:none;" title="Optik Okuyucudan Pasaport Oku (Otomatik Algıla)">
-                        <span class="passport-pulse-dot"></span> <i class="fas fa-camera mr-1"></i> Cihazdan Pasaport Oku
-                    </button>
-                    <button type="button" class="btn btn-success dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="border-radius:0 6px 6px 0; background:#047857; border:none; border-left:1px solid rgba(255,255,255,0.25);" title="Okuyucu Cihazını Seç">
-                        <span class="sr-only">Cihaz Seçimi</span>
-                    </button>
-                    <div class="dropdown-menu dropdown-menu-right shadow-lg" style="font-size:0.85rem; min-width:260px; z-index:1050;">
-                        <h6 class="dropdown-header text-uppercase font-weight-bold text-muted py-1" style="font-size:0.75rem;"><i class="fas fa-microchip mr-1"></i> Okuyucu Donanımı</h6>
-                        <a class="dropdown-item py-2 font-weight-bold text-success" href="javascript:void(0);" onclick="scanPassportDirect('auto');">
-                            <i class="fas fa-magic mr-2"></i> Otomatik Algıla <span class="badge badge-success ml-1">Önerilen</span>
-                        </a>
-                        <div class="dropdown-divider my-1"></div>
-                        <a class="dropdown-item py-2" href="javascript:void(0);" onclick="scanPassportDirect('3m');">
-                            <i class="fas fa-id-card mr-2 text-primary"></i> 3M Cogent / Gemalto (PV40/AT9000)
-                        </a>
-                        <a class="dropdown-item py-2" href="javascript:void(0);" onclick="scanPassportDirect('regula');">
-                            <i class="fas fa-camera-retro mr-2 text-info"></i> Regula Document Reader (70X4)
-                        </a>
-                        <a class="dropdown-item py-2" href="javascript:void(0);" onclick="scanPassportDirect('desko');">
-                            <i class="fas fa-barcode mr-2 text-warning"></i> Desko PENTA Scanner
-                        </a>
-                        <a class="dropdown-item py-2" href="javascript:void(0);" onclick="scanPassportDirect('thales');">
-                            <i class="fas fa-fingerprint mr-2 text-danger"></i> Thales Cogent CS500f
-                        </a>
-                    </div>
-                </div>
-                <span id="bridgeStatusContainer" class="mr-2"></span>
-                <button type="button" onclick="resetCalculateForm()" class="btn btn-reset-calc" title="Tüm alanları sıfırlar ve yeni yolcu için hazırlar">
+                <button type="button" onclick="resetCalculateForm()" class="btn btn-reset-calc mr-2 shadow-sm" title="Tüm alanları sıfırlar ve yeni yolcu için hazırlar">
                     <i class="fas fa-redo-alt mr-1"></i> Yeni Yolcu
                 </button>
+                <button type="button" id="btnToggleTopTools" class="btn btn-sm btn-outline-light font-weight-bold shadow-sm" style="border-radius:6px; font-size:0.84rem; padding:6px 14px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.25); color:#f8fafc;" title="Donanım köprüsü, optik okuyucu ve mevzuat araçlarını göster/gizle" aria-expanded="false" aria-controls="topToolsCollapse">
+                    <i class="fas fa-tools mr-1 text-warning"></i> <span id="lblTopToolsToggle">Hızlı Araçlar & Donanım</span> <i class="fas fa-chevron-down ml-1 text-light" id="iconTopToolsChevron"></i>
+                </button>
             </div>
+        </div>
+
+        <!-- AÇILIR KAPANIR DONANIM & HIZLI ARAÇLAR ŞERİDİ -->
+        <div id="topToolsCollapse" class="collapse mt-2 pt-2 border-top" style="border-color: rgba(255, 255, 255, 0.15) !important;">
+            <div class="d-flex flex-wrap align-items-center justify-content-between p-2 rounded" style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.12);">
+                <div class="d-flex flex-wrap align-items-center">
+                    <span class="text-muted small font-weight-bold mr-2 my-1"><i class="fas fa-microchip text-info mr-1"></i> Donanım & Araçlar:</span>
+                    <a href="@Url.Action("DownloadBridgeExe", "Calculate")" id="btnLaunchBridgeDirect" onclick="handleStartBridgeClick(event)" class="btn btn-warning font-weight-bold mr-2 shadow-sm text-dark btn-launch-bridge my-1" style="border-radius:6px; font-size:0.84rem; padding:5px 12px; background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:#1f2937 !important; border:none;" title="Masanızdaki Optik Okuyucu Donanım Köprüsünü Başlat veya İndir (Yönetici Yetkisi Gerekmez)">
+                        <i class="fas fa-bolt text-danger mr-1"></i> <span id="lblBridgeStatusText" class="lblBridgeStatusText">Köprüyü Başlat</span>
+                    </a>
+                    <div class="btn-group mr-2 shadow-sm my-1" role="group">
+                        <button type="button" id="btnDirectOpticalScan" onclick="scanPassportDirect('auto');" class="btn btn-success font-weight-bold" style="border-radius:6px 0 0 6px; font-size:0.84rem; padding:5px 12px; background:linear-gradient(135deg, #059669 0%, #047857 100%); border:none;" title="Optik Okuyucudan Pasaport Oku (Otomatik Algıla)">
+                            <span class="passport-pulse-dot"></span> <i class="fas fa-camera mr-1"></i> Cihazdan Pasaport Oku
+                        </button>
+                        <button type="button" class="btn btn-success dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="border-radius:0 6px 6px 0; background:#047857; border:none; border-left:1px solid rgba(255,255,255,0.25);" title="Okuyucu Cihazını Seç">
+                            <span class="sr-only">Cihaz Seçimi</span>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-right shadow-lg" style="font-size:0.85rem; min-width:260px; z-index:1050;">
+                            <h6 class="dropdown-header text-uppercase font-weight-bold text-muted py-1" style="font-size:0.75rem;"><i class="fas fa-microchip mr-1"></i> Okuyucu Donanımı</h6>
+                            <a class="dropdown-item py-2 font-weight-bold text-success" href="javascript:void(0);" onclick="scanPassportDirect('auto');">
+                                <i class="fas fa-magic mr-2"></i> Otomatik Algıla <span class="badge badge-success ml-1">Önerilen</span>
+                            </a>
+                            <div class="dropdown-divider my-1"></div>
+                            <a class="dropdown-item py-2" href="javascript:void(0);" onclick="scanPassportDirect('3m');">
+                                <i class="fas fa-id-card mr-2 text-primary"></i> 3M Cogent / Gemalto (PV40/AT9000)
+                            </a>
+                            <a class="dropdown-item py-2" href="javascript:void(0);" onclick="scanPassportDirect('regula');">
+                                <i class="fas fa-camera-retro mr-2 text-info"></i> Regula Document Reader (70X4)
+                            </a>
+                            <a class="dropdown-item py-2" href="javascript:void(0);" onclick="scanPassportDirect('desko');">
+                                <i class="fas fa-barcode mr-2 text-warning"></i> Desko PENTA Scanner
+                            </a>
+                            <a class="dropdown-item py-2" href="javascript:void(0);" onclick="scanPassportDirect('thales');">
+                                <i class="fas fa-fingerprint mr-2 text-danger"></i> Thales Cogent CS500f
+                            </a>
+                        </div>
+                    </div>
+                    <button type="button" id="btnReferenceDocTop" onclick="openReferenceDocument();" class="btn btn-outline-info font-weight-bold mr-2 shadow-sm my-1" style="border-radius:6px; font-size:0.84rem; padding:5px 12px; background:#f0f9ff; border:1.5px solid #0284c7; color:#0369a1;" title="Yolcunun uyruğuna ait orijinal referans pasaport/kimlik belgesini açar ve güvenlik katmanlarını (UV, IR, Filigran) incelemenizi sağlar">
+                        <i class="fas fa-passport mr-1"></i> Referans Belgeyi İncele
+                    </button>
+                    <span id="bridgeStatusContainer" class="mr-2 my-1"></span>
+                </div>
+                <div class="d-flex align-items-center my-1">
+                    <a href="@Url.Action("Mevzuat", "Calculate")" target="_blank" class="btn btn-outline-info shadow-sm font-weight-bold" id="btnMevzuat" style="border-radius:6px; font-size:0.84rem; padding:5px 12px; border:1.5px solid #0284c7; background-color:#f0f9ff; color:#0369a1;" title="Hesaplama Algoritmaları ve Yasal Dayanaklar Rehberi">
+                        <i class="fas fa-balance-scale mr-1 text-primary"></i> İlgili Mevzuat & Algoritmalar
+                    </a>
+                </div>
+            </div>
+        </div>
         </div>
     </header>
 
@@ -655,34 +675,32 @@
                     <h5 class="panel-title mb-0">
                         <i class="fas fa-id-card-alt text-primary mr-1"></i> Resmi Tebliğ Formu ve Yolcu Kimlik Bilgileri
                     </h5>
-                    <span class="text-muted small">Yolcu kimlik alanları — masanızdaki optik okuyucu (3M, Thales, Desko, Regula) ile otomatik dolar</span>
+                    <span class="text-muted small">Yolcu kimlik alanları ve resmi tebliğ belgesi yazdırma işlemi</span>
                 </div>
                 <div class="d-flex align-items-center mt-2 mt-md-0">
-                    <a href="@Url.Action("DownloadBridgeExe", "Calculate")" id="btnLaunchBridgeBottom" onclick="handleStartBridgeClick(event)" class="btn btn-sm btn-warning font-weight-bold mr-2 shadow-sm text-dark btn-launch-bridge py-1 px-3" style="font-size:0.84rem; border-radius:6px; background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:#1f2937 !important; border:none;" title="Masanızdaki Optik Okuyucu Donanım Köprüsünü Başlat veya İndir">
-                        <i class="fas fa-bolt text-danger mr-1"></i> <span class="lblBridgeStatusText">Köprüyü Başlat</span>
-                    </a>
-                    <div class="btn-group shadow-sm" role="group">
-                    <button type="button" id="btnTutanakOpticalScan" onclick="scanPassportDirect('auto');" class="btn btn-sm btn-success font-weight-bold py-1 px-3" style="font-size:0.84rem; background:linear-gradient(135deg, #059669 0%, #047857 100%); border:none; border-radius:6px 0 0 6px;" title="Optik okuyucudan yolcu kimlik bilgilerini doldur">
-                        <span class="passport-pulse-dot mr-1"></span> <i class="fas fa-camera mr-1"></i> Optik Okuyucudan Doldur
+                    <!-- 1. PLANDA: YAZDIRMA BUTONU -->
+                    <button type="submit" class="btn btn-sm btn-primary font-weight-bold shadow-sm py-1 px-3 mr-2" style="border-radius:6px; font-size:0.86rem; background:linear-gradient(135deg, #1e40af 0%, #2563eb 100%); border:none;" title="Formu oluşturur ve yazdırma penceresini açar">
+                        <i class="fas fa-print mr-1"></i> Formu Yazdır
                     </button>
-                    <button type="button" class="btn btn-sm btn-success dropdown-toggle dropdown-toggle-split py-1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="border-radius:0 6px 6px 0; background:#047857; border:none; border-left:1px solid rgba(255,255,255,0.25);" title="Okuyucu cihazını seç">
-                        <span class="sr-only">Cihaz Seçimi</span>
-                    </button>
-                    <div class="dropdown-menu dropdown-menu-right shadow-lg" style="font-size:0.84rem; min-width:260px; z-index:1050;">
-                        <h6 class="dropdown-header text-uppercase font-weight-bold text-muted py-1" style="font-size:0.75rem;"><i class="fas fa-microchip mr-1"></i> Okuyucu Donanımı</h6>
-                        <a class="dropdown-item py-2 font-weight-bold text-success" href="javascript:void(0);" onclick="scanPassportDirect('auto');">
-                            <i class="fas fa-magic mr-2"></i> Otomatik Algıla <span class="badge badge-success ml-1">Önerilen</span>
-                        </a>
-                        <div class="dropdown-divider my-1"></div>
-                        <a class="dropdown-item py-2" href="javascript:void(0);" onclick="scanPassportDirect('3m');">
-                            <i class="fas fa-id-card mr-2 text-primary"></i> 3M Cogent / Gemalto (PV40/AT9000)
-                        </a>
-                        <a class="dropdown-item py-2" href="javascript:void(0);" onclick="scanPassportDirect('regula');">
-                            <i class="fas fa-camera-retro mr-2 text-info"></i> Regula Document Reader (70X4)
-                        </a>
-                        <a class="dropdown-item py-2" href="javascript:void(0);" onclick="scanPassportDirect('desko');">
-                            <i class="fas fa-barcode mr-2 text-warning"></i> Desko PENTA Scanner
-                        </a>
+
+                    <!-- DİĞER BUTONLAR (KULLANICININ GÖZÜNE SOKMADAN, SADE VE İKİNCİL SEÇENEKLER MENÜSÜ) -->
+                    <div class="dropdown">
+                        <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle py-1 px-2 text-muted" style="font-size:0.82rem; border-color:#cbd5e1; background:#ffffff;" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="Optik okuyucu ve ek donanım araçları">
+                            <i class="fas fa-sliders-h mr-1 text-secondary"></i> Donanım Seçenekleri
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-right shadow-lg" style="font-size:0.84rem; min-width:240px; z-index:1050;">
+                            <h6 class="dropdown-header text-uppercase font-weight-bold text-muted py-1" style="font-size:0.75rem;"><i class="fas fa-microchip mr-1"></i> Okuyucu Donanımı</h6>
+                            <button type="button" id="btnTutanakOpticalScan" onclick="scanPassportDirect('auto');" class="dropdown-item py-2 font-weight-bold text-success border-0 bg-transparent w-100 text-left">
+                                <i class="fas fa-camera mr-2"></i> Optik Okuyucudan Doldur
+                            </button>
+                            <a href="@Url.Action("DownloadBridgeExe", "Calculate")" id="btnLaunchBridgeBottom" onclick="handleStartBridgeClick(event)" class="dropdown-item py-2 btn-launch-bridge text-dark">
+                                <i class="fas fa-bolt text-warning mr-2"></i> <span class="lblBridgeStatusText">Köprüyü Başlat</span>
+                            </a>
+                            <div class="dropdown-divider my-1"></div>
+                            <button type="button" onclick="openReferenceDocument();" class="dropdown-item py-2 text-info border-0 bg-transparent w-100 text-left">
+                                <i class="fas fa-passport mr-2"></i> Referans Belgeyi İncele
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -703,37 +721,34 @@
             <input name="codeFORM" id="codeFORM" type="text" class="form-control hidden" required>
             <input name="visatype" id="visatype" type="text" class="form-control hidden" required>
             <input readonly autocomplete="off" id="BirthdateCFORM" name="BirthdateCFORM" type="text" data-plugin-datepicker data-plugin-options='{"format":"dd.mm.yyyy","autoclose":"true","weekStart":"1","language":"tr","endDate":"+0d"}' class="form-control hidden" required>
+            <input name="FatherCFORM" id="FatherCFORM" type="hidden" value="">
+            <input name="MotherCFORM" id="MotherCFORM" type="hidden" value="">
 
             <div class="form-row">
-                <div class="form-group col-xl-2 col-lg-4 col-md-6 mb-2">
+                <div class="form-group col-xl-3 col-lg-3 col-md-6 mb-2">
                     <label for="NameCFORM" class="control-label">Yolcu Adı Soyadı</label>
                     <input autocomplete="off" name="NameCFORM" id="NameCFORM" type="text" class="form-control" placeholder="Ad Soyad" required>
                 </div>
-                <div class="form-group col-xl-2 col-lg-4 col-md-6 mb-2">
+                <div class="form-group col-xl-3 col-lg-3 col-md-6 mb-2">
                     <label for="PassportCFORM" class="control-label">Pasaport Numarası</label>
                     <input autocomplete="off" name="PassportCFORM" id="PassportCFORM" type="text" class="form-control" placeholder="Pasaport No" required>
                 </div>
-                <div class="form-group col-xl-2 col-lg-4 col-md-6 mb-2">
+                <div class="form-group col-xl-3 col-lg-3 col-md-6 mb-2">
                     <label for="IDNCFORM" class="control-label">YKN / TC No</label>
                     <input autocomplete="off" name="IDNCFORM" id="IDNCFORM" type="text" class="form-control" placeholder="Varsa YKN">
                 </div>
-                <div class="form-group col-xl-2 col-lg-4 col-md-6 mb-2">
-                    <label for="FatherCFORM" class="control-label">Baba Adı</label>
-                    <input autocomplete="off" name="FatherCFORM" id="FatherCFORM" type="text" class="form-control" placeholder="Baba Adı">
-                </div>
-                <div class="form-group col-xl-2 col-lg-4 col-md-6 mb-2">
-                    <label for="MotherCFORM" class="control-label">Anne Adı</label>
-                    <input autocomplete="off" name="MotherCFORM" id="MotherCFORM" type="text" class="form-control" placeholder="Anne Adı">
-                </div>
-                <div class="form-group col-xl-2 col-lg-4 col-md-6 mb-2">
+                <div class="form-group col-xl-3 col-lg-3 col-md-6 mb-2">
                     <label for="PoliceCFORM" class="control-label">Kontrol Memuru</label>
-                    <input autocomplete="off" name="PoliceCFORM" id="PoliceCFORM" type="text" class="form-control" value="@ViewBag.OfficerName" placeholder="Memur Sicil" required>
+                    <input autocomplete="off" name="PoliceCFORM" id="PoliceCFORM" type="text" class="form-control" value="" placeholder="Memur Sicil / Adı Soyadı" required>
                 </div>
             </div>
 
-            <div class="text-right mt-1">
-                <button type="submit" class="btn btn-print-action">
-                    <i class="fas fa-file-pdf mr-1"></i> Resmi Tutanağı Oluştur ve Yazdır
+            <div class="mt-3 d-flex justify-content-between align-items-center flex-wrap">
+                <a href="javascript:void(0);" onclick="openReferenceDocument();" class="text-muted small" title="Yolcunun uyruğuna ait orijinal referans pasaport/kimlik belgesini açar">
+                    <i class="fas fa-passport mr-1 text-info"></i> Referans Belgeyi İncele
+                </a>
+                <button type="submit" class="btn btn-print-action font-weight-bold shadow-sm py-2 px-4" style="font-size:1.02rem; border-radius:6px; background:linear-gradient(135deg, #059669 0%, #047857 100%); border:none;">
+                    <i class="fas fa-print mr-2"></i> Resmi Tutanağı Oluştur ve Yazdır
                 </button>
             </div>
         </form>
@@ -846,9 +861,68 @@
             }
         }
 
+        var currentUserToken = '@(Request.Cookies["Token"]?.Value ?? "")';
+
+        function openReferenceDocument() {
+            var country = ($('#CountryCalculate').val() || $('#CountryCalculate option:selected').text() || $('#OrginCFORM').val() || '').trim();
+            if (!country || country === 'Lütfen Seçiniz' || country === '-- Seçiniz --' || country === 'Lütfen Ülke Seçiniz' || country.indexOf('Seçiniz') !== -1) {
+                country = '';
+            }
+
+            var host = window.location.hostname || '10.7.202.138';
+            var isLocal = (host === 'localhost' || host === '127.0.0.1');
+            var baseUrl = isLocal 
+                ? 'https://localhost:44324' 
+                : (window.location.protocol + '//' + host + ':8080');
+
+            var refUrl = baseUrl + '/ReferenceDocument';
+            var queryParams = [];
+            if (country) {
+                queryParams.push('country=' + encodeURIComponent(country));
+            }
+            if (currentUserToken) {
+                queryParams.push('ssoToken=' + encodeURIComponent(currentUserToken));
+            }
+            if (queryParams.length > 0) {
+                refUrl += '?' + queryParams.join('&');
+            }
+
+            window.open(refUrl, '_blank');
+        }
+        var sevkEtSahtecilik = openReferenceDocument;
+
         $(document).ready(function () {
             // Kimlik bilgileri tutanak formu (#form) her zaman açık ve görünür
             $('#form').show().removeClass('hidden').css('display', 'block');
+
+            // Üst araçlar şeridi açılır-kapanır (varsayılan: kapalı ve sade)
+            var isToolsOpen = false;
+            try {
+                isToolsOpen = (localStorage.getItem('calc_top_tools_open') === '1');
+            } catch(e) {}
+
+            if (isToolsOpen) {
+                $('#topToolsCollapse').addClass('show');
+                $('#iconTopToolsChevron').removeClass('fa-chevron-down').addClass('fa-chevron-up');
+                $('#btnToggleTopTools').addClass('btn-light text-dark').removeClass('btn-outline-light');
+            }
+
+            $('#btnToggleTopTools').on('click', function (e) {
+                e.preventDefault();
+                $('#topToolsCollapse').collapse('toggle');
+            });
+
+            $('#topToolsCollapse').on('show.bs.collapse', function () {
+                $('#iconTopToolsChevron').removeClass('fa-chevron-down').addClass('fa-chevron-up');
+                $('#btnToggleTopTools').addClass('btn-light text-dark').removeClass('btn-outline-light');
+                try { localStorage.setItem('calc_top_tools_open', '1'); } catch(e) {}
+            });
+
+            $('#topToolsCollapse').on('hide.bs.collapse', function () {
+                $('#iconTopToolsChevron').removeClass('fa-chevron-up').addClass('fa-chevron-down');
+                $('#btnToggleTopTools').removeClass('btn-light text-dark').addClass('btn-outline-light');
+                try { localStorage.setItem('calc_top_tools_open', '0'); } catch(e) {}
+            });
         });
     </script>
 }

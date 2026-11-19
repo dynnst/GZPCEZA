@@ -971,22 +971,35 @@
         var docType = "1";
         var parsedSuccessfully = false;
 
-        // A. 3M, Regula veya Desko Key-Value Wedge Formatı (Türkçe ve İngilizce Etiketler)
-        var hasWedgeKeys = /(?:Surname|Last\s*Name|Family\s*Name|Forenames?|Given\s*Names?|First\s*Names?|Doc\.?\s*(?:Number|No)|Passport\s*(?:Number|No)?|Date\s*of\s*Birth|Birth\s*Date|DOB|Nationality|Country|Personal\s*No|Soyad[ıi]?|Ad[ıi]?|İsim|Belge\s*No|Pasaport\s*No|Kimlik\s*No|TC\s*No|YKN|Do[gğ]um\s*Tarihi|D\.?\s*Tarihi|Uyruk|Vatanda[sş]l[ıi]k)/i.test(rawText);
+        // A. 3M, Regula veya Desko Key-Value Wedge Formatı (Türkçe ve İngilizce Etiketler + Ceza Formu Karekod)
+        var hasWedgeKeys = /(?:Surname|Last\s*Name|Family\s*Name|Forenames?|Given\s*Names?|First\s*Names?|Doc\.?\s*(?:Number|No)|Passport\s*(?:Number|No)?|Date\s*of\s*Birth|Birth\s*Date|DOB|Nationality|Country|Personal\s*No|Soyad[ıi]?|Ad[ıi]?|İsim|Belge\s*No|Pasaport\s*(?:No)?|Kimlik\s*No|TC\s*No|YKN|Do[gğ]um\s*Tarihi|D\.?\s*Tarihi|Uyruk|Vatanda[sş]l[ıi]k|Yolcu|Ceza\s*Tutar[ıi]|Tahdit\s*Kodu)/i.test(rawText);
         if (hasWedgeKeys) {
             var lines = rawText.split(/[\r\n]+/);
             for (var i = 0; i < lines.length; i++) {
                 var l = lines[i].trim();
                 if (!l) continue;
 
+                var mYolcu = /^(?:Yolcu)\s*[:=]\s*(.+)$/i.exec(l);
+                if (mYolcu) {
+                    var yName = mYolcu[1].trim();
+                    var yParts = yName.split(/\s+/);
+                    if (yParts.length >= 2) {
+                        surname = yParts[yParts.length - 1];
+                        givenNames = yParts.slice(0, yParts.length - 1).join(' ');
+                    } else {
+                        surname = yName;
+                        givenNames = "";
+                    }
+                }
+
                 var mSurname = /^(?:Surname|Last\s*Name|Family\s*Name|Soyad[ıi]?)\s*[:=]\s*(.+)$/i.exec(l);
                 if (mSurname) surname = mSurname[1].trim();
 
                 var mGiven = /^(?:Forenames?|Given\s*Names?|First\s*Names?|Name|Ad[ıi]?|İsim)\s*[:=]\s*(.+)$/i.exec(l);
-                if (mGiven && !mSurname) givenNames = mGiven[1].trim();
+                if (mGiven && !mSurname && !mYolcu) givenNames = mGiven[1].trim();
 
                 var mFullName = /^(?:Ad[ıi]?\s*Soyad[ıi]?|Full\s*Name)\s*[:=]\s*(.+)$/i.exec(l);
-                if (mFullName) {
+                if (mFullName && !mYolcu) {
                     var fn = mFullName[1].trim();
                     var fnParts = fn.split(/\s+/);
                     if (fnParts.length >= 2) {
@@ -997,11 +1010,16 @@
                     }
                 }
 
-                var mDoc = /^(?:Doc\.?\s*(?:Number|No)|Document\s*(?:Number|No)?|Passport\s*(?:Number|No)?|Pasaport\s*No|Belge\s*No)\s*[:=]\s*(.+)$/i.exec(l);
+                var mDoc = /^(?:Doc\.?\s*(?:Number|No)|Document\s*(?:Number|No)?|Passport\s*(?:Number|No)?|Pasaport\s*(?:No)?|Belge\s*No)\s*[:=]\s*(.+)$/i.exec(l);
                 if (mDoc) passportNo = mDoc[1].trim().replace(/\s+/g, '');
 
                 var mNat = /^(?:Nationality|Country|Issuing\s*State|Uyruk|Vatanda[sş]l[ıi]k|[UÜ]lke)\s*[:=]\s*(.+)$/i.exec(l);
                 if (mNat) nationalityCode = mNat[1].trim();
+
+                var mCode = /^(?:Tahdit\s*Kodu?)\s*[:=]\s*(.+)$/i.exec(l);
+                if (mCode && $('#codeFORM').length) {
+                    $('#codeFORM').val(mCode[1].trim());
+                }
 
                 var mDob = /^(?:Date\s*of\s*Birth|Birth\s*Date|DOB|Do[gğ]um\s*Tarihi|D\.?\s*Tarihi)\s*[:=]\s*(.+)$/i.exec(l);
                 if (mDob) {
@@ -1311,16 +1329,17 @@
         var scannerTimer = null;
         var burstCount = 0;
 
-        // 1) PANO / CTRL+V DİNLEYİCİSİ (3M, Thales, Desko Pano Modu)
+        // 1) PANO / CTRL+V DİNLEYİCİSİ (3M, Thales, Desko Pano Modu + Ceza Formu Karekod)
         $(window).on('paste', function (e) {
             var clip = (e.originalEvent || e).clipboardData;
             if (!clip) return;
             var text = clip.getData('text');
-            if (text && text.trim().length >= 20) {
+            if (text && text.trim().length >= 15) {
                 var isMrzOrWedge = (
                     text.indexOf('P<') >= 0 || text.indexOf('I<') >= 0 || text.indexOf('P;') >= 0 || text.indexOf('I;') >= 0 ||
                     text.indexOf('START') >= 0 ||
-                    /(?:Surname|Soyad|Doc\.?\s*Number|Pasaport\s*No)/i.test(text) ||
+                    text.indexOf('Yolcu:') >= 0 || text.indexOf('ICISLERI') >= 0 || text.indexOf('İÇİŞLERİ') >= 0 ||
+                    /(?:Surname|Soyad|Doc\.?\s*Number|Pasaport\s*(?:No)?|Yolcu)/i.test(text) ||
                     text.split(/[\r\n]+/).filter(function (l) { return l.trim().length >= 28; }).length >= 2
                 );
                 if (isMrzOrWedge) {
@@ -1333,8 +1352,9 @@
         // 2) INPUT ALANI ENGELLEYİCİSİ: Eğer kullanıcı bir alandayken okuyucu basarsa
         $(document).on('input', 'input[type="text"]', function () {
             var val = $(this).val();
-            if (val && val.length >= 28) {
-                if (val.indexOf('P<') >= 0 || val.indexOf('I<') >= 0 || val.indexOf('P;') >= 0 || val.indexOf('I;') >= 0 || val.indexOf('START') >= 0) {
+            if (val && val.length >= 20) {
+                if (val.indexOf('P<') >= 0 || val.indexOf('I<') >= 0 || val.indexOf('P;') >= 0 || val.indexOf('I;') >= 0 ||
+                    val.indexOf('START') >= 0 || val.indexOf('Yolcu:') >= 0 || val.indexOf('ICISLERI') >= 0 || val.indexOf('İÇİŞLERİ') >= 0) {
                     var capturedVal = val;
                     $(this).val('');
                     parseAndApplyPassportMrz(capturedVal, "Donanımsal Okuyucu (Wedge Alanı)");
@@ -1389,6 +1409,10 @@
                 scannerBuffer.indexOf('Adı:') >= 0 ||
                 scannerBuffer.indexOf('Belge No') >= 0 ||
                 scannerBuffer.indexOf('Pasaport No') >= 0 ||
+                scannerBuffer.indexOf('Pasaport:') >= 0 ||
+                scannerBuffer.indexOf('Yolcu:') >= 0 ||
+                scannerBuffer.indexOf('ICISLERI') >= 0 ||
+                scannerBuffer.indexOf('İÇİŞLERİ') >= 0 ||
                 scannerBuffer.indexOf('REGULA') >= 0 ||
                 scannerBuffer.indexOf('DESKO') >= 0 ||
                 scannerBuffer.indexOf('THALES') >= 0 ||

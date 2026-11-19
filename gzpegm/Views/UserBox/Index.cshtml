@@ -93,6 +93,13 @@
                                 </li>
                             }
 
+                            <li>
+                                <a class="nav-link font-weight-bold" href="@Url.Action("Index", "Genelge")" style="color:#0284c7;" title="Genelgeler ve Mevzuat Bilgi Bankası">
+                                    <i class="fas fa-book-open text-info"></i>
+                                    <span>Genelgeler</span>
+                                </a>
+                            </li>
+
                             @if (canUseCoreApps())
                             {
                                 <li class="dropdown">
@@ -131,6 +138,7 @@
                                                 <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="/GRAFIK">İşlem Grafikleri</a></li>
                                             </ul>
                                         </li>
+                                        <li><a class="dropdown-item font-weight-bold" href="@Url.Action("Index", "Genelge")"><i class="fas fa-book-open text-info mr-1"></i> Genelgeler &amp; Mevzuat Portalı</a></li>
                                         <li><a class="dropdown-item" href="@Url.Action("Index", "Tahdit")"><i class="fas fa-list"></i> Tahditler &amp; Yapılacaklar</a></li>
                                         <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="@Url.Action("Yardimci", "Home")"><i class="fas fa-question-circle"></i> Kullanma Rehberi</a></li>
                                         <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="/ISTATIK"><i class="fas fa-chart-bar"></i> İstatistik Bilgileri</a></li>

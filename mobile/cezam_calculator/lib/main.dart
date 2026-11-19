@@ -1813,7 +1813,7 @@ class _CalculatorPageState extends State<CalculatorPage> {
     }
 
     if (result.defter != 0) {
-      text += '+ DEF${_money(result.defter)}TL';
+      text += ' + DEF ${_money(result.defter)} TL';
       if (payType == '4') {
         text +=
             ' İdari para cezası: ${_money(result.administrativeFine)} TL, Toplam=${_money(result.total)}';
@@ -1954,8 +1954,12 @@ class _CalculatorPageState extends State<CalculatorPage> {
           pw.TableRow(children: [
             _cell(row[0], size: 8.2, bold: true),
             _cell(':', size: 13, bold: true),
-            _cell(row[1], size: 12, bold: true),
-            _cell(row[2], size: 11, bold: true),
+            _cell(row[1],
+                size: row[0].contains('Penalty for visa violation') ? 14 : 12,
+                bold: true),
+            _cell(row[2],
+                size: row[0].contains('Penalty for visa violation') ? 13 : 11,
+                bold: true),
           ]),
       ],
     );
@@ -2007,7 +2011,12 @@ class _CalculatorPageState extends State<CalculatorPage> {
                   pw.SizedBox(width: 6),
                   pw.Text(': ', style: const pw.TextStyle(fontSize: 10)),
                   pw.SizedBox(
-                      width: 96, child: _text(row[1], size: 11, bold: true)),
+                      width: 96,
+                      child: _text(row[1],
+                          size: row[0].contains('Penalty for visa violation')
+                              ? 13
+                              : 11,
+                          bold: true)),
                   if (row[2].isNotEmpty)
                     pw.SizedBox(
                         width: 58,
