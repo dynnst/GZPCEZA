@@ -1,25 +1,39 @@
-# CEZAM - Vize ve İkamet İhlali Ceza Hesaplayıcı (Android Mobil APK)
+# Pasaport Kontrol ve Hudut Kapıları Mobil APK Paketleri
 
-Bu klasör, Pasaport Kontrol ve Sınır Kapıları için geliştirilen **CEZAM Vize ve İkamet İhlali Ceza Hesaplayıcı** mobil uygulamasının doğrudan kurulabilir güncel Android sürümünü (`cezam-calculator.apk`) içermektedir.
+Bu klasör, Pasaport Kontrol ve Sınır Kapıları için geliştirilen her iki kurumsal mobil uygulamanın (`cezam-calculator.apk` ve `sahtecilik_mobile.apk`) doğrudan kurulabilir güncel Android sürümlerini içermektedir.
 
 ---
 
-### 📦 Dosya Bilgileri
+### 📥 Doğrudan İndirme Bağlantıları (GitHub)
+* 📱 **CEZAM (Vize & İkamet İhlali Hesaplayıcı):** [cezam-calculator.apk](https://github.com/dynnst/GZPCEZA/raw/main/Apk/cezam-calculator.apk)
+* 🔍 **Pasaport ve Adli Belge İnceleme:** [sahtecilik_mobile.apk](https://github.com/dynnst/GZPCEZA/raw/main/Apk/sahtecilik_mobile.apk)
+
+---
+
+### 📦 1. CEZAM - Vize ve İkamet İhlali Ceza Hesaplayıcı
 * **Dosya Adı:** `cezam-calculator.apk`
 * **Sürüm:** `0.3.3 (Build 6)`
 * **Boyut:** ~65.5 MB
-* **Desteklenen Platform:** Android 7.0 (API 24) ve üzeri
+* **Desteklenen Platform:** Android 7.0 (API 24) ve üzeri / BlueStacks
 * **Çalışma Modu:** %100 Çevrimdışı (İnternetsiz / Yerel Hesaplama Motoru)
 * **Uygulama Teması:** Hudut Kapıları (✈️ Uçak • 🚢 Gemi • 🚗 Araba)
-* **API / Senkronizasyon Desteği:** Vizeİhlal API ile merkezi veri güncelleme opsiyonu
+
+---
+
+### 📦 2. Pasaport ve Adli Belge İnceleme Otomasyonu
+* **Dosya Adı:** `sahtecilik_mobile.apk`
+* **Sürüm:** `1.1.0 (Build 11)`
+* **Boyut:** ~67.5 MB
+* **Desteklenen Platform:** Android 7.0 (API 24) ve üzeri / BlueStacks
+* **Çalışma Modu:** %100 Çevrimdışı (Cihaz Hafızasına Kayıt) / Opsiyonel Sunucu API
 
 ---
 
 ### 🚀 Kurulum Talimatları
-1. **İndirme:** `cezam-calculator.apk` dosyasını Android telefonunuza veya tabletinize indirin.
+1. **İndirme:** Yukarıdaki doğrudan indirme bağlantılarına dokunarak APK dosyasını telefonunuza veya tabletinize indirin.
 2. **Güvenlik İzni:** Android ayarlarından tarayıcınıza veya dosya yöneticinize *"Bilinmeyen kaynaklardan uygulama yükle"* izni verin.
 3. **Yükleme:** İndirilen APK dosyasına dokunarak kurulumu tamamlayın.
-4. **Kullanım:** Uygulamayı açtığınızda internet veya sunucu bağlantısına ihtiyaç duymaksızın doğrudan tüm vize ve ikamet ihlali hesaplamalarını yapabilirsiniz.
+4. **Kullanım:** Uygulamayı açtığınızda internet veya sunucu bağlantısına ihtiyaç duymaksızın doğrudan tüm işlemleri yapabilirsiniz.
 
 ---
 
