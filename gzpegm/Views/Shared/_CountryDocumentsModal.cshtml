@@ -1,0 +1,312 @@
+@using System.Collections.Generic
+@{
+    var uvrCountries = ViewBag.UvrCountries as IEnumerable<string> ?? new List<string>();
+}
+
+<style>
+    .cd-doc-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 16px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+    .cd-doc-card:hover {
+        background: #f8fafc;
+        border-color: #0284c7;
+        box-shadow: 0 4px 12px rgba(2, 132, 199, 0.12);
+        transform: translateY(-1px);
+    }
+    .cd-doc-card.is-confidential {
+        border-left: 4px solid #ef4444;
+    }
+    .cd-doc-card.is-restricted {
+        background: #fffdf5;
+        border-color: #fef08a;
+    }
+    .cd-doc-card.is-restricted:hover {
+        background: #fefce8;
+        border-color: #f59e0b;
+    }
+    .cd-doc-icon {
+        font-size: 28px;
+        width: 36px;
+        text-align: center;
+        flex-shrink: 0;
+    }
+    .cd-doc-title {
+        font-weight: 700;
+        font-size: 14.5px;
+        color: #1e293b;
+        margin-bottom: 3px;
+        word-break: break-word;
+    }
+    .cd-doc-meta {
+        font-size: 12px;
+        color: #64748b;
+    }
+    .cd-doc-actions {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+        margin-left: 12px;
+    }
+    #modalCountryDocViewer {
+        z-index: 1085 !important;
+    }
+    #modalCountryDocAccessRequest {
+        z-index: 1095 !important;
+    }
+</style>
+
+<!-- ========================================================================= -->
+<!-- 1. ÜLKELERE ÖZEL RESMİ YAZILAR & MEVZUAT BİLGİ BANKASI MODAL                 -->
+<!-- ========================================================================= -->
+<div class="modal fade" id="countryDocumentsModal" tabindex="-1" role="dialog" aria-labelledby="countryDocumentsModalLabel" aria-hidden="true" style="z-index: 1062;">
+    <div class="modal-dialog modal-dialog-centered modal-xl" role="document" style="max-width: 1050px;">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-light border-bottom d-flex align-items-center justify-content-between py-3">
+                <div class="d-flex align-items-center">
+                    <div class="mr-3 bg-primary text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 44px; height: 44px; font-size: 1.25rem;">
+                        <i class="fas fa-globe-americas"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title font-weight-bold text-dark mb-0" id="countryDocumentsModalLabel">
+                            Ülkelere Özel Resmi Yazılar &amp; Mevzuat Bilgi Bankası
+                        </h5>
+                        <small class="text-muted">Hudut kapısı operasyonları için ülkeye özgü bakanlık talimatları, genelgeler ve vize rejimleri</small>
+                    </div>
+                </div>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Kapat">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body p-4" style="background-color: #f8fafc;">
+                <!-- Ülke Seçim Bölümü -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body p-3">
+                        <label for="cdCountrySelect" class="font-weight-bold text-dark mb-1">
+                            <i class="fas fa-flag text-primary mr-1"></i> Yabancının Uyruğu / İncelenecek Ülke:
+                        </label>
+                        <div class="row align-items-center">
+                            <div class="col-md-9 mb-2 mb-md-0">
+                                <select id="cdCountrySelect" class="form-control form-control-lg font-weight-semibold">
+                                    <option value="">-- Lütfen Ülke Seçiniz veya Arayınız --</option>
+                                    @foreach (var c in uvrCountries)
+                                    {
+                                        <option value="@c">@c</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <button type="button" id="btnCdFetchCountry" class="btn btn-primary btn-lg btn-block font-weight-bold shadow-sm">
+                                    <i class="fas fa-search mr-1"></i> Yazıları Getir
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Sık Aranan Ülkeler Kısayol Rozetleri -->
+                        <div class="mt-3 pt-2 border-top">
+                            <span class="small font-weight-bold text-muted mr-2">
+                                <i class="fas fa-bolt text-warning mr-1"></i> Sık İşlem Yapılan Ülkeler:
+                            </span>
+                            <div class="d-inline-flex flex-wrap" style="gap: 5px;">
+                                @{
+                                    var quickCountries = new[] { "Suriye", "Ukrayna", "Almanya", "Rusya", "Suudi Arabistan", "Irak", "İran", "Bulgaristan", "Hollanda", "Norveç", "Libya", "KKTC", "Gürcistan", "Azerbaycan" };
+                                }
+                                @foreach (var qc in quickCountries)
+                                {
+                                    <button type="button" class="btn btn-sm btn-outline-secondary font-weight-semibold py-0 px-2 btn-quick-country" data-country="@qc" style="font-size: 0.78rem; border-radius: 12px;">
+                                        @qc
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Yükleniyor Göstergesi -->
+                <div id="cdLoadingSpinner" class="text-center py-5" style="display: none;">
+                    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                        <span class="sr-only">Yükleniyor...</span>
+                    </div>
+                    <div class="font-weight-bold text-muted mt-3">İlgili ülkenin resmi yazıları ve mevzuatı taranıyor...</div>
+                </div>
+
+                <!-- Sonuç Alanı -->
+                <div id="cdResultArea" style="display: none;">
+                    <!-- Ülke Vize & Kalış Rejimi Bilgi Bandı -->
+                    <div id="cdRegimeCard" class="card border-0 shadow-sm mb-4" style="border-left: 4px solid #0284c7 !important;">
+                        <div class="card-body p-3">
+                            <div class="d-flex flex-wrap align-items-center justify-content-between mb-2 pb-2 border-bottom">
+                                <div>
+                                    <span class="badge badge-primary px-2 py-1 font-weight-bold" style="font-size: 0.85rem;" id="cdSelectedCountryBadge">ÜLKE</span>
+                                    <strong class="ml-2 text-dark font-weight-bold" style="font-size: 1.05rem;" id="cdCountryTitleText">Ülke Bilgisi</strong>
+                                </div>
+                                <div id="cdSpecialNoticeContainer"></div>
+                            </div>
+                            <div class="row text-center text-md-left">
+                                <div class="col-6 col-md-3 mb-2 mb-md-0">
+                                    <small class="text-muted d-block">Normal Vize / Muafiyet</small>
+                                    <strong class="text-dark font-weight-bold" id="cdRegimeDay">-</strong>
+                                </div>
+                                <div class="col-6 col-md-3 mb-2 mb-md-0">
+                                    <small class="text-muted d-block">Vize Statüsü</small>
+                                    <strong class="text-dark font-weight-bold" id="cdRegimeStatus">-</strong>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <small class="text-muted d-block">Harç Durumu</small>
+                                    <strong class="text-dark font-weight-bold" id="cdRegimeHarc">-</strong>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <small class="text-muted d-block">Kaşe Vize Kolaylığı</small>
+                                    <strong class="text-success font-weight-bold" id="cdRegimeSpecial">-</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Resmi Yazılar ve Genelgeler Listesi -->
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between border-bottom">
+                            <div>
+                                <h6 class="font-weight-bold mb-0 text-dark">
+                                    <i class="fas fa-file-contract text-primary mr-2"></i>
+                                    Bu Ülkeye Ait Resmi Yazılar, Genelgeler ve Talimatlar
+                                    <span class="badge badge-primary ml-2 font-weight-bold" id="cdDocCountBadge">0</span>
+                                </h6>
+                            </div>
+                            <div>
+                                <span class="badge badge-light border text-muted px-2 py-1" style="font-size: 0.75rem;">
+                                    <i class="fas fa-shield-alt text-success mr-1"></i> Güvenli &amp; Filigranlı Önizleme
+                                </span>
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <!-- Boş Durum -->
+                            <div id="cdEmptyDocsMessage" class="p-4 text-center" style="display: none;">
+                                <i class="fas fa-folder-open text-muted fa-3x mb-3 d-block" style="opacity: 0.4;"></i>
+                                <h6 class="font-weight-bold text-dark">Bu Ülkeye Özel Kayıtlı Resmi Yazı Bulunmamaktadır</h6>
+                                <p class="text-muted small mb-0">
+                                    Bu ülke için genel pasaport ve vize hükümleri geçerlidir. Arşivde bu ülkeye özel ek bir kısıtlama veya talimat bulunmamaktadır.
+                                </p>
+                            </div>
+
+                            <!-- Belgeler Listesi (Kart Görünümü) -->
+                            <div class="p-3" id="cdDocsListWrapper" style="max-height: 540px; overflow-y: auto;">
+                                <div id="cdDocsListContainer">
+                                    <!-- Dinamik olarak JS ile kartlar oluşturulacak -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light d-flex justify-content-between py-2">
+                <span class="small text-muted">
+                    <i class="fas fa-info-circle text-primary mr-1"></i> Tüm belgeler <strong>Sicil No + IP + Tarih</strong> filigranı ile korunmaktadır; kopyalama ve indirme yasaktır.
+                </span>
+                <button type="button" class="btn btn-secondary font-weight-bold px-4" data-dismiss="modal">
+                    Kapat
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- 2. ÜLKE BELGESİ GÜVENLİ ÖNİZLEYİCİ MODAL                                  -->
+<!-- ========================================================================= -->
+<div class="modal fade" id="modalCountryDocViewer" tabindex="-1" role="dialog" aria-labelledby="modalCountryDocViewerLabel" aria-hidden="true" style="z-index: 1080;">
+    <div class="modal-dialog modal-dialog-centered modal-xl" role="document" style="max-width: 95vw; height: 92vh; margin: auto;">
+        <div class="modal-content shadow-lg border-0" style="height: 92vh; display: flex; flex-direction: column;">
+            <div class="modal-header bg-dark text-white py-2 px-3 border-0 d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center text-truncate mr-2">
+                    <button type="button" class="btn btn-outline-light btn-sm mr-2 font-weight-bold" id="btnBackToCountryDocs" title="Ülke belgeleri listesine dön">
+                        <i class="fas fa-arrow-left mr-1"></i> Ülke Belgelerine Dön
+                    </button>
+                    <span class="badge badge-warning mr-2" id="countryDocViewerBadge">GİZLİ</span>
+                    <h6 class="modal-title font-weight-bold text-white text-truncate mb-0" id="modalCountryDocViewerLabel" style="font-size: 0.95rem;">
+                        Belge Önizleme
+                    </h6>
+                </div>
+                <div class="d-flex align-items-center">
+                    <a id="btnPopoutCountryDoc" href="#" target="_blank" class="btn btn-outline-info btn-sm font-weight-bold mr-2" title="Belgeyi tam ekran yeni sekmede aç">
+                        <i class="fas fa-external-link-alt mr-1"></i> Yeni Sekmede Aç
+                    </a>
+                    <button type="button" class="close text-white" id="btnCloseCountryDocViewer" aria-label="Kapat" style="opacity: 0.85;">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            </div>
+            <div class="modal-body p-0" style="flex: 1; background: #0f172a; position: relative; overflow: hidden;">
+                <iframe id="countryDocViewerIframe" src="about:blank" style="width: 100%; height: 100%; border: none; background: #0f172a;"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- 3. GİZLİ BELGE ERİŞİM İZNİ TALEBİ VE YÖNETİCİ İLETİŞİM MODALI             -->
+<!-- ========================================================================= -->
+<div class="modal fade" id="modalCountryDocAccessRequest" tabindex="-1" role="dialog" aria-labelledby="modalCountryDocAccessRequestLabel" aria-hidden="true" style="z-index: 1090;">
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 540px;">
+        <div class="modal-content shadow-lg border-0">
+            <form id="formCountryDocRequestAccess">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="cdReqDocPath" name="path" value="" />
+                <input type="hidden" id="cdReqDocTitle" name="title" value="" />
+
+                <div class="modal-header bg-danger text-white py-2 px-3 d-flex align-items-center justify-content-between">
+                    <h5 class="modal-title font-weight-bold mb-0" id="modalCountryDocAccessRequestLabel" style="font-size: 15px;">
+                        <i class="fas fa-shield-alt mr-2"></i> Gizli Belge Erişim İzni Talebi
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Kapat" style="opacity: 0.85;">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body p-3">
+                    <div class="alert alert-warning py-2 px-3 mb-3" style="font-size: 13px;">
+                        <i class="fas fa-lock mr-1"></i> Bu resmi yazı / genelge <strong>GİZLİ / HİZMETE ÖZEL</strong> olarak sınıflandırılmıştır. İnceleyebilmek için görev gerekçenizi belirterek yönetici onayına göndermelisiniz.
+                    </div>
+
+                    <div class="form-group mb-2">
+                        <label class="font-weight-bold text-dark small mb-1">Talep Edilen Belge</label>
+                        <input type="text" id="cdDisplayReqDocTitle" class="form-control form-control-sm font-weight-bold bg-light" readonly />
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label class="font-weight-bold text-dark small mb-1">
+                            Görev Gerekçeniz / Notunuz <span class="text-danger">*</span>
+                        </label>
+                        <textarea id="cdReqReason" name="reason" class="form-control form-control-sm" rows="3" placeholder="Örn: Pasaport kontrol nöbetinde ilgili ülke yolcusunun vize muafiyeti ve süresi incelemesi amacıyla inceleme izni talep ediyorum." required></textarea>
+                    </div>
+
+                    <!-- Kurumsal Yönetici İletişim Rehberi -->
+                    <div class="card bg-light border-0 p-3 mb-0" style="font-size: 12px; border-left: 3px solid #0284c7 !important;">
+                        <div class="font-weight-bold text-dark mb-1">
+                            <i class="fas fa-phone-volume text-primary mr-1"></i> Yönetici İletişim &amp; Onay Süreci Rehberi:
+                        </div>
+                        <ul class="mb-0 pl-3 text-muted" style="line-height: 1.5;">
+                            <li>İlettiğiniz onay talebi sistem üzerinden anında <strong>Grup Amiri ve Şube Yönetimi</strong> paneline düşer.</li>
+                            <li>Talebiniz onaylandığında belge 24 saat boyunca veya süresiz olarak adınıza doğrudan açılır.</li>
+                            <li><strong>İvedilik gerektiren hudut kapısı işlemlerinde</strong> Nöbetçi Amir / Büro Yönetimi ile dahili hat veya telsiz üzerinden iletişime geçebilirsiniz.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer py-2 px-3 bg-light d-flex justify-content-between">
+                    <button type="button" class="btn btn-sm btn-secondary font-weight-bold" data-dismiss="modal">Vazgeç</button>
+                    <button type="submit" id="btnSubmitCdRequest" class="btn btn-sm btn-danger font-weight-bold shadow-sm">
+                        <i class="fas fa-paper-plane mr-1"></i> Onay Talebini Gönder
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

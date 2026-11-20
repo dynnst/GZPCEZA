@@ -425,6 +425,19 @@
                 </div>
             </div>
 
+            <!-- Hızlı Aksiyon: Ülke Yazıları & Mevzuat Masası -->
+            <div class="d-flex flex-wrap align-items-center justify-content-between mt-3 pt-2" style="border-top: 1px solid rgba(255,255,255,0.12);">
+                <div class="d-flex align-items-center flex-wrap mb-1" style="gap: 10px;">
+                    <button type="button" class="btn btn-warning font-weight-bold shadow-sm" id="btnOpenCountryDocsModal" data-toggle="modal" data-target="#countryDocumentsModal" style="border-radius: 20px; padding: 6px 20px; font-size: 13.5px; border: 1px solid #d97706;">
+                        <i class="fas fa-globe-americas mr-1 text-dark"></i> <span class="text-dark">Ülke Yazıları &amp; Mevzuat Masası</span>
+                        <span class="badge badge-dark ml-2">Özel Talimatlar</span>
+                    </button>
+                    <span class="text-white-50 small d-none d-md-inline">
+                        <i class="fas fa-passport text-warning mr-1"></i> Ülkelere özel vize rejimleri, süre kolaylıkları ve bakanlık resmi yazıları
+                    </span>
+                </div>
+            </div>
+
             <!-- Admin / Teacher Action Toolbar -->
             @if (Model.CanManage)
             {
@@ -1100,9 +1113,16 @@
     </div>
 }
 
+<!-- ========================================================================= -->
+<!-- ÜLKELERE ÖZEL RESMİ YAZILAR & MEVZUAT BİLGİ BANKASI MODALLARI (ORTAK)     -->
+<!-- ========================================================================= -->
+@Html.Partial("_CountryDocumentsModal")
+
 @section Scripts {
     <!-- PDF.js Lokal Kütüphanesi -->
     <script src="@Url.Content("~/vendor/pdfjs/pdf.min.js")"></script>
+    <!-- Ülke Yazıları ve Mevzuat Ortak Modülü -->
+    <script src="@Url.Content("~/js/country-documents.js")?v=@DateTime.Now.Ticks"></script>
 
     <script>
         // PDF.js Worker Tanımı
