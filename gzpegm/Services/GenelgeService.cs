@@ -164,6 +164,90 @@ namespace gzpegm.Services
             return @"C:\Users\Naşit\Desktop\GENELGE";
         }
 
+        public List<string> GetAllStorageRoots()
+        {
+            var roots = new List<string>();
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            void AddIfValid(string p)
+            {
+                if (string.IsNullOrWhiteSpace(p)) return;
+                try
+                {
+                    if (p.StartsWith("~"))
+                    {
+                        try { p = System.Web.Hosting.HostingEnvironment.MapPath(p); } catch { }
+                    }
+                    if (!string.IsNullOrWhiteSpace(p) && Directory.Exists(p))
+                    {
+                        var full = Path.GetFullPath(p);
+                        if (seen.Add(full))
+                        {
+                            roots.Add(full);
+                        }
+                    }
+                }
+                catch { }
+            }
+
+            // 1. Birincil root
+            AddIfValid(GetStorageRoot());
+
+            // 2. Web.config GenelgeStoragePath
+            var cfg = ConfigurationManager.AppSettings["GenelgeStoragePath"];
+            if (!string.IsNullOrWhiteSpace(cfg))
+            {
+                foreach (var part in cfg.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    AddIfValid(part.Trim());
+                }
+            }
+
+            // 3. Proje İçi Klasörler (files/Genelge, files, App_Data)
+            try
+            {
+                AddIfValid(System.Web.Hosting.HostingEnvironment.MapPath("~/files/Genelge"));
+                AddIfValid(System.Web.Hosting.HostingEnvironment.MapPath("~/files/GENELGE"));
+                AddIfValid(System.Web.Hosting.HostingEnvironment.MapPath("~/files"));
+                AddIfValid(System.Web.Hosting.HostingEnvironment.MapPath("~/App_Data/GENELGE"));
+                AddIfValid(System.Web.Hosting.HostingEnvironment.MapPath("~/App_Data/Genelge"));
+            }
+            catch { }
+
+            // 4. ExternalFileStorageRoot
+            var extRoot = ConfigurationManager.AppSettings["ExternalFileStorageRoot"];
+            if (!string.IsNullOrWhiteSpace(extRoot))
+            {
+                foreach (var ep in extRoot.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    var trimmed = ep.Trim();
+                    AddIfValid(Path.Combine(trimmed, "GENELGE"));
+                    AddIfValid(Path.Combine(trimmed, "Genelge"));
+                    AddIfValid(trimmed);
+                }
+            }
+
+            // 5. Masaüstü ve Sürücü Klasörleri
+            AddIfValid(@"C:\Users\Naşit\Desktop\GENELGE");
+            AddIfValid(@"C:\Users\Naşit\Desktop\GENELGELER");
+            AddIfValid(@"D:\veri\GENELGE");
+            AddIfValid(@"D:\GENELGE");
+            AddIfValid(@"F:\GENELGELER");
+            AddIfValid(@"F:\GENELGE");
+            try
+            {
+                var desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+                if (!string.IsNullOrWhiteSpace(desktop))
+                {
+                    AddIfValid(Path.Combine(desktop, "GENELGE"));
+                    AddIfValid(Path.Combine(desktop, "GENELGELER"));
+                }
+            }
+            catch { }
+
+            return roots;
+        }
+
         public bool StorageExists()
         {
             var root = GetStorageRoot();
@@ -674,25 +758,74 @@ namespace gzpegm.Services
             if (relativePath.StartsWith(Path.DirectorySeparatorChar.ToString()))
                 relativePath = relativePath.TrimStart(Path.DirectorySeparatorChar);
 
-            var root = GetStorageRoot();
-            if (string.IsNullOrWhiteSpace(root) || !Directory.Exists(root))
-                return null;
-
-            var rootNorm = Path.GetFullPath(root);
-            if (!rootNorm.EndsWith(Path.DirectorySeparatorChar.ToString()))
-                rootNorm += Path.DirectorySeparatorChar;
-
+            // Zaten var olan tam mutlak dosya yolu mu?
             try
             {
-                var combined = Path.Combine(rootNorm, relativePath);
-                var fullPath = Path.GetFullPath(combined);
-
-                if (fullPath.StartsWith(rootNorm, StringComparison.OrdinalIgnoreCase) && File.Exists(fullPath))
+                if (Path.IsPathRooted(relativePath) && File.Exists(relativePath))
                 {
-                    return fullPath;
+                    return Path.GetFullPath(relativePath);
                 }
             }
             catch { }
+
+            var candidateRoots = GetAllStorageRoots();
+
+            // 1. Göreceli yol kombinasyonu tüm kök dizinlerde kontrol edilir (Harici Depo, Proje İçi ~/files/Genelge vb.)
+            foreach (var root in candidateRoots)
+            {
+                try
+                {
+                    var rootNorm = Path.GetFullPath(root);
+                    if (!rootNorm.EndsWith(Path.DirectorySeparatorChar.ToString()))
+                        rootNorm += Path.DirectorySeparatorChar;
+
+                    var combined = Path.Combine(rootNorm, relativePath);
+                    var fullPath = Path.GetFullPath(combined);
+
+                    if (File.Exists(fullPath))
+                    {
+                        return fullPath;
+                    }
+
+                    // Ön ek temizleme (örn. "files\Genelge\..." veya "Genelge\...")
+                    var prefixes = new[] {
+                        "files" + Path.DirectorySeparatorChar + "Genelge" + Path.DirectorySeparatorChar,
+                        "files" + Path.DirectorySeparatorChar,
+                        "Genelge" + Path.DirectorySeparatorChar
+                    };
+                    foreach (var pre in prefixes)
+                    {
+                        if (relativePath.StartsWith(pre, StringComparison.OrdinalIgnoreCase))
+                        {
+                            var stripped = relativePath.Substring(pre.Length);
+                            var combStripped = Path.Combine(rootNorm, stripped);
+                            if (File.Exists(combStripped)) return Path.GetFullPath(combStripped);
+                        }
+                    }
+                }
+                catch { }
+            }
+
+            // 2. Fallback: Sadece dosya adı ile tüm depolama dizinlerinde özyinelemeli arama
+            var fileName = Path.GetFileName(relativePath);
+            if (!string.IsNullOrWhiteSpace(fileName))
+            {
+                foreach (var root in candidateRoots)
+                {
+                    try
+                    {
+                        if (Directory.Exists(root))
+                        {
+                            var matches = Directory.GetFiles(root, fileName, SearchOption.AllDirectories);
+                            if (matches != null && matches.Length > 0)
+                            {
+                                return Path.GetFullPath(matches[0]);
+                            }
+                        }
+                    }
+                    catch { }
+                }
+            }
 
             return null;
         }
