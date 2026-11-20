@@ -1,5 +1,6 @@
 @{
     Layout = null;
+    bool isAccessDenied = (ViewBag.IsAccessDenied as bool?) == true;
     string docPath = ViewBag.DocPath as string ?? "";
     string docTitle = ViewBag.DocTitle as string ?? "Resmi Belge / Genelge";
     string docType = ViewBag.DocType as string ?? "image";
@@ -157,7 +158,30 @@
     </style>
 </head>
 <body oncontextmenu="return false;">
-
+@if (isAccessDenied)
+{
+    <div style="display:flex; align-items:center; justify-content:center; width:100%; height:100%; background:#0f172a; padding:20px;">
+        <div class="card shadow-lg border-danger text-center p-4" style="max-width:550px; background:#1e293b; border-radius:14px; color:#fff;">
+            <div class="mb-3 text-danger" style="font-size:3.5rem;"><i class="fas fa-user-lock"></i></div>
+            <h4 class="font-weight-bold text-white mb-2">Gizli Belge Erişim İzni Gerekli</h4>
+            <h6 class="text-warning mb-3" style="word-break:break-word;">@docTitle</h6>
+            <p class="text-muted small mb-4" style="line-height:1.6;">
+                Bu resmi belge / genelge <strong>GİZLİ / HİZMETE ÖZEL</strong> olarak sınıflandırılmıştır ve adınıza kayıtlı onaylanmış bir erişim izni bulunmamaktadır.<br />
+                İnceleyebilmek için <strong>Genelgeler Masasından</strong> veya <strong>Ülke Yazıları</strong> ekranından görev gerekçenizle yönetici onayı talep edebilirsiniz.
+            </p>
+            <div class="d-flex justify-content-center" style="gap:10px;">
+                <button type="button" class="btn btn-secondary font-weight-bold" onclick="if(window.parent && window.parent !== window && window.parent.closeCountryDocViewer){ window.parent.closeCountryDocViewer(); } else { window.close(); }">
+                    <i class="fas fa-times mr-1"></i> Pencereyi Kapat
+                </button>
+                <a href="/Genelge" class="btn btn-primary font-weight-bold" target="_top">
+                    <i class="fas fa-shield-alt mr-1"></i> Genelgeler Masasına Git
+                </a>
+            </div>
+        </div>
+    </div>
+}
+else
+{
     <!-- 1. ÜST KONTROL ARAÇ ÇUBUĞU -->
     <header class="viewer-topbar">
         <div class="viewer-brand">
@@ -541,5 +565,6 @@
             toast.stop(true, true).fadeIn(150).delay(2500).fadeOut(350);
         }
     </script>
+}
 </body>
 </html>

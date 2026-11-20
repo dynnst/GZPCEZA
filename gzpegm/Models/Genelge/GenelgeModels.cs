@@ -83,9 +83,10 @@ namespace gzpegm.Models.Genelge
         public string UserIp { get; set; }
         public Dictionary<string, int> TagCounts { get; set; } = new Dictionary<string, int>();
 
-        // Talepler
+        // Talepler ve Onaylananlar
         public int PendingRequestCount { get; set; }
         public List<GenelgeAccessRequestItem> AccessRequests { get; set; } = new List<GenelgeAccessRequestItem>();
+        public List<GenelgeAccessRequestItem> ApprovedRequests { get; set; } = new List<GenelgeAccessRequestItem>();
     }
 
     public class GenelgeSearchResult

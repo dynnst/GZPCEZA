@@ -469,6 +469,168 @@
             }
         </div>
 
+        <!-- ========================================================================= -->
+        <!-- YÖNETİCİ TARAFINDAN TALEP EDİLEN VEYA ONAYLANAN BÜTÜN YAZILAR BÖLÜMÜ       -->
+        <!-- ========================================================================= -->
+        @if ((Model.AccessRequests != null && Model.AccessRequests.Any()) || (Model.ApprovedRequests != null && Model.ApprovedRequests.Any()))
+        {
+            <div class="card shadow-sm border-0 mb-4" style="border-radius: 14px; overflow: hidden; background: #ffffff;">
+                <div class="card-header d-flex flex-wrap align-items-center justify-content-between py-2 px-3" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: #fff;">
+                    <div class="d-flex align-items-center">
+                        <div class="mr-3 bg-warning text-dark rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 38px; height: 38px; font-size: 1.15rem;">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0 font-weight-bold text-white" style="font-size: 15px;">
+                                @(Model.CanManage ? "Yönetici İzin & Talep Masası: İncelenen ve Onaylanan Belgeler" : "Erişim İzinleriniz & Onaylanan Resmi Belgeler")
+                            </h6>
+                            <small class="text-white-50">
+                                @(Model.CanManage ? "Personel tarafından talep edilen ve yönetici tarafından onaylanmış tüm aktif mevzuat yazıları" : "Tarafınızca talep edilen ve amiriniz tarafından onaylanarak erişime açılmış resmi yazılar")
+                            </small>
+                        </div>
+                    </div>
+                    <div class="mt-2 mt-md-0 d-flex align-items-center flex-wrap" style="gap: 8px;">
+                        @if (Model.AccessRequests != null && Model.AccessRequests.Any())
+                        {
+                            <span class="badge badge-warning text-dark font-weight-bold px-2 py-1" style="font-size: 12px;">
+                                <i class="fas fa-hourglass-half mr-1"></i> @Model.AccessRequests.Count Bekleyen Talep
+                            </span>
+                        }
+                        @if (Model.ApprovedRequests != null && Model.ApprovedRequests.Any())
+                        {
+                            <span class="badge badge-success font-weight-bold px-2 py-1" style="font-size: 12px;">
+                                <i class="fas fa-check-circle mr-1"></i> @Model.ApprovedRequests.Count Onaylanan Belge
+                            </span>
+                        }
+                    </div>
+                </div>
+                <div class="card-body p-3" style="background-color: #f8fafc;">
+                    <div class="row">
+                        <!-- 1. SÜTUN: TALEP EDİLEN / BEKLEYEN YAZILAR -->
+                        @if (Model.AccessRequests != null && Model.AccessRequests.Any())
+                        {
+                            <div class="@(Model.ApprovedRequests != null && Model.ApprovedRequests.Any() ? "col-lg-6" : "col-12") mb-3 mb-lg-0">
+                                <div class="card border-warning shadow-sm h-100">
+                                    <div class="card-header bg-warning text-dark py-2 px-3 d-flex align-items-center justify-content-between font-weight-bold" style="font-size: 13.5px;">
+                                        <span><i class="fas fa-bell mr-1"></i> @(Model.CanManage ? "Onay Bekleyen Belge Talepleri" : "İncelenmekte Olan Talepleriniz")</span>
+                                        <span class="badge badge-dark">@Model.AccessRequests.Count Adet</span>
+                                    </div>
+                                    <div class="card-body p-2" style="max-height: 280px; overflow-y: auto;">
+                                        <div class="list-group list-group-flush">
+                                            @foreach (var req in Model.AccessRequests)
+                                            {
+                                                <div class="list-group-item p-2 border-bottom d-flex flex-column" style="background: transparent;">
+                                                    <div class="d-flex align-items-center justify-content-between mb-1">
+                                                        <strong class="text-dark text-truncate mr-2" style="font-size: 13px;" title="@req.ItemTitle">
+                                                            <i class="fas fa-file-alt text-warning mr-1"></i> @req.ItemTitle
+                                                        </strong>
+                                                        <span class="badge badge-light border text-muted" style="font-size: 11px;">@req.FormattedRequestDate</span>
+                                                    </div>
+                                                    <div class="small text-muted mb-2 text-truncate" title="@req.Reason">
+                                                        @if (Model.CanManage)
+                                                        {
+                                                            <span class="badge badge-secondary mr-1">@req.UserName (@req.UserSicil)</span>
+                                                        }
+                                                        <i class="fas fa-comment-dots mr-1"></i> @req.Reason
+                                                    </div>
+                                                    @if (Model.CanManage)
+                                                    {
+                                                        <div class="d-flex align-items-center justify-content-end" style="gap: 5px;">
+                                                            <div class="btn-group btn-group-sm">
+                                                                <button type="button" class="btn btn-success btn-xs font-weight-bold" onclick="reviewRequestAction(@req.Id, 'Onaylandi', 24)">
+                                                                    <i class="fas fa-check mr-1"></i> 24 Saat
+                                                                </button>
+                                                                <button type="button" class="btn btn-success btn-xs dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></button>
+                                                                <div class="dropdown-menu dropdown-menu-right shadow">
+                                                                    <h6 class="dropdown-header font-weight-bold text-dark">Süre Seçimi</h6>
+                                                                    <a class="dropdown-item" href="javascript:void(0)" onclick="reviewRequestAction(@req.Id, 'Onaylandi', 24)"><i class="fas fa-history mr-2 text-success"></i> 24 Saat (1 Gün)</a>
+                                                                    <a class="dropdown-item" href="javascript:void(0)" onclick="reviewRequestAction(@req.Id, 'Onaylandi', 72)"><i class="fas fa-calendar-day mr-2 text-info"></i> 3 Gün (72 Saat)</a>
+                                                                    <a class="dropdown-item" href="javascript:void(0)" onclick="reviewRequestAction(@req.Id, 'Onaylandi', 168)"><i class="fas fa-calendar-week mr-2 text-primary"></i> 1 Hafta (7 Gün)</a>
+                                                                    <a class="dropdown-item" href="javascript:void(0)" onclick="reviewRequestAction(@req.Id, 'Onaylandi', 720)"><i class="fas fa-calendar-alt mr-2 text-secondary"></i> 1 Ay (30 Gün)</a>
+                                                                    <div class="dropdown-divider"></div>
+                                                                    <a class="dropdown-item" href="javascript:void(0)" onclick="reviewRequestAction(@req.Id, 'Onaylandi', null)"><i class="fas fa-infinity mr-2 text-warning"></i> Süresiz Onay</a>
+                                                                </div>
+                                                            </div>
+                                                            <button type="button" class="btn btn-danger btn-xs" onclick="reviewRequestAction(@req.Id, 'Reddedildi', null)">
+                                                                <i class="fas fa-times"></i> Reddet
+                                                            </button>
+                                                        </div>
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="d-flex align-items-center justify-content-between">
+                                                            <span class="badge badge-warning text-dark font-weight-semibold">
+                                                                <i class="fas fa-spinner fa-spin mr-1"></i> Amir Onayında Bekliyor
+                                                            </span>
+                                                            <button type="button" class="btn btn-outline-info btn-xs font-weight-bold btn-show-admin-contact">
+                                                                <i class="fas fa-phone-alt mr-1"></i> İletişim Rehberi
+                                                            </button>
+                                                        </div>
+                                                    }
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        <!-- 2. SÜTUN: YÖNETİCİ TARAFINDAN ONAYLANAN BÜTÜN YAZILAR -->
+                        @if (Model.ApprovedRequests != null && Model.ApprovedRequests.Any())
+                        {
+                            <div class="@(Model.AccessRequests != null && Model.AccessRequests.Any() ? "col-lg-6" : "col-12")">
+                                <div class="card border-success shadow-sm h-100">
+                                    <div class="card-header bg-success text-white py-2 px-3 d-flex align-items-center justify-content-between font-weight-bold" style="font-size: 13.5px;">
+                                        <span><i class="fas fa-check-circle mr-1"></i> @(Model.CanManage ? "Yönetici Tarafından Onaylanan Bütün Yazılar" : "Onaylanan ve Erişiminize Açık Resmi Belgeler")</span>
+                                        <span class="badge badge-light text-success font-weight-bold">@Model.ApprovedRequests.Count Adet</span>
+                                    </div>
+                                    <div class="card-body p-2" style="max-height: 280px; overflow-y: auto;">
+                                        <div class="list-group list-group-flush">
+                                            @foreach (var app in Model.ApprovedRequests)
+                                            {
+                                                var viewerUrl = Url.Action("Viewer", "Genelge", new { path = app.ItemIdentifier });
+                                                <div class="list-group-item p-2 border-bottom d-flex flex-column" style="background: transparent;">
+                                                    <div class="d-flex align-items-center justify-content-between mb-1">
+                                                        <strong class="text-dark text-truncate mr-2" style="font-size: 13px;" title="@app.ItemTitle">
+                                                            <i class="fas fa-file-contract text-success mr-1"></i> @app.ItemTitle
+                                                        </strong>
+                                                        <span class="badge badge-success" style="font-size: 11px;">
+                                                            <i class="fas fa-clock mr-1"></i> @app.FormattedExpiryDate
+                                                        </span>
+                                                    </div>
+                                                    <div class="d-flex align-items-center justify-content-between mt-1">
+                                                        <small class="text-muted text-truncate mr-2">
+                                                            @if (Model.CanManage)
+                                                            {
+                                                                <span class="badge badge-light border text-dark mr-1"><i class="fas fa-user mr-1 text-primary"></i>@app.UserName (@app.UserSicil)</span>
+                                                            }
+                                                            <span class="text-success font-weight-semibold"><i class="fas fa-shield-alt mr-1"></i>Erişime Açık</span>
+                                                            @if (!string.IsNullOrWhiteSpace(app.ReviewNote))
+                                                            {
+                                                                <span class="ml-1 text-muted">(@app.ReviewNote)</span>
+                                                            }
+                                                        </small>
+                                                        <div class="d-inline-flex" style="gap: 5px;">
+                                                            <a href="@viewerUrl" target="_blank" class="btn btn-primary btn-xs font-weight-bold shadow-sm">
+                                                                <i class="fas fa-book-open mr-1"></i> Belgeyi Aç
+                                                            </a>
+                                                            <a href="@viewerUrl" target="_blank" class="btn btn-outline-info btn-xs font-weight-bold" title="Ayrı sekmede aç">
+                                                                <i class="fas fa-external-link-alt"></i>
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+
         <!-- Filter Chips & Chronological Sorting Bar -->
         <div class="card mb-3">
             <div class="card-body py-2 px-3">

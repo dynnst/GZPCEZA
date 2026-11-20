@@ -357,12 +357,20 @@ namespace gzpegm.Services
                 TagCounts = tagCounts
             };
 
-            // Yönetici ise bekleyen talepleri yükle
+            // Talepler ve Onaylanan Belgeleri Yükle
             if (isManager)
             {
                 var requests = GetPendingRequests();
                 vm.PendingRequestCount = requests.Count;
                 vm.AccessRequests = requests;
+                vm.ApprovedRequests = GetApprovedRequests(null);
+            }
+            else
+            {
+                var requests = GetUserPendingRequests(userId);
+                vm.PendingRequestCount = requests.Count;
+                vm.AccessRequests = requests;
+                vm.ApprovedRequests = GetApprovedRequests(userId);
             }
 
             return vm;
@@ -596,8 +604,8 @@ namespace gzpegm.Services
                         LockedByAdmin = doc.LockedByAdmin,
                         LockedByUserName = doc.LockedByUserName,
                         CanCurrentUserUnlock = isAdmin || (!doc.LockedByAdmin && isManager),
-                        UserHasAccess = true,
-                        HasPendingRequest = false
+                        UserHasAccess = isManager || !doc.IsConfidential || (approvedSet != null && (approvedSet.Contains(doc.RelativePath) || approvedSet.Contains(doc.Id))),
+                        HasPendingRequest = !isManager && doc.IsConfidential && (pendingSet != null && (pendingSet.Contains(doc.RelativePath) || pendingSet.Contains(doc.Id)))
                     };
                     matches.Add(item);
                 }
@@ -1217,7 +1225,7 @@ namespace gzpegm.Services
             if (!isConf) return true;
 
             var approved = GetUserApprovedIdentifiers(userId);
-            return approved.Contains(relPath);
+            return approved.Contains(relPath) || approved.Contains(pathOrId);
         }
 
         public HashSet<string> GetUserApprovedIdentifiers(int userId)
@@ -1231,7 +1239,13 @@ namespace gzpegm.Services
                     var items = db.Database.SqlQuery<string>(sql, userId).ToList();
                     foreach (var it in items)
                     {
-                        if (!string.IsNullOrWhiteSpace(it)) set.Add(it.Trim());
+                        if (!string.IsNullOrWhiteSpace(it))
+                        {
+                            var trimmed = it.Trim();
+                            set.Add(trimmed);
+                            try { set.Add(DecodePath(trimmed)); } catch { }
+                            try { set.Add(EncodePath(trimmed)); } catch { }
+                        }
                     }
                 }
             }
@@ -1250,7 +1264,13 @@ namespace gzpegm.Services
                     var items = db.Database.SqlQuery<string>(sql, userId).ToList();
                     foreach (var it in items)
                     {
-                        if (!string.IsNullOrWhiteSpace(it)) set.Add(it.Trim());
+                        if (!string.IsNullOrWhiteSpace(it))
+                        {
+                            var trimmed = it.Trim();
+                            set.Add(trimmed);
+                            try { set.Add(DecodePath(trimmed)); } catch { }
+                            try { set.Add(EncodePath(trimmed)); } catch { }
+                        }
                     }
                 }
             }
@@ -1297,6 +1317,90 @@ namespace gzpegm.Services
                     var sql = @"SELECT Id, ItemIdentifier, ItemTitle, UserId, UserSicil, UserName, RequestDate, Reason, Status, ExpiryDate, ReviewNote
                                 FROM E_GenelgeTalep WHERE Status = 'Bekliyor' ORDER BY RequestDate DESC";
                     var raw = db.Database.SqlQuery<RawTalep>(sql).ToList();
+                    return raw.Select(r => new GenelgeAccessRequestItem
+                    {
+                        Id = r.Id,
+                        ItemIdentifier = r.ItemIdentifier,
+                        ItemTitle = r.ItemTitle,
+                        UserId = r.UserId,
+                        UserSicil = r.UserSicil,
+                        UserName = r.UserName,
+                        RequestDate = r.RequestDate,
+                        FormattedRequestDate = r.RequestDate.ToString("dd.MM.yyyy HH:mm"),
+                        Reason = r.Reason,
+                        Status = r.Status,
+                        ExpiryDate = r.ExpiryDate,
+                        FormattedExpiryDate = r.ExpiryDate.HasValue ? r.ExpiryDate.Value.ToString("dd.MM.yyyy HH:mm") : "Süresiz",
+                        ReviewNote = r.ReviewNote
+                    }).ToList();
+                }
+            }
+            catch
+            {
+                return new List<GenelgeAccessRequestItem>();
+            }
+        }
+
+        public List<GenelgeAccessRequestItem> GetApprovedRequests(int? userId = null)
+        {
+            try
+            {
+                using (var db = new GZPEGM1())
+                {
+                    string sql;
+                    List<RawTalep> raw;
+                    if (userId.HasValue && userId.Value > 0)
+                    {
+                        sql = @"SELECT Id, ItemIdentifier, ItemTitle, UserId, UserSicil, UserName, RequestDate, Reason, Status, ExpiryDate, ReviewNote
+                                FROM E_GenelgeTalep 
+                                WHERE UserId = @p0 AND Status = 'Onaylandi' AND (ExpiryDate IS NULL OR ExpiryDate > GETDATE())
+                                ORDER BY ReviewDate DESC, RequestDate DESC";
+                        raw = db.Database.SqlQuery<RawTalep>(sql, userId.Value).ToList();
+                    }
+                    else
+                    {
+                        sql = @"SELECT Id, ItemIdentifier, ItemTitle, UserId, UserSicil, UserName, RequestDate, Reason, Status, ExpiryDate, ReviewNote
+                                FROM E_GenelgeTalep 
+                                WHERE Status = 'Onaylandi' AND (ExpiryDate IS NULL OR ExpiryDate > GETDATE())
+                                ORDER BY ReviewDate DESC, RequestDate DESC";
+                        raw = db.Database.SqlQuery<RawTalep>(sql).ToList();
+                    }
+
+                    return raw.Select(r => new GenelgeAccessRequestItem
+                    {
+                        Id = r.Id,
+                        ItemIdentifier = r.ItemIdentifier,
+                        ItemTitle = r.ItemTitle,
+                        UserId = r.UserId,
+                        UserSicil = r.UserSicil,
+                        UserName = r.UserName,
+                        RequestDate = r.RequestDate,
+                        FormattedRequestDate = r.RequestDate.ToString("dd.MM.yyyy HH:mm"),
+                        Reason = r.Reason,
+                        Status = r.Status,
+                        ExpiryDate = r.ExpiryDate,
+                        FormattedExpiryDate = r.ExpiryDate.HasValue ? r.ExpiryDate.Value.ToString("dd.MM.yyyy HH:mm") : "Süresiz",
+                        ReviewNote = r.ReviewNote
+                    }).ToList();
+                }
+            }
+            catch
+            {
+                return new List<GenelgeAccessRequestItem>();
+            }
+        }
+
+        public List<GenelgeAccessRequestItem> GetUserPendingRequests(int userId)
+        {
+            try
+            {
+                using (var db = new GZPEGM1())
+                {
+                    var sql = @"SELECT Id, ItemIdentifier, ItemTitle, UserId, UserSicil, UserName, RequestDate, Reason, Status, ExpiryDate, ReviewNote
+                                FROM E_GenelgeTalep 
+                                WHERE UserId = @p0 AND Status = 'Bekliyor'
+                                ORDER BY RequestDate DESC";
+                    var raw = db.Database.SqlQuery<RawTalep>(sql, userId).ToList();
                     return raw.Select(r => new GenelgeAccessRequestItem
                     {
                         Id = r.Id,

@@ -368,7 +368,13 @@ namespace gzpegm.Controllers
             // Gizli Belge Yetki Kontrolü
             if (!_genelgeService.CheckUserAccess(path, userId, canManage))
             {
-                return Content("<script>alert('Bu gizli belgeye erişim yetkiniz bulunmamaktadır.'); window.close(); history.back();</script>");
+                ViewBag.DocPath = path;
+                ViewBag.DocTitle = !string.IsNullOrWhiteSpace(fullPath) ? Path.GetFileName(fullPath) : Path.GetFileName(path);
+                ViewBag.DocType = "denied";
+                ViewBag.UserSicil = currentUser.fldSicil ?? currentUser.fldId.ToString();
+                ViewBag.UserIp = Request.ServerVariables["HTTP_X_FORWARDED_FOR"] ?? Request.UserHostAddress;
+                ViewBag.IsAccessDenied = true;
+                return View();
             }
 
             var ext = Path.GetExtension(fullPath).ToLowerInvariant();
@@ -405,7 +411,7 @@ namespace gzpegm.Controllers
             // Gizli Belge Yetki Kontrolü
             if (!_genelgeService.CheckUserAccess(path, userId, canManage))
             {
-                return Content("<script>alert('Bu gizli belgeye erişim yetkiniz bulunmamaktadır.'); history.back();</script>");
+                return Content("<div style='font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; text-align:center; padding:50px 20px; color:#ef4444; background:#0f172a; min-height:100vh; box-sizing:border-box;'><h3 style='margin-bottom:12px;'>🔒 Bu gizli belgeye erişim yetkiniz bulunmamaktadır.</h3><p style='color:#94a3b8; font-size:14px; max-width:480px; margin:0 auto 20px;'>İnceleyebilmek için lütfen Genelgeler Masasından veya Ülke Yazıları menüsünden yöneticinize görev gerekçenizle erişim izni talebi iletiniz.</p></div>");
             }
 
             var ext = Path.GetExtension(fullPath).ToLowerInvariant();
