@@ -113,14 +113,26 @@
             // Gizli Belge Erişim İzni Form Gönderimi (AJAX)
             $(document).off('submit.cdReqForm').on('submit.cdReqForm', '#formCountryDocRequestAccess', function (e) {
                 e.preventDefault();
-                var form = $(this);
+                var duration = $('#cdReqDuration').val() || '24 Saat';
+                var rawReason = $('#cdReqReason').val() || '';
+                var combinedReason = '[Talep Süresi: ' + duration + '] ' + rawReason;
+
+                var token = $('#formCountryDocRequestAccess input[name="__RequestVerificationToken"]').val();
+                var path = $('#cdReqDocPath').val();
+                var title = $('#cdReqDocTitle').val();
+
                 var btn = $('#btnSubmitCdRequest');
                 btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> İletiliyor...');
 
                 $.ajax({
                     url: '/Genelge/RequestAccess',
                     type: 'POST',
-                    data: form.serialize(),
+                    data: {
+                        __RequestVerificationToken: token,
+                        path: path,
+                        title: title,
+                        reason: combinedReason
+                    },
                     success: function (res) {
                         btn.prop('disabled', false).html('<i class="fas fa-paper-plane mr-1"></i> Onay Talebini Gönder');
                         if (res && res.success) {

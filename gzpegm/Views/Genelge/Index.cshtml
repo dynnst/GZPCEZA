@@ -839,6 +839,16 @@
                         <input type="text" id="displayRequestDocTitle" class="form-control" readonly />
                     </div>
                     <div class="form-group mb-3">
+                        <label class="font-weight-bold text-dark">Talep Edilen İzin Süresi</label>
+                        <select id="requestDuration" class="form-control font-weight-bold text-primary">
+                            <option value="24 Saat (1 Gün)" selected>24 Saat (1 Gün - Nöbet Süresince)</option>
+                            <option value="3 Gün">3 Gün</option>
+                            <option value="1 Hafta (7 Gün)">1 Hafta (7 Gün)</option>
+                            <option value="1 Ay (30 Gün)">1 Ay (30 Gün)</option>
+                            <option value="Süresiz / İhtiyaç Süresince">Süresiz / İhtiyaç Süresince</option>
+                        </select>
+                    </div>
+                    <div class="form-group mb-3">
                         <label class="font-weight-bold text-dark">Gereken Görev Gerekçesi / Notunuz</label>
                         <textarea id="requestReason" name="reason" class="form-control" rows="3" placeholder="Örn: 18.11.2026 tarihli nöbette pasaport tahdit incelemesi amacıyla incelemem gerekmektedir." required></textarea>
                     </div>
@@ -901,13 +911,34 @@
                                             <td>@req.FormattedRequestDate</td>
                                             <td>@req.Reason</td>
                                             <td>
-                                                <button type="button" class="btn btn-xs btn-success" onclick="reviewRequestAction(@req.Id, 'Onaylandi', 24)" title="24 Saatlik İzin Ver">
-                                                    <i class="fas fa-check mr-1"></i> 24 Saat Onayla
-                                                </button>
-                                                <button type="button" class="btn btn-xs btn-primary" onclick="reviewRequestAction(@req.Id, 'Onaylandi', null)" title="Süresiz İzin Ver">
-                                                    Süresiz
-                                                </button>
-                                                <button type="button" class="btn btn-xs btn-danger" onclick="reviewRequestAction(@req.Id, 'Reddedildi', null)" title="Reddet">
+                                                <div class="btn-group btn-group-sm">
+                                                    <button type="button" class="btn btn-success font-weight-bold" onclick="reviewRequestAction(@req.Id, 'Onaylandi', 24)" title="24 Saatlik İzin Ver">
+                                                        <i class="fas fa-check mr-1"></i> 24 Saat
+                                                    </button>
+                                                    <button type="button" class="btn btn-success dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                        <span class="sr-only">Diğer Süreler</span>
+                                                    </button>
+                                                    <div class="dropdown-menu dropdown-menu-right shadow">
+                                                        <h6 class="dropdown-header font-weight-bold text-dark"><i class="fas fa-clock mr-1 text-primary"></i> Onay Süresi Belirle</h6>
+                                                        <a class="dropdown-item" href="javascript:void(0)" onclick="reviewRequestAction(@req.Id, 'Onaylandi', 24)">
+                                                            <i class="fas fa-history mr-2 text-success"></i> 24 Saat (1 Gün)
+                                                        </a>
+                                                        <a class="dropdown-item" href="javascript:void(0)" onclick="reviewRequestAction(@req.Id, 'Onaylandi', 72)">
+                                                            <i class="fas fa-calendar-day mr-2 text-info"></i> 3 Gün (72 Saat)
+                                                        </a>
+                                                        <a class="dropdown-item" href="javascript:void(0)" onclick="reviewRequestAction(@req.Id, 'Onaylandi', 168)">
+                                                            <i class="fas fa-calendar-week mr-2 text-primary"></i> 1 Hafta (7 Gün)
+                                                        </a>
+                                                        <a class="dropdown-item" href="javascript:void(0)" onclick="reviewRequestAction(@req.Id, 'Onaylandi', 720)">
+                                                            <i class="fas fa-calendar-alt mr-2 text-secondary"></i> 1 Ay (30 Gün)
+                                                        </a>
+                                                        <div class="dropdown-divider"></div>
+                                                        <a class="dropdown-item" href="javascript:void(0)" onclick="reviewRequestAction(@req.Id, 'Onaylandi', null)">
+                                                            <i class="fas fa-infinity mr-2 text-warning"></i> Süresiz Onayla
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                                <button type="button" class="btn btn-danger btn-sm ml-1" onclick="reviewRequestAction(@req.Id, 'Reddedildi', null)" title="Talebi Reddet">
                                                     <i class="fas fa-times"></i>
                                                 </button>
                                             </td>
@@ -1235,10 +1266,21 @@
                 var btn = $('#btnSubmitAccessRequest');
                 btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Gönderiliyor...');
 
+                var duration = $('#requestDuration').val() || '24 Saat';
+                var rawReason = $('#requestReason').val() || '';
+                var combinedReason = '[Talep Süresi: ' + duration + '] ' + rawReason;
+
+                var dataObj = {
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val(),
+                    path: $('#requestDocPath').val(),
+                    title: $('#requestDocTitle').val(),
+                    reason: combinedReason
+                };
+
                 $.ajax({
                     url: '@Url.Action("RequestAccess", "Genelge")',
                     type: 'POST',
-                    data: $(this).serialize(),
+                    data: dataObj,
                     success: function (res) {
                         btn.prop('disabled', false).html('<i class="fas fa-paper-plane mr-1"></i> Talebi İlet');
                         if (res.success) {
@@ -2044,7 +2086,14 @@
         }
 
         function reviewRequestAction(reqId, status, validHours) {
-            var actionText = status === 'Onaylandi' ? (validHours ? '24 Saatlik Onay' : 'Süresiz Onay') : 'Reddet';
+            var durationLabel = 'Süresiz';
+            if (validHours === 24) durationLabel = '24 Saat (1 Gün)';
+            else if (validHours === 72) durationLabel = '3 Gün';
+            else if (validHours === 168) durationLabel = '1 Hafta (7 Gün)';
+            else if (validHours === 720) durationLabel = '1 Ay (30 Gün)';
+            else if (validHours) durationLabel = validHours + ' Saat';
+
+            var actionText = status === 'Onaylandi' ? (durationLabel + ' Onay') : 'Reddet';
             if (!confirm('Bu talep için ' + actionText + ' işlemi yapılsın mı?')) return;
 
             var token = $('input[name="__RequestVerificationToken"]').val();

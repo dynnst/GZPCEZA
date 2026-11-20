@@ -1207,7 +1207,8 @@ namespace gzpegm.Services
         /// </summary>
         public bool CheckUserAccess(string pathOrId, int userId, bool isManager)
         {
-            if (isManager || userId > 0) return true;
+            if (isManager) return true;
+            if (userId <= 0) return false;
 
             string relPath = pathOrId;
             try { relPath = DecodePath(pathOrId); } catch { }
