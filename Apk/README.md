@@ -5,15 +5,19 @@ Bu klasör, Pasaport Kontrol ve Sınır Kapıları için geliştirilen her iki k
 ---
 
 ### 📥 Doğrudan İndirme Bağlantıları (GitHub)
-* 📱 **CEZAM (Vize & İkamet İhlali Hesaplayıcı):** [cezam-calculator.apk](https://github.com/dynnst/GZPCEZA/raw/main/Apk/cezam-calculator.apk)
-* 🔍 **Pasaport ve Adli Belge İnceleme:** [sahtecilik_mobile.apk](https://github.com/dynnst/GZPCEZA/raw/main/Apk/sahtecilik_mobile.apk)
+* 📱 **CEZAM (Vize & İkamet İhlali Hesaplayıcı v0.3.3):** 
+  - [cezam-calculator.apk (Depo)](https://github.com/dynnst/GZPCEZA/raw/main/Apk/cezam-calculator.apk)
+  - [cezam-calculator.apk (GitHub Release)](https://github.com/dynnst/GZPCEZA/releases/download/mobile-latest/cezam-calculator.apk)
+* 🔍 **Pasaport ve Adli Belge İnceleme (v1.1.0):** 
+  - [sahtecilik_mobile.apk (Depo)](https://github.com/dynnst/GZPCEZA/raw/main/Apk/sahtecilik_mobile.apk)
+  - [sahtecilik_mobile.apk (GitHub Release)](https://github.com/dynnst/Sahtecilik/releases/download/latest/sahtecilik_mobile.apk)
 
 ---
 
 ### 📦 1. CEZAM - Vize ve İkamet İhlali Ceza Hesaplayıcı
 * **Dosya Adı:** `cezam-calculator.apk`
 * **Sürüm:** `0.3.3 (Build 6)`
-* **Boyut:** ~65.5 MB
+* **Boyut:** ~64.5 MB (Son Güncel Derleme: 20.11.2026)
 * **Desteklenen Platform:** Android 7.0 (API 24) ve üzeri / BlueStacks
 * **Çalışma Modu:** %100 Çevrimdışı (İnternetsiz / Yerel Hesaplama Motoru)
 * **Uygulama Teması:** Hudut Kapıları (✈️ Uçak • 🚢 Gemi • 🚗 Araba)
@@ -23,7 +27,7 @@ Bu klasör, Pasaport Kontrol ve Sınır Kapıları için geliştirilen her iki k
 ### 📦 2. Pasaport ve Adli Belge İnceleme Otomasyonu
 * **Dosya Adı:** `sahtecilik_mobile.apk`
 * **Sürüm:** `1.1.0 (Build 11)`
-* **Boyut:** ~67.5 MB
+* **Boyut:** ~66.3 MB (Son Güncel Derleme: 20.11.2026)
 * **Desteklenen Platform:** Android 7.0 (API 24) ve üzeri / BlueStacks
 * **Çalışma Modu:** %100 Çevrimdışı (Cihaz Hafızasına Kayıt) / Opsiyonel Sunucu API
 
