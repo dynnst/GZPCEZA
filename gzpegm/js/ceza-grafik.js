@@ -124,14 +124,26 @@
     function renderSummary(summary) {
         summary = summary || {};
         $('#sumCalculations').text(number(summary.totalCalculations));
+        $('#sumCalculationsBadge').text(number(summary.totalCalculations) + ' Hesaplama');
         $('#sumMoney').text(money(summary.totalMoney));
         $('#sumAverage').text('Ortalama: ' + money(summary.averageMoney));
+        $('#sumSartli').text(number(summary.sartliCount));
+        $('#sumInad').text(number(summary.inadCount));
+        $('#sumTahdit').text(number(summary.tahditFormCount));
+
         if (IS_ADMIN) {
-            $('#sumScope').text(number(summary.countryCount) + ' / ' + number(summary.borderCount));
+            $('#sumScope').text(number(summary.countryCount) + ' Ülke / ' + number(summary.borderCount) + ' Kapı');
         } else {
-            $('#sumScope').text(number(summary.countryCount) + ' Ülke');
+            $('#sumScope').text(number(summary.countryCount) + ' Yabancı Ülke');
         }
-        $('#sumInadSartli').text(number(summary.inadCount) + ' / ' + number(summary.sartliCount) + ' / ' + number(summary.tahditFormCount));
+
+        if (summary.maxMoneyRecord && summary.maxMoneyRecord.Money > 0) {
+            var mm = summary.maxMoneyRecord;
+            $('#maxMoneyText').html('<strong>' + money(mm.Money) + '</strong> &bull; ' + escapeHtml(mm.Country) + ' (' + escapeHtml(mm.Border) + ' - ' + escapeHtml(mm.User) + ' - ' + dateOnly(mm.Date) + ')');
+            $('#maxMoneyHighlight').removeClass('d-none').addClass('d-flex');
+        } else {
+            $('#maxMoneyHighlight').removeClass('d-flex').addClass('d-none');
+        }
     }
 
     function renderBar(canvasId, tableId, data, labelField, valueField, datasetLabel, valueType, horizontal) {
@@ -263,30 +275,7 @@
             { title: 'Kişi Sayısı', field: 'Count', type: 'number' }
         ], res.sartliByBorder);
 
-        if (res.userByRole && res.userByRole.length) {
-            renderChart('userRoleChart', 'doughnut', res.userByRole.map(function (x) { return x.Role; }), [{
-                label: 'Kullanıcı',
-                data: res.userByRole.map(function (x) { return x.Count; }),
-                backgroundColor: palette
-            }]);
-        } else {
-            noData('userRoleChart', 'userRoleTable');
-        }
-        renderTable('userRoleTable', [
-            { title: 'Rol', field: 'Role' },
-            { title: 'Kullanıcı Sayısı', field: 'Count', type: 'number' }
-        ], res.userByRole);
 
-        var education = [];
-        (res.examByCourse || []).forEach(function (x) { education.push({ Name: x.Course, Type: 'Kurs/Sınav', Count: x.Count }); });
-        (res.questionByExam || []).forEach(function (x) { education.push({ Name: x.ExamTitle, Type: 'Sınav/Soru', Count: x.Count }); });
-        education = education.slice(0, 12);
-        renderBar('educationChart', 'educationTable', education, 'Name', 'Count', 'Adet', 'number', true);
-        renderTable('educationTable', [
-            { title: 'Başlık', field: 'Name' },
-            { title: 'Tür', field: 'Type' },
-            { title: 'Adet', field: 'Count', type: 'number' }
-        ], education);
 
         renderBar('tahditCodeChart', 'tahditCodeTable', res.tahditByCode, 'TahditCode', 'Count', 'Form Sayısı', 'number', false);
         renderTable('tahditCodeTable', [

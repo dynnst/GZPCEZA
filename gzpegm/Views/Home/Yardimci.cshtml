@@ -814,13 +814,17 @@
         <!-- Hızlı Filtre Hapları -->
         <div class="quick-filter-pills">
             <span class="pill-btn active" data-target="all"><i class="fas fa-layer-group"></i> Tüm Konular</span>
-            <span class="pill-btn active" data-target="section-ceza" style="background:#2b6cb0; border-color:#63b3ed; color:#fff; box-shadow:0 0 10px rgba(99,179,237,0.5);"><i class="fas fa-bolt text-warning"></i> ⚡ Ceza Hesaplama (Öncelikli)</span>
-            <span class="pill-btn" data-target="section-kasevize"><i class="fas fa-passport"></i> Kaşe Vize (P-60)</span>
+            <span class="pill-btn" data-target="section-ceza"><i class="fas fa-calculator"></i> Ceza Hesaplama</span>
+            <span class="pill-btn" data-target="section-kasevize"><i class="fas fa-passport"></i> Kaşe Vize</span>
             <span class="pill-btn" data-target="section-v84"><i class="fas fa-stamp"></i> V-84 Şartlı Giriş</span>
-            <span class="pill-btn" data-target="section-tahdit"><i class="fas fa-ban"></i> Tahdit & Ç Kodları</span>
+            <span class="pill-btn" data-target="section-tahdit"><i class="fas fa-ban"></i> Tahdit &amp; Ç Kodları</span>
             <span class="pill-btn" data-target="section-inad"><i class="fas fa-user-times"></i> INAD Prosedürü</span>
-            <span class="pill-btn" data-target="section-egitim"><i class="fas fa-graduation-cap"></i> Eğitim Portalı</span>
-            <span class="pill-btn" data-target="section-admin"><i class="fas fa-user-cog"></i> Yetki & Bakım</span>
+            <span class="pill-btn" data-target="section-raporlar"><i class="fas fa-chart-pie"></i> İstatistik &amp; Grafikler</span>
+            <span class="pill-btn" data-target="section-faaliyet"><i class="fas fa-file-alt"></i> Hudut Faaliyetleri</span>
+            <span class="pill-btn" data-target="section-eskiislemler"><i class="fas fa-history"></i> İşlem Kayıtları</span>
+            <span class="pill-btn" data-target="section-sahtecilik"><i class="fas fa-search-plus"></i> Sahtecilik Portalı</span>
+            <span class="pill-btn" data-target="section-genelge"><i class="fas fa-book-open"></i> Genelgeler (DLP)</span>
+            <span class="pill-btn" data-target="section-admin"><i class="fas fa-desktop"></i> Yetki &amp; PCInfo</span>
         </div>
     </div>
 
@@ -833,20 +837,21 @@
                 <li>
                     <a href="#section-ceza" class="active flagship-nav-item">
                         <i class="fas fa-calculator text-primary"></i>
-                        <span class="d-flex align-items-center justify-content-between w-100">
-                            <span>1. Ceza Hesaplama</span>
-                            <span class="badge badge-warning pulse-glow ms-1" style="font-size:0.65rem; background:#f6ad55; color:#742a2a; border-radius:10px; padding:2px 7px; font-weight:800;">ÖNCELİKLİ</span>
-                        </span>
+                        <span>1. Ceza Hesaplama &amp; İkamet İhlali</span>
                     </a>
                 </li>
                 <li><a href="#section-kasevize"><i class="fas fa-passport text-success"></i> 2. Kaşe Vize Değerlendirmesi</a></li>
                 <li><a href="#section-v84"><i class="fas fa-stamp text-warning"></i> 3. V-84 Şartlı Giriş</a></li>
-                <li><a href="#section-tahdit"><i class="fas fa-ban text-danger"></i> 4. Tahditler & Giriş Yasakları</a></li>
+                <li><a href="#section-tahdit"><i class="fas fa-ban text-danger"></i> 4. Tahditler &amp; Giriş Yasakları</a></li>
                 <li><a href="#section-inad"><i class="fas fa-user-times text-dark"></i> 5. INAD (Kabul Edilemez Yolcu)</a></li>
-                <li><a href="#section-raporlar"><i class="fas fa-chart-bar text-secondary"></i> 6. Raporlar & İstatistikler</a></li>
-                <li><a href="#section-egitim"><i class="fas fa-graduation-cap text-primary"></i> 7. Eğitim & Sınav Portalı</a></li>
-                <li><a href="#section-admin"><i class="fas fa-user-shield text-danger"></i> 8. Yetkiler & Bakım İşlemleri</a></li>
-                <li><a href="#section-faq"><i class="fas fa-question-circle text-warning"></i> 9. Sıkça Sorulan Sorular</a></li>
+                <li><a href="#section-raporlar"><i class="fas fa-chart-pie text-info"></i> 6. Ceza &amp; İşlem İstatistikleri</a></li>
+                <li><a href="#section-faaliyet"><i class="fas fa-file-alt text-primary"></i> 7. Hudut Kapısı Faaliyetleri</a></li>
+                <li><a href="#section-eskiislemler"><i class="fas fa-history text-secondary"></i> 8. İşlem Kayıtları &amp; Arşiv</a></li>
+                <li><a href="#section-sahtecilik"><i class="fas fa-search-plus text-danger"></i> 9. Sahtecilik Portalı (SSO)</a></li>
+                <li><a href="#section-genelge"><i class="fas fa-book-open text-info"></i> 10. Genelgeler (DLP Korumalı)</a></li>
+                <li><a href="#section-egitim"><i class="fas fa-graduation-cap text-primary"></i> 11. Eğitim &amp; Sınav Portalı</a></li>
+                <li><a href="#section-admin"><i class="fas fa-desktop text-danger"></i> 12. Yetkiler &amp; PCInfo Denetimi</a></li>
+                <li><a href="#section-faq"><i class="fas fa-question-circle text-warning"></i> 13. Sıkça Sorulan Sorular</a></li>
             </ul>
         </aside>
 
@@ -1483,111 +1488,406 @@
             </section>
 
 
-            <!-- 7. RAPORLAR VE İSTATİSTİKLER -->
+            <!-- 6. CEZA & İŞLEM İSTATİSTİKLERİ VE BRİFİNG PANELİ -->
             <section id="section-raporlar" class="guide-card searchable-section">
                 <div class="guide-card-header">
-                    <h2 class="guide-card-title">
-                        <i class="fas fa-chart-bar"></i> 7. Eski İşlemler ve Raporlama
-                    </h2>
-                    <a href="@Url.Action("Index", "EskiIslemler")" class="btn-guide-action" target="_blank">
-                        <i class="fas fa-external-link-alt"></i> Eski İşlemler
+                    <div>
+                        <h2 class="guide-card-title text-info">
+                            <i class="fas fa-chart-pie"></i> 6. Ceza &amp; İşlem İstatistikleri (Tek Sekmede Birleştirilmiş Dashboard)
+                        </h2>
+                        <span class="guide-badge-role">Yönetici &amp; Saha Analiz Portalı</span>
+                    </div>
+                    <a href="@Url.Action("Index", "Istatistik")" class="btn-guide-action" target="_blank">
+                        <i class="fas fa-chart-line me-1"></i> İstatistik &amp; Brifing Paneline Git
                     </a>
                 </div>
                 <p>
-                    Kapınızda veya ülke genelinde yapılmış tüm ceza, vize ve muafiyet işlemlerini filtreleyebilir; Excel/PDF formatında dışa aktarabilirsiniz.
+                    Daha önce ayrı sayfalarda bulunan <em>Genel İstatistik Bilgileri</em> (<code>/ISTATIK</code>) ile <em>İşlem &amp; Ceza Grafikleri</em> (<code>/GRAFIK</code>), 
+                    operasyonel verimliliği artırmak ve hudut amirlerinin tek ekranda tüm verilere ulaşabilmesini sağlamak amacıyla 
+                    <strong>tek sekmede sekmeli (tabbed) birleştirilmiş mimari</strong>ye kavuşturulmuştur.
                 </p>
-                <ul class="small ps-3 mb-0">
-                    <li>Tarih aralığı, pasaport numarası, yabancı uyruğu ve işlem yapan personel siciline göre filtreleme.</li>
-                    <li>Tahsil edilen harç tutarlarının günlük/aylık kasa icmali.</li>
-                    <li>Hudut kapısı bazlı yoğunluk ve en çok ihlal yapan ülke grafik analizleri.</li>
-                </ul>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded h-100" style="background:#f8fafc; border-left:4px solid #2563eb !important;">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <span class="font-weight-bold text-primary"><i class="fas fa-tachometer-alt me-1"></i> Sekme 1: Genel Operasyonel Özet</span>
+                                <span class="badge badge-primary">#tab-ozet</span>
+                            </div>
+                            <ul class="small mb-0 ps-3 text-secondary" style="line-height:1.7;">
+                                <li><strong>4 Temel KPI Kartı:</strong> Toplam Kesilen Ceza Adedi, Toplam Tahakkuk Eden Tutar (TL), Ortalama Ceza Tutarı ve Bugün Kesilen Ceza.</li>
+                                <li><strong>Canlı Hudut Özet Bandı:</strong> En çok ihlal yapılan ülke, son 30 gün işlem adedi, ortalama ihlal süresi ve en sık uygulanan tahdit kodu.</li>
+                                <li><strong>Özet Dağılım Grafikleri:</strong> Sefer türlerine göre dağılım pastası, en çok işlem yapılan ilk 5 ülke ve yolcu yaş grupları grafiği.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded h-100" style="background:#f8fafc; border-left:4px solid #7c3aed !important;">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <span class="font-weight-bold" style="color:#7c3aed;"><i class="fas fa-chart-area me-1"></i> Sekme 2: Detaylı Grafikler &amp; Brifing</span>
+                                <span class="badge badge-info">#tab-brifing</span>
+                            </div>
+                            <ul class="small mb-0 ps-3 text-secondary" style="line-height:1.7;">
+                                <li><strong>Amir Brifing Araç Çubuğu:</strong> Sayfayı doğrudan yazdırma/PDF alma ve tam ekran sunum modu.</li>
+                                <li><strong>Rekor Ceza Panosu:</strong> Tek işlemde kesilen en yüksek ceza tutarı, yolcunun uyruğu ve işlem tarihi.</li>
+                                <li><strong>10 Derinlemesine Grafik:</strong> Aylık tahakkuk trendi, ülke bazlı ceza hacmi, döviz cinsleri (USD/EUR/GBP), saatlik kapı yoğunluğu ve tahdit kodları dağılımı.</li>
+                                <li><strong>PNG İndirme &amp; Tablo İnceleme:</strong> Her grafiğin sağ üstündeki butonlarla grafiği yüksek çözünürlüklü resim olarak indirme veya ham veri tablosuna geçiş.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-info py-2 px-3 small mb-0">
+                    <i class="fas fa-link me-1"></i> <strong>Geriye Dönük Uyumluluk:</strong> Eski sık kullanılanlardaki <code>/GRAFIK</code> bağlantıları otomatik olarak <code>/ISTATIK#tab-brifing</code> sekmesine yönlendirilir. İlgili sekmeye doğrudan erişmek için URL sonuna <code>?tab=grafik</code> veya <code>#tab-brifing</code> ekleyebilirsiniz.
+                </div>
             </section>
 
-            <!-- 8. EĞİTİM PORTALI -->
-            <section id="section-egitim" class="guide-card searchable-section">
+            <!-- 7. HUDUT KAPISI FAALİYETLERİ & RAPOR YÖNETİMİ -->
+            <section id="section-faaliyet" class="guide-card searchable-section">
                 <div class="guide-card-header">
-                    <h2 class="guide-card-title">
-                        <i class="fas fa-graduation-cap"></i> 8. Eğitim & Sınav Portalı
-                    </h2>
-                    <a href="@Url.Action("Index", "Edu")" class="btn-guide-action" target="_blank">
-                        <i class="fas fa-external-link-alt"></i> Eğitim Portalına Git
+                    <div>
+                        <h2 class="guide-card-title text-primary">
+                            <i class="fas fa-file-alt"></i> 7. Hudut Kapısı Faaliyetleri &amp; Faaliyet Raporu
+                        </h2>
+                        <span class="guide-badge-role">Sadece Yetkili Kapı Adminleri &amp; Genel Admin</span>
+                    </div>
+                    <a href="@Url.Action("Index", "Faaliyet")" class="btn-guide-action" target="_blank">
+                        <i class="fas fa-door-open me-1"></i> Faaliyet Yönetimi
                     </a>
                 </div>
                 <p>
-                    Hudut kapısı personelinin mevzuat bilgilerini taze tutmak, sahte belge/pasaport inceleme yetkinliklerini artırmak amacıyla hazırlanan interaktif eğitim sistemidir.
+                    Hudut kapılarındaki günlük giriş-çıkış yolcu trafiği, Türk vatandaşı ve yabancı ayrımı, havayolu/denizyolu/karayolu sefer sayıları ile 
+                    amirliğe sunulacak resmi günlük/aylık faaliyet cetvellerinin girildiği ve yönetildiği modüldür.
                 </p>
+
+                <div class="warning-box mb-3">
+                    <div class="warning-box-title"><i class="fas fa-user-lock text-warning"></i> Güvenlik &amp; Yetkilendirme Kuralı (StatService.CanAccessBorderActivities):</div>
+                    <p class="small mb-1">
+                        <strong>"Hudut kapısı faaliyetlerinde bulunan Kapı yetki ve personel yönetimini öğrenciler veya yetkisiz personel neden göremiyor?"</strong>
+                    </p>
+                    <p class="small mb-0 text-secondary">
+                        Sistem güvenlik mimarisi gereğince <code>StatService.CanAccessBorderActivities</code> kontrolü aktiftir. Hudut kapısı faaliyetleri genele yayılmamış olup yalnızca <strong>Genel Admin</strong> veya <strong>Havalimanı/Hudut Kapısı Amirliği tarafından yetkilendirilmiş kapı yöneticileri</strong> tarafından görüntülenebilir ve düzenlenebilir. Normal pasaport memurları, stajyerler ve öğrenciler bu menüyü ve yönetim sayfalarını göremez.
+                    </p>
+                </div>
+
                 <div class="steps-container">
                     <div class="step-item">
                         <div class="step-number">1</div>
                         <div class="step-content">
-                            <div class="step-title">Dersleri İnceleyin</div>
-                            <p class="step-desc">Mevzuat videoları, slaytlar ve örnek olay çalışmalarını tamamlayın.</p>
+                            <div class="step-title"><i class="fas fa-edit text-primary"></i> Günlük Faaliyet Verisi Girişi (/Faaliyet/Index)</div>
+                            <p class="step-desc">Giriş ve çıkış yapan Türk yolcu sayısı, yabancı yolcu sayısı, uçak/gemi/araç sayısı vardiya amiri tarafından sisteme işlenir.</p>
                         </div>
                     </div>
                     <div class="step-item">
                         <div class="step-number">2</div>
                         <div class="step-content">
-                            <div class="step-title">Sınavlara Katılın</div>
-                            <p class="step-desc">Kurs sonundaki çoktan seçmeli değerlendirme testlerine katılın.</p>
+                            <div class="step-title"><i class="fas fa-file-invoice text-info"></i> Resmi Faaliyet Raporu Dökümü (/FaaliyetRapor/Index)</div>
+                            <p class="step-desc">Girilen veriler EGM Hudut Kapıları Daire Başkanlığı ve Mülki İdare formatında tek tıkla resmi faaliyet raporu haline getirilir ve PDF/Excel olarak imzaya hazır sunulur.</p>
                         </div>
                     </div>
                     <div class="step-item">
                         <div class="step-number">3</div>
                         <div class="step-content">
-                            <div class="step-title">Sertifika Kazanın</div>
-                            <p class="step-desc">Başarı barajını aşarak dijital eğitim sertifikanızı profilinize ekleyin.</p>
+                            <div class="step-title"><i class="fas fa-users-cog text-success"></i> Kapı Yetki ve Personel Dağıtımı (/Kapi/Index)</div>
+                            <p class="step-desc">Havalimanı admini, kendi kapısına bağlı personelleri, gişe yetkilerini ve işlem limitlerini yönetir; yabancı personelin veya öğrencinin kapı verilerine müdahalesini engeller.</p>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- 9. YETKİLER VE BAKIM İŞLEMLERİ (ADMIN) -->
-            <section id="section-admin" class="guide-card searchable-section">
+            <!-- 8. İŞLEM KAYITLARI & ARŞİV (ESKİ İŞLEMLER) -->
+            <section id="section-eskiislemler" class="guide-card searchable-section">
                 <div class="guide-card-header">
-                    <h2 class="guide-card-title">
-                        <i class="fas fa-user-shield"></i> 9. Yetkiler ve Bakım İşlemleri (Yöneticiler İçin)
-                    </h2>
-                    <span class="guide-badge-role">Admin Yetkisi (Kod: 2)</span>
+                    <div>
+                        <h2 class="guide-card-title text-secondary">
+                            <i class="fas fa-history"></i> 8. İşlem Kayıtları &amp; Arşiv (Eski İşlemler)
+                        </h2>
+                        <span class="guide-badge-role">E_IsK &amp; E_History Veri Tabanı</span>
+                    </div>
+                    <a href="@Url.Action("Index", "EskiIslemler")" class="btn-guide-action" target="_blank">
+                        <i class="fas fa-search me-1"></i> Arşivde Ara
+                    </a>
                 </div>
                 <p>
-                    Sistem yöneticileri (Adminler) için kullanıcı hesap yönetimi, yetki matrisi ve veritabanı sağlık kontrolleri araçları:
+                    Hudut kapınızda veya yetkiniz dahilinde ülke genelinde yapılmış tüm ceza, vize muafiyet aşımı, şartlı giriş (V-84) ve INAD işlemlerinin 
+                    saniyeler içinde geriye dönük taranabildiği, resmi teftiş ve adli denetimlere esas teşkil eden dijital işlem kütüğüdür.
                 </p>
+
                 <div class="table-responsive">
                     <table class="table table-bordered table-sm small mb-2">
                         <thead class="bg-light font-weight-bold">
                             <tr>
-                                <th>Yetki Kodu</th>
-                                <th>Yetki Adı</th>
-                                <th>Kapsadığı İşlem Alanları</th>
+                                <th>Özellik / Yetenek</th>
+                                <th>Kullanım Amacı</th>
+                                <th>Saha Operasyonundaki Faydası</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr><td><strong>1</strong></td><td>Kullanıcı İşlemleri</td><td>Personel ekleme, düzenleme, şifre sıfırlama, kapı ataması.</td></tr>
-                            <tr><td><strong>2</strong></td><td>Admin / Sistem Tanımları</td><td>Harç tarifeleri, ülke tanımları, bakım işlemleri ve rol yetkilendirmesi.</td></tr>
-                            <tr><td><strong>3</strong></td><td>Ceza, Tahdit ve Vize</td><td>Ceza hesaplama, kaşe vize, V-84 taahhüdü ve tahdit sorgulama.</td></tr>
-                            <tr><td><strong>4</strong></td><td>Eski İşlemler / Raporlar</td><td>Geçmiş sorgular, kasa dökümleri ve Excel/PDF ihracı.</td></tr>
-                            <tr><td><strong>5</strong></td><td>Duyuru ve Mesajlar</td><td>Personele sistem içi duyuru ve bildirim gönderme.</td></tr>
-                            <tr><td><strong>6</strong></td><td>Eğitim Yönetimi</td><td>Kurs açma, sınav hazırlama, soru ekleme ve eğitmen yetkisi.</td></tr>
+                            <tr>
+                                <td class="font-weight-bold text-primary"><i class="fas fa-filter me-1"></i> Çok Kriterli Canlı Filtre</td>
+                                <td>Tarih aralığı, pasaport no, uyruk, işlem türü ve personel sicili ile anlık sorgulama.</td>
+                                <td>Veznede veya tebliğde uyuşmazlık çıkan bir yolcunun kaydını saniyeler içinde ekrana getirir.</td>
+                            </tr>
+                            <tr>
+                                <td class="font-weight-bold text-info"><i class="fas fa-info-circle me-1"></i> Detaylı İşlem Modalı</td>
+                                <td>Yolcunun giriş-çıkış tarihleri, TCMB kuru, hesaplanan 5 ceza kalemi ve makbuz no dökümü.</td>
+                                <td>Önceden kesilmiş bir cezanın harç kalemlerini teker teker incelemeye imkan tanır.</td>
+                            </tr>
+                            <tr>
+                                <td class="font-weight-bold text-success"><i class="fas fa-file-excel me-1"></i> Excel &amp; CSV İhracı</td>
+                                <td>Filtrelenen sonuçların tek tıkla Excel veya CSV formatında indirilmesi.</td>
+                                <td>Gün sonu kasa icmali, maliye mutabakatı ve aylık istatistik brifingleri için hazır veri sağlar.</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
+            </section>
+
+            <!-- 9. SAHTECİLİK PORTALI (SSO ENTEGRASYONU) -->
+            <section id="section-sahtecilik" class="guide-card searchable-section">
+                <div class="guide-card-header">
+                    <div>
+                        <h2 class="guide-card-title text-danger">
+                            <i class="fas fa-search-plus"></i> 9. Sahtecilik Portalı (Tek Tıkla Güvenli SSO Geçişi)
+                        </h2>
+                        <span class="guide-badge-role">EGM Belge Güvenliği Laboratuvarı</span>
+                    </div>
+                    <a href="@Url.Action("SahtecilikSSO", "Home")" class="btn-guide-action" target="_blank" style="background:#dc2626; border-color:#b91c1c;">
+                        <i class="fas fa-fingerprint me-1"></i> Sahtecilik Portalını Aç (SSO)
+                    </a>
+                </div>
+                <p>
+                    Pasaport kontrol noktasında memurun şüphelendiği seyahat belgeleri (pasaport, kimlik kartı, vize etiketi, ikamet izni belgesi, gemi adamı cüzdanı vb.) 
+                    için EGM Sahtecilik İnceleme Portalı'na <strong>tek tıkla oturum açma (Single Sign-On - SSO)</strong> sağlayan doğrudan güvenlik entegrasyonudur.
+                </p>
+
+                <div class="simulator-card mb-3">
+                    <div class="simulator-header">
+                        <span><i class="fas fa-microscope me-1"></i> Belge Güvenlik Unsurları İnceleme Kılavuzu</span>
+                        <span class="sim-tag" style="background:#dc2626;">Kritik Kontrol Noktaları</span>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-2 mb-md-0">
+                            <h6 class="text-warning font-weight-bold mb-1"><i class="fas fa-lightbulb me-1"></i> 1. Optik ve Fiziksel Özellikler</h6>
+                            <ul class="small text-light mb-0 ps-3">
+                                <li><strong>UV (Ultraviyole) Reaksiyonu:</strong> Sahte belgelerde optik beyazlatıcı parlar; orijinal pasaport kağıdı UV altında mat ve donuk kalır, gizli UV lifleri/damgaları parlar.</li>
+                                <li><strong>OVI (Optik Değişken Mürekkep):</strong> Bakış açısı değiştikçe renk değiştiren (örn: yeşilden maviye) boyalar incelenir. Sahtelerde genellikle düz simli boya kullanılır.</li>
+                                <li><strong>Filigran (Watermark):</strong> Işığa tutulduğunda kağıdın kalınlık farkından doğan ton geçişleri aranır.</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-info font-weight-bold mb-1"><i class="fas fa-id-card me-1"></i> 2. Lazer Gravür &amp; Biyometrik Çip</h6>
+                            <ul class="small text-light mb-0 ps-3">
+                                <li><strong>Lazer Gravür:</strong> Polikarbonat biyometrik sayfada fotoğraf ve yazılar yüzeyde kabartmalı (hissedilir) ve lazerle yakılarak oluşturulmuştur.</li>
+                                <li><strong>Mikro Yazılar:</strong> Çıplak gözle düz çizgi gibi görünen ancak büyüteç altında okunabilen ülke kodları ve metinler incelenir.</li>
+                                <li><strong>MRZ &amp; Kontrol Basamakları:</strong> Makine Okunabilir Alan algoritması ile sistemdeki pasaport numarası kontrol hanesi teyit edilir.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-danger py-2 px-3 small mb-0">
+                    <i class="fas fa-exclamation-triangle me-1"></i> <strong>Saha Kuralı:</strong> Sahte veya tahrif edilmiş belge tespit edildiğinde yolcuya belge kesinlikle iade edilmez; derhal Nöbetçi Amir'e haber verilerek Tutanak düzenlenir, adli makamlara ve INAD bürosuna teslim edilir.
+                </div>
+            </section>
+
+            <!-- 10. GENELGELER VE MEVZUAT KÜTÜPHANESİ (DLP KORUMALI) -->
+            <section id="section-genelge" class="guide-card searchable-section">
+                <div class="guide-card-header">
+                    <div>
+                        <h2 class="guide-card-title text-info">
+                            <i class="fas fa-book-open"></i> 10. Genelgeler &amp; Mevzuat Kütüphanesi (DLP Korumalı)
+                        </h2>
+                        <span class="guide-badge-role">EGM &amp; GİGM Güncel Mevzuat</span>
+                    </div>
+                    <a href="@Url.Action("Index", "Genelge")" class="btn-guide-action" target="_blank">
+                        <i class="fas fa-folder-open me-1"></i> Genelgeler Kütüphanesi
+                    </a>
+                </div>
+                <p>
+                    Emniyet Genel Müdürlüğü Göçmen Kaçakçılığı ve Hudut Kapıları Daire Başkanlığı ile Göç İdaresi Başkanlığı tarafından yayımlanan tüm 
+                    <strong>uygulama talimatları, vizeler, ikili muafiyet anlaşmaları ve giriş yasakları genelgeleri</strong> bu merkezde toplanmıştır.
+                </p>
+
+                <div class="p-3 border rounded mb-3" style="background:#f0fdf4; border-color:#86efac !important;">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <i class="fas fa-user-shield text-success fa-2x"></i>
+                        <div>
+                            <div class="font-weight-bold text-success">DLP (Data Loss Prevention) Ekran &amp; Belge Güvenlik Sistemi</div>
+                            <div class="small text-muted">Gizli ve Hizmete Özel belgelerin güvenliği için sistemde aktif koruma çalışır.</div>
+                        </div>
+                    </div>
+                    <p class="small text-secondary mb-0">
+                        Genelgeler açıldığında arka planda dinamik bir <strong>Canvas Filigran Katmanı</strong> oluşturulur. Belgenin üzerine oturum açan personelin <strong>Sicil Numarası, Adı-Soyadı, İstemci IP Adresi ve Açılış Zaman Damgası</strong> saydam olarak işlenir. Bu sayede belgenin yetkisiz ekran görüntüsünün alınması, fotoğraflanması veya sızdırılması durumunda kaynağın adli tespiti güvenceye alınır.
+                    </p>
+                </div>
+
+                <div class="row g-2 small">
+                    <div class="col-md-3">
+                        <div class="p-2 border rounded bg-white text-center">
+                            <i class="fas fa-ban text-danger fa-2x mb-1"></i>
+                            <div class="font-weight-bold">Tahdit Genelgeleri</div>
+                            <div class="text-muted" style="font-size:11px;">Ç &amp; V Kodları Uygulaması</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-2 border rounded bg-white text-center">
+                            <i class="fas fa-passport text-primary fa-2x mb-1"></i>
+                            <div class="font-weight-bold">Vize Rejimleri</div>
+                            <div class="text-muted" style="font-size:11px;">Muafiyet &amp; Harç Tarifeleri</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-2 border rounded bg-white text-center">
+                            <i class="fas fa-stamp text-warning fa-2x mb-1"></i>
+                            <div class="font-weight-bold">Kaşe Vize &amp; V-84</div>
+                            <div class="text-muted" style="font-size:11px;">Süre Kısaltma Genelgeleri</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-2 border rounded bg-white text-center">
+                            <i class="fas fa-file-contract text-info fa-2x mb-1"></i>
+                            <div class="font-weight-bold">Mütekabiliyet</div>
+                            <div class="text-muted" style="font-size:11px;">İkili Devlet Protokolleri</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 11. EĞİTİM & SINAV PORTALI -->
+            <section id="section-egitim" class="guide-card searchable-section">
+                <div class="guide-card-header">
+                    <div>
+                        <h2 class="guide-card-title text-primary">
+                            <i class="fas fa-graduation-cap"></i> 11. Eğitim &amp; Sınav Portalı (LMS Akademisi)
+                        </h2>
+                        <span class="guide-badge-role">Sürekli Mesleki Gelişim</span>
+                    </div>
+                    <a href="@Url.Action("Index", "Edu")" class="btn-guide-action" target="_blank">
+                        <i class="fas fa-external-link-alt me-1"></i> Eğitim Portalına Git
+                    </a>
+                </div>
+                <p>
+                    Hudut kapısı personelinin mevzuat bilgilerini taze tutmak, sahte belge/pasaport inceleme yetkinliklerini artırmak ve saha vakalarını interaktif olarak çözmelerini sağlamak amacıyla entegre edilmiş tam teşekküllü uzaktan eğitim ve sınav sistemidir.
+                </p>
+                <div class="steps-container">
+                    <div class="step-item">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <div class="step-title"><i class="fas fa-play-circle text-primary me-1"></i> Dersleri ve Vaka Videolarını İnceleyin</div>
+                            <p class="step-desc">Mevzuat değişiklikleri, genelge analizleri, kaşe vize uygulamaları ve pasaport optik inceleme tekniklerini içeren dersleri modül modül takip edin.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <div class="step-title"><i class="fas fa-check-double text-warning me-1"></i> Değerlendirme Sınavlarına Katılın</div>
+                            <p class="step-desc">Kurs sonundaki çoktan seçmeli, senaryo tabanlı değerlendirme testlerine katılın. Sınavlar dinamik soru havuzundan otomatik karılarak üretilir.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <div class="step-title"><i class="fas fa-award text-success me-1"></i> Dijital Başarı Sertifikanızı Alın</div>
+                            <p class="step-desc">Başarı barajını (%70+) aşan personel, üzerinde doğrulama kodu ve sicil numarası bulunan EGM onaylı dijital eğitim sertifikasını profilinden anında indirebilir.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 12. YETKİLER, GÜVENLİK & PCINFO DENETİMİ -->
+            <section id="section-admin" class="guide-card searchable-section">
+                <div class="guide-card-header">
+                    <div>
+                        <h2 class="guide-card-title text-danger">
+                            <i class="fas fa-desktop"></i> 12. Yetkiler &amp; PCInfo Donanım/Ağ Denetimi
+                        </h2>
+                        <span class="guide-badge-role">Admin Yetkisi (Kod: 2)</span>
+                    </div>
+                    <a href="@Url.Action("Index", "AllUsers")" class="btn-guide-action" target="_blank">
+                        <i class="fas fa-cogs me-1"></i> Kullanıcı &amp; Bakım Paneli
+                    </a>
+                </div>
+                <p>
+                    Sistem yöneticileri (Genel Admin ve Kapı Amirleri) için kullanıcı hesap yönetimi, rol yetki matrisi, veritabanı bakım araçları ve istemci donanım güvenlik denetimidir:
+                </p>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-7">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-sm small mb-0">
+                                <thead class="bg-light font-weight-bold">
+                                    <tr>
+                                        <th style="width:70px;">Kod</th>
+                                        <th>Yetki Adı</th>
+                                        <th>Kapsadığı İşlem Alanları</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td><strong>1</strong></td><td>Kullanıcı İşlemleri</td><td>Personel ekleme, düzenleme, şifre sıfırlama, kapı ataması.</td></tr>
+                                    <tr><td><strong>2</strong></td><td>Admin / Sistem Tanımları</td><td>Harç tarifeleri, ülke tanımları, bakım işlemleri ve rol yetkilendirmesi.</td></tr>
+                                    <tr><td><strong>3</strong></td><td>Ceza, Tahdit ve Vize</td><td>Ceza hesaplama, kaşe vize, V-84 taahhüdü ve tahdit sorgulama.</td></tr>
+                                    <tr><td><strong>4</strong></td><td>Eski İşlemler / Raporlar</td><td>Geçmiş sorgular, kasa dökümleri ve Excel/PDF ihracı.</td></tr>
+                                    <tr><td><strong>5</strong></td><td>Duyuru ve Mesajlar</td><td>Personele sistem içi duyuru ve bildirim gönderme.</td></tr>
+                                    <tr><td><strong>6</strong></td><td>Eğitim Yönetimi</td><td>Kurs açma, sınav hazırlama, soru ekleme ve eğitmen yetkisi.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="col-md-5">
+                        <div class="p-3 border rounded bg-light h-100" style="border-left:4px solid #ef4444 !important;">
+                            <div class="font-weight-bold text-danger mb-2"><i class="fas fa-laptop-code me-1"></i> PCInfo Donanım &amp; Ağ Denetimi</div>
+                            <p class="small text-secondary mb-2">
+                                Hudut kapılarındaki gişe terminallerinin güvenliğini sağlamak için her işlem anında istemcinin IP adresi, MAC adresi, tarayıcı sürümü, ekran çözünürlüğü ve donanım parmak izi sisteme kaydedilir.
+                            </p>
+                            <div class="small font-weight-bold text-dark">
+                                <i class="fas fa-check text-success me-1"></i> Yetkisiz terminalden giriş engelleme<br />
+                                <i class="fas fa-check text-success me-1"></i> Oturum suistimali ve IP sızıntısı tespiti<br />
+                                <i class="fas fa-check text-success me-1"></i> Donanım arızalarında hızlı teknik destek
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="scenario-box">
-                    <div class="scenario-box-title"><i class="fas fa-tools text-success"></i> Sistem Bakım İşlemleri (/AllUsers):</div>
+                    <div class="scenario-box-title"><i class="fas fa-tools text-success"></i> Sistem Bakım &amp; Sağlık İşlemleri (/AllUsers):</div>
                     <ul class="mb-0 small ps-3">
-                        <li><strong>Tüm Pasifleri Aktifleştir:</strong> Tayin/görev değişimi sonrası kapalı hesapları tek tıkla oturuma açar.</li>
-                        <li><strong>3 Ay ve Üzeri İnaktifleri Pasife Al:</strong> Güvenlik gereği 90 gün oturum açmamış hesapları dondurur.</li>
-                        <li><strong>Yetim Kullanıcıları Temizle:</strong> Silinmiş kapıya/yetkiye bağlı kalmış geçersiz hesap artıklarını temizler.</li>
+                        <li><strong>Tüm Pasifleri Aktifleştir:</strong> Tayin veya görev değişimi sonrası kapalı hesapları tek tıkla oturuma açar.</li>
+                        <li><strong>3 Ay ve Üzeri İnaktifleri Pasife Al:</strong> Güvenlik protokolleri gereği 90 gün boyunca oturum açmamış hesapları otomatik dondurur.</li>
+                        <li><strong>Yetim Kullanıcıları Temizle:</strong> Silinmiş bir kapıya veya geçersiz bir yetkiye bağlı kalmış artık kayıtları temizleyerek veri bütünlüğünü korur.</li>
                     </ul>
                 </div>
             </section>
 
-            <!-- 10. SIKÇA SORULAN SORULAR -->
+            <!-- 13. SIKÇA SORULAN SORULAR -->
             <section id="section-faq" class="guide-card searchable-section">
                 <div class="guide-card-header">
-                    <h2 class="guide-card-title">
-                        <i class="fas fa-question-circle"></i> 10. Sıkça Sorulan Sorular (SSS)
-                    </h2>
+                    <div>
+                        <h2 class="guide-card-title text-warning">
+                            <i class="fas fa-question-circle"></i> 13. Sıkça Sorulan Sorular (SSS)
+                        </h2>
+                        <span class="guide-badge-role">Hızlı Çözüm Rehberi</span>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>İstatistik ve grafik ekranları neden tek sekmede toplandı?</span>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Kullanıcılarımızın iki farklı menü arasında gidip gelmesini önlemek, hem üst düzey brifing özetine hem de 10 detaylı analitik grafiğe tek bir sayfadan ulaşabilmesini sağlamak için <code>/ISTATIK</code> sayfası altında <strong>Genel Operasyonel Özet</strong> ve <strong>Detaylı Grafikler &amp; Brifing</strong> sekmeleri olarak birleştirildi. Eski bağlantılar (<code>/GRAFIK</code>) doğrudan bu yeni sekmeye yönlendirilmektedir.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>Hudut Kapısı Faaliyetlerini neden bazı personel veya öğrenciler göremiyor?</span>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Hudut kapısı faaliyetleri ve kapı personel yetkilendirme modülü stratejik operasyonel veriler içerdiğinden genele yayılmamıştır. <code>StatService.CanAccessBorderActivities</code> güvenlik kuralı doğrultusunda bu ekranlar yalnızca <strong>Genel Sistem Admini</strong> veya <strong>Havalimanı/Hudut Kapısı Admini</strong> tarafından görülebilir ve yönetilebilir. Normal memurlar ve öğrenciler bu ekranları göremez.
+                    </div>
                 </div>
 
                 <div class="faq-item">
@@ -1646,6 +1946,16 @@
                     <div class="faq-answer">
                         <strong>Evet.</strong> İkili anlaşmalar uyarınca; Almanya vatandaşlarının son 1 yıl içinde; Belçika, Fransa, İspanya, İsviçre, 
                         Lüksemburg ve Portekiz vatandaşlarının son 5 yıl içinde süresi bitmiş pasaport veya kimlik kartları geçerli kabul edilmektedir.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>Genelgelerdeki DLP filigranı ne işe yarar?</span>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Hizmete özel veya gizli mevzuat genelgelerinin ekran görüntüsü alınarak yetkisiz mecralarda paylaşılmasını önlemek amacıyla; personelin sicil numarası, IP adresi ve anlık tarih-saat damgası canvas katmanıyla belgenin üzerine işlenir. Bu sayede olası sızıntıların kaynağı adli olarak kanıtlanabilir.
                     </div>
                 </div>
             </section>

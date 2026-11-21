@@ -266,11 +266,7 @@
                                     {
                                         <tr>
                                             <td class="text-muted font-weight-bold">@counter</td>
-                                            <td class="text-center">
-                                                <span class="badge-custom @(user.fldActive?.Trim() == "1" ? "badge-success-custom" : "badge-secondary-custom")">
-                                                    @(user.fldActive?.Trim() == "1" ? "Aktif" : "Pasif")
-                                                </span>
-                                            </td>
+                                            <td class="text-center"><span class="badge-custom @(user.fldActive?.Trim() == "1" ? "badge-success-custom" : "badge-secondary-custom")">@(user.fldActive?.Trim() == "1" ? "Aktif" : "Pasif")</span></td>
                                             <td class="text-center">
                                                 @if (string.Equals(user.Role, "Admin", StringComparison.OrdinalIgnoreCase))
                                                 {
@@ -543,7 +539,7 @@
                                         <i class="fas fa-user-check me-1"></i> Tüm Pasifleri Aktifleştir
                                     </h6>
                                     <span class="badge badge-secondary px-2 py-1">
-                                        <span id="passiveCountText">@Model.inactiveUsers.Count(u => u.fldActive == "0")</span> pasif hesap
+                                        <span id="passiveCountText">@(Model.inactiveUsers?.Count(u => u.fldActive == "0") ?? 0)</span> pasif hesap
                                     </span>
                                 </div>
                                 <p class="text-muted small mb-3">
@@ -652,9 +648,12 @@
                         <label>Sınır Kapısı <span class="text-danger">*</span></label>
                         <select data-plugin-selectTwo class="form-control populate" name="BorderUser" required>
                             <option value="">Lütfen Seçiniz</option>
-                            @foreach (var data in Model.borders)
+                            @if (Model.borders != null)
                             {
-                                <option value="@data.fldName">@data.fldName</option>
+                                foreach (var data in Model.borders)
+                                {
+                                    <option value="@data.fldName">@data.fldName</option>
+                                }
                             }
                         </select>
                     </div>
@@ -720,9 +719,12 @@
                         <label>Sınır Kapısı <span class="text-danger">*</span></label>
                         <select data-plugin-selectTwo class="form-control populate" id="editBorderUser" name="editBorderUser" required>
                             <option value="">Lütfen Seçiniz</option>
-                            @foreach (var data in Model.borders)
+                            @if (Model.borders != null)
                             {
-                                <option value="@data.fldName">@data.fldName</option>
+                                foreach (var data in Model.borders)
+                                {
+                                    <option value="@data.fldName">@data.fldName</option>
+                                }
                             }
                         </select>
                     </div>

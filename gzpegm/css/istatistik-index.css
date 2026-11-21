@@ -246,3 +246,151 @@
         background: #ffffff !important;
     }
 }
+
+/* ==========================================================================
+   YENİ OPERASYONEL KPI VE VURGU BARI STİLLERİ
+   ========================================================================== */
+.istatistik-kpi-card {
+    background: #ffffff;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    margin-bottom: 20px;
+    padding: 18px 20px;
+    position: relative;
+    transition: all 0.2s ease-in-out;
+    border-top: 4px solid #3b82f6;
+}
+.istatistik-kpi-card:hover {
+    box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+    transform: translateY(-2px);
+}
+.istatistik-kpi-card.kpi-ceza {
+    border-top-color: #10b981;
+}
+.istatistik-kpi-card.kpi-v84 {
+    border-top-color: #2563eb;
+}
+.istatistik-kpi-card.kpi-inad {
+    border-top-color: #ef4444;
+}
+.istatistik-kpi-card.kpi-hesaplama {
+    border-top-color: #f59e0b;
+}
+
+.istatistik-kpi-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+.istatistik-kpi-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #475569;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.istatistik-kpi-val {
+    font-size: 1.85rem;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.1;
+    margin-bottom: 8px;
+}
+.istatistik-kpi-sub {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 10px;
+    border-top: 1px dashed #e2e8f0;
+    font-size: 0.82rem;
+    color: #64748b;
+}
+
+/* Şampiyonlar ve Canlı Durum Şeridi */
+.istatistik-highlights-bar {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    border-radius: 8px;
+    color: #ffffff;
+    padding: 16px 20px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 15px rgba(15, 23, 42, 0.15);
+}
+.highlight-pill-col {
+    border-right: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 0 15px;
+}
+.highlight-pill-col:last-child {
+    border-right: none;
+}
+.highlight-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    color: #94a3b8;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.highlight-value {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #f8fafc;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.highlight-meta {
+    font-size: 0.75rem;
+    color: #cbd5e1;
+}
+
+/* ==========================================================================
+   Birleşik İstatistik & Brifing Sekmeleri (Tab Bar)
+   ========================================================================== */
+.istatistik-tabs-container {
+    padding: 0 25px 15px;
+}
+.istatistik-nav-tabs {
+    border-bottom: 2px solid #cbd5e1;
+    display: flex;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+}
+.istatistik-nav-tabs .nav-item {
+    list-style: none;
+    margin-bottom: -2px;
+}
+.istatistik-nav-tabs .nav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 22px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #64748b;
+    border: none;
+    border-bottom: 3px solid transparent;
+    border-radius: 8px 8px 0 0;
+    background: transparent;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+.istatistik-nav-tabs .nav-link:hover {
+    color: #0f172a;
+    background: rgba(255, 255, 255, 0.7);
+}
+.istatistik-nav-tabs .nav-link.active {
+    color: #0284c7;
+    background: #ffffff;
+    border-bottom: 3px solid #0284c7;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
+}

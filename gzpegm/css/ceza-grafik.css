@@ -94,6 +94,13 @@
 .briefing-card.inad { border-left-color: var(--brief-red); }
 .briefing-card.sartli { border-left-color: var(--brief-indigo); }
 
+#maxMoneyHighlight.d-none {
+    display: none !important;
+}
+#maxMoneyHighlight.d-flex {
+    display: flex !important;
+}
+
 .briefing-card span {
     display: block;
     color: var(--brief-muted);

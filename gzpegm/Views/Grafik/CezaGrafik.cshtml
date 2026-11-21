@@ -5,14 +5,11 @@
     bool isAdmin = ViewBag.IsAdmin == true;
     string userBorder = ViewBag.UserBorder as string ?? "";
     string userFullName = ViewBag.UserFullName as string ?? "";
+    var currentUser = Session["User"] as gzpegm.Models.E_User;
+    bool canSeeFaaliyet = gzpegm.Services.StatService.CanAccessBorderActivities(currentUser);
 }
 
-<link href="~/AdminTemplate/css/bootstrap.min.css" rel="stylesheet" />
-<link href="~/AdminTemplate/font-awesome/css/font-awesome.css" rel="stylesheet" />
-<link href="~/AdminTemplate/css/animate.css" rel="stylesheet" />
-<link href="~/AdminTemplate/css/style.css" rel="stylesheet" />
-
-<link href="@Url.Content("~/css/ceza-grafik.css")?v=1.0" rel="stylesheet" />
+<link href="@Url.Content("~/css/ceza-grafik.css")?v=1.1" rel="stylesheet" />
 
 <div id="cezagrafik-config"
      data-is-admin="@(isAdmin ? "true" : "false")"
@@ -20,6 +17,17 @@
      data-url-borders="@Url.Action("GetBorders", "Grafik")"
      data-url-chart-data="@Url.Action("ChartData", "Grafik")"
      style="display:none;"></div>
+
+<header class="page-header">
+    <h2><i class="fas fa-chart-line"></i> Ceza Brifing Grafikleri</h2>
+    <div class="right-wrapper pull-right mr-3">
+        <ol class="breadcrumbs">
+            <li><a href="@Url.Action("Index", "Home")"><i class="fas fa-home"></i> Ana Sayfa</a></li>
+            <li><a href="/ISTATIK">İstatistikler</a></li>
+            <li><span>Ceza Grafikleri</span></li>
+        </ol>
+    </div>
+</header>
 
 <div id="page-wrapper" class="@(currentTheme == "dark" ? "theme-dark" : "")">
     <div class="wrapper wrapper-content animated fadeInRight briefing-shell">
@@ -50,6 +58,11 @@
                     <div class="print-meta" id="reportMeta">Rapor hazırlanıyor...</div>
                 </div>
                 <div class="action-row">
+                    <a href="/ISTATIK" class="btn btn-default" title="Genel İstatistik Bilgileri ve Kartlar"><i class="fa fa-pie-chart"></i> İstatistikler</a>
+                    @if (canSeeFaaliyet)
+                    {
+                        <a href="@Url.Action("FaaliyetRaporu", "Istatistik")" class="btn btn-default" title="Resmi Havalimanı Faaliyet Raporu"><i class="fa fa-file-text-o"></i> Faaliyet Raporu</a>
+                    }
                     <button type="button" class="btn btn-primary" id="applyFilterBtn"><i class="fa fa-search"></i> Filtrele</button>
                     <button type="button" class="btn btn-default" id="resetFilterBtn"><i class="fa fa-refresh"></i> Sıfırla</button>
                     <button type="button" class="btn btn-info" id="downloadReportBtn"><i class="fa fa-file-image-o"></i> Rapor Görseli</button>
@@ -97,33 +110,59 @@
         </div>
 
         <div id="reportArea">
-            <div class="row" id="summaryCards">
-                <div class="col-sm-6 col-lg-3 mb-3">
-                    <div class="briefing-card">
-                        <span>Toplam Hesaplama</span>
-                        <strong id="sumCalculations">0</strong>
-                        <small>Seçili filtreye göre</small>
+            <div id="maxMoneyHighlight" class="alert alert-info d-none align-items-center mb-3" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: #f8fafc; border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 12px 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.12);">
+                <div class="mr-3" style="font-size: 24px; color: #fbbf24;">
+                    <i class="fa fa-trophy"></i>
+                </div>
+                <div style="flex: 1 1 auto;">
+                    <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; font-weight: 700;">
+                        Tek Seferde En Yüksek Ceza Kaydı
+                    </div>
+                    <div id="maxMoneyText" style="font-size: 14px; font-weight: 600; color: #ffffff; margin-top: 2px;">
+                        —
                     </div>
                 </div>
+            </div>
+
+            <div class="row" id="summaryCards">
                 <div class="col-sm-6 col-lg-3 mb-3">
                     <div class="briefing-card money">
-                        <span>Toplam Ceza Tutarı</span>
-                        <strong id="sumMoney">0 TL</strong>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span>Toplam Ceza Tutarı</span>
+                            <span class="label label-primary" style="font-size: 10px;">Tahsilat</span>
+                        </div>
+                        <strong id="sumMoney" style="color: #10b981;">0 TL</strong>
                         <small id="sumAverage">Ortalama: 0 TL</small>
                     </div>
                 </div>
                 <div class="col-sm-6 col-lg-3 mb-3">
-                    <div class="briefing-card country">
-                        <span>@(isAdmin ? "Ülke / Kapı Kapsamı" : "Ülke Kapsamı")</span>
-                        <strong id="sumScope">0 / 0</strong>
-                        <small>@(isAdmin ? "Ülke / hudut kapısı" : "İşlem yapılan yabancı ülke")</small>
+                    <div class="briefing-card">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span>Ceza Hesaplama</span>
+                            <span class="label label-info" id="sumCalculationsBadge" style="font-size: 10px;">0 Hesaplama</span>
+                        </div>
+                        <strong id="sumCalculations" style="color: #2563eb;">0</strong>
+                        <small><span id="sumTahdit">0</span> Tahdit Formu ile Birlikte</small>
                     </div>
                 </div>
                 <div class="col-sm-6 col-lg-3 mb-3">
-                    <div class="briefing-card inad">
-                        <span>İnad / Şartlı / Tahdit</span>
-                        <strong id="sumInadSartli">0 / 0</strong>
-                        <small>Ek operasyon göstergesi</small>
+                    <div class="briefing-card sartli">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span>Şartlı Vize / İnad</span>
+                            <span class="label label-warning" style="font-size: 10px;">Giriş / Ret</span>
+                        </div>
+                        <strong><span id="sumSartli" style="color: #4f46e5;">0</span> <span style="font-size:16px; font-weight:normal; color:#94a3b8;">/</span> <span id="sumInad" style="color: #ef4444;">0</span></strong>
+                        <small>V-84 Şartlı Giriş / İNAD Reddi</small>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3 mb-3">
+                    <div class="briefing-card country">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span>@(isAdmin ? "Ülke / Kapı Kapsamı" : "Ülke Kapsamı")</span>
+                            <span class="label label-success" style="font-size: 10px;">Kapsam</span>
+                        </div>
+                        <strong id="sumScope" style="font-size: 20px; color: #b7791f;">0</strong>
+                        <small>@(isAdmin ? "İşlem gören yabancı ülke ve kapı" : "İşlem yapılan yabancı ülke")</small>
                     </div>
                 </div>
             </div>
@@ -275,42 +314,13 @@
                 </div>
             </div>
 
-            <div class="row">
-                <div class="col-lg-6">
-                    <section class="chart-panel" id="section-users">
-                        <div class="chart-header">
-                            <h5>Kullanıcı Rolleri</h5>
-                            <button class="btn btn-sm btn-info download-section-btn" data-section="section-users"><i class="fa fa-download"></i> İndir</button>
-                        </div>
-                        <div class="chart-body">
-                            <div class="chart-frame"><canvas id="userRoleChart"></canvas></div>
-                            <div id="userRoleTable" class="chart-table"></div>
-                        </div>
-                    </section>
-                </div>
-                <div class="col-lg-6">
-                    <section class="chart-panel" id="section-education">
-                        <div class="chart-header">
-                            <h5>Eğitim ve Sınav Göstergeleri</h5>
-                            <button class="btn btn-sm btn-info download-section-btn" data-section="section-education"><i class="fa fa-download"></i> İndir</button>
-                        </div>
-                        <div class="chart-body">
-                            <div class="chart-frame"><canvas id="educationChart"></canvas></div>
-                            <div id="educationTable" class="chart-table"></div>
-                        </div>
-                    </section>
-                </div>
-            </div>
         </div>
     </div>
 </div>
 
 <div class="loading-overlay"><i class="fa fa-spinner fa-pulse fa-3x"></i><br />İşleniyor...</div>
 
-<script src="~/AdminTemplate/js/jquery-3.1.1.min.js"></script>
-<script src="~/AdminTemplate/js/popper.min.js"></script>
-<script src="~/AdminTemplate/js/bootstrap.js"></script>
 <script src="~/AdminTemplate/js/plugins/chartJs/Chart.min.js"></script>
 <script src="~/AdminTemplate/js/plugins/html2canvas/html2canvas.min.js"></script>
 
-<script src="@Url.Content("~/js/ceza-grafik.js")?v=1.0"></script>
+<script src="@Url.Content("~/js/ceza-grafik.js")?v=1.1"></script>

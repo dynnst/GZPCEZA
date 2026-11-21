@@ -1,782 +1,777 @@
 @{
-    ViewBag.Title = "İstatistikler";
+    ViewBag.Title = "Ceza & İşlem İstatistikleri";
     Layout = "~/Views/Shared/_Master.cshtml";
+    var currentUser = Session["User"] as gzpegm.Models.E_User;
+    bool canSeeFaaliyet = gzpegm.Services.StatService.CanAccessBorderActivities(currentUser);
+    bool isAdmin = ViewBag.IsAdmin == true;
+    string userBorder = ViewBag.UserBorder as string ?? "";
+    string userFullName = ViewBag.UserFullName as string ?? "";
 }
 
 <div id="istatistik-data"
      data-url-gunluk="@Url.Action("GunlukTrend", "Istatistik")"
      data-url-aylik="@Url.Action("AylikTrend", "Istatistik")"
      data-url-ulke="@Url.Action("UlkeDagilimi", "Istatistik")"
-     data-url-ulke-az="@Url.Action("UlkeDagilimiAz", "Istatistik")"
      data-url-personel="@Url.Action("PersonelSiralamasi", "Istatistik")"
      data-url-inad-pie="@Url.Action("InadUyrukDagilimi", "Istatistik")"
      data-url-inad-donut="@Url.Action("InadKapiDagilimi", "Istatistik")"
      data-url-islem-tipi="@Url.Action("IslemTipiDagilimi", "Istatistik")"
      data-url-bugun-islem="@Url.Action("BugunIslemDagilimi", "Istatistik")"
      data-url-kapi-genel="@Url.Action("KapiGenelDagilimi", "Istatistik")"
-     data-url-radar="@Url.Action("RadarVerileri", "Istatistik")"
      data-url-haftalik="@Url.Action("HaftalikYogunluk", "Istatistik")"
      style="display:none;">
 </div>
 
+<div id="cezagrafik-config"
+     data-is-admin="@(isAdmin ? "true" : "false")"
+     data-user-border="@userBorder"
+     data-url-borders="@Url.Action("GetBorders", "Grafik")"
+     data-url-chart-data="@Url.Action("ChartData", "Grafik")"
+     style="display:none;"></div>
+
 @section Styles {
-    <link href="@Url.Content("~/css/istatistik-index.css")?v=1.0" rel="stylesheet" />
+    <link href="@Url.Content("~/css/ceza-grafik.css")?v=1.2" rel="stylesheet" />
+    <link href="@Url.Content("~/css/istatistik-index.css")?v=2.2" rel="stylesheet" />
 }
 
 <div class="istatistik-page">
 
-<div class="row wrapper border-bottom white-bg page-heading">
-    <div class="col-lg-9 col-md-8 col-sm-7">
-        <h2>İstatistikler</h2>
+    <div class="row wrapper border-bottom white-bg page-heading">
+        <div class="col-lg-6 col-md-5 col-sm-12 mb-2 mb-md-0">
+            <h2><i class="fa fa-bar-chart text-primary mr-2"></i>Hudut Kapıları Ceza &amp; İşlem İstatistikleri</h2>
 
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item">
-                <a href="@Url.Action("Index", "Landing")">
-                    Ana Sayfa
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="@Url.Action("Index", "Home")">
+                        Ana Sayfa
+                    </a>
+                </li>
+                <li class="breadcrumb-item">
+                    <span>Raporlar</span>
+                </li>
+                <li class="breadcrumb-item active">
+                    <strong>Ceza &amp; İşlem İstatistikleri</strong>
+                </li>
+            </ol>
+        </div>
+
+        <div class="col-lg-6 col-md-7 col-sm-12 text-md-right" style="padding-top: 18px;">
+            @if (canSeeFaaliyet)
+            {
+                <a href="@Url.Action("FaaliyetRaporu", "Istatistik")" class="btn btn-outline btn-success btn-sm mr-1" title="Resmi Havalimanı Faaliyet Raporu">
+                    <i class="fa fa-file-text-o"></i> Faaliyet Raporu
+                </a>
+            }
+            <button type="button" class="btn btn-outline btn-primary btn-sm" onclick="window.print()" title="İstatistik raporunu yazdır veya PDF olarak kaydet">
+                <i class="fa fa-print"></i> Sayfayı Yazdır / PDF
+            </button>
+        </div>
+    </div>
+
+    <!-- ========================================================
+         BİRLEŞİK İSTATİSTİK & BRİFİNG SEKMELERİ
+    ========================================================= -->
+    <div class="istatistik-tabs-container">
+        <ul class="nav istatistik-nav-tabs" id="istatistikMainTabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" id="tab-ozet-btn" data-toggle="tab" href="#tab-ozet" role="tab" aria-controls="tab-ozet" aria-selected="true">
+                    <i class="fa fa-dashboard text-primary"></i> Genel Operasyonel Özet
                 </a>
             </li>
-
-            <li class="breadcrumb-item">
-                <span>Raporlar</span>
+            <li class="nav-item">
+                <a class="nav-link" id="tab-brifing-btn" data-toggle="tab" href="#tab-brifing" role="tab" aria-controls="tab-brifing" aria-selected="false">
+                    <i class="fa fa-line-chart text-info"></i> Detaylı Grafikler &amp; Brifing Paneli
+                </a>
             </li>
-
-            <li class="breadcrumb-item active">
-                <strong>İstatistikler</strong>
-            </li>
-        </ol>
+        </ul>
     </div>
 
-    <div class="col-lg-3 col-md-4 col-sm-5 text-right" style="padding-top: 22px;">
-        <button type="button" class="btn btn-outline btn-primary btn-sm" onclick="window.print()" title="İstatistik raporunu yazdır veya PDF olarak kaydet">
-            <i class="fa fa-print"></i> Sayfayı Yazdır / PDF
-        </button>
+    <div class="wrapper wrapper-content animated fadeInRight">
+        <div class="tab-content" id="istatistikTabContent">
+
+            <!-- ========================================================
+                 1. SEKME: GENEL OPERASYONEL ÖZET
+            ========================================================= -->
+            <div class="tab-pane fade show active" id="tab-ozet" role="tabpanel" aria-labelledby="tab-ozet-btn">
+                
+                <!-- 4 Odaklı Operasyon KPI Kartı (Bugün + Genel) -->
+                <div class="row">
+                    <!-- 1. Ceza & Tahsilat -->
+                    <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12">
+                        <div class="istatistik-kpi-card kpi-ceza">
+                            <div class="istatistik-kpi-header">
+                                <span class="istatistik-kpi-title text-success">
+                                    <i class="fa fa-money"></i> Ceza ve Harç
+                                </span>
+                                <span class="label label-primary">Tahsilat</span>
+                            </div>
+                            <div class="istatistik-kpi-val text-success">
+                                @ViewBag.toplam ₺
+                            </div>
+                            <div class="istatistik-kpi-sub">
+                                <span><strong>Bugün:</strong> @ViewBag.d1 ₺ (@ViewBag.d14 adet)</span>
+                                <span><strong>Toplam:</strong> @ViewBag.KesilenToplamCeza ceza</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Şartlı Vize (V-84) -->
+                    <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12">
+                        <div class="istatistik-kpi-card kpi-v84">
+                            <div class="istatistik-kpi-header">
+                                <span class="istatistik-kpi-title text-primary">
+                                    <i class="fa fa-id-card-o"></i> V-84 Şartlı Vize
+                                </span>
+                                <span class="label label-success">Giriş İzni</span>
+                            </div>
+                            <div class="istatistik-kpi-val text-primary">
+                                @ViewBag.v84sayisi
+                            </div>
+                            <div class="istatistik-kpi-sub">
+                                <span><strong>Bugün:</strong> @ViewBag.bugunsartli adet</span>
+                                <span><strong>Toplam Arşiv:</strong> Tüm V-84 Kayıtları</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. İNAD (Kabul Edilemez Yolcu) -->
+                    <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12">
+                        <div class="istatistik-kpi-card kpi-inad">
+                            <div class="istatistik-kpi-header">
+                                <span class="istatistik-kpi-title text-danger">
+                                    <i class="fa fa-ban"></i> İNAD İşlemleri
+                                </span>
+                                <span class="label label-danger">Ret &amp; Geri Gönderme</span>
+                            </div>
+                            <div class="istatistik-kpi-val text-danger">
+                                @ViewBag.inadsayisi
+                            </div>
+                            <div class="istatistik-kpi-sub">
+                                <span><strong>Bugün:</strong> @ViewBag.buguninad adet</span>
+                                <span><strong>Toplam Arşiv:</strong> E_Inad Kayıtları</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. Ceza Hesaplama -->
+                    <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12">
+                        <div class="istatistik-kpi-card kpi-hesaplama">
+                            <div class="istatistik-kpi-header">
+                                <span class="istatistik-kpi-title text-warning">
+                                    <i class="fa fa-calculator"></i> Ceza Hesaplama
+                                </span>
+                                <span class="label label-warning">Ön Sorgulama</span>
+                            </div>
+                            <div class="istatistik-kpi-val text-warning">
+                                @ViewBag.hesaplamasayisi
+                            </div>
+                            <div class="istatistik-kpi-sub">
+                                <span><strong>Bugün:</strong> @ViewBag.d15 adet</span>
+                                <span><strong>Ort. Ceza:</strong> @ViewBag.ortalamaCeza ₺</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Canlı Operasyonel Özet & Şampiyonlar Şeridi -->
+                <div class="istatistik-highlights-bar">
+                    <div class="row align-items-center">
+                        <div class="col-lg-3 col-md-6 col-sm-12 highlight-pill-col mb-2 mb-lg-0">
+                            <div class="highlight-label">
+                                <i class="fa fa-clock-o text-info"></i> Son Canlı İşlem
+                            </div>
+                            <div class="highlight-value text-info" title="@ViewBag.islemyapansonper">
+                                @ViewBag.islemyapansonper
+                            </div>
+                            <div class="highlight-meta">
+                                @if (ViewBag.d11 != null)
+                                {
+                                    <span>@(Convert.ToDateTime(ViewBag.d11).ToString("dd.MM.yyyy HH:mm"))</span>
+                                }
+                                else
+                                {
+                                    <span>-</span>
+                                }
+                                &bull; @ViewBag.d12
+                            </div>
+                        </div>
+
+                        <div class="col-lg-2 col-md-6 col-sm-12 highlight-pill-col mb-2 mb-lg-0">
+                            <div class="highlight-label">
+                                <i class="fa fa-flag text-danger"></i> Lider Ceza Ülkesi
+                            </div>
+                            <div class="highlight-value text-danger" title="@ViewBag.encokulkehangi">
+                                @ViewBag.encokulkehangi
+                            </div>
+                            <div class="highlight-meta">
+                                @ViewBag.encokulkesayi ceza kaydı
+                            </div>
+                        </div>
+
+                        <div class="col-lg-2 col-md-6 col-sm-12 highlight-pill-col mb-2 mb-lg-0">
+                            <div class="highlight-label">
+                                <i class="fa fa-trophy text-warning"></i> En Çok Ceza Kesen
+                            </div>
+                            <div class="highlight-value text-warning" title="@ViewBag.d13">
+                                @ViewBag.d13
+                            </div>
+                            <div class="highlight-meta">
+                                İşlem birincisi
+                            </div>
+                        </div>
+
+                        <div class="col-lg-2 col-md-6 col-sm-12 highlight-pill-col mb-2 mb-lg-0">
+                            <div class="highlight-label">
+                                <i class="fa fa-certificate text-primary"></i> En Çok V-84
+                            </div>
+                            <div class="highlight-value text-primary" title="@ViewBag.v84encokpersonel">
+                                @ViewBag.v84encokpersonel
+                            </div>
+                            <div class="highlight-meta">
+                                V-84 düzenleme lideri
+                            </div>
+                        </div>
+
+                        <div class="col-lg-3 col-md-12 col-sm-12 highlight-pill-col">
+                            <div class="highlight-label">
+                                <i class="fa fa-database text-success"></i> Toplam İşlem Hacmi
+                            </div>
+                            <div class="highlight-value text-success">
+                                @ViewBag.bugunToplamIslem <span style="font-size:0.8rem; font-weight:normal; color:#cbd5e1;">bugün yapılan işlem</span>
+                            </div>
+                            <div class="highlight-meta">
+                                Genel Hacim: <strong>@ViewBag.genelToplamIslem</strong> toplam kayıt
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grafikler - 1. Satır: Trend Analizi -->
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="ibox">
+                            <div class="ibox-title">
+                                <div class="ibox-tools">
+                                    <button type="button" class="btn btn-xs btn-chart-export" data-chart="gunlukTrendChart" title="Görsel İndir">
+                                        <i class="fa fa-download"></i> İndir
+                                    </button>
+                                </div>
+                                <h5>
+                                    <i class="fa fa-area-chart text-navy mr-1"></i> Son 7 Günlük İşlem Trendi
+                                    <small>Ceza ve hesaplama sayıları</small>
+                                </h5>
+                            </div>
+                            <div class="ibox-content">
+                                <div class="chart-container">
+                                    <canvas id="gunlukTrendChart" height="150"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <div class="ibox">
+                            <div class="ibox-title">
+                                <div class="ibox-tools">
+                                    <button type="button" class="btn btn-xs btn-chart-export" data-chart="aylikTrendChart" title="Görsel İndir">
+                                        <i class="fa fa-download"></i> İndir
+                                    </button>
+                                </div>
+                                <h5>
+                                    <i class="fa fa-line-chart text-info mr-1"></i> Son 6 Aylık İşlem Trendi
+                                    <small>Ceza ve V-84 sayıları</small>
+                                </h5>
+                            </div>
+                            <div class="ibox-content">
+                                <div class="chart-container">
+                                    <canvas id="aylikTrendChart" height="150"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grafikler - 2. Satır: Ülke ve Uyruk Analizi -->
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="ibox">
+                            <div class="ibox-title">
+                                <div class="ibox-tools">
+                                    <button type="button" class="btn btn-xs btn-chart-export" data-chart="ulkeCokChart" title="Görsel İndir">
+                                        <i class="fa fa-download"></i> İndir
+                                    </button>
+                                </div>
+                                <h5>
+                                    <i class="fa fa-flag text-danger mr-1"></i> En Çok Ceza Kesilen İlk 10 Ülke
+                                </h5>
+                            </div>
+                            <div class="ibox-content">
+                                <div class="chart-container">
+                                    <canvas id="ulkeCokChart" height="170"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <div class="ibox">
+                            <div class="ibox-title">
+                                <div class="ibox-tools">
+                                    <button type="button" class="btn btn-xs btn-chart-export" data-chart="inadUyrukChart" title="Görsel İndir">
+                                        <i class="fa fa-download"></i> İndir
+                                    </button>
+                                </div>
+                                <h5>
+                                    <i class="fa fa-pie-chart text-warning mr-1"></i> İNAD Uyruk Dağılımı
+                                    <small>Kabul Edilmeyen Yolcular</small>
+                                </h5>
+                            </div>
+                            <div class="ibox-content">
+                                <div class="text-center">
+                                    <canvas id="inadUyrukChart" height="170"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grafikler - 3. Satır: Personel ve Haftalık Yoğunluk -->
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="ibox">
+                            <div class="ibox-title">
+                                <div class="ibox-tools">
+                                    <button type="button" class="btn btn-xs btn-chart-export" data-chart="personelChart" title="Görsel İndir">
+                                        <i class="fa fa-download"></i> İndir
+                                    </button>
+                                </div>
+                                <h5>
+                                    <i class="fa fa-users text-navy mr-1"></i> Personel Ceza Sıralaması
+                                    <small>En çok işlem yapan ilk 10 personel</small>
+                                </h5>
+                            </div>
+                            <div class="ibox-content">
+                                <div class="chart-container">
+                                    <canvas id="personelChart" height="200"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <div class="ibox">
+                            <div class="ibox-title">
+                                <div class="ibox-tools">
+                                    <button type="button" class="btn btn-xs btn-chart-export" data-chart="haftalikChart" title="Görsel İndir">
+                                        <i class="fa fa-download"></i> İndir
+                                    </button>
+                                </div>
+                                <h5>
+                                    <i class="fa fa-calendar text-info mr-1"></i> Haftanın Günlerine Göre Ceza Yoğunluğu
+                                </h5>
+                            </div>
+                            <div class="ibox-content">
+                                <div class="chart-container">
+                                    <canvas id="haftalikChart" height="200"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grafikler - 4. Satır: Genel Dağılım ve Kapı Hacimleri -->
+                <div class="row">
+                    <div class="col-lg-4">
+                        <div class="ibox">
+                            <div class="ibox-title">
+                                <div class="ibox-tools">
+                                    <button type="button" class="btn btn-xs btn-chart-export" data-chart="islemTipiChart" title="Görsel İndir">
+                                        <i class="fa fa-download"></i> İndir
+                                    </button>
+                                </div>
+                                <h5>
+                                    <i class="fa fa-pie-chart mr-1"></i> Genel İşlem Dağılımı
+                                    <small>Ceza, hesaplama, İNAD, V-84</small>
+                                </h5>
+                            </div>
+                            <div class="ibox-content">
+                                <div class="text-center">
+                                    <canvas id="islemTipiChart" height="190"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4">
+                        <div class="ibox">
+                            <div class="ibox-title">
+                                <div class="ibox-tools">
+                                    <button type="button" class="btn btn-xs btn-chart-export" data-chart="bugunIslemChart" title="Görsel İndir">
+                                        <i class="fa fa-download"></i> İndir
+                                    </button>
+                                </div>
+                                <h5>
+                                    <i class="fa fa-clock-o mr-1"></i> Bugünkü İşlem Dağılımı
+                                </h5>
+                            </div>
+                            <div class="ibox-content">
+                                <div class="text-center">
+                                    <canvas id="bugunIslemChart" height="190"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4">
+                        <div class="ibox">
+                            <div class="ibox-title">
+                                <div class="ibox-tools">
+                                    <button type="button" class="btn btn-xs btn-chart-export" data-chart="kapiGenelChart" title="Görsel İndir">
+                                        <i class="fa fa-download"></i> İndir
+                                    </button>
+                                </div>
+                                <h5>
+                                    <i class="fa fa-building-o mr-1"></i> Kapı Bazlı Toplam Yoğunluk
+                                </h5>
+                            </div>
+                            <div class="ibox-content">
+                                <div class="chart-container">
+                                    <canvas id="kapiGenelChart" height="190"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ========================================================
+                 2. SEKME: DETAYLI BRİFİNG & GRAFİKLER (ESKİ CEZA GRAFİK)
+            ========================================================= -->
+            <div class="tab-pane fade" id="tab-brifing" role="tabpanel" aria-labelledby="tab-brifing-btn">
+                <div class="briefing-shell">
+                    
+                    <div class="briefing-toolbar" id="briefingHeader">
+                        <div class="d-flex justify-content-between flex-wrap align-items-center">
+                            <div>
+                                <h3 class="briefing-title mb-1">
+                                    <i class="fa fa-bar-chart text-info"></i> Pasaport Ceza Brifing Grafikleri
+                                    @if (!isAdmin && !string.IsNullOrEmpty(userBorder))
+                                    {
+                                        <span class="label label-primary" style="font-size: 13px; vertical-align: middle; margin-left: 8px;"><i class="fa fa-shield"></i> Yetkili Kapı: @userBorder</span>
+                                    }
+                                    else if (isAdmin)
+                                    {
+                                        <span class="label label-success" style="font-size: 13px; vertical-align: middle; margin-left: 8px;"><i class="fa fa-star"></i> Sistem Yöneticisi (Tüm Kapılar)</span>
+                                    }
+                                </h3>
+                                <p class="briefing-subtitle">
+                                    @if (!isAdmin && !string.IsNullOrEmpty(userBorder))
+                                    {
+                                        <span><strong>@userBorder</strong> hudut kapısına ait detaylı brifing grafikleri, tablo ve rapor çıktı paneli</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Müdürlük brifingleri için genel hudut kapıları grafik, tablo ve rapor çıktı paneli</span>
+                                    }
+                                </p>
+                                <div class="print-meta" id="reportMeta">Rapor hazırlanıyor...</div>
+                            </div>
+                            <div class="action-row">
+                                <button type="button" class="btn btn-primary" id="applyFilterBtn"><i class="fa fa-search"></i> Filtrele</button>
+                                <button type="button" class="btn btn-default" id="resetFilterBtn"><i class="fa fa-refresh"></i> Sıfırla</button>
+                                <button type="button" class="btn btn-info" id="downloadReportBtn"><i class="fa fa-file-image-o"></i> Rapor Görseli</button>
+                                <button type="button" class="btn btn-success" id="downloadAllBtn"><i class="fa fa-download"></i> Tüm Bölümler</button>
+                                <button type="button" class="btn btn-warning" id="printBtn"><i class="fa fa-print"></i> Yazdır / PDF</button>
+                            </div>
+                        </div>
+
+                        <div class="filter-grid">
+                            <div>
+                                <label for="borderFilter">Hudut Kapısı</label>
+                                @if (isAdmin)
+                                {
+                                    <select id="borderFilter" class="form-control">
+                                        <option value="">Tümü (Tüm Hudut Kapıları)</option>
+                                    </select>
+                                }
+                                else
+                                {
+                                    <select id="borderFilter" class="form-control" disabled style="background-color: #f1f5f9; cursor: not-allowed; font-weight: 600;">
+                                        <option value="@userBorder" selected>@(!string.IsNullOrEmpty(userBorder) ? userBorder : "Atanmış Kapı Yok")</option>
+                                    </select>
+                                    <small class="text-info" style="display:block; margin-top:3px;"><i class="fa fa-lock"></i> Yetki: <strong>@(!string.IsNullOrEmpty(userBorder) ? userBorder : "Yetki Tanımsız")</strong></small>
+                                }
+                            </div>
+                            <div>
+                                <label for="startDateFilter">Başlangıç Tarihi</label>
+                                <input type="date" id="startDateFilter" class="form-control" />
+                            </div>
+                            <div>
+                                <label for="endDateFilter">Bitiş Tarihi</label>
+                                <input type="date" id="endDateFilter" class="form-control" />
+                            </div>
+                            <div>
+                                <label for="quickRange">Hızlı Aralık</label>
+                                <select id="quickRange" class="form-control">
+                                    <option value="">Serbest</option>
+                                    <option value="7">Son 7 gün</option>
+                                    <option value="30">Son 30 gün</option>
+                                    <option value="90">Son 90 gün</option>
+                                    <option value="365">Son 1 yıl</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="reportArea">
+                        <div id="maxMoneyHighlight" class="alert alert-info d-none align-items-center mb-3" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: #f8fafc; border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 12px 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.12);">
+                            <div class="mr-3" style="font-size: 24px; color: #fbbf24;">
+                                <i class="fa fa-trophy"></i>
+                            </div>
+                            <div style="flex: 1 1 auto;">
+                                <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; font-weight: 700;">
+                                    Tek Seferde En Yüksek Ceza Kaydı
+                                </div>
+                                <div id="maxMoneyText" style="font-size: 14px; font-weight: 600; color: #ffffff; margin-top: 2px;">
+                                    —
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row" id="summaryCards">
+                            <div class="col-sm-6 col-lg-3 mb-3">
+                                <div class="briefing-card money">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span>Toplam Ceza Tutarı</span>
+                                        <span class="label label-primary" style="font-size: 10px;">Tahsilat</span>
+                                    </div>
+                                    <strong id="sumMoney" style="color: #10b981;">0 TL</strong>
+                                    <small id="sumAverage">Ortalama: 0 TL</small>
+                                </div>
+                            </div>
+                            <div class="col-sm-6 col-lg-3 mb-3">
+                                <div class="briefing-card">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span>Ceza Hesaplama</span>
+                                        <span class="label label-info" id="sumCalculationsBadge" style="font-size: 10px;">0 Hesaplama</span>
+                                    </div>
+                                    <strong id="sumCalculations" style="color: #2563eb;">0</strong>
+                                    <small><span id="sumTahdit">0</span> Tahdit Formu ile Birlikte</small>
+                                </div>
+                            </div>
+                            <div class="col-sm-6 col-lg-3 mb-3">
+                                <div class="briefing-card sartli">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span>Şartlı Vize / İnad</span>
+                                        <span class="label label-warning" style="font-size: 10px;">Giriş / Ret</span>
+                                    </div>
+                                    <strong><span id="sumSartli" style="color: #4f46e5;">0</span> <span style="font-size:16px; font-weight:normal; color:#94a3b8;">/</span> <span id="sumInad" style="color: #ef4444;">0</span></strong>
+                                    <small>V-84 Şartlı Giriş / İNAD Reddi</small>
+                                </div>
+                            </div>
+                            <div class="col-sm-6 col-lg-3 mb-3">
+                                <div class="briefing-card country">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span>@(isAdmin ? "Ülke / Kapı Kapsamı" : "Ülke Kapsamı")</span>
+                                        <span class="label label-success" style="font-size: 10px;">Kapsam</span>
+                                    </div>
+                                    <strong id="sumScope" style="font-size: 20px; color: #b7791f;">0</strong>
+                                    <small>@(isAdmin ? "İşlem gören yabancı ülke ve kapı" : "İşlem yapılan yabancı ülke")</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <section class="chart-panel" id="section-tahdit-code">
+                                    <div class="chart-header">
+                                        <h5>Tahdit Formları - Kod Dağılımı</h5>
+                                        <button class="btn btn-sm btn-info download-section-btn" data-section="section-tahdit-code"><i class="fa fa-download"></i> İndir</button>
+                                    </div>
+                                    <div class="chart-body">
+                                        <div class="chart-frame"><canvas id="tahditCodeChart"></canvas></div>
+                                        <div id="tahditCodeTable" class="chart-table"></div>
+                                    </div>
+                                </section>
+                            </div>
+                            <div class="col-lg-6">
+                                <section class="chart-panel" id="section-tahdit-user">
+                                    <div class="chart-header">
+                                        <h5>Tahdit Formları - İlk 10 Kullanıcı</h5>
+                                        <button class="btn btn-sm btn-info download-section-btn" data-section="section-tahdit-user"><i class="fa fa-download"></i> İndir</button>
+                                    </div>
+                                    <div class="chart-body">
+                                        <div class="chart-frame"><canvas id="tahditUserChart"></canvas></div>
+                                        <div id="tahditUserTable" class="chart-table"></div>
+                                    </div>
+                                </section>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-lg-8">
+                                <section class="chart-panel" id="section-monthly">
+                                    <div class="chart-header">
+                                        <h5>Aylık Hesaplama ve Ceza Tutarı</h5>
+                                        <button class="btn btn-sm btn-info download-section-btn" data-section="section-monthly"><i class="fa fa-download"></i> İndir</button>
+                                    </div>
+                                    <div class="chart-body">
+                                        <div class="chart-frame tall"><canvas id="monthlyChart"></canvas></div>
+                                        <div id="monthlyTable" class="chart-table"></div>
+                                    </div>
+                                </section>
+                            </div>
+                            <div class="col-lg-4">
+                                <section class="chart-panel" id="section-country">
+                                    <div class="chart-header">
+                                        <h5>En Fazla Ceza Kesilen Ülkeler</h5>
+                                        <button class="btn btn-sm btn-info download-section-btn" data-section="section-country"><i class="fa fa-download"></i> İndir</button>
+                                    </div>
+                                    <div class="chart-body">
+                                        <div class="chart-frame tall"><canvas id="countryChart"></canvas></div>
+                                        <div id="countryTable" class="chart-table"></div>
+                                    </div>
+                                </section>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <section class="chart-panel" id="section-border-money">
+                                    <div class="chart-header">
+                                        <h5>Kapı Bazında Ceza Tutarı</h5>
+                                        <button class="btn btn-sm btn-info download-section-btn" data-section="section-border-money"><i class="fa fa-download"></i> İndir</button>
+                                    </div>
+                                    <div class="chart-body">
+                                        <div class="chart-frame"><canvas id="borderMoneyChart"></canvas></div>
+                                        <div id="borderMoneyTable" class="chart-table"></div>
+                                    </div>
+                                </section>
+                            </div>
+                            <div class="col-lg-6">
+                                <section class="chart-panel" id="section-personnel">
+                                    <div class="chart-header">
+                                        <h5>En Çok İşlem Yapan Personel</h5>
+                                        <button class="btn btn-sm btn-info download-section-btn" data-section="section-personnel"><i class="fa fa-download"></i> İndir</button>
+                                    </div>
+                                    <div class="chart-body">
+                                        <div class="chart-frame"><canvas id="personnelChart"></canvas></div>
+                                        <div id="personnelTable" class="chart-table"></div>
+                                    </div>
+                                </section>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <section class="chart-panel" id="section-daily">
+                                    <div class="chart-header">
+                                        <h5>Son 30 Gün Günlük Eğilim</h5>
+                                        <button class="btn btn-sm btn-info download-section-btn" data-section="section-daily"><i class="fa fa-download"></i> İndir</button>
+                                    </div>
+                                    <div class="chart-body">
+                                        <div class="chart-frame"><canvas id="dailyChart"></canvas></div>
+                                        <div id="dailyTable" class="chart-table"></div>
+                                    </div>
+                                </section>
+                            </div>
+                            <div class="col-lg-6">
+                                <section class="chart-panel" id="section-hourly">
+                                    <div class="chart-header">
+                                        <h5>Saatlik Yoğunluk</h5>
+                                        <button class="btn btn-sm btn-info download-section-btn" data-section="section-hourly"><i class="fa fa-download"></i> İndir</button>
+                                    </div>
+                                    <div class="chart-body">
+                                        <div class="chart-frame"><canvas id="hourlyChart"></canvas></div>
+                                        <div id="hourlyTable" class="chart-table"></div>
+                                    </div>
+                                </section>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-lg-4">
+                                <section class="chart-panel" id="section-penalty">
+                                    <div class="chart-header">
+                                        <h5>Ceza Türü Dağılımı</h5>
+                                        <button class="btn btn-sm btn-info download-section-btn" data-section="section-penalty"><i class="fa fa-download"></i> İndir</button>
+                                    </div>
+                                    <div class="chart-body">
+                                        <div class="chart-frame"><canvas id="penaltyChart"></canvas></div>
+                                        <div id="penaltyTable" class="chart-table"></div>
+                                    </div>
+                                </section>
+                            </div>
+                            <div class="col-lg-4">
+                                <section class="chart-panel" id="section-inad">
+                                    <div class="chart-header">
+                                        <h5>İnad Sebep Dağılımı</h5>
+                                        <button class="btn btn-sm btn-info download-section-btn" data-section="section-inad"><i class="fa fa-download"></i> İndir</button>
+                                    </div>
+                                    <div class="chart-body">
+                                        <div class="chart-frame"><canvas id="inadChart"></canvas></div>
+                                        <div id="inadTable" class="chart-table"></div>
+                                    </div>
+                                </section>
+                            </div>
+                            <div class="col-lg-4">
+                                <section class="chart-panel" id="section-sartli">
+                                    <div class="chart-header">
+                                        <h5>Şartlı Kişiler Kapı Dağılımı</h5>
+                                        <button class="btn btn-sm btn-info download-section-btn" data-section="section-sartli"><i class="fa fa-download"></i> İndir</button>
+                                    </div>
+                                    <div class="chart-body">
+                                        <div class="chart-frame"><canvas id="sartliChart"></canvas></div>
+                                        <div id="sartliTable" class="chart-table"></div>
+                                    </div>
+                                </section>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
     </div>
-</div>
-
-<div class="wrapper wrapper-content animated fadeInRight">
-
-    <!-- ========================================================
-         ÖZET KARTLARI - 1. SATIR
-    ========================================================= -->
-    <div class="row">
-
-        <div class="col-lg-3">
-            <div class="ibox">
-                <div class="ibox-title">
-                    <span class="label label-primary float-right">
-                        Bugün
-                    </span>
-                    <h5>Kesilen Tutar</h5>
-                </div>
-
-                <div class="ibox-content">
-                    <h1 class="no-margins">
-                        @ViewBag.d1 ₺
-                    </h1>
-
-                    <div class="stat-percent font-bold text-navy">
-                        <i class="fa fa-try"></i>
-                    </div>
-
-                    <small>Bugünkü toplam ceza tutarı</small>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-3">
-            <div class="ibox">
-                <div class="ibox-title">
-                    <span class="label label-success float-right">
-                        Genel
-                    </span>
-                    <h5>Toplam Ceza Tutarı</h5>
-                </div>
-
-                <div class="ibox-content">
-                    <h1 class="no-margins">
-                        @ViewBag.toplam ₺
-                    </h1>
-
-                    <div class="stat-percent font-bold text-success">
-                        <i class="fa fa-money"></i>
-                    </div>
-
-                    <small>Tüm zamanların toplamı</small>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-3">
-            <div class="ibox">
-                <div class="ibox-title">
-                    <span class="label label-warning float-right">
-                        Bugün
-                    </span>
-                    <h5>Kesilen Ceza</h5>
-                </div>
-
-                <div class="ibox-content">
-                    <h1 class="no-margins">
-                        @ViewBag.d14
-                    </h1>
-
-                    <div class="stat-percent font-bold text-warning">
-                        <i class="fa fa-gavel"></i>
-                    </div>
-
-                    <small>Bugün kesilen ceza sayısı</small>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-3">
-            <div class="ibox">
-                <div class="ibox-title">
-                    <span class="label label-danger float-right">
-                        Genel
-                    </span>
-                    <h5>Toplam Ceza</h5>
-                </div>
-
-                <div class="ibox-content">
-                    <h1 class="no-margins">
-                        @ViewBag.KesilenToplamCeza
-                    </h1>
-
-                    <div class="stat-percent font-bold text-danger">
-                        <i class="fa fa-list-ol"></i>
-                    </div>
-
-                    <small>Toplam kesilen ceza sayısı</small>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-    <!-- ========================================================
-         ÖZET KARTLARI - 2. SATIR
-    ========================================================= -->
-    <div class="row">
-
-        <div class="col-lg-3">
-            <div class="ibox">
-                <div class="ibox-title">
-                    <span class="label label-primary float-right">
-                        Bugün
-                    </span>
-                    <h5>Hesaplama</h5>
-                </div>
-
-                <div class="ibox-content">
-                    <h1 class="no-margins">
-                        @ViewBag.d15
-                    </h1>
-
-                    <div class="stat-percent font-bold text-navy">
-                        <i class="fa fa-calculator"></i>
-                    </div>
-
-                    <small>Bugün yapılan hesaplama</small>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-3">
-            <div class="ibox">
-                <div class="ibox-title">
-                    <span class="label label-success float-right">
-                        Genel
-                    </span>
-                    <h5>Toplam Hesaplama</h5>
-                </div>
-
-                <div class="ibox-content">
-                    <h1 class="no-margins">
-                        @ViewBag.hesaplamasayisi
-                    </h1>
-
-                    <div class="stat-percent font-bold text-success">
-                        <i class="fa fa-line-chart"></i>
-                    </div>
-
-                    <small>Tüm hesaplama kayıtları</small>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-3">
-            <div class="ibox">
-                <div class="ibox-title">
-                    <span class="label label-warning float-right">
-                        Bugün
-                    </span>
-                    <h5>V-84</h5>
-                </div>
-
-                <div class="ibox-content">
-                    <h1 class="no-margins">
-                        @ViewBag.bugunsartli
-                    </h1>
-
-                    <div class="stat-percent font-bold text-warning">
-                        <i class="fa fa-file-text-o"></i>
-                    </div>
-
-                    <small>Bugün düzenlenen V-84</small>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-3">
-            <div class="ibox">
-                <div class="ibox-title">
-                    <span class="label label-info float-right">
-                        Aktif
-                    </span>
-                    <h5>Toplam Personel</h5>
-                </div>
-
-                <div class="ibox-content">
-                    <h1 class="no-margins">
-                        @ViewBag.personelsayisi
-                    </h1>
-
-                    <div class="stat-percent font-bold text-info">
-                        <i class="fa fa-users"></i>
-                    </div>
-
-                    <small>Sistemde kayıtlı personel</small>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-    <!-- ========================================================
-         ÖZET KARTLARI - 3. SATIR
-    ========================================================= -->
-    <div class="row">
-
-        <div class="col-lg-3">
-            <div class="ibox">
-                <div class="ibox-title">
-                    <span class="label label-danger float-right">
-                        Genel
-                    </span>
-                    <h5>Toplam İNAD</h5>
-                </div>
-
-                <div class="ibox-content">
-                    <h1 class="no-margins">
-                        @ViewBag.inadsayisi
-                    </h1>
-
-                    <div class="stat-percent font-bold text-danger">
-                        <i class="fa fa-ban"></i>
-                    </div>
-
-                    <small>E_Inad tablosundaki toplam kayıt</small>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-3">
-            <div class="ibox">
-                <div class="ibox-title">
-                    <span class="label label-warning float-right">
-                        Bugün
-                    </span>
-                    <h5>Bugünkü İNAD</h5>
-                </div>
-
-                <div class="ibox-content">
-                    <h1 class="no-margins">
-                        @ViewBag.buguninad
-                    </h1>
-
-                    <div class="stat-percent font-bold text-warning">
-                        <i class="fa fa-calendar-check-o"></i>
-                    </div>
-
-                    <small>Bugün oluşturulan İNAD kaydı</small>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-3">
-            <div class="ibox">
-                <div class="ibox-title">
-                    <span class="label label-primary float-right">
-                        Genel
-                    </span>
-                    <h5>Toplam V-84</h5>
-                </div>
-
-                <div class="ibox-content">
-                    <h1 class="no-margins">
-                        @ViewBag.v84sayisi
-                    </h1>
-
-                    <div class="stat-percent font-bold text-navy">
-                        <i class="fa fa-file-text"></i>
-                    </div>
-
-                    <small>E_Sartli tablosundaki toplam kayıt</small>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-3">
-            <div class="ibox">
-                <div class="ibox-title">
-                    <span class="label label-info float-right">
-                        Aktif
-                    </span>
-                    <h5>Aktif Personel</h5>
-                </div>
-
-                <div class="ibox-content">
-                    <h1 class="no-margins">
-                        @ViewBag.aktifpersonelsayisi
-                    </h1>
-
-                    <div class="stat-percent font-bold text-info">
-                        <i class="fa fa-user-check"></i>
-                    </div>
-
-                    <small>E_User tablosundaki aktif kullanıcı</small>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-    <!-- ========================================================
-         GRAFİKLER - 1. SATIR
-    ========================================================= -->
-    <div class="row">
-
-        <div class="col-lg-6">
-            <div class="ibox">
-                <div class="ibox-title">
-                    <div class="ibox-tools">
-                        <button type="button" class="btn btn-xs btn-chart-export" data-chart="gunlukTrendChart" title="Yüksek Çözünürlüklü ve Tablolu Görsel İndir">
-                            <i class="fa fa-download"></i> Detaylı Görsel İndir
-                        </button>
-                    </div>
-                    <h5>
-                        Son 7 Günlük İşlem Trendi
-                        <small>
-                            Ceza ve hesaplama sayıları
-                        </small>
-                    </h5>
-                </div>
-
-                <div class="ibox-content">
-                    <div class="chart-container">
-                        <canvas id="gunlukTrendChart"
-                                height="150"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-6">
-            <div class="ibox">
-                <div class="ibox-title">
-                    <div class="ibox-tools">
-                        <button type="button" class="btn btn-xs btn-chart-export" data-chart="aylikTrendChart" title="Yüksek Çözünürlüklü ve Tablolu Görsel İndir">
-                            <i class="fa fa-download"></i> Detaylı Görsel İndir
-                        </button>
-                    </div>
-                    <h5>
-                        Son 6 Aylık İşlem Trendi
-                        <small>
-                            Ceza ve V-84 sayıları
-                        </small>
-                    </h5>
-                </div>
-
-                <div class="ibox-content">
-                    <div class="chart-container">
-                        <canvas id="aylikTrendChart"
-                                height="150"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-    <!-- ========================================================
-         GRAFİKLER - 2. SATIR
-    ========================================================= -->
-    <div class="row">
-
-        <div class="col-lg-6">
-            <div class="ibox">
-                <div class="ibox-title">
-                    <div class="ibox-tools">
-                        <button type="button" class="btn btn-xs btn-chart-export" data-chart="ulkeCokChart" title="Yüksek Çözünürlüklü ve Tablolu Görsel İndir">
-                            <i class="fa fa-download"></i> Detaylı Görsel İndir
-                        </button>
-                    </div>
-                    <h5>
-                        En Çok Ceza Kesilen Ülkeler
-                    </h5>
-                </div>
-
-                <div class="ibox-content">
-                    <div class="chart-container">
-                        <canvas id="ulkeCokChart"
-                                height="160"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-6">
-            <div class="ibox">
-                <div class="ibox-title">
-                    <div class="ibox-tools">
-                        <button type="button" class="btn btn-xs btn-chart-export" data-chart="ulkeAzChart" title="Yüksek Çözünürlüklü ve Tablolu Görsel İndir">
-                            <i class="fa fa-download"></i> Detaylı Görsel İndir
-                        </button>
-                    </div>
-                    <h5>
-                        En Az Ceza Kesilen Ülkeler
-                    </h5>
-                </div>
-
-                <div class="ibox-content">
-                    <div class="chart-container">
-                        <canvas id="ulkeAzChart"
-                                height="160"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-    <!-- ========================================================
-         GRAFİKLER - 3. SATIR
-    ========================================================= -->
-    <div class="row">
-
-        <div class="col-lg-6">
-            <div class="ibox">
-                <div class="ibox-title">
-                    <div class="ibox-tools">
-                        <button type="button" class="btn btn-xs btn-chart-export" data-chart="personelChart" title="Yüksek Çözünürlüklü ve Tablolu Görsel İndir">
-                            <i class="fa fa-download"></i> Detaylı Görsel İndir
-                        </button>
-                    </div>
-                    <h5>
-                        Personel Ceza Sıralaması
-                        <small>
-                            İlk 10 personel
-                        </small>
-                    </h5>
-                </div>
-
-                <div class="ibox-content">
-                    <div class="chart-container">
-                        <canvas id="personelChart"
-                                height="210"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-6">
-            <div class="ibox">
-                <div class="ibox-title">
-                    <div class="ibox-tools">
-                        <button type="button" class="btn btn-xs btn-chart-export" data-chart="haftalikChart" title="Yüksek Çözünürlüklü ve Tablolu Görsel İndir">
-                            <i class="fa fa-download"></i> Detaylı Görsel İndir
-                        </button>
-                    </div>
-                    <h5>
-                        Haftanın Günlerine Göre Ceza Yoğunluğu
-                    </h5>
-                </div>
-
-                <div class="ibox-content">
-                    <div class="chart-container">
-                        <canvas id="haftalikChart"
-                                height="210"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-    <!-- ========================================================
-         GRAFİKLER - 4. SATIR
-    ========================================================= -->
-    <div class="row">
-
-        <div class="col-lg-6">
-            <div class="ibox">
-                <div class="ibox-title">
-                    <div class="ibox-tools">
-                        <button type="button" class="btn btn-xs btn-chart-export" data-chart="inadUyrukChart" title="Yüksek Çözünürlüklü ve Tablolu Görsel İndir">
-                            <i class="fa fa-download"></i> Detaylı Görsel İndir
-                        </button>
-                    </div>
-                    <h5>
-                        İNAD Uyruk Dağılımı
-                    </h5>
-                </div>
-
-                <div class="ibox-content">
-                    <div class="text-center">
-                        <canvas id="inadUyrukChart"
-                                height="180"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-6">
-            <div class="ibox">
-                <div class="ibox-title">
-                    <div class="ibox-tools">
-                        <button type="button" class="btn btn-xs btn-chart-export" data-chart="inadKapiChart" title="Yüksek Çözünürlüklü ve Tablolu Görsel İndir">
-                            <i class="fa fa-download"></i> Detaylı Görsel İndir
-                        </button>
-                    </div>
-                    <h5>
-                        İNAD Kapı Dağılımı
-                    </h5>
-                </div>
-
-                <div class="ibox-content">
-                    <div class="text-center">
-                        <canvas id="inadKapiChart"
-                                height="180"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-    <!-- ========================================================
-         GENEL DAĞILIM GRAFİKLERİ
-    ========================================================= -->
-    <div class="row">
-
-        <div class="col-lg-4">
-            <div class="ibox">
-                <div class="ibox-title">
-                    <div class="ibox-tools">
-                        <button type="button" class="btn btn-xs btn-chart-export" data-chart="islemTipiChart" title="Yüksek Çözünürlüklü ve Tablolu Görsel İndir">
-                            <i class="fa fa-download"></i> Detaylı Görsel İndir
-                        </button>
-                    </div>
-                    <h5>
-                        Genel İşlem Dağılımı
-                        <small>
-                            Ceza, hesaplama, İNAD, V-84
-                        </small>
-                    </h5>
-                </div>
-
-                <div class="ibox-content">
-                    <div class="text-center">
-                        <canvas id="islemTipiChart"
-                                height="190"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-4">
-            <div class="ibox">
-                <div class="ibox-title">
-                    <div class="ibox-tools">
-                        <button type="button" class="btn btn-xs btn-chart-export" data-chart="bugunIslemChart" title="Yüksek Çözünürlüklü ve Tablolu Görsel İndir">
-                            <i class="fa fa-download"></i> Detaylı Görsel İndir
-                        </button>
-                    </div>
-                    <h5>
-                        Bugünkü İşlem Dağılımı
-                    </h5>
-                </div>
-
-                <div class="ibox-content">
-                    <div class="text-center">
-                        <canvas id="bugunIslemChart"
-                                height="190"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-4">
-            <div class="ibox">
-                <div class="ibox-title">
-                    <div class="ibox-tools">
-                        <button type="button" class="btn btn-xs btn-chart-export" data-chart="kapiGenelChart" title="Yüksek Çözünürlüklü ve Tablolu Görsel İndir">
-                            <i class="fa fa-download"></i> Detaylı Görsel İndir
-                        </button>
-                    </div>
-                    <h5>
-                        Kapı Bazlı Toplam Yoğunluk
-                        <small>
-                            Tüm işlem tabloları
-                        </small>
-                    </h5>
-                </div>
-
-                <div class="ibox-content">
-                    <div class="chart-container">
-                        <canvas id="kapiGenelChart"
-                                height="190"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-    <!-- ========================================================
-         RADAR
-    ========================================================= -->
-    <div class="row">
-
-        <div class="col-lg-12">
-            <div class="ibox">
-                <div class="ibox-title">
-                    <div class="ibox-tools">
-                        <button type="button" class="btn btn-xs btn-chart-export" data-chart="radarChart" title="Yüksek Çözünürlüklü ve Tablolu Görsel İndir">
-                            <i class="fa fa-download"></i> Detaylı Görsel İndir
-                        </button>
-                    </div>
-                    <h5>
-                        Hudut Kapısı Karşılaştırması
-                        <small>
-                            Ceza ve V-84 işlem sayıları
-                        </small>
-                    </h5>
-                </div>
-
-                <div class="ibox-content">
-                    <div class="chart-container">
-                        <canvas id="radarChart"
-                                height="90"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-    <!-- ========================================================
-         BİLGİ KARTLARI
-    ========================================================= -->
-    <div class="row">
-
-        <div class="col-lg-3">
-            <div class="ibox">
-                <div class="ibox-title">
-                    <h5>En Fazla Ceza Kesen</h5>
-                </div>
-
-                <div class="ibox-content text-center">
-                    <i class="fa fa-trophy fa-3x text-warning"></i>
-
-                    <h3 class="m-t-md">
-                        @ViewBag.d13
-                    </h3>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-3">
-            <div class="ibox">
-                <div class="ibox-title">
-                    <h5>En Çok V-84 Düzenleyen</h5>
-                </div>
-
-                <div class="ibox-content text-center">
-                    <i class="fa fa-certificate fa-3x text-navy"></i>
-
-                    <h3 class="m-t-md">
-                        @ViewBag.v84encokpersonel
-                    </h3>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-3">
-            <div class="ibox">
-                <div class="ibox-title">
-                    <h5>En Çok Ceza Kesilen Ülke</h5>
-                </div>
-
-                <div class="ibox-content text-center">
-                    <i class="fa fa-flag fa-3x text-danger"></i>
-
-                    <h3 class="m-t-md">
-                        @ViewBag.encokulkehangi
-                    </h3>
-
-                    <small class="text-muted">
-                        @ViewBag.encokulkesayi ceza
-                    </small>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-3">
-            <div class="ibox">
-                <div class="ibox-title">
-                    <h5>Son İşlem</h5>
-                </div>
-
-                <div class="ibox-content text-center">
-                    <i class="fa fa-clock-o fa-3x text-info"></i>
-
-                    <h4 class="m-t-md">
-                        @ViewBag.islemyapansonper
-                    </h4>
-
-                    <div>
-                        @if (ViewBag.d11 != null)
-                        {
-                            <span>
-                                @(Convert.ToDateTime(ViewBag.d11).ToString("dd.MM.yyyy HH:mm"))
-                            </span>
-                        }
-                        else
-                        {
-                            <span>-</span>
-                        }
-                    </div>
-
-                    <small class="text-muted">
-                        @ViewBag.d12
-                    </small>
-                </div>
-            </div>
-        </div>
 
 </div>
 
-</div>
-
-</div>
+<div class="loading-overlay"><i class="fa fa-spinner fa-pulse fa-3x"></i><br />İşleniyor...</div>
 
 @section Scripts {
-
-    <!-- INSPINIA kaynak şablonundaki Chart.js yolu -->
+    <!-- INSPINIA kaynak şablonundaki Chart.js ve html2canvas yolları -->
     <script src="@Url.Content("~/AdminTemplate/js/plugins/chartJs/Chart.min.js")?v=2.8"></script>
+    <script src="@Url.Content("~/AdminTemplate/js/plugins/html2canvas/html2canvas.min.js")"></script>
 
-    <!-- İstatistik sayfasına özel JavaScript -->
-    <script src="@Url.Content("~/js/istatistik-index.js")?v=2.9"></script>
+    <!-- İstatistik ve Brifing JavaScript Dosyaları -->
+    <script src="@Url.Content("~/js/istatistik-index.js")?v=3.2"></script>
+    <script src="@Url.Content("~/js/ceza-grafik.js")?v=1.2"></script>
+
+    <script>
+        $(document).ready(function () {
+            // URL hash veya parametre kontrolü: #tab-brifing veya ?tab=grafik
+            if (window.location.hash === '#tab-brifing' ||
+                window.location.search.indexOf('tab=grafik') !== -1 ||
+                window.location.search.indexOf('tab=brifing') !== -1) {
+                $('#tab-brifing-btn').tab('show');
+            }
+
+            // Sekme değişiminde Chart.js canvas boyutlarını yenile
+            $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+                var target = $(e.target).attr('href');
+                window.dispatchEvent(new Event('resize'));
+                if (target === '#tab-brifing') {
+                    if (window.location.hash !== '#tab-brifing') {
+                        history.replaceState(null, null, '#tab-brifing');
+                    }
+                } else if (target === '#tab-ozet') {
+                    if (window.location.hash === '#tab-brifing') {
+                        history.replaceState(null, null, '#tab-ozet');
+                    }
+                }
+            });
+        });
+    </script>
 }

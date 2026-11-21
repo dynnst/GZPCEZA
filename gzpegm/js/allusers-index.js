@@ -210,7 +210,12 @@ function approveTeacher(id) {
         id: id,
         __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').first().val()
     }, function (res) {
-        if (res.status === "ok") location.reload(); else alert(res.message || "İşlem başarısız.");
+        if (res.status === "ok") {
+            window.location.hash = '#teacher-content';
+            location.reload();
+        } else {
+            alert(res.message || "İşlem başarısız.");
+        }
     }).fail(function () { alert("Sunucu hatası oluştu."); });
 }
 
@@ -220,7 +225,12 @@ function rejectTeacher(id) {
         id: id,
         __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').first().val()
     }, function (res) {
-        if (res.status === "ok") location.reload(); else alert(res.message || "İşlem başarısız.");
+        if (res.status === "ok") {
+            window.location.hash = '#teacher-content';
+            location.reload();
+        } else {
+            alert(res.message || "İşlem başarısız.");
+        }
     }).fail(function () { alert("Sunucu hatası oluştu."); });
 }
 
@@ -391,12 +401,14 @@ function runInactivityDeactivation() {
             .done(function (res) {
                 if (res && res.success) {
                     alert(res.message);
+                    window.location.hash = '#maintenance-content';
                     location.reload();
                 } else if (res && res.message) {
                     alert("Hata: " + res.message);
                     isRunningInactivityDeactivation = false;
                     $btn.prop("disabled", false).html('<i class="fas fa-user-lock me-1"></i> <span id="inactivityBtnText">' + months + ' Ay ve Üzeri İnaktifleri Pasife Al</span>');
                 } else {
+                    window.location.hash = '#maintenance-content';
                     location.reload();
                 }
             })
@@ -430,6 +442,7 @@ function startBulkActivation() {
             .done(function (res) {
                 if (res && res.success) {
                     alert(res.message || "Tüm pasif kullanıcılar başarıyla aktifleştirildi.");
+                    window.location.hash = '#maintenance-content';
                     location.reload();
                 } else if (fallbackUrl) {
                     postActivate(fallbackUrl, null);
@@ -528,6 +541,7 @@ function startOrphanDeletion(monthsParam) {
                 $("#orphanResultText").html(summary);
                 $("#btnDeleteOrphans").prop("disabled", false).html('<i class="fas fa-user-times me-1"></i> Yetim Kullanıcıları Sil (Doğrudan Başlat)');
                 $("#btnProceedDelete").prop("disabled", false).html('<i class="fas fa-trash-alt me-1"></i> Bu Kullanıcıları Güvenle Sil');
+                window.location.hash = '#maintenance-content';
                 setTimeout(function () { location.reload(); }, 1500);
             }
 
@@ -586,8 +600,34 @@ function startOrphanDeletion(monthsParam) {
         });
 }
 
+// URL Hash ile sekme etkinleştirme
+function activateTabFromHash() {
+    var hash = window.location.hash;
+    if (hash) {
+        var $targetTab = $('a[data-toggle="tab"][href="' + hash + '"]');
+        if ($targetTab.length) {
+            $targetTab.tab('show');
+            return true;
+        }
+    }
+    return false;
+}
+
 $(document).ready(function () {
     initializeDataTables();
+
+    // Sayfa açıldığında modal popup formlarını bağla
+    if ($.fn.magnificPopup) {
+        $('.modal-with-form').magnificPopup({
+            type: 'inline',
+            preloader: false,
+            modal: true
+        });
+    }
+
+    // URL'deki hash sekmesini etkinleştir
+    activateTabFromHash();
+    window.addEventListener('hashchange', activateTabFromHash);
 
     // DataTables sayfalandığında veya arama yapıldığında modal form bağlamalarını tazele
     $(document).on('draw.dt', function () {
@@ -637,12 +677,20 @@ $(document).ready(function () {
         var val = $(this).val();
         if (usersTable) {
             if (val === "") usersTable.column(1).search('').draw();
-            else usersTable.column(1).search('^' + val + '$', true, false).draw();
+            else usersTable.column(1).search('^\\s*' + val + '\\s*$', true, false).draw();
         }
     });
 
     $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
         var targetTab = $(e.target).attr("href");
+        if (targetTab) {
+            if (history.replaceState) {
+                history.replaceState(null, null, targetTab);
+            } else {
+                window.location.hash = targetTab;
+            }
+        }
+
         if (targetTab === "#maintenance-content") {
             loadInactivityCandidateCount();
         }

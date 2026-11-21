@@ -1,63 +1,136 @@
 @model gzpegm.Models.ViewModels.OldOperationsIndexViewModel
 @{
-    ViewBag.Title = "Eski İşlemler";
+    ViewBag.Title = "İşlem Kayıtları & Arşiv";
     Layout = "~/Views/Shared/_Master.cshtml";
 }
 
-<section class="card">
-    <header class="card-header d-flex justify-content-between align-items-center">
-        <h2 class="card-title"><i class="fas fa-history"></i> Eski İşlemler</h2>
-        <span class="badge badge-info">Tek merkez</span>
-    </header>
-    <div class="card-body">
-        <div class="alert alert-info">
-            Genel eski işlemler ve yetkiniz varsa admin eski işlemleri bu sayfadan kontrol edebilirsiniz.
-        </div>
+<style>
+    .op-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        transition: all 0.2s ease-in-out;
+        background: #ffffff;
+        text-decoration: none !important;
+        display: block;
+        height: 100%;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    }
+    .op-card:hover {
+        border-color: #0284c7;
+        box-shadow: 0 8px 20px rgba(2, 132, 199, 0.15);
+        transform: translateY(-2px);
+    }
+    .op-card-admin {
+        border-left: 4px solid #f59e0b;
+    }
+    .op-card-admin:hover {
+        border-color: #f59e0b;
+        box-shadow: 0 8px 20px rgba(245, 158, 11, 0.18);
+    }
+    .op-card-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        flex-shrink: 0;
+    }
+    .op-icon-blue { background: #e0f2fe; color: #0284c7; }
+    .op-icon-amber { background: #fef3c7; color: #d97706; }
+    .op-icon-green { background: #dcfce7; color: #16a34a; }
+    .op-icon-purple { background: #f3e8ff; color: #9333ea; }
+    .op-icon-red { background: #fee2e2; color: #dc2626; }
+</style>
 
-        <h4 class="mb-3">Genel Eski İşlemler</h4>
-        <div class="row">
-            @foreach (var item in Model.GeneralOperations)
-            {
-                <div class="col-md-4 mb-3">
-                    <a href="@item.Url" target="_blank" rel="noopener noreferrer" class="card text-decoration-none h-100">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center mb-2">
-                                <i class="@item.Icon fa-2x text-primary mr-3"></i>
-                                <h5 class="mb-0">@item.Title</h5>
-                            </div>
-                            <p class="text-muted mb-0">@item.Description</p>
-                        </div>
-                    </a>
+<div class="row">
+    <div class="col-12">
+        <section class="card">
+            <header class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="card-title font-weight-bold mb-1">
+                        <i class="fas fa-history text-primary mr-2"></i> İşlem Kayıtları &amp; Arşiv Merkezi
+                    </h2>
+                    <small class="text-muted">Hudut kapınızda yapılan ceza, tutanak, hesaplama, şartlı vize ve inad kayıt arşivi</small>
                 </div>
-            }
-        </div>
+                <span class="badge badge-primary px-3 py-2 font-weight-bold">
+                    <i class="fas fa-shield-alt mr-1"></i> Yetkili Erişim
+                </span>
+            </header>
+            <div class="card-body">
+                <div class="alert alert-info py-2 px-3 mb-4 d-flex align-items-center">
+                    <i class="fas fa-info-circle fa-2x mr-3 text-info"></i>
+                    <div>
+                        <strong>Bilgilendirme:</strong> Bu ekranda yetkiniz dahilinde geçmiş operasyonel formları ve arşiv kayıtlarını listeleyebilir, filtreleyebilir ve tekrar çıktı alabilirsiniz.
+                    </div>
+                </div>
 
-        @if (Model.CanSeeAdminOperations)
-        {
-            <hr />
-            <h4 class="mb-3">Admin Eski İşlemler</h4>
-            <div class="row">
-                @foreach (var item in Model.AdminOperations)
-                {
-                    <div class="col-md-4 mb-3">
-                        <a href="@item.Url" target="_blank" rel="noopener noreferrer" class="card text-decoration-none h-100 border-warning">
-                            <div class="card-body">
-                                <div class="d-flex align-items-center mb-2">
-                                    <i class="@item.Icon fa-2x text-warning mr-3"></i>
-                                    <h5 class="mb-0">@item.Title</h5>
+                <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+                    <h4 class="mb-0 font-weight-bold text-dark">
+                        <i class="fas fa-folder-open text-primary mr-2"></i> Kapı İşlem Kayıtları
+                    </h4>
+                    <span class="badge badge-light border text-muted">@Model.GeneralOperations.Count İşlem Modülü</span>
+                </div>
+
+                <div class="row mb-4">
+                    @foreach (var item in Model.GeneralOperations)
+                    {
+                        <div class="col-lg-4 col-md-6 mb-3">
+                            <a href="@item.Url" target="_blank" rel="noopener noreferrer" class="op-card p-3">
+                                <div class="d-flex align-items-start">
+                                    <div class="op-card-icon op-icon-blue mr-3">
+                                        <i class="@item.Icon"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <h5 class="font-weight-bold text-dark mb-0" style="font-size: 15px;">@item.Title</h5>
+                                        </div>
+                                        <p class="text-muted small mb-0">@item.Description</p>
+                                    </div>
                                 </div>
-                                <p class="text-muted mb-0">@item.Description</p>
+                            </a>
+                        </div>
+                    }
+                </div>
+
+                @if (Model.CanSeeAdminOperations)
+                {
+                    <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2 mt-4">
+                        <h4 class="mb-0 font-weight-bold text-dark">
+                            <i class="fas fa-user-shield text-warning mr-2"></i> Sistem Geneli &amp; Admin Arşivi (Tüm Kapılar)
+                        </h4>
+                        <span class="badge badge-warning text-dark font-weight-bold">Admin / Rapor Yetkisi</span>
+                    </div>
+
+                    <div class="row">
+                        @foreach (var item in Model.AdminOperations)
+                        {
+                            <div class="col-lg-4 col-md-6 mb-3">
+                                <a href="@item.Url" target="_blank" rel="noopener noreferrer" class="op-card op-card-admin p-3">
+                                    <div class="d-flex align-items-start">
+                                        <div class="op-card-icon op-icon-amber mr-3">
+                                            <i class="@item.Icon"></i>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <h5 class="font-weight-bold text-dark mb-0" style="font-size: 15px;">@item.Title</h5>
+                                            </div>
+                                            <p class="text-muted small mb-0">@item.Description</p>
+                                        </div>
+                                    </div>
+                                </a>
                             </div>
-                        </a>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-light border text-muted small mt-3">
+                        <i class="fas fa-lock mr-1"></i> Tüm kapılara ait genel admin arşivi yalnızca <strong>Sistem Yöneticisi</strong> ve <strong>Rapor Yetkilisi</strong> personellerine gösterilir.
                     </div>
                 }
             </div>
-        }
-        else
-        {
-            <div class="alert alert-secondary mt-3">
-                Admin eski işlemleri yalnızca yetkili kullanıcılar için gösterilir.
-            </div>
-        }
+        </section>
     </div>
-</section>
+</div>

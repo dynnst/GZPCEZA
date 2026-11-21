@@ -65,6 +65,15 @@
         .Select(c => getAuthDescription(c))
         .Where(d => !string.IsNullOrWhiteSpace(d))
         .ToList();
+
+    bool isAdmin = (currentUser != null && string.Equals(currentUser.Role, "Admin", StringComparison.OrdinalIgnoreCase)) || authCodesList.Contains("2");
+    bool canCore = isAdmin || authCodesList.Contains("3");
+    bool canEducation = isAdmin || authCodesList.Contains("3") || authCodesList.Contains("6");
+    bool canAdminOld = isAdmin || authCodesList.Contains("4");
+    bool isStatSuper = gzpegm.Services.StatService.IsSuperAdmin(currentUser);
+    bool isStatKapi = gzpegm.Services.StatService.IsAnyKapiAdmin(currentUser);
+    bool canManageStats = isStatSuper || isStatKapi;
+
     var pendingInadList = ViewBag.PendingInadList as List<gzpegm.Models.E_Inad> ?? new List<gzpegm.Models.E_Inad>();
     var pendingInadCount = ViewBag.PendingInadCount != null ? (int)ViewBag.PendingInadCount : pendingInadList.Count;
     var inadUserBorder = ViewBag.InadUserBorder as string ?? "";
@@ -132,9 +141,12 @@
             <h1 id="homeTitle" class="home-title">Ceza, vize ve tahdit işlemleri için hızlı çalışma alanı</h1>
             <p class="home-summary">Sık kullanılan hesaplama, belge ve kontrol ekranları tek yerde toplandı. Tüm bağlantılar yerel proje dosyaları ve mevcut modüller üzerinden çalışır.</p>
             <div class="home-primary-actions">
-                <a href="@Url.Action("Index", "Calculate")" class="home-primary-btn">
-                    <i class="fas fa-calculator"></i> Hesaplama
-                </a>
+                @if (canCore)
+                {
+                    <a href="@Url.Action("Index", "Calculate")" class="home-primary-btn">
+                        <i class="fas fa-calculator"></i> Ceza Hesaplama
+                    </a>
+                }
                 <button id="openKaseVizeModal" type="button" class="home-secondary-btn" data-toggle="modal" data-target="#kaseVizeModal">
                     <i class="fas fa-passport"></i> Kaşe Vize Kontrolü
                 </button>
@@ -217,50 +229,55 @@
             <span>Yerel modüller ve dosyalar</span>
         </div>
         <div class="quick-action-grid">
-            <a href="@Url.Action("Index", "Calculate")" class="quick-action is-primary">
-                <span class="quick-action-icon"><i class="fas fa-calculator"></i></span>
-                <span class="quick-action-text"><strong>Ceza Hesaplama</strong><span>Hesaplama ekranı</span></span>
-            </a>
-            <a href="/VIZEV" target="_blank" rel="noopener noreferrer" class="quick-action is-check">
-                <span class="quick-action-icon"><i class="fas fa-stamp"></i></span>
-                <span class="quick-action-text"><strong>V-84 İşlemler</strong><span>Şartlı vize ekranı</span></span>
-            </a>
-            <a href="@Url.Action("Index", "Tahdit")" target="_blank" rel="noopener noreferrer" class="quick-action is-warning">
-                <span class="quick-action-icon"><i class="fas fa-ban"></i></span>
-                <span class="quick-action-text"><strong>Tahditler</strong><span>Tahdit kayıtları</span></span>
-            </a>
-            <a href="@Url.Action("Index", "EInad")" target="_blank" rel="noopener noreferrer" class="quick-action">
-                <span class="quick-action-icon"><i class="fas fa-clipboard-check"></i></span>
-                <span class="quick-action-text"><strong>İnad İşlemleri</strong><span>İnad kayıtları</span></span>
-            </a>
-            <a href="@Url.Action("Index", "Isk")" target="_blank" rel="noopener noreferrer" class="quick-action is-primary">
-                <span class="quick-action-icon"><i class="fas fa-users"></i></span>
-                <span class="quick-action-text"><strong>İşlem Kayıtları</strong><span>Yolcu işlem geçmişi</span></span>
-            </a>
-            <a href="@Url.Action("StudentIndex", "Course")" target="_blank" rel="noopener noreferrer" class="quick-action is-check">
-                <span class="quick-action-icon"><i class="fas fa-graduation-cap"></i></span>
-                <span class="quick-action-text"><strong>Eğitim Modülü</strong><span>Kurslar ve sınavlar</span></span>
-            </a>
-            <a href="@Url.Action("Inbox", "Mesaj")" class="quick-action">
-                <span class="quick-action-icon"><i class="fas fa-envelope"></i></span>
-                <span class="quick-action-text"><strong>Mesajlar</strong><span>Gelen kutusu</span></span>
+            @if (canCore)
+            {
+                <a href="@Url.Action("Index", "Calculate")" class="quick-action is-primary">
+                    <span class="quick-action-icon"><i class="fas fa-calculator"></i></span>
+                    <span class="quick-action-text"><strong>Ceza Hesaplama</strong><span>Hesaplama ekranı</span></span>
+                </a>
+                <a href="/VIZEV" target="_blank" rel="noopener noreferrer" class="quick-action is-check">
+                    <span class="quick-action-icon"><i class="fas fa-stamp"></i></span>
+                    <span class="quick-action-text"><strong>V-84 İşlemler</strong><span>Şartlı vize ekranı</span></span>
+                </a>
+                <a href="@Url.Action("Index", "Tahdit")" target="_blank" rel="noopener noreferrer" class="quick-action is-warning">
+                    <span class="quick-action-icon"><i class="fas fa-ban"></i></span>
+                    <span class="quick-action-text"><strong>Tahditler</strong><span>Tahdit kayıtları</span></span>
+                </a>
+                <a href="@Url.Action("Index", "EInad")" target="_blank" rel="noopener noreferrer" class="quick-action">
+                    <span class="quick-action-icon"><i class="fas fa-clipboard-check"></i></span>
+                    <span class="quick-action-text"><strong>İnad İşlemleri</strong><span>İnad kayıtları</span></span>
+                </a>
+                <a href="/GRAFIK" target="_blank" rel="noopener noreferrer" class="quick-action is-check">
+                    <span class="quick-action-icon"><i class="fas fa-chart-line"></i></span>
+                    <span class="quick-action-text"><strong>İşlem Grafikleri</strong><span>Ceza brifing grafikleri</span></span>
+                </a>
+            }
+            <a href="@Url.Action("Index", "EskiIslemler")" target="_blank" rel="noopener noreferrer" class="quick-action is-reference">
+                <span class="quick-action-icon"><i class="fas fa-history"></i></span>
+                <span class="quick-action-text"><strong>İşlem Kayıtları</strong><span>Arşiv &amp; eski işlemler</span></span>
             </a>
             <a href="@Url.Action("Index", "Istatistik")" target="_blank" rel="noopener noreferrer" class="quick-action is-warning">
                 <span class="quick-action-icon"><i class="fas fa-chart-bar"></i></span>
-                <span class="quick-action-text"><strong>İstatistikler</strong><span>Ceza ve işlem grafikleri</span></span>
+                <span class="quick-action-text"><strong>İstatistikler</strong><span>Genel istatistik verileri</span></span>
             </a>
-            <a href="@Url.Action("Index", "EskiIslemler")" target="_blank" rel="noopener noreferrer" class="quick-action is-reference">
-                <span class="quick-action-icon"><i class="fas fa-history"></i></span>
-                <span class="quick-action-text"><strong>Eski İşlemler</strong><span>Arşiv kayıtları</span></span>
-            </a>
-            <a href="@Url.Content("~/files/Genelge/TahditGenelgeler/Giris_Yasaklari.pdf")" target="_blank" rel="noopener noreferrer" class="quick-action is-reference">
-                <span class="quick-action-icon"><i class="fas fa-file-pdf"></i></span>
-                <span class="quick-action-text"><strong>Ç Kodlu Genelge</strong><span>Yerel PDF</span></span>
-            </a>
-            <a href="@Url.Content("~/files/Genelge/TahditGenelgeler/Idari_Kodlar.pdf")" target="_blank" rel="noopener noreferrer" class="quick-action is-reference">
-                <span class="quick-action-icon"><i class="fas fa-file-alt"></i></span>
-                <span class="quick-action-text"><strong>V Kodlu Genelge</strong><span>Yerel PDF</span></span>
-            </a>
+            @if (canManageStats)
+            {
+                <a href="@Url.Action("FaaliyetRaporu", "Istatistik")" class="quick-action is-primary">
+                    <span class="quick-action-icon"><i class="fas fa-file-alt"></i></span>
+                    <span class="quick-action-text"><strong>Faaliyet Raporu</strong><span>Resmi aylık/yıllık rapor</span></span>
+                </a>
+            }
+            @if (canEducation)
+            {
+                <a href="@Url.Action("StudentIndex", "Course")" target="_blank" rel="noopener noreferrer" class="quick-action is-check">
+                    <span class="quick-action-icon"><i class="fas fa-graduation-cap"></i></span>
+                    <span class="quick-action-text"><strong>Eğitim Modülü</strong><span>Kurslar ve sınavlar</span></span>
+                </a>
+                <a href="@Url.Action("Inbox", "Mesaj")" class="quick-action">
+                    <span class="quick-action-icon"><i class="fas fa-envelope"></i></span>
+                    <span class="quick-action-text"><strong>Mesajlar</strong><span>Gelen kutusu</span></span>
+                </a>
+            }
             <button type="button" class="quick-action is-check" data-toggle="modal" data-target="#kaseVizeModal">
                 <span class="quick-action-icon"><i class="fas fa-passport"></i></span>
                 <span class="quick-action-text"><strong>Kaşe Vize Kontrolü</strong><span>Pasaport süresi</span></span>
@@ -272,6 +289,14 @@
             <a href="@Url.Action("Index", "Genelge")" class="quick-action is-reference">
                 <span class="quick-action-icon"><i class="fas fa-book-open"></i></span>
                 <span class="quick-action-text"><strong>Mevzuat Bilgi Bankası</strong><span>Tüm Genelgeler</span></span>
+            </a>
+            <a href="@Url.Content("~/files/Genelge/TahditGenelgeler/Giris_Yasaklari.pdf")" target="_blank" rel="noopener noreferrer" class="quick-action is-reference">
+                <span class="quick-action-icon"><i class="fas fa-file-pdf"></i></span>
+                <span class="quick-action-text"><strong>Ç Kodlu Genelge</strong><span>Yerel PDF</span></span>
+            </a>
+            <a href="@Url.Content("~/files/Genelge/TahditGenelgeler/Idari_Kodlar.pdf")" target="_blank" rel="noopener noreferrer" class="quick-action is-reference">
+                <span class="quick-action-icon"><i class="fas fa-file-alt"></i></span>
+                <span class="quick-action-text"><strong>V Kodlu Genelge</strong><span>Yerel PDF</span></span>
             </a>
         </div>
     </section>

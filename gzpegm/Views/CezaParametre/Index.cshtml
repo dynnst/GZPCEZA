@@ -1,0 +1,202 @@
+@model IEnumerable<gzpegm.Services.CezaParametreItem>
+
+@{
+    Layout = "~/Views/Shared/_Master.cshtml";
+    ViewBag.Title = "Ceza & Genelge Parametreleri Yönetimi";
+    var cezaList = Model?.Where(x => x.ParamGroup == "Ceza" || x.ParamGroup == "Basamak").ToList() ?? new List<gzpegm.Services.CezaParametreItem>();
+    var ulkeList = Model?.Where(x => x.ParamGroup == "Ulke").ToList() ?? new List<gzpegm.Services.CezaParametreItem>();
+}
+
+<div class="row">
+    <div class="col-lg-12">
+        <section class="card shadow-sm border-0 mb-4">
+            <header class="card-header bg-gradient text-white py-3" style="background: linear-gradient(135deg, #1e3a8a 0%, #0284c7 100%);">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="card-title text-white font-weight-bold mb-1" style="font-size: 1.25rem;">
+                            <i class="fas fa-sliders-h mr-2"></i> Ceza, Basamak ve Ülke Sınıflandırmaları Yönetimi
+                        </h2>
+                        <p class="mb-0 text-white-50" style="font-size: 0.88rem;">
+                            Resmi genelgeler doğrultusunda uygulanan idari para cezaları, özel gün basamakları ve ülke gruplarını buradan dinamik olarak güncelleyebilirsiniz.
+                        </p>
+                    </div>
+                    <div>
+                        <a href="@Url.Action("Mevzuat", "Calculate")" target="_blank" class="btn btn-sm btn-light font-weight-bold shadow-sm">
+                            <i class="fas fa-book-reader mr-1 text-primary"></i> Mevzuat Rehberi
+                        </a>
+                    </div>
+                </div>
+            </header>
+
+            <div class="card-body">
+                <!-- Nav Tabs -->
+                <ul class="nav nav-tabs nav-tabs-primary mb-4" id="paramTabs" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active font-weight-bold" id="tab-ceza-link" data-toggle="tab" href="#tab-ceza" role="tab">
+                            <i class="fas fa-coins mr-1 text-warning"></i> İdari Cezalar ve Özel Basamaklar
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link font-weight-bold" id="tab-ulke-link" data-toggle="tab" href="#tab-ulke" role="tab">
+                            <i class="fas fa-globe-americas mr-1 text-info"></i> Ülke Ceza Sınıflandırmaları (Genelgeler)
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link font-weight-bold" id="tab-bilgi-link" data-toggle="tab" href="#tab-bilgi" role="tab">
+                            <i class="fas fa-file-alt mr-1 text-success"></i> Yasal Dayanaklar ve Genelgeler
+                        </a>
+                    </li>
+                </ul>
+
+                @using (Html.BeginForm("Update", "CezaParametre", FormMethod.Post, new { id = "formParams" }))
+                {
+                    @Html.AntiForgeryToken()
+
+                    <div class="tab-content" id="paramTabsContent">
+                        <!-- 1. SEKME: İDARİ CEZALAR VE ÖZEL BASAMAKLAR -->
+                        <div class="tab-pane fade show active" id="tab-ceza" role="tabpanel">
+                            <div class="alert alert-info border-left-info py-2 mb-4" style="border-left: 4px solid #0284c7; background-color: #f0f9ff; color: #0369a1;">
+                                <i class="fas fa-info-circle mr-2"></i> <strong>Bilgi:</strong> Burada tanımlanan tutarlar hesaplama motorunda doğrudan kullanılır. Yılbaşlarında Yeniden Değerleme Oranı (YDO) ile değişen tutarları kod derlemeye gerek kalmadan bu ekrandan güncelleyebilirsiniz.
+                            </div>
+
+                            <div class="row">
+                                @foreach (var item in cezaList)
+                                {
+                                    <div class="col-md-6 mb-4">
+                                        <div class="card border h-100 shadow-sm" style="border-radius: 8px;">
+                                            <div class="card-header bg-light py-2 px-3 font-weight-bold d-flex justify-content-between align-items-center">
+                                                <span><i class="fas fa-tag mr-1 text-primary"></i> @item.ParamTitle</span>
+                                                <span class="badge badge-secondary" style="font-size: 0.75rem;">@item.ParamKey</span>
+                                            </div>
+                                            <div class="card-body p-3">
+                                                <div class="form-group mb-2">
+                                                    <label class="font-weight-bold text-dark mb-1">Miktar (TL):</label>
+                                                    <div class="input-group">
+                                                        <input type="text" 
+                                                               class="form-control font-weight-bold text-success text-right" 
+                                                               style="font-size: 1.15rem;" 
+                                                               id="param_@item.ParamKey" 
+                                                               name="param_@item.ParamKey" 
+                                                               value="@item.ParamValue" 
+                                                               required />
+                                                        <div class="input-group-append">
+                                                            <span class="input-group-text font-weight-bold">TL</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <small class="text-muted d-block mt-2">
+                                                    <i class="fas fa-align-left mr-1"></i> @item.ParamDescription
+                                                </small>
+                                                <small class="text-secondary d-block mt-1" style="font-size: 0.78rem;">
+                                                    <i class="far fa-clock mr-1"></i> Son Güncelleme: @item.UpdatedAt.ToString("dd.MM.yyyy HH:mm") (@(string.IsNullOrWhiteSpace(item.UpdatedBy) ? "Sistem" : item.UpdatedBy))
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- 2. SEKME: ÜLKE CEZA SINIFLANDIRMALARI -->
+                        <div class="tab-pane fade" id="tab-ulke" role="tabpanel">
+                            <div class="alert alert-warning py-2 mb-4" style="border-left: 4px solid #f59e0b; background-color: #fffbeb; color: #92400e;">
+                                <i class="fas fa-exclamation-triangle mr-2"></i> <strong>Ülke Grupları Sınıflandırması:</strong> Ülkeler arasına virgül koyarak ekleme veya çıkarma yapabilirsiniz. Yapılan değişiklikler anında vize ihlal ceza hesaplama sistemine yansıyacaktır.
+                            </div>
+
+                            <div class="row">
+                                @foreach (var item in ulkeList)
+                                {
+                                    <div class="col-md-12 mb-4">
+                                        <div class="card border shadow-sm" style="border-radius: 8px;">
+                                            <div class="card-header bg-light py-2 px-3 font-weight-bold d-flex justify-content-between align-items-center">
+                                                <span><i class="fas fa-flag mr-1 text-danger"></i> @item.ParamTitle</span>
+                                                <span class="badge badge-info" style="font-size: 0.75rem;">@item.ParamKey</span>
+                                            </div>
+                                            <div class="card-body p-3">
+                                                <div class="form-group mb-2">
+                                                    <label class="font-weight-bold text-dark mb-1">Gruptaki Ülkeler (Virgülle ayrılmış):</label>
+                                                    <textarea class="form-control" 
+                                                              rows="3" 
+                                                              id="param_@item.ParamKey" 
+                                                              name="param_@item.ParamKey" 
+                                                              style="font-size: 0.92rem; line-height: 1.5;" 
+                                                              required>@item.ParamValue</textarea>
+                                                </div>
+                                                <small class="text-muted d-block mt-2">
+                                                    <i class="fas fa-info-circle mr-1 text-primary"></i> @item.ParamDescription
+                                                </small>
+                                                <small class="text-secondary d-block mt-1" style="font-size: 0.78rem;">
+                                                    <i class="far fa-clock mr-1"></i> Son Güncelleme: @item.UpdatedAt.ToString("dd.MM.yyyy HH:mm") (@(string.IsNullOrWhiteSpace(item.UpdatedBy) ? "Sistem" : item.UpdatedBy))
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- 3. SEKME: YASAL DAYANAKLAR VE GENELGELER -->
+                        <div class="tab-pane fade" id="tab-bilgi" role="tabpanel">
+                            <div class="card border mb-3">
+                                <div class="card-header bg-primary text-white font-weight-bold py-2">
+                                    <i class="fas fa-file-contract mr-2"></i> 1. EGM Genelgesi: 04 Haziran 2013 Tarih ve 41139-5 Sayılı Yazı (İkamet Harcından Muaf Ülkeler)
+                                </div>
+                                <div class="card-body p-3">
+                                    <h6 class="font-weight-bold text-dark">Kapsam ve Yasal Esas:</h6>
+                                    <p class="mb-2">
+                                        Maliye Bakanlığı Gelir İdaresi Başkanlığı görüşü uyarınca; <strong>Çek Cumhuriyeti, Danimarka, İrlanda, Kosova, Nepal, Sri Lanka, Suriye ve Türkmenistan</strong> vatandaşları ikamet tezkeresi harcından muaf tutulmuştur.
+                                    </p>
+                                    <ul class="mb-2" style="padding-left: 20px;">
+                                        <li>Bu ülkelerin vatandaşlarından vize veya ikamet ihlali yaptıklarında <strong>cezalı ikamet harcı tahsil edilmez</strong>.</li>
+                                        <li>Varsa <strong>Tek Giriş Vize Harcı (TGVH)</strong> tahsil edilir.</li>
+                                        <li>İkamet tezkeresi <strong>defter bedeli</strong> tahsil edilir.</li>
+                                        <li>Ve <strong>5326 Sayılı Kabahatler Kanununun 32. maddesine göre İDARİ PARA CEZASI</strong> uygulanır.</li>
+                                        <li>İdari para cezasını ödeyemeyenler için tahdit veri girişinde "Vergi/Adli Para" satırına Kabahatler Kanunundan kaynaklanan idari para cezası kaydedilir.</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="card border mb-3">
+                                <div class="card-header bg-info text-white font-weight-bold py-2">
+                                    <i class="fas fa-file-contract mr-2"></i> 2. EGM Genelgesi: 25 Mart 2011 Tarih ve 68506 Sayılı Yazı (Ülkeler Harç ve Ceza Sınıflandırması)
+                                </div>
+                                <div class="card-body p-3">
+                                    <h6 class="font-weight-bold text-dark">Ülke Grupları Harç Kriterleri:</h6>
+                                    <p class="mb-2">Mütekabiliyet (karşılıklılık) esası çerçevesinde 492 Sayılı Harçlar Kanunu (6) Sayılı Tarifesine göre ülkeler gruplandırılmıştır:</p>
+                                    <ul class="mb-0" style="padding-left: 20px;">
+                                        <li><strong>Grup A:</strong> 1 aya kadar her gün için 1 USD (min 10 USD, max 25 USD). 1 aydan sonra 5 USD/ay.</li>
+                                        <li><strong>Grup B:</strong> Filipinler, İsrail, Japonya, Kamboçya, Makedonya, Mali, Umman, Arnavutluk, Tacikistan (1 aya kadar 0.5 USD/gün [5-14 USD], 1 aydan sonra 3.5 USD/ay).</li>
+                                        <li><strong>Grup C:</strong> İspanya, Malta, Belarus, Kuveyt, Belçika, Singapur, Tayvan, Cezayir, Lüksemburg, Ürdün (1 aya kadar 0.4 USD/gün [4-9 USD], 1 aydan sonra 2.5 USD/ay).</li>
+                                        <li><strong>Grup D:</strong> Hong Kong, Mikronezya, Rusya, Etiyopya, Güney Kore (1 aya kadar 0.3 USD/gün [3-7 USD], 1 aydan sonra 1.5 USD/ay).</li>
+                                        <li><strong>Grup E:</strong> Fas, Fildişi Sahili, Irak, Sırbistan-Karadağ, Karadağ, Mısır, Tunus (1 aya kadar 0.2 USD/gün [2-5 USD], 1 aydan sonra 0.5 USD/ay).</li>
+                                        <li><strong>Grup F:</strong> Norveç, Sırbistan, Fiji, Kuzey Mariana Adaları (Özel basamaklı Türk Lirası tarifesi; 1-8 gün günlük kat, 9. gün ara sıçrama, 10. gün kuruş tavanı).</li>
+                                        <li><strong>Grup G:</strong> Harçtan muaf olup idari para cezası uygulanan ülkeler.</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="card border mb-0">
+                                <div class="card-header bg-dark text-white font-weight-bold py-2">
+                                    <i class="fas fa-gavel mr-2"></i> 3. 6458 Sayılı YUKK m. 53/54 (V-137 Terke Davet Rejimi)
+                                </div>
+                                <div class="card-body p-3">
+                                    <p class="mb-0">
+                                        Hakkında sınır dışı etme kararı alınıp Türkiye'yi terke davet edilen (V-137) yabancılar kendilerine tanınan yasal süre (15-30 gün) içinde çıkış yaparlarsa haklarında giriş yasağı konulmaz. Ancak bu süreyi aşan yabancılara kanun gereğince <strong>İdari Para Cezası</strong> tahakkuk ettirilir ve çıkışta defter bedelinden muaf tutulurlar.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-md-12 text-right">
+                            <button type="submit" class="btn btn-primary font-weight-bold shadow px-4 py-2" style="font-size: 1rem;">
+                                <i class="fas fa-save mr-1"></i> Tüm Değişiklikleri Kaydet
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+        </section>
+    </div>
+</div>

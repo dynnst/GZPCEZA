@@ -541,7 +541,11 @@ namespace gzpegm.Services
         public static bool IsSuperAdmin(E_User user)
         {
             if (user == null) return false;
-            return string.Equals(user.Role?.Trim(), "Admin", StringComparison.OrdinalIgnoreCase);
+
+            if (string.Equals(user.Role?.Trim(), "Admin", StringComparison.OrdinalIgnoreCase)) return true;
+
+            var auth = (user.fldAuth ?? "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim());
+            return auth.Contains("2");
         }
 
         public static bool IsKapiAdmin(E_User user, int borderId)
@@ -630,6 +634,93 @@ namespace gzpegm.Services
             }
             catch { }
             return list;
+        }
+
+        /// <summary>
+        /// Admin tarafından Faaliyet Raporu & Günlük Giriş modülü aktif edilmiş/tanımlanmış kapıların ID listesini döner.
+        /// (Stat_Department'ta kapıya özel birimi olan veya Stat_UserPermission'da atanmış kapılar)
+        /// </summary>
+        public static List<int> GetConfiguredBorderIds()
+        {
+            var list = new List<int>();
+            try
+            {
+                using (var con = OpenConnection())
+                using (var cmd = con.CreateCommand())
+                {
+                    cmd.CommandText = @"
+                        SELECT DISTINCT BorderId FROM Stat_Department WHERE IsActive = 1 AND BorderId IS NOT NULL
+                        UNION
+                        SELECT DISTINCT BorderId FROM Stat_UserPermission WHERE BorderId IS NOT NULL";
+                    using (var r = cmd.ExecuteReader())
+                    {
+                        while (r.Read())
+                        {
+                            if (!r.IsDBNull(0))
+                            {
+                                list.Add(r.GetInt32(0));
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            // Varsayılan tanımlı pilot kapı 14 (Gazipaşa)
+            if (!list.Contains(14)) list.Add(14);
+
+            return list;
+        }
+
+        /// <summary>
+        /// Belirli bir hudut kapısının admin tarafından faaliyet modülüne dahil edilip edilmediğini kontrol eder.
+        /// </summary>
+        public static bool IsBorderConfigured(int borderId)
+        {
+            var configuredIds = GetConfiguredBorderIds();
+            return configuredIds.Contains(borderId);
+        }
+
+        /// <summary>
+        /// Kullanıcının veya görevli olduğu kapının admin tarafından 'Hudut Kapısı Faaliyetleri'
+        /// (Faaliyet Raporu & Günlük Giriş) modülüne dahil edilip edilmediğini doğrular.
+        /// Genele açık değildir; yalnızca adminin tanımladığı kapı personeli ve yetkilendirilenler erişebilir.
+        /// </summary>
+        public static bool CanAccessBorderActivities(E_User user)
+        {
+            if (user == null) return false;
+            // 1. Genel Admin tüm kapı faaliyetlerini görebilir ve yönetebilir
+            if (IsSuperAdmin(user)) return true;
+
+            try
+            {
+                using (var con = OpenConnection())
+                using (var cmd = con.CreateCommand())
+                {
+                    // 2. Admin bu kullanıcıya Stat_UserPermission tablosunda açık bir yetki vermiş mi?
+                    cmd.CommandText = "SELECT COUNT(*) FROM Stat_UserPermission WHERE UserId = @uid";
+                    cmd.Parameters.AddWithValue("@uid", user.fldId);
+                    if (Convert.ToInt32(cmd.ExecuteScalar()) > 0)
+                        return true;
+
+                    // 3. Kullanıcının görev yeri adminin tanımladığı kapılardan biri mi?
+                    if (!string.IsNullOrWhiteSpace(user.fldBorder))
+                    {
+                        cmd.Parameters.Clear();
+                        cmd.CommandText = "SELECT TOP 1 fldId FROM E_Border WHERE fldName = @name OR fldName LIKE '%' + @name + '%' ORDER BY fldId";
+                        cmd.Parameters.AddWithValue("@name", user.fldBorder.Trim());
+                        var obj = cmd.ExecuteScalar();
+                        if (obj != null && obj != DBNull.Value)
+                        {
+                            int borderId = Convert.ToInt32(obj);
+                            return IsBorderConfigured(borderId);
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            return false;
         }
 
         public static bool CanEditDepartment(E_User user, int borderId, int departmentId)

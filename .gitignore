@@ -363,6 +363,8 @@ MigrationBackup/
 FodyWeavers.xsd
 
 # Temporary scratch & build scripts
+Thumbs.db
+[Tt]humbs.db
 batch_process_all.js
 build_country_packages.js
 countries_catalog.json

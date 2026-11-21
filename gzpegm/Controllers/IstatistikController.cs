@@ -43,6 +43,8 @@ namespace gzpegm.Controllers
             public string EnAzCezaKesilenUlke { get; set; }
             public int EnAzCezaKesilenUlkeSayi { get; set; }
             public string GenelToplamPara { get; set; }
+            public string OrtalamaCezaTutari { get; set; }
+            public int ToplamIslemSayisi { get; set; }
         }
 
         [Serializable]
@@ -133,7 +135,11 @@ namespace gzpegm.Controllers
                     dto.EnAzCezaKesilenUlkeSayi = enAzUlke != null ? enAzUlke.Sayi : 0;
 
                     var tumTutarlar = c.E_History.AsNoTracking().Select(x => x.fldPMoney).ToList();
-                    dto.GenelToplamPara = ParaTopla(tumTutarlar).ToString("N2", CultureInfo.GetCultureInfo("tr-TR"));
+                    decimal toplamPara = ParaTopla(tumTutarlar);
+                    dto.GenelToplamPara = toplamPara.ToString("N2", CultureInfo.GetCultureInfo("tr-TR"));
+                    decimal ortalama = dto.HesaplamaSayisi > 0 ? (toplamPara / dto.HesaplamaSayisi) : 0;
+                    dto.OrtalamaCezaTutari = ortalama.ToString("N2", CultureInfo.GetCultureInfo("tr-TR"));
+                    dto.ToplamIslemSayisi = dto.KesilenToplamCeza + dto.V84Sayisi + dto.InadSayisi + dto.HesaplamaSayisi;
 
                     return dto;
                 }
@@ -213,7 +219,21 @@ namespace gzpegm.Controllers
 
                 var bugunToplam = ParaTopla(bugunTutarlar);
                 ViewBag.d1 = bugunToplam.ToString("N2", CultureInfo.GetCultureInfo("tr-TR"));
+
+                int bSartli = ViewBag.bugunsartli != null ? (int)ViewBag.bugunsartli : 0;
+                int bInad = ViewBag.buguninad != null ? (int)ViewBag.buguninad : 0;
+                int bIsk = ViewBag.d14 != null ? (int)ViewBag.d14 : 0;
+                int bHist = ViewBag.d15 != null ? (int)ViewBag.d15 : 0;
+                ViewBag.bugunToplamIslem = bSartli + bInad + bIsk + bHist;
+                ViewBag.genelToplamIslem = macro.ToplamIslemSayisi;
+                ViewBag.ortalamaCeza = macro.OrtalamaCezaTutari;
             }
+
+            var sessionUser = Session["User"] as E_User;
+            bool isSystemAdmin = sessionUser != null && (string.Equals(sessionUser.Role, "Admin", StringComparison.OrdinalIgnoreCase) || (sessionUser.fldAuth ?? "").Contains("2"));
+            ViewBag.IsAdmin = isSystemAdmin;
+            ViewBag.UserBorder = (sessionUser?.fldBorder ?? string.Empty).Trim();
+            ViewBag.UserFullName = ((sessionUser?.fldName ?? string.Empty) + " " + (sessionUser?.fldLastName ?? string.Empty)).Trim();
 
             return View();
         }
@@ -742,14 +762,32 @@ ORDER BY SUM([Count]) DESC";
             if (currentUser == null)
                 return RedirectToAction("Index", "Giris");
 
+            // Sadece adminin tanımladığı kapılardaki veya yetkilendirdiği kullanıcılar erişebilir
+            if (!StatService.CanAccessBorderActivities(currentUser))
+            {
+                TempData["msgInfo"] = "Görevli olduğunuz hudut kapısı için Faaliyet Raporu modülü henüz aktif edilmemiştir.";
+                return RedirectToAction("Index", "Home");
+            }
+
             int activeBorderId = borderId ?? StatService.ResolveBorderId(currentUser);
             bool isSuper = StatService.IsSuperAdmin(currentUser);
             bool isKapiAdmin = StatService.IsKapiAdmin(currentUser, activeBorderId);
 
-            // Hudut kapısı listesi (Sadece admin değiştirebilir, normal kullanıcı kendi kapısını görür)
+            // Hudut kapısı listesi (SüperAdmin tüm kapıları, normal yetkili ise sadece tanımlı kapıları görür)
             using (var db = new GZPEGM1())
             {
-                ViewBag.Borders = db.E_Border.AsNoTracking().OrderBy(b => b.fldName).ToList();
+                if (isSuper)
+                {
+                    ViewBag.Borders = db.E_Border.AsNoTracking().OrderBy(b => b.fldName).ToList();
+                }
+                else
+                {
+                    var configuredBorderIds = StatService.GetConfiguredBorderIds();
+                    ViewBag.Borders = db.E_Border.AsNoTracking()
+                        .Where(b => b.fldId == activeBorderId || configuredBorderIds.Contains(b.fldId))
+                        .OrderBy(b => b.fldName)
+                        .ToList();
+                }
                 var currentBorder = db.E_Border.AsNoTracking().FirstOrDefault(b => b.fldId == activeBorderId);
                 ViewBag.BorderName = currentBorder != null ? currentBorder.fldName : "HUDUT KAPISI";
                 ViewBag.ValilikName = StatService.ResolveValilikName(ViewBag.BorderName);
@@ -807,6 +845,13 @@ ORDER BY SUM([Count]) DESC";
             if (currentUser == null)
                 return RedirectToAction("Index", "Giris");
 
+            // Sadece adminin tanımladığı kapılardaki veya yetkilendirdiği kullanıcılar erişebilir
+            if (!StatService.CanAccessBorderActivities(currentUser))
+            {
+                TempData["msgInfo"] = "Görevli olduğunuz hudut kapısı için Günlük Sayı Girişi modülü henüz aktif edilmemiştir.";
+                return RedirectToAction("Index", "Home");
+            }
+
             int activeBorderId = borderId ?? StatService.ResolveBorderId(currentUser);
             DateTime activeDate = DateTime.Today;
             if (!string.IsNullOrWhiteSpace(date) && DateTime.TryParse(date, out DateTime parsedDate))
@@ -819,7 +864,18 @@ ORDER BY SUM([Count]) DESC";
 
             using (var db = new GZPEGM1())
             {
-                ViewBag.Borders = db.E_Border.AsNoTracking().OrderBy(b => b.fldName).ToList();
+                if (isSuper)
+                {
+                    ViewBag.Borders = db.E_Border.AsNoTracking().OrderBy(b => b.fldName).ToList();
+                }
+                else
+                {
+                    var configuredBorderIds = StatService.GetConfiguredBorderIds();
+                    ViewBag.Borders = db.E_Border.AsNoTracking()
+                        .Where(b => b.fldId == activeBorderId || configuredBorderIds.Contains(b.fldId))
+                        .OrderBy(b => b.fldName)
+                        .ToList();
+                }
                 var currentBorder = db.E_Border.AsNoTracking().FirstOrDefault(b => b.fldId == activeBorderId);
                 ViewBag.BorderName = currentBorder != null ? currentBorder.fldName : "HUDUT KAPISI";
                 ViewBag.ValilikName = StatService.ResolveValilikName(ViewBag.BorderName);
@@ -843,6 +899,9 @@ ORDER BY SUM([Count]) DESC";
                 var currentUser = GetCurrentUser();
                 if (currentUser == null)
                     return Json(new { success = false, message = "Oturum süreniz dolmuş, lütfen tekrar giriş yapınız." });
+
+                if (!StatService.CanAccessBorderActivities(currentUser))
+                    return Json(new { success = false, message = "Bu kapı için veri girişi yetkiniz bulunmamaktadır." });
 
                 if (!DateTime.TryParse(date, out DateTime parsedDate))
                     return Json(new { success = false, message = "Geçersiz tarih formatı." });
@@ -949,8 +1008,9 @@ ORDER BY SUM([Count]) DESC";
                 }
                 else
                 {
-                    // Hiçbir kapıda admin yetkisi yoksa doğrudan Veri Giriş ekranına yönlendir
-                    return RedirectToAction("VeriGiris", new { borderId = activeBorderId });
+                    // Genel admin veya kapı admini olmayan kullanıcıları ana sayfaya yönlendir
+                    TempData["msgError"] = "Bu sayfaya yalnızca Genel Admin ve Havalimanı Yöneticileri erişebilir.";
+                    return RedirectToAction("Index", "Home");
                 }
             }
 

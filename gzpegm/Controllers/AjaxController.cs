@@ -465,7 +465,12 @@ namespace gzpegm.Controllers
                     if (match.Success) int.TryParse(match.Value, out Ay);
                     if (Array.IndexOf(ulke.GGRUBU, Country) > -1)
                     {
-                        Ceza = Convert.ToDouble(AUHdata.fldFirstMounth);
+                        double gTaban = gzpegm.Services.CezaParametreService.GetParamDouble("KABAHATLER_M32_CEZA", 0);
+                        if (gTaban <= 0 && AUHdata != null)
+                        {
+                            double.TryParse(AUHdata.fldFirstMounth, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out gTaban);
+                        }
+                        Ceza = (gTaban > 0) ? gTaban : 1854;
                         if (Type != 1) Ceza = Ceza * 2;
                     }
                     else
@@ -520,13 +525,18 @@ namespace gzpegm.Controllers
                         for (int i = 1; i < Gun + 1; i++)
                         {
                             if (i > 1 && i < 9) Ceza += Convert.ToDouble(AUHdata.fldDayKat);
-                            else if (i == 9) Ceza += Convert.ToDouble(467.6);
+                            else if (i == 9) Ceza += gzpegm.Services.CezaParametreService.GetParamDouble("FGRUBU_DAY9_KAT", 467.6);
                             if (i == 10) Ceza = Math.Ceiling(Ceza);
                         }
                     }
                     else if (Array.IndexOf(ulke.GGRUBU, Country) > -1)
                     {
-                        Ceza = Convert.ToDouble(AUHdata.fldFirstMounth);
+                        double gTaban = gzpegm.Services.CezaParametreService.GetParamDouble("KABAHATLER_M32_CEZA", 0);
+                        if (gTaban <= 0 && AUHdata != null)
+                        {
+                            double.TryParse(AUHdata.fldFirstMounth, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out gTaban);
+                        }
+                        Ceza = (gTaban > 0) ? gTaban : 1854;
                     }
                     if (Array.IndexOf(ulke.GGRUBU, Country) > -1)
                     {
@@ -566,7 +576,8 @@ namespace gzpegm.Controllers
                 }
                 if (Visa != 4 && Visa != 8 && Visa != 10 && Visa != 12 && Visa != 14 && Visa != 15) Defter = tgvh.GetDefter().fldPrice.ToString();
                 double Toplam = Convert.ToDouble(cezatl) + Convert.ToDouble(Defter) + Convert.ToDouble(VizeHarc);
-                if ((Visa == 11 || Visa == 13) && V137Expired) Idari = "20605";
+                if ((Visa == 11 || Visa == 13) && V137Expired) 
+                    Idari = gzpegm.Services.CezaParametreService.GetParamString("V137_IDARI_CEZA", "20605");
                 Toplam += Convert.ToDouble(Idari);
                 return Json(new { toplam = Toplam.ToString(), ID = Idari, VH = VizeHarc, DFTR = Defter, CTL = cezatl, Fine = Ceza, ToM = AUHdata.fldToM, KurPrice = KurP, Kur = Kurr }, JsonRequestBehavior.AllowGet);
             }

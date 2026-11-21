@@ -22,14 +22,17 @@
         }
     }
 
+    bool isStudent = string.Equals(Model?.Role, "Student", StringComparison.OrdinalIgnoreCase);
+
     Func<string, bool> hasAuth = code => authValues.Contains(code);
     Func<bool> canUseCoreApps = () => hasAuth("2") || hasAuth("3");
-    Func<bool> canUseEducation = () => hasAuth("2") || hasAuth("3") || hasAuth("6");
-    Func<bool> canManageEducation = () => hasAuth("2") || hasAuth("6");
+    Func<bool> canUseEducation = () => hasAuth("2") || hasAuth("3") || hasAuth("6") || isStudent;
+    Func<bool> canManageEducation = () => !isStudent && (hasAuth("2") || hasAuth("6"));
 
     bool isStatSuperAdmin = gzpegm.Services.StatService.IsSuperAdmin(Model);
     bool isStatKapiAdmin = gzpegm.Services.StatService.IsAnyKapiAdmin(Model);
     bool canManageStats = isStatSuperAdmin || isStatKapiAdmin;
+    bool canSeeBorderActivities = gzpegm.Services.StatService.CanAccessBorderActivities(Model);
 
     var displayName = ((Model?.fldName ?? "") + " " + (Model?.fldLastName ?? "")).Trim();
     var displayNameUpper = string.IsNullOrWhiteSpace(displayName) ? "KULLANICI" : displayName.ToUpper(new System.Globalization.CultureInfo("tr-TR"));
@@ -61,7 +64,7 @@
 
             @if (Model != null)
             {
-                <button class="btn header-btn-collapse-nav userbox-menu-toggle d-lg-none" type="button" data-toggle="collapse" data-target="#mainHeaderNav" aria-controls="mainHeaderNav" aria-expanded="false" aria-label="Menüyü aç/kapat">
+                <button class="btn header-btn-collapse-nav userbox-menu-toggle d-xl-none" type="button" data-toggle="collapse" data-target="#mainHeaderNav" aria-controls="mainHeaderNav" aria-expanded="false" aria-label="Menüyü aç/kapat">
                     <i class="fas fa-bars"></i>
                 </button>
             }
@@ -81,17 +84,54 @@
                                         <span>Ceza Hesaplama</span>
                                     </a>
                                 </li>
-                            }
 
-                            @if (canUseEducation())
-                            {
-                                <li>
-                                    <a class="nav-link" target="_blank" rel="noopener noreferrer" href="@Url.Action("Index", "Landing")">
-                                        <i class="fas fa-graduation-cap"></i>
-                                        <span>Eğitim Anasayfa</span>
+                                <li class="dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        <i class="fas fa-passport"></i>
+                                        <span>Hudut İşlemleri</span>
                                     </a>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item font-weight-bold" target="_blank" rel="noopener noreferrer" href="/VIZEV"><i class="fas fa-stamp text-primary mr-1"></i> <strong>V-84 Şartlı Vize</strong></a></li>
+                                        <li><a class="dropdown-item font-weight-bold" target="_blank" rel="noopener noreferrer" href="@Url.Action("Index", "EInad")"><i class="fas fa-clipboard-check text-danger mr-1"></i> <strong>İnad Kayıt &amp; Takip</strong></a></li>
+                                        <li><a class="dropdown-item" href="@Url.Action("Index", "Tahdit")"><i class="fas fa-ban text-warning mr-1"></i> Tahditler &amp; Yapılacaklar</a></li>
+                                        <li class="divider"></li>
+                                        <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="/Hesaplama"><i class="fas fa-calculator text-success mr-1"></i> Ceza Hesaplama</a></li>
+                                    </ul>
                                 </li>
                             }
+
+                            <li>
+                                <a class="nav-link" href="@Url.Action("Index", "EskiIslemler")">
+                                    <i class="fas fa-history"></i>
+                                    <span>İşlem Kayıtları</span>
+                                </a>
+                            </li>
+
+                            <li class="dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <i class="fas fa-chart-bar"></i>
+                                    <span>İstatistik &amp; Raporlar</span>
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item font-weight-bold" target="_blank" rel="noopener noreferrer" href="/ISTATIK"><i class="fas fa-chart-pie text-primary mr-1"></i> <strong>Ceza &amp; İşlem İstatistikleri</strong></a></li>
+                                    @if (canSeeBorderActivities)
+                                    {
+                                        <li class="divider"></li>
+                                        <li class="dropdown-header text-uppercase text-muted" style="font-size:0.75rem; font-weight:700; padding:4px 16px;">Hudut Kapısı Faaliyetleri</li>
+                                        <li><a class="dropdown-item font-weight-bold" href="@Url.Action("FaaliyetRaporu", "Istatistik")"><i class="fas fa-file-alt text-primary mr-1"></i> <strong>Faaliyet Raporu (Resmi)</strong></a></li>
+                                        <li><a class="dropdown-item font-weight-bold" href="@Url.Action("VeriGiris", "Istatistik")"><i class="fas fa-edit text-success mr-1"></i> <strong>Günlük Sayı Girişi</strong></a></li>
+                                    }
+                                    @if (canManageStats)
+                                    {
+                                        <li class="divider"></li>
+                                        <li>
+                                            <a class="dropdown-item font-weight-bold" href="@Url.Action("Yonetim", "Istatistik")" style="color: #d97706;">
+                                                <i class="fas fa-users-cog text-warning mr-1"></i> <strong>@(isStatSuperAdmin ? "Büro & Personel Yetki Yönetimi" : "Kapı Yetki & Personel Yönetimi")</strong>
+                                            </a>
+                                        </li>
+                                    }
+                                </ul>
+                            </li>
 
                             <li>
                                 <a class="nav-link font-weight-bold" href="@Url.Action("Index", "Genelge")" style="color:#0284c7;" title="Genelgeler ve Mevzuat Bilgi Bankası">
@@ -107,75 +147,23 @@
                                 </a>
                             </li>
 
-                            @if (canUseCoreApps())
-                            {
-                                <li class="dropdown">
-                                    <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                        <i class="fas fa-th-large"></i>
-                                        <span>Uygulamalar</span>
-                                    </a>
-                                    <ul class="dropdown-menu">
-                                        <li class="dropdown-submenu">
-                                            <a class="dropdown-item dropdown-toggle submenu-toggle" href="javascript:void(0);">
-                                                <i class="fas fa-passport"></i>
-                                                Hudut Kapıları
-                                            </a>
-                                            <ul class="dropdown-menu">
-                                                <li class="dropdown-submenu">
-                                                    <a class="dropdown-item dropdown-toggle submenu-toggle font-weight-bold" href="javascript:void(0);">
-                                                        <i class="fas fa-chart-line text-primary mr-1"></i>
-                                                        Havalimanı İstatistiki Veriler
-                                                    </a>
-                                                    <ul class="dropdown-menu">
-                                                        <li><a class="dropdown-item font-weight-bold" href="@Url.Action("FaaliyetRaporu", "Istatistik")"><i class="fas fa-file-alt text-primary mr-1"></i> <strong>Faaliyet Raporu (Resmi)</strong></a></li>
-                                                        <li><a class="dropdown-item font-weight-bold" href="@Url.Action("VeriGiris", "Istatistik")"><i class="fas fa-edit text-success mr-1"></i> <strong>Günlük Sayı Girişi</strong></a></li>
-                                                        @if (canManageStats)
-                                                        {
-                                                            <li>
-                                                                <a class="dropdown-item font-weight-bold" href="@Url.Action("Yonetim", "Istatistik")" style="color: #d97706;">
-                                                                    <i class="fas fa-users-cog text-warning mr-1"></i> <strong>@(isStatSuperAdmin ? "Büro & Personel Yetki Yönetimi" : "Kapı Yetki & Personel Yönetimi")</strong>
-                                                                </a>
-                                                            </li>
-                                                        }
-                                                    </ul>
-                                                </li>
-                                                <li class="divider"></li>
-                                                <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="/VIZEV">V-84 Şartlı Vize İşlemleri</a></li>
-                                                <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="@Url.Action("Index", "EInad")">İnad Kayıtları</a></li>
-                                                <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="/GRAFIK">İşlem Grafikleri</a></li>
-                                            </ul>
-                                        </li>
-                                        <li><a class="dropdown-item font-weight-bold" href="@Url.Action("Index", "Genelge")"><i class="fas fa-book-open text-info mr-1"></i> Genelgeler &amp; Mevzuat Portalı</a></li>
-                                        <li><a class="dropdown-item font-weight-bold text-danger" href="javascript:void(0);" onclick="openSahtecilikPortal();"><i class="fas fa-search-plus mr-1"></i> Sahte Belge &amp; Referans Portalı</a></li>
-                                        <li><a class="dropdown-item" href="@Url.Action("Index", "Tahdit")"><i class="fas fa-list"></i> Tahditler &amp; Yapılacaklar</a></li>
-                                        <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="@Url.Action("Yardimci", "Home")"><i class="fas fa-question-circle"></i> Kullanma Rehberi</a></li>
-                                        <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="/ISTATIK"><i class="fas fa-chart-bar"></i> İstatistik Bilgileri</a></li>
-                                        <li class="dropdown-submenu faydali-linkler">
-                                            <a class="dropdown-item dropdown-toggle submenu-toggle" href="javascript:void(0);">
-                                                <i class="fas fa-link"></i>
-                                                Faydalı Linkler
-                                            </a>
-                                            <ul class="dropdown-menu">
-                                                <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="http://10.155.0.193/ULKE_LISTESI.htm">Vize Bilgi Sistemi</a></li>
-                                                <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="http://bilge/Pages/RaporListesi.aspx">Bilge İş Zekası Portalı</a></li>
-                                                <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="/MatbuEvrak">Matbu Tutanaklar İndir</a></li>
-                                                <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="http://10.34.14.239/gazeteler/">Gazete Oku</a></li>
-                                                <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="http://pbsnet/Themes/PBS2/Pages/AnaSayfa.aspx">Personel Bilgi Sistemi</a></li>
-                                                <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="http://10.155.88.30/interpol/AnaMenu.aspx">İnterpol Sorgu</a></li>
-                                                <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="http://gozcu.polnet.intra:8080/">Analiz Merkezi Gözcü</a></li>
-                                                <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="http://10.155.88.30/KayipBelge/YeniLogin.aspx">Kayıp Eşya ve Belge</a></li>
-                                                <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="https://tahdit.egm.gov.tr/Anasayfa.asp">Tahdit Sorgu</a></li>
-                                            </ul>
-                                        </li>
-                                    </ul>
-                                </li>
-                            }
-
-                            <li>
-                                <a class="nav-link" href="@Url.Action("Index", "EskiIslemler")">
-                                    <i class="fas fa-history"></i>
-                                    <span>Eski İşlemler</span>
+                            <li class="dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <i class="fas fa-external-link-alt"></i>
+                                    <span>Faydalı Linkler</span>
                                 </a>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="@Url.Action("Yardimci", "Home")"><i class="fas fa-question-circle text-info mr-1"></i> <strong>Kullanma Rehberi</strong></a></li>
+                                    <li class="divider"></li>
+                                    <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="http://10.155.0.193/ULKE_LISTESI.htm"><i class="fas fa-globe mr-1"></i> Vize Bilgi Sistemi</a></li>
+                                    <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="http://bilge/Pages/RaporListesi.aspx"><i class="fas fa-brain mr-1"></i> Bilge İş Zekası Portalı</a></li>
+                                    <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="http://10.34.14.239/gazeteler/"><i class="fas fa-newspaper mr-1"></i> Gazete Oku</a></li>
+                                    <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="http://pbsnet/Themes/PBS2/Pages/AnaSayfa.aspx"><i class="fas fa-id-badge mr-1"></i> Personel Bilgi Sistemi</a></li>
+                                    <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="http://10.155.88.30/interpol/AnaMenu.aspx"><i class="fas fa-search mr-1"></i> İnterpol Sorgu</a></li>
+                                    <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="http://gozcu.polnet.intra:8080/"><i class="fas fa-eye mr-1"></i> Analiz Merkezi Gözcü</a></li>
+                                    <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="http://10.155.88.30/KayipBelge/YeniLogin.aspx"><i class="fas fa-passport mr-1"></i> Kayıp Eşya ve Belge</a></li>
+                                    <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="https://tahdit.egm.gov.tr/Anasayfa.asp"><i class="fas fa-ban mr-1"></i> Tahdit Sorgu</a></li>
+                                </ul>
                             </li>
 
                             @if (hasAuth("2"))
@@ -187,6 +175,7 @@
                                     </a>
                                     <ul class="dropdown-menu">
                                         <li><a class="dropdown-item font-weight-bold" href="@Url.Action("Yonetim", "Istatistik")"><i class="fas fa-users-cog text-warning mr-1"></i> İstatistik &amp; Personel Yetki Yönetimi</a></li>
+                                        <li><a class="dropdown-item font-weight-bold text-primary" href="/CezaParametre"><i class="fas fa-cogs mr-1 text-primary"></i> <strong>Ceza &amp; Genelge Parametreleri</strong></a></li>
                                         <li class="divider"></li>
                                         <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="/tgvh">Tek Giriş Vize Harcı</a></li>
                                         <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="/auh">Aylık Ülke Harçları</a></li>
@@ -200,7 +189,6 @@
                                         <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="@Url.Action("Dashboard", "Health")"><i class="fas fa-heartbeat"></i> Sistem Sağlık Kontrolü</a></li>
                                         <li><a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="@Url.Action("Index", "ErrorLogs")"><i class="fas fa-bug"></i> Hata Logları</a></li>
                                         <li><a class="dropdown-item" href="@Url.Action("Index", "PCInfo")"><i class="fas fa-desktop text-primary mr-1"></i> <strong>PC &amp; Donanım Denetimi (PCInfo)</strong></a></li>
-                                       
                                     </ul>
                                 </li>
                             }
@@ -209,36 +197,23 @@
                             {
                                 <li class="dropdown">
                                     <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                        <i class="fas fa-envelope"></i>
-                                        <span>Mesajlar</span>
-                                        <span id="unreadBadge" class="badge badge-danger userbox-badge" style="display:none;">0</span>
+                                        <i class="fas fa-graduation-cap"></i>
+                                        <span>Eğitim</span>
                                     </a>
                                     <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item" href="@Url.Action("Inbox", "Mesaj")"><i class="fas fa-inbox"></i> Gelen Kutusu <span id="unreadBadgeInbox" class="badge badge-danger userbox-badge" style="display:none;">0</span></a></li>
-                                        <li><a class="dropdown-item" href="@Url.Action("Sent", "Mesaj")"><i class="fas fa-paper-plane"></i> Gönderilen Mesajlar</a></li>
-                                        <li><a class="dropdown-item" href="@Url.Action("Compose", "Mesaj")"><i class="fas fa-edit"></i> Yeni Mesaj Yaz</a></li>
-                                        @if (hasAuth("2"))
+                                        <li><a class="dropdown-item font-weight-bold" target="_blank" rel="noopener noreferrer" href="@Url.Action("Index", "Landing")"><i class="fas fa-home text-primary mr-1"></i> <strong>Eğitim Anasayfa</strong></a></li>
+                                        <li><a class="dropdown-item font-weight-bold" href="@Url.Action("Inbox", "Mesaj")"><i class="fas fa-envelope text-info mr-1"></i> <strong>Mesaj Kutusu</strong> <span id="unreadBadgeInbox" class="badge badge-danger userbox-badge" style="display:none;">0</span></a></li>
+                                        <li class="divider"></li>
+                                        <li><a class="dropdown-item" href="@Url.Action("StudentDashboard", "Dashboard")"><i class="fas fa-tachometer-alt"></i> Öğrenci Panelim</a></li>
+                                        <li><a class="dropdown-item" href="@Url.Action("StudentIndex", "Course")"><i class="fas fa-book-open"></i> Kurslarım</a></li>
+                                        <li><a class="dropdown-item" href="@Url.Action("AvailableExams", "StudentExam")"><i class="fas fa-clipboard-list"></i> Sınavlarım</a></li>
+                                        <li><a class="dropdown-item" href="@Url.Action("MyExamResults", "StudentExam")"><i class="fas fa-chart-bar"></i> Sınav Sonuçlarım</a></li>
+                                        <li><a class="dropdown-item" href="@Url.Action("AllInstructors", "Course")"><i class="fas fa-users"></i> Eğitmenler</a></li>
+                                        @if (canManageEducation())
                                         {
                                             <li class="divider"></li>
-                                            <li><a class="dropdown-item userbox-highlight" href="@Url.Action("BulkCompose", "Mesaj")"><i class="fas fa-users"></i> Toplu Mesaj Gönder</a></li>
-                                        }
-                                    </ul>
-                                </li>
-
-                                <li class="dropdown">
-                                    <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                        <i class="fas fa-chalkboard-teacher"></i>
-                                        <span>Eğitim Paneli</span>
-                                    </a>
-                                    <ul class="dropdown-menu">
-                                        @if (canManageEducation())
-                                        {
-                                            <li><a class="dropdown-item" href="@Url.Action("Index", "Dashboard")"><i class="fas fa-chart-line"></i> Yönetim Dashboard</a></li>
-                                        }
-                                        <li><a class="dropdown-item" href="@Url.Action("StudentDashboard", "Dashboard")"><i class="fas fa-tachometer-alt"></i> Öğrenci Panelim</a></li>
-                                        <li class="divider"></li>
-                                        @if (canManageEducation())
-                                        {
+                                            <li class="dropdown-header text-uppercase text-muted" style="font-size:0.75rem; font-weight:700; padding:4px 16px;">Eğitim Yönetimi</li>
+                                            <li><a class="dropdown-item font-weight-bold" href="@Url.Action("Index", "Dashboard")"><i class="fas fa-chart-line text-warning mr-1"></i> <strong>Yönetim Dashboard</strong></a></li>
                                             <li><a class="dropdown-item" href="@Url.Action("Index", "Category")"><i class="fas fa-folder"></i> Kategori Yönetimi</a></li>
                                             <li><a class="dropdown-item" href="@Url.Action("Index", "Course")"><i class="fas fa-book"></i> Ders Yönetimi</a></li>
                                             <li><a class="dropdown-item" href="@Url.Action("Index", "Exam")"><i class="fas fa-file-alt"></i> Sınav Yönetimi</a></li>
@@ -247,12 +222,7 @@
                                                 <li><a class="dropdown-item" href="@Url.Action("Index", "EducationPackage")"><i class="fas fa-box-open"></i> Eğitim Paketleri</a></li>
                                                 <li><a class="dropdown-item" href="@Url.Action("Index", "EducationQuality")"><i class="fas fa-clipboard-check"></i> Eğitim Kalite Raporu</a></li>
                                             }
-
                                         }
-                                        <li><a class="dropdown-item" href="@Url.Action("StudentIndex", "Course")"><i class="fas fa-book-open"></i> Kurslarım</a></li>
-                                        <li><a class="dropdown-item" href="@Url.Action("AvailableExams", "StudentExam")"><i class="fas fa-clipboard-list"></i> Sınavlarım</a></li>
-                                        <li><a class="dropdown-item" href="@Url.Action("MyExamResults", "StudentExam")"><i class="fas fa-chart-bar"></i> Sınav Sonuçlarım</a></li>
-                                        <li><a class="dropdown-item" href="@Url.Action("AllInstructors", "Course")"><i class="fas fa-users"></i> Eğitmenler</a></li>
                                     </ul>
                                 </li>
                             }
@@ -264,11 +234,12 @@
             <div class="header-right userbox-account">
                 <div id="userbox" class="userbox">
                     <a href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <figure class="profile-picture">
+                        <figure class="profile-picture position-relative">
                             <img src="@pictureUrl"
                                  alt="@displayName"
                                  class="rounded-circle"
                                  data-lock-picture="@Url.Content("~/files/user/no-user-image.jpg")" />
+                            <span id="unreadBadgeProfile" class="badge badge-danger userbox-avatar-badge" style="display:none;">0</span>
                         </figure>
                         <div class="profile-info" data-lock-name="@displayName" data-lock-email="@email">
                             <span class="name">@displayNameUpper</span>
@@ -278,9 +249,19 @@
                     </a>
 
                     <div class="dropdown-menu dropdown-menu-right">
-                        <ul class="list-unstyled">
-                            <li><a role="menuitem" tabindex="-1" href="@Url.Action("Index", "Profile")"><i class="fas fa-user"></i> Profilim</a></li>
-                            <li><a role="menuitem" tabindex="-1" href="/Cikis"><i class="fas fa-power-off"></i> Çıkış</a></li>
+                        <ul class="list-unstyled mb-0">
+                            <li><a role="menuitem" tabindex="-1" href="@Url.Action("Index", "Profile")"><i class="fas fa-user text-primary mr-2"></i> Profilim</a></li>
+                            @if (canUseEducation())
+                            {
+                                <li>
+                                    <a role="menuitem" tabindex="-1" href="@Url.Action("Inbox", "Mesaj")" class="d-flex align-items-center justify-content-between">
+                                        <span><i class="fas fa-envelope text-info mr-2"></i> Mesaj Kutusu</span>
+                                        <span id="unreadBadge" class="badge badge-danger userbox-badge ml-2" style="display:none;">0</span>
+                                    </a>
+                                </li>
+                            }
+                            <li class="divider" style="margin: 6px 0; border-top: 1px solid rgba(0,0,0,0.08);"></li>
+                            <li><a role="menuitem" tabindex="-1" href="/Cikis"><i class="fas fa-power-off text-danger mr-2"></i> Çıkış</a></li>
                         </ul>
                     </div>
                 </div>
@@ -289,10 +270,10 @@
     </div>
 </header>
 
-<link rel="stylesheet" href="@Url.Content("~/css/userbox.css")?v=1.4" />
+<link rel="stylesheet" href="@Url.Content("~/css/userbox.css")?v=1.8" />
 
 <div id="userbox-config" data-unread-url="@Url.Action("GetUnreadCount", "Mesaj")" style="display:none;"></div>
-<script src="@Url.Content("~/js/userbox.js")?v=1.4"></script>
+<script src="@Url.Content("~/js/userbox.js")?v=1.8"></script>
 <script>
     function openSahtecilikPortal() {
         var host = window.location.hostname || '10.7.202.138';

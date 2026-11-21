@@ -20,14 +20,17 @@
                 if (count > 0) {
                     $('#unreadBadge').text(count).show();
                     $('#unreadBadgeInbox').text(count).show();
+                    $('#unreadBadgeProfile').text(count).show();
                 } else {
                     $('#unreadBadge').hide();
                     $('#unreadBadgeInbox').hide();
+                    $('#unreadBadgeProfile').hide();
                 }
             },
             error: function () {
                 $('#unreadBadge').hide();
                 $('#unreadBadgeInbox').hide();
+                $('#unreadBadgeProfile').hide();
             }
         });
     }
@@ -111,15 +114,53 @@
         });
     }
 
+    function initUserboxHover() {
+        if (!window.jQuery) return;
+
+        var $userbox = $('.userbox-header .userbox');
+        if (!$userbox.length) return;
+
+        var timer = null;
+
+        $userbox.off('mouseenter.userboxProfile mouseleave.userboxProfile')
+                .on('mouseenter.userboxProfile', function () {
+            if (timer) {
+                clearTimeout(timer);
+                timer = null;
+            }
+            $(this).addClass('show open is-hovered');
+            $(this).find('> a').attr('aria-expanded', 'true');
+            $(this).find('.dropdown-menu').addClass('show');
+        })
+        .on('mouseleave.userboxProfile', function () {
+            var $this = $(this);
+            timer = setTimeout(function () {
+                $this.removeClass('show open is-hovered');
+                $this.find('> a').attr('aria-expanded', 'false');
+                $this.find('.dropdown-menu').removeClass('show');
+            }, 250);
+        });
+
+        $userbox.off('click.userboxProfileLink', '.dropdown-menu a')
+                .on('click.userboxProfileLink', '.dropdown-menu a', function (e) {
+            var href = $(this).attr('href');
+            if (href && href !== '#' && href.indexOf('javascript:') !== 0) {
+                window.location.href = href;
+            }
+        });
+    }
+
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function () {
             updateUnreadCount();
             initSubmenus();
+            initUserboxHover();
             window.setInterval(updateUnreadCount, 30000);
         });
     } else {
         updateUnreadCount();
         initSubmenus();
+        initUserboxHover();
         window.setInterval(updateUnreadCount, 30000);
     }
 })();

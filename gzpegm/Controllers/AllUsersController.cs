@@ -143,7 +143,7 @@ namespace gzpegm.Controllers
                 if (user == null)
                     return Json(new { ok = false, message = "Kullanıcı bulunamadı.", id = id }, JsonRequestBehavior.AllowGet);
 
-                if (user.Role == "Admin")
+                if (string.Equals(user.Role, "Admin", StringComparison.OrdinalIgnoreCase))
                     return Json(new { ok = false, message = "Admin hesap silinemez.", id = id }, JsonRequestBehavior.AllowGet);
 
                 var fullName = ((user.fldName ?? "") + " " + (user.fldLastName ?? "")).Trim();
@@ -176,6 +176,8 @@ namespace gzpegm.Controllers
         //
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Route("ApproveTeacher")]
+        [Route("AllUsers/ApproveTeacher")]
         public JsonResult ApproveTeacher(int id)
         {
             try
@@ -217,6 +219,8 @@ namespace gzpegm.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Route("RejectTeacher")]
+        [Route("AllUsers/RejectTeacher")]
         public JsonResult RejectTeacher(int id)
         {
             using (GZPEGM1 db = new GZPEGM1())
@@ -236,21 +240,23 @@ namespace gzpegm.Controllers
         }
 
         [Route("Kullanıcılar")]
+        [Route("AllUsers")]
+        [Route("AllUsers/Index")]
         public ActionResult Index()
         {
             gzpegm.Cont.User user = new User();
             Border border = new Border();
             Usermodel model = new Usermodel();
 
-            model.user = user.GetAllUsers();
-            model.tempuser = user.GetAllTempUsers();
-            model.borders = border.GetAll();
+            model.user = user.GetAllUsers() ?? new List<E_User>();
+            model.tempuser = user.GetAllTempUsers() ?? new List<tbl_TempUser>();
+            model.borders = border.GetAll() ?? new List<E_Border>();
 
             using (var db = new GZPEGM1())
             {
                 model.teacherRequests = db.E_User
                     .Where(u => u.TeacherRequestStatus == 0)
-                    .ToList();
+                    .ToList() ?? new List<E_User>();
 
                 var thirtyMinutesAgo = DateTime.Now.AddMinutes(-30);
                 var list = db.E_User
@@ -445,24 +451,19 @@ namespace gzpegm.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Route("Adduser")]
+        [Route("AllUsers/Adduser")]
         public ActionResult Index(string NameUser, string LastNameUser, string TitleUser, string DeputyUser,
                          string PhoneUser, string EmailUser, string SicilUser, string[] PermiUser,
                          string BorderUser, string UserRole)
         {
             gzpegm.Cont.User user = new User();
-            Border border = new Border();
-            Usermodel model = new Usermodel();
-
 
             var check = user.Check(0, SicilUser);
             if (check != null)
             {
-                ViewBag.GeneralWarningMessage = "Bu sicil numarası daha önce kaydedilmiş..!";
-                ViewBag.GeneralDynamicScripts = "$('#general-warning').click();";
-                model.user = user.GetAllUsers();
-                model.tempuser = user.GetAllTempUsers();
-                model.borders = border.GetAll();
-                return View(model);
+                TempData["Error"] = "Bu sicil numarası daha önce kaydedilmiş..!";
+                TempData["msgError"] = "Bu sicil numarası daha önce kaydedilmiş..!";
+                return Redirect(Url.Action("Index", "AllUsers") + "#users-content");
             }
             else
             {
@@ -486,16 +487,14 @@ namespace gzpegm.Controllers
                 string pass = CryptoHelper.Crypto.HashPassword("123459");
                 user.AddUser(SicilUser, NameUser, LastNameUser, PhoneUser, EmailUser,
                 TitleUser, DeputyUser, "", fldAuthValue, "0", pass, BorderUser, UserRole);
-                ViewBag.GeneralSuccessMessage = "Kullanıcı başarılı bir şekilde kaydedilmiştir..!";
-                ViewBag.GeneralDynamicScripts = "$('#general-success').click();";
-                model.user = user.GetAllUsers();
-                model.tempuser = user.GetAllTempUsers();
-                model.borders = border.GetAll();
-                return View(model);
+                TempData["Success"] = "Kullanıcı başarılı bir şekilde kaydedilmiştir..!";
+                TempData["msgSuccess"] = "Kullanıcı başarılı bir şekilde kaydedilmiştir..!";
+                return Redirect(Url.Action("Index", "AllUsers") + "#users-content");
             }
 
         }
         [Route("Edituser")]
+        [Route("AllUsers/Edituser")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult Index(int EditUserId, string editNameUser, string editLastNameUser, string editTitleUser,
@@ -503,14 +502,13 @@ namespace gzpegm.Controllers
         string[] editPermiUser, string editBorderUser, string editUserRole)
         {
             gzpegm.Cont.User user = new User();
-            Usermodel model = new Usermodel();
-            Border border = new Border();
 
             var check = user.Check(EditUserId, editSicilUser);
             if (check != null)
             {
-                ViewBag.GeneralWarningMessage = "Bu sicil numarası daha önce kaydedilmiş..!";
-                ViewBag.GeneralDynamicScripts = "$('#general-warning').click();";
+                TempData["Error"] = "Bu sicil numarası daha önce kaydedilmiş..!";
+                TempData["msgError"] = "Bu sicil numarası daha önce kaydedilmiş..!";
+                return Redirect(Url.Action("Index", "AllUsers") + "#users-content");
             }
             else
             {
@@ -523,54 +521,14 @@ namespace gzpegm.Controllers
                 editEmailUser, editTitleUser, editDeputyUser, "",
                 fldAuthValue, "0", editBorderUser, editUserRole);
 
-                ViewBag.GeneralSuccessMessage = "Kullanıcı başarılı bir şekilde güncellenmiştir..!";
-                ViewBag.GeneralDynamicScripts = "$('#general-success').click();";
+                TempData["Success"] = "Kullanıcı başarılı bir şekilde güncellenmiştir..!";
+                TempData["msgSuccess"] = "Kullanıcı başarılı bir şekilde güncellenmiştir..!";
+                return Redirect(Url.Action("Index", "AllUsers") + "#users-content");
             }
-
-            model.user = user.GetAllUsers();
-            model.tempuser = user.GetAllTempUsers();
-            model.borders = border.GetAll();
-
-            var fiveMinutesAgo = DateTime.Now.AddMinutes(-5);
-            using (var db = new GZPEGM1())
-            {
-                var list = db.E_User
-      .AsNoTracking()
-      .Where(u => u.LastLogin.HasValue && u.LastLogin.Value >= fiveMinutesAgo)
-      .Select(u => new UserViewModel
-      {
-          fldId = u.fldId,
-          fldName = u.fldName,
-          fldLastName = u.fldLastName,
-          fldSicil = u.fldSicil,
-          fldEmail = u.fldEmail,
-          fldPhone = u.fldPhone,
-          LastLogin = u.LastLogin,
-          LastIP = db.E_Token
-                      .Where(t => t.fldUserId == u.fldId)
-                      .OrderByDescending(t => t.fldDateTime)
-                      .Select(t => t.fldIp)
-                      .FirstOrDefault(),
-          RegisterDate = u.fldDateTime,
-          fldActive = u.fldActive,
-          fldAuth = u.fldAuth,
-          fldTitle = u.fldTitle,
-          fldDeputy = u.fldDeputy,
-          Role = u.Role
-      })
-      .ToList();
-
-                model.onlineUsers = list
-                    .GroupBy(u => u.fldId)
-                    .Select(g => g.OrderByDescending(x => x.LastLogin).FirstOrDefault())
-                    .ToList();
-            }
-
-            model.onlineUsers = model.onlineUsers ?? new List<UserViewModel>();
-            return View(model);
         }
 
         [Route("Getuser")]
+        [Route("AllUsers/Getuser")]
         public JsonResult GetUser(int fldId)
         {
             gzpegm.Cont.User user = new User();
@@ -578,7 +536,7 @@ namespace gzpegm.Controllers
             if (UData == null)
                 return Json(new { success = false, message = "Kullanıcı bulunamadı." }, JsonRequestBehavior.AllowGet);
 
-            return Json(new { success = true, ID = fldId, Name = UData.fldName, LastName = UData.fldLastName, Title = UData.fldTitle, Deputy = UData.fldDeputy, Phone = UData.fldPhone, Email = UData.fldEmail, Sicil = UData.fldSicil, Permi = UData.fldAuth, Border = UData.fldBorder, Role = UData.Role }, JsonRequestBehavior.AllowGet);
+            return Json(new { success = true, ID = fldId, Name = UData.fldName, LastName = UData.fldLastName, Title = UData.fldTitle, Deputy = UData.fldDeputy, Phone = UData.fldPhone, Email = UData.fldEmail, Sicil = UData.fldSicil, Permi = UData.fldAuth, Border = UData.fldBorder?.Trim(), Role = UData.Role }, JsonRequestBehavior.AllowGet);
         }
 
         [HttpPost]
@@ -602,12 +560,13 @@ namespace gzpegm.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Route("submituser")]
+        [Route("AllUsers/submituser")]
         public JsonResult submituser(int Id)
         {
             gzpegm.Cont.User user = new User();
             var tempuser = user.GetTempUserById(Id);
             if (tempuser == null)
-                return Json(new { Message = "Bilinmeyen bir hata oluştu...(code : 1995)", Url = "/Kullanıcılar" }, JsonRequestBehavior.AllowGet);
+                return Json(new { Message = "Bilinmeyen bir hata oluştu...(code : 1995)", Url = "/Kullanıcılar#pending-content" }, JsonRequestBehavior.AllowGet);
 
             string pass = CryptoHelper.Crypto.HashPassword("123459");
 
@@ -616,22 +575,24 @@ namespace gzpegm.Controllers
                         tempuser.fldDeputy, "", "3", "0", pass, tempuser.fldDeputy, "Student");
 
             user.DeleteTempUser(Id);
-            return Json(new { Message = "Kullanıcıya başarılı bir şekilde onay verilmiştir...", Url = "/Kullanıcılar" }, JsonRequestBehavior.AllowGet);
+            return Json(new { Message = "Kullanıcıya başarılı bir şekilde onay verilmiştir...", Url = "/Kullanıcılar#pending-content" }, JsonRequestBehavior.AllowGet);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Route("deletetempuser")]
+        [Route("AllUsers/deletetempuser")]
         public JsonResult deletetempuser(int Id)
         {
             gzpegm.Cont.User user = new User();
             user.DeleteTempUser(Id);
-            return Json(new { Message = "Geçici kullanıcı başarılı bir şekilde silinmiştir...", Url = "/Kullanıcılar" }, JsonRequestBehavior.AllowGet);
+            return Json(new { Message = "Geçici kullanıcı başarılı bir şekilde silinmiştir...", Url = "/Kullanıcılar#pending-content" }, JsonRequestBehavior.AllowGet);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Route("deleteuser")]
+        [Route("AllUsers/deleteuser")]
         public JsonResult deleteuser(int Id)
         {
             using (var db = new GZPEGM1())
@@ -657,7 +618,7 @@ namespace gzpegm.Controllers
 
                     db.E_User.Remove(user);
                     db.SaveChanges();
-                    return Json(new { ok = true, Message = "Kullanıcı başarılı bir şekilde silinmiştir...", Url = "/Kullanıcılar" }, JsonRequestBehavior.AllowGet);
+                    return Json(new { ok = true, Message = "Kullanıcı başarılı bir şekilde silinmiştir...", Url = "/Kullanıcılar#users-content" }, JsonRequestBehavior.AllowGet);
                 }
                 catch (Exception ex)
                 {
@@ -670,6 +631,7 @@ namespace gzpegm.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Route("SetInactive")]
+        [Route("AllUsers/SetInactive")]
         public ActionResult SetInactive(int id)
         {
             using (var db = new GZPEGM1())
@@ -678,13 +640,13 @@ namespace gzpegm.Controllers
                 if (user == null)
                 {
                     TempData["Error"] = "Kullanıcı bulunamadı.";
-                    return RedirectToAction("Index");
+                    return Redirect(Url.Action("Index", "AllUsers") + "#inactive-content");
                 }
 
                 if (string.Equals(user.Role, "Admin", StringComparison.OrdinalIgnoreCase))
                 {
                     TempData["Error"] = "Admin kullanıcı pasife alınamaz.";
-                    return RedirectToAction("Index");
+                    return Redirect(Url.Action("Index", "AllUsers") + "#inactive-content");
                 }
 
                 try
@@ -699,13 +661,14 @@ namespace gzpegm.Controllers
                 }
             }
 
-            return RedirectToAction("Index");
+            return Redirect(Url.Action("Index", "AllUsers") + "#inactive-content");
         }
 
         // ✅ YENİ: Kullanıcıyı aktifleştir (InactiveUser'dan taşıdık)
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Route("SetActive")]
+        [Route("AllUsers/SetActive")]
         public ActionResult SetActive(int id)
         {
             using (var db = new GZPEGM1())
@@ -714,7 +677,7 @@ namespace gzpegm.Controllers
                 if (user == null)
                 {
                     TempData["Error"] = "Kullanıcı bulunamadı.";
-                    return RedirectToAction("Index");
+                    return Redirect(Url.Action("Index", "AllUsers") + "#inactive-content");
                 }
 
                 try
@@ -730,13 +693,14 @@ namespace gzpegm.Controllers
                 }
             }
 
-            return RedirectToAction("Index");
+            return Redirect(Url.Action("Index", "AllUsers") + "#inactive-content");
         }
 
         // ✅ YENİ: Tüm kullanıcıları aynı anda aktifleştir (Adminler hariç)
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Route("SetAllActive")]
+        [Route("AllUsers/SetAllActive")]
         public ActionResult SetAllActive()
         {
             try
@@ -766,7 +730,7 @@ WHERE ISNULL(Role, '') <> 'Admin' AND (ISNULL(IsActive, 0) = 0 OR ISNULL(fldActi
                 TempData["Error"] = "İşlem başarısız: " + ex.Message;
             }
 
-            return RedirectToAction("Index");
+            return Redirect(Url.Action("Index", "AllUsers") + "#maintenance-content");
         }
 
         // ✅ YENİ: Kullanıcı geçmişini göster (InactiveUser'dan taşıdık)
@@ -982,11 +946,13 @@ WHERE ISNULL(Role, '') <> 'Admin'
                 TempData["Error"] = "İşlem sırasında hata oluştu: " + ex.Message;
             }
 
-            return RedirectToAction("Index");
+            return Redirect(Url.Action("Index", "AllUsers") + "#maintenance-content");
         }
 
         // GET: pasif kullanıcıları getir (id ve isim)
         [HttpGet]
+        [Route("GetPassiveUsers")]
+        [Route("AllUsers/GetPassiveUsers")]
         public JsonResult GetPassiveUsers()
         {
             using (var db = new GZPEGM1())
@@ -1055,16 +1021,26 @@ WHERE ISNULL(Role, '') <> 'Admin'
                     checks.Add($"✓ Oluşturulan kurs olmayan: {withoutCreatedCourse.Count}");
 
                     checks.Add("✓ İNAD kayıtları kontrol ediliyor...");
-                    var inadSicils = db.E_Inad.Select(i => i.Sicil).Distinct().ToList();
-                    var withoutInad = withoutCreatedCourse.Where(u => !inadSicils.Contains(u.fldSicil)).ToList();
+                    var inadSicils = db.E_Inad.Where(i => i.Sicil != null).Select(i => i.Sicil).Distinct().ToList();
+                    var withoutInad = withoutCreatedCourse.Where(u =>
+                    {
+                        var s = (u.fldSicil ?? "").Trim();
+                        if (string.IsNullOrWhiteSpace(s)) return true;
+                        return !inadSicils.Any(x => string.Equals((x ?? "").Trim(), s, StringComparison.OrdinalIgnoreCase));
+                    }).ToList();
                     checks.Add($"✓ İNAD kaydı olmayan: {withoutInad.Count}");
 
                     checks.Add("✓ Dilekçe ve doküman kayıtları kontrol ediliyor...");
-                    var dilekceSicils = db.E_Dilekce.Select(d => d.Sicil).Distinct().ToList();
-                    var documentSicils = db.DocumentTerms.Select(d => d.Sicil).Distinct().ToList();
-                    var withoutDocuments = withoutInad
-                        .Where(u => !dilekceSicils.Contains(u.fldSicil) && !documentSicils.Contains(u.fldSicil))
-                        .ToList();
+                    var dilekceSicils = db.E_Dilekce.Where(d => d.Sicil != null).Select(d => d.Sicil).Distinct().ToList();
+                    var documentSicils = db.DocumentTerms.Where(d => d.Sicil != null).Select(d => d.Sicil).Distinct().ToList();
+                    var withoutDocuments = withoutInad.Where(u =>
+                    {
+                        var s = (u.fldSicil ?? "").Trim();
+                        if (string.IsNullOrWhiteSpace(s)) return true;
+                        if (dilekceSicils.Any(x => string.Equals((x ?? "").Trim(), s, StringComparison.OrdinalIgnoreCase))) return false;
+                        if (documentSicils.Any(x => string.Equals((x ?? "").Trim(), s, StringComparison.OrdinalIgnoreCase))) return false;
+                        return true;
+                    }).ToList();
                     checks.Add($"✓ Dilekçe/doküman kaydı olmayan: {withoutDocuments.Count}");
 
                     checks.Add("✓ İşlem geçmişi kontrol ediliyor...");
@@ -1103,6 +1079,8 @@ WHERE ISNULL(Role, '') <> 'Admin'
         // POST: tek bir kullanıcıyı aktifleştir
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Route("ActivateUser")]
+        [Route("AllUsers/ActivateUser")]
         public JsonResult ActivateUser(int id)
         {
             using (var db = new GZPEGM1())

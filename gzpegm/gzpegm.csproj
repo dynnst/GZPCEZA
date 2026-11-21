@@ -7040,6 +7040,7 @@
     <Compile Include="Controllers\StoredFilesController.cs" />
     <Compile Include="Controllers\StudentExamController.cs" />
     <Compile Include="Controllers\TahditController.cs" />
+    <Compile Include="Controllers\CezaParametreController.cs" />
     <Compile Include="Controllers\TGVHController.cs" />
     <Compile Include="Controllers\TKodController.cs" />
     <Compile Include="Controllers\UlkeController.cs" />
@@ -7251,6 +7252,7 @@
     <Compile Include="Services\IMessageService.cs" />
     <Compile Include="Services\MessageService.cs" />
     <Compile Include="Services\OpticalReaderService.cs" />
+    <Compile Include="Services\CezaParametreService.cs" />
     <Compile Include="Services\StatService.cs" />
     <Compile Include="Startup.cs" />
     <Compile Include="ViewModels\DashboardViewModel.cs" />
@@ -7419,6 +7421,7 @@
     <Content Include="Views\ErrorLogs\Index.cshtml" />
     <Content Include="Views\ErrorLogs\Detail.cshtml" />
     <Content Include="Views\EducationQuality\Index.cshtml" />
+    <Content Include="Views\CezaParametre\Index.cshtml" />
     <Content Include="Views\TGVH\Index.cshtml" />
     <Content Include="Views\AUH\Index.cshtml" />
     <Content Include="Views\TKod\Index.cshtml" />

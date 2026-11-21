@@ -106,16 +106,7 @@ namespace gzpegm.Controllers
             if (user == null)
                 return RedirectToAction("Index", "Giris");
 
-            bool isAdmin = IsAdminUser(user);
-            string userBorder = (user.fldBorder ?? string.Empty).Trim();
-
-            var themeCookie = Request.Cookies["theme"];
-            ViewBag.CurrentTheme = themeCookie != null ? themeCookie.Value : "light";
-            ViewBag.IsAdmin = isAdmin;
-            ViewBag.UserBorder = userBorder;
-            ViewBag.UserFullName = ((user.fldName ?? string.Empty) + " " + (user.fldLastName ?? string.Empty)).Trim();
-
-            return View();
+            return Redirect("/ISTATIK#tab-brifing");
         }
 
         [HttpGet]
@@ -292,30 +283,6 @@ namespace gzpegm.Controllers
                     .Take(10)
                     .ToList();
 
-                var userByRole = userData
-                    .Where(x => !string.IsNullOrEmpty(x.Role))
-                    .GroupBy(x => x.Role)
-                    .Select(g => new { Role = g.Key, Count = g.Count() })
-                    .OrderByDescending(x => x.Count)
-                    .ToList();
-
-                var examByCourse = (from exam in db.Exam.AsNoTracking()
-                                    join course in db.Courses.AsNoTracking() on exam.CourseId equals course.CourseId
-                                    where exam.IsActive == true
-                                    group exam by course.CourseTitle into g
-                                    select new { Course = g.Key ?? "Belirtilmemiş", Count = g.Count() })
-                                    .OrderByDescending(x => x.Count)
-                                    .Take(10)
-                                    .ToList();
-
-                var questionByExam = (from question in db.Question.AsNoTracking()
-                                      join exam in db.Exam.AsNoTracking() on question.ExamId equals exam.ExamId
-                                      group question by new { exam.ExamId, exam.Title } into g
-                                      select new { ExamId = g.Key.ExamId, ExamTitle = g.Key.Title ?? "Belirtilmemiş", Count = g.Count() })
-                                      .OrderByDescending(x => x.Count)
-                                      .Take(10)
-                                      .ToList();
-
                 var totalMoney = historyData.Sum(x => SafeParseDecimal(x.fldPMoney));
                 var tahditStats = new TahditFormLogService().GetStatistics(startDate, endDate, effectiveBorder, null, null);
                 var maxMoneyRecord = historyData
@@ -358,9 +325,6 @@ namespace gzpegm.Controllers
                     inadByReason,
                     userByBorderTop10,
                     sartliByBorder,
-                    userByRole,
-                    examByCourse,
-                    questionByExam,
                     tahditByCode = tahditStats.AllByCode,
                     tahditByBorder = tahditStats.AllByBorder,
                     tahditByUser = tahditStats.AllByUser.Take(10),
