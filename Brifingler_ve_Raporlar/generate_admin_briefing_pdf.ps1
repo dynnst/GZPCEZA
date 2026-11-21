@@ -161,8 +161,8 @@ $box2 = New-Object iTextSharp.text.pdf.PdfPCell
 $box2.BackgroundColor = $cGreenBg
 $box2.Padding = 5
 $fGreenTitle = New-Object iTextSharp.text.Font($baseFontBold, 9, [iTextSharp.text.Font]::NORMAL, $cGreen)
-$box2.AddElement((New-Object iTextSharp.text.Paragraph("G GRUBU (Azerbaycan, Kazakistan, Özbekistan vb.):", $fGreenTitle)))
-$box2Text = "• EGM 04.06.2013 / 41139-5 Genelgesi uyarınca ikamet harcından TAMAMEN MUAFTIRLAR.`n• İhlal süresine bakılmaksızın ikamet harcı 0,00 TL'dir.`n• Yalnızca 5326 s. Kabahatler Kanunu m.32 idari para cezası kesilir (2026 yılı: 1.854,00 TL).`n• 2027 Güncelleme: 1.854 * (1 + YDO)"
+$box2.AddElement((New-Object iTextSharp.text.Paragraph("G GRUBU (Danimarka, Suriye, Türkmenistan vb.):", $fGreenTitle)))
+$box2Text = "• EGM 04.06.2013 / 41139-5 Genelgesi uyarınca ikamet harcından TAMAMEN MUAFTIRLAR (8 Ülke).`n• İhlal süresine bakılmaksızın ikamet harcı 0,00 TL'dir.`n• Yalnızca 5326 s. Kabahatler Kanunu m.32 idari yaptırımı uygulanır (2026: 1.854 TL).`n• DİKKAT: Azerbaycan, Kazakistan vb. Standart A Grubundadır ve normal harç öderler!"
 $box2.AddElement((New-Object iTextSharp.text.Paragraph($box2Text, $fTableCell)))
 $boxTable.AddCell($box2)
 
@@ -234,9 +234,9 @@ foreach ($h in $hTest) {
 }
 
 $tests = @(
-    @("1. Standart Ülke Kontrolü", "Uyruk: Almanya | İhlal: 15 Gün", "Yeni TGVH tabanına göre 1 aylık ikamet harcı + yeni Defter bedeli eksiksiz hesaplanmalıdır."),
+    @("1. Standart Ülke (A Grubu)", "Uyruk: Azerbaycan (veya Almanya) | İhlal: 15 Gün", "25 USD tabanına göre ikamet harcı + Defter bedeli + Vize harcı eksiksiz hesaplanmalıdır."),
     @("2. F Grubu Kademeli Artış", "Uyruk: Norveç | İhlal: 3 Gün & 12 Gün", "3 gün için günlük katsayı çarpımı; 12 gün için POLNET tavan harcına kilitlenmelidir."),
-    @("3. G Grubu Muafiyet", "Uyruk: Azerbaycan | İhlal: 25 Gün", "İkamet harcı 0,00 TL çıkmalı; yalnızca Kabahatler Kanunu m.32 idari para cezası kesilmelidir."),
+    @("3. G Grubu Muafiyet", "Uyruk: Türkmenistan (veya Suriye) | İhlal: 25 Gün", "İkamet harcı 0,00 TL çıkmalı; yalnızca Kabahatler Kanunu m.32 idari para cezası kesilmelidir."),
     @("4. V-137 Tahditli İhlal", "Herhangi Uyruk | İhlal: 400 Gün", "Kırmızı renkli V-137 tahdit uyarısı çıkmalı ve yeni maktu ceza tutarı toplam cezaya eklenmelidir.")
 )
 
