@@ -106,6 +106,8 @@
                         </div>
 
                         <!-- Giriş - Çıkış Tarih Satırları Konteyneri -->
+                        <div id="dateOrderValidation" class="alert alert-danger py-2 mb-2" role="alert" style="display:none;"></div>
+                        <div id="calcResultAlert" class="alert alert-success py-2 mb-2 font-weight-bold" role="alert" style="display:none;"></div>
                         <div id="date-rows-container" class="date-rows-container mb-2">
                             <!-- 1. Giriş-Çıkış Satırı -->
                             <div class="form-group row form-row date-pair-row align-items-end mb-1" id="date-row-0">
@@ -805,6 +807,45 @@
                         </button>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- İHLAL / CEZALI SÜRE YOKTUR BİLGİLENDİRME MODALI -->
+<div class="modal fade" id="modalNoViolation" tabindex="-1" role="dialog" style="z-index:99990;">
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 460px;">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:14px; overflow:hidden;">
+            <div class="modal-header bg-success text-white py-3">
+                <h5 class="modal-title font-weight-bold">
+                    <i class="fas fa-check-circle text-white mr-2"></i>İhlal / Ceza Durumu
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Kapat">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <div class="mb-3">
+                    <div class="d-inline-flex align-items-center justify-content-center rounded-circle text-success shadow-sm" style="width: 72px; height: 72px; background:#f0fdf4; border: 2px solid #86efac;">
+                        <i class="fas fa-user-check fa-2x"></i>
+                    </div>
+                </div>
+                <h4 class="font-weight-bold text-success mb-2" id="modalNoViolationTitle">Cezalı Süresi Yoktur..!</h4>
+                <p class="text-muted mb-3" id="modalNoViolationDesc" style="font-size:0.92rem; line-height:1.45;">
+                    Yolcunun yasal kalış süresi dolmamıştır. Herhangi bir vize veya ikamet ihlali bulunmamaktadır.
+                </p>
+                <div class="p-3 mb-3 rounded text-left" style="background:#f8fafc; border:1px solid #e2e8f0;">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="small font-weight-bold text-muted"><i class="fas fa-shield-alt text-success mr-1"></i>Yasal Durum:</span>
+                        <span class="badge badge-success px-2 py-1" style="font-size:0.82rem;">İHLAL YOK (0 GÜN)</span>
+                    </div>
+                    <div class="small text-muted">
+                        Yolcu hakkında herhangi bir para cezası, harç tahakkuku veya giriş yasağı tahdidi uygulanmaz.
+                    </div>
+                </div>
+                <button type="button" class="btn btn-success btn-lg btn-block shadow-sm font-weight-bold py-2" data-dismiss="modal" style="border-radius:8px;">
+                    <i class="fas fa-check mr-1"></i> Tamam
+                </button>
             </div>
         </div>
     </div>

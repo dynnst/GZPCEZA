@@ -598,7 +598,10 @@ function _executeHesapla1() {
     } catch (e) { }
     var form = $('#calculate-form');
     $('#veri, #hes2, #hes3, #hes4, #hes5').addClass('hidden');
-    $('#PayCalculate').val('').change();
+    $('#PayCalculate').val('');
+    if ($('#calcResultAlert').length) {
+        $('#calcResultAlert').hide().empty();
+    }
 
     var $Exit = $('#ExitDateCalculate').val(),
         $Enter = $('#EnterDateCalculate').val(),
@@ -624,7 +627,9 @@ function _executeHesapla1() {
             $('#BirthdateCFORM').val($Enter);
         }
     } else {
-        $('#AdultCalculate').val('').change();
+        if (!$('#AdultCalculate').val()) {
+            $('#AdultCalculate').val('2');
+        }
     }
 
     var enter = document.getElementsByClassName("endt"),
@@ -685,10 +690,23 @@ function _executeHesapla1() {
             if (requestId !== _hesapla1RequestId || _calculateInputSignature() !== requestSignature) return;
             if (result.Type == '0') {
                 $('#DayCalculate, #LongCalculate, #OneTimeCalculate, #BasCalculate, #BitCalculate, #CezaAyCalculate, #CezaGunCalculate, #SonucCalculate').val('');
-                if (result.Message) {
-                    $('#dateOrderValidation').text(result.Message).show();
+                var msg = result.Message || 'Cezalı Süresi Yoktur..!';
+                if ($('#modalNoViolation').length) {
+                    $('#modalNoViolationTitle').text(msg);
+                    $('#modalNoViolation').modal('show');
+                } else if ($('#calcResultAlert').length) {
+                    $('#calcResultAlert').html('<i class="fas fa-check-circle mr-1"></i> ' + msg).show();
+                } else {
+                    $('#dateOrderValidation').text(msg).show();
+                }
+                $('#dateOrderValidation').hide().empty();
+                if ($('#calcResultAlert').length) {
+                    $('#calcResultAlert').hide().empty();
                 }
                 return false;
+            }
+            if ($('#calcResultAlert').length) {
+                $('#calcResultAlert').hide().empty();
             }
             $('#dateOrderValidation').hide().empty();
 
@@ -792,8 +810,14 @@ function hesapla2() {
 
 function _executeHesapla2() {
     var requestId = ++_hesapla2RequestId;
-    var $Tckt = $('#SonucCalculate').val(),
-        $Type = $('#AdultCalculate').val(),
+    var $Tckt = ($('#SonucCalculate').val() || '').trim();
+
+    // Sonuç boşsa (ihlal yoksa veya henüz hesaplanmadıysa) harç ve ceza hesaplanmaz; döngüye girilmez
+    if (!$Tckt) {
+        return false;
+    }
+
+    var $Type = $('#AdultCalculate').val(),
         $Passport = $('#PassportCalculate').val(),
         $Visa = $('#VisaCalculate').val(),
         $Ctype = $('#CTypeCalculate').val(),
@@ -817,14 +841,6 @@ function _executeHesapla2() {
     }
 
     if (!$Country) {
-        return false;
-    }
-
-    // Sonuç boşsa ama tarihler ve ülke girilmişse önce hesapla1'i tetikle
-    if (!$Tckt || $Tckt.trim() === '') {
-        if ($('#EnterDateCalculate').val() && $('#ExitDateCalculate').val() && $Country) {
-            hesapla1(true);
-        }
         return false;
     }
 
@@ -1004,7 +1020,7 @@ function reindexDateRows() {
 function validateTripOrder(showMessage) {
     var $rows = $('#date-rows-container .date-pair-row');
     var valid = true;
-    var message = 'Seferleri en yeni giriş en üstte olacak şekilde sıralayın. Bir seferin çıkışı, sonraki eski seferin girişinden önce olmalıdır.';
+    var message = 'Seferleri en yeni giriş en üstte olacak şekilde sıralayın. Üstteki seferin giriş tarihi, altındaki eski seferin çıkış tarihinden sonra olmalıdır (sefer tarihleri çakışamaz).';
 
     $rows.find('.endt, .exdt').removeClass('is-invalid');
     $rows.each(function (i) {
@@ -1026,8 +1042,14 @@ function validateTripOrder(showMessage) {
         $warning = $('<div id="dateOrderValidation" class="alert alert-danger py-2 mb-2" role="alert" style="display:none;"></div>');
         $('#date-rows-container').before($warning);
     }
-    if (!valid && showMessage) $warning.text(message).show();
-    else if (valid) $warning.hide().empty();
+    if (!valid && showMessage) {
+        $warning.text(message).show();
+        if ($('#calcResultAlert').length) {
+            $('#calcResultAlert').hide();
+        }
+    } else if (valid) {
+        $warning.hide().empty();
+    }
     return valid;
 }
 window.validateTripOrder = validateTripOrder;

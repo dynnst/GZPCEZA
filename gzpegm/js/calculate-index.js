@@ -228,6 +228,8 @@
         $('#Visaday, #testarihi, #BirthDateCalculate').val('');
         $('#V137ExpiredCalculate').val('0');
         $('#birthDateRequiredAlert').hide();
+        $('#dateOrderValidation, #calcResultAlert').hide().empty();
+        if ($('#modalNoViolation').length) { $('#modalNoViolation').modal('hide'); }
         $('#BirthDateCalculate').removeClass('border-danger');
         window._lastCalculatedAge = null;
 

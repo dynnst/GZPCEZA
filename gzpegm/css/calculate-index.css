@@ -203,9 +203,22 @@
 
 /* Sefer Satırları Konteyneri */
 .date-rows-container {
-    max-height: 220px;
+    max-height: 340px;
     overflow-y: auto;
+    overflow-x: hidden;
     padding-right: 4px;
+    scrollbar-gutter: stable;
+}
+
+#calcResultAlert {
+    font-size: 0.92rem;
+    font-weight: 700;
+    border-radius: 6px;
+    border-left: 4px solid #16a34a;
+    background: #f0fdf4;
+    color: #166534;
+    border-color: #bbf7d0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .date-pair-row {
