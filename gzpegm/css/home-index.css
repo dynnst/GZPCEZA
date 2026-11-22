@@ -11,14 +11,12 @@
 
     .home-hero {
         position: relative;
-        display: grid;
-        grid-template-columns: minmax(0, 1.15fr) minmax(280px, .85fr);
-        gap: 22px;
-        padding: 24px;
+        display: block;
+        padding: 28px 32px;
         border: 1px solid #d9e2ef;
         border-radius: 8px;
         background:
-            linear-gradient(135deg, rgba(255,255,255,.94), rgba(244,248,252,.92)),
+            linear-gradient(135deg, rgba(255,255,255,.95), rgba(244,248,252,.92)),
             url('../img/kapak.png') center right / cover no-repeat;
         box-shadow: 0 12px 28px rgba(36, 49, 67, .08);
         overflow: hidden;
