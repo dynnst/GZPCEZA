@@ -77,6 +77,11 @@
     var pendingInadList = ViewBag.PendingInadList as List<gzpegm.Models.E_Inad> ?? new List<gzpegm.Models.E_Inad>();
     var pendingInadCount = ViewBag.PendingInadCount != null ? (int)ViewBag.PendingInadCount : pendingInadList.Count;
     var inadUserBorder = ViewBag.InadUserBorder as string ?? "";
+
+    var duyurular = ViewBag.Duyurular as List<gzpegm.Models.DuyuruItem> ?? new List<gzpegm.Models.DuyuruItem>();
+    bool canManageDuyuru = ViewBag.CanManageDuyuru != null && (bool)ViewBag.CanManageDuyuru;
+    var recentGenelgeler = ViewBag.RecentGenelgeler as List<gzpegm.Models.Genelge.GenelgeItem> ?? new List<gzpegm.Models.Genelge.GenelgeItem>();
+    var tahditCodes = ViewBag.TahditCodes as List<gzpegm.Models.TahditSozlukItem> ?? new List<gzpegm.Models.TahditSozlukItem>();
 }
 
 @section Styles {
@@ -136,10 +141,10 @@
 
 <div class="home-workspace">
     <section class="home-hero" aria-labelledby="homeTitle">
-        <div>
+        <div class="home-hero-left">
             <div class="home-eyebrow"><i class="fas fa-shield-alt"></i>İŞLEM EKRANLARI</div>
             <h1 id="homeTitle" class="home-title">Ceza, vize ve tahdit işlemleri için hızlı çalışma alanı</h1>
-            <p class="home-summary">Sık kullanılan hesaplama, belge ve kontrol ekranları tek yerde toplandı. Tüm bağlantılar yerel proje dosyaları ve mevcut modüller üzerinden çalışır.</p>
+            <p class="home-summary">Sık kullanılan hesaplama, mevzuat ve operasyonel kontrol ekranları tek yerde toplandı. Tüm bağlantılar yerel proje modülleri üzerinden anlık çalışır.</p>
             <div class="home-primary-actions">
                 @if (canCore)
                 {
@@ -150,6 +155,176 @@
                 <button id="openKaseVizeModal" type="button" class="home-secondary-btn" data-toggle="modal" data-target="#kaseVizeModal">
                     <i class="fas fa-passport"></i> Kaşe Vize Kontrolü
                 </button>
+            </div>
+        </div>
+
+        <div class="home-hero-hub">
+            <div class="hub-card">
+                <div class="hub-header">
+                    <ul class="nav nav-pills hub-tabs" id="hubTabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" id="tab-duyuru-btn" data-toggle="pill" href="#tab-duyuru" role="tab">
+                                <i class="fas fa-bullhorn text-warning mr-1"></i> Duyurular
+                                @if (duyurular.Count > 0)
+                                {
+                                    <span class="badge badge-warning ml-1">@duyurular.Count</span>
+                                }
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="tab-genelge-btn" data-toggle="pill" href="#tab-genelge" role="tab">
+                                <i class="fas fa-file-contract text-primary mr-1"></i> Son Genelgeler
+                                @if (recentGenelgeler.Count > 0)
+                                {
+                                    <span class="badge badge-info ml-1">@recentGenelgeler.Count</span>
+                                }
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="tab-tahdit-btn" data-toggle="pill" href="#tab-tahdit" role="tab">
+                                <i class="fas fa-book-dead text-danger mr-1"></i> Tahdit Sözlüğü
+                            </a>
+                        </li>
+                    </ul>
+                    @if (canManageDuyuru)
+                    {
+                        <button type="button" class="btn btn-sm btn-outline-primary hub-add-btn" data-toggle="modal" data-target="#modalAddDuyuru" title="Yeni Duyuru Yayınla (Admin & Öğretmen)">
+                            <i class="fas fa-plus mr-1"></i> Duyuru Ekle
+                        </button>
+                    }
+                </div>
+
+                <div class="tab-content hub-body" id="hubTabContent">
+                    <!-- 1. DUYURULAR SEKMESİ -->
+                    <div class="tab-pane fade show active" id="tab-duyuru" role="tabpanel">
+                        <div class="duyuru-list">
+                            @if (duyurular.Any())
+                            {
+                                foreach (var d in duyurular)
+                                {
+                                    <div class="duyuru-item kategori-@((d.Kategori ?? "genel").ToLowerInvariant())" id="duyuru-item-@d.Id">
+                                        <div class="duyuru-top">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="badge @d.BadgeClass">@d.BadgeText</span>
+                                                <span class="duyuru-title">@d.Baslik</span>
+                                            </div>
+                                            <div class="duyuru-actions">
+                                                <span class="duyuru-time text-muted" title="@d.FormattedTarih"><i class="far fa-clock mr-1"></i>@d.TimeAgo</span>
+                                                @if (canManageDuyuru)
+                                                {
+                                                    <button type="button" class="btn-del-duyuru" onclick="deleteDuyuru(@d.Id)" title="Duyuruyu Kaldır">
+                                                        <i class="fas fa-trash-alt text-danger"></i>
+                                                    </button>
+                                                }
+                                            </div>
+                                        </div>
+                                        <div class="duyuru-desc">
+                                            @d.Icerik
+                                        </div>
+                                        <div class="duyuru-footer">
+                                            <span class="duyuru-author"><i class="fas fa-user-shield mr-1"></i>@d.OlusturanAd (@(d.OlusturanRol ?? "Görevli"))</span>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="hub-empty">
+                                    <i class="fas fa-bell-slash"></i>
+                                    <p>Şu anda aktif bir duyuru bulunmamaktadır.</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- 2. SON EKLENEN GENELGELER SEKMESİ -->
+                    <div class="tab-pane fade" id="tab-genelge" role="tabpanel">
+                        <div class="genelge-quick-list">
+                            @if (recentGenelgeler.Any())
+                            {
+                                foreach (var g in recentGenelgeler)
+                                {
+                                    var ext = (g.Extension ?? "").ToLowerInvariant();
+                                    string iconClass = "fa-file-pdf text-danger";
+                                    if (ext.Contains("doc")) { iconClass = "fa-file-word text-primary"; }
+                                    else if (ext.Contains("xls")) { iconClass = "fa-file-excel text-success"; }
+                                    else if (ext.Contains("tif") || ext.Contains("jpg") || ext.Contains("png")) { iconClass = "fa-file-image text-warning"; }
+
+                                    <div class="genelge-item">
+                                        <div class="genelge-icon"><i class="fas @iconClass"></i></div>
+                                        <div class="genelge-info">
+                                            <a href="@Url.Action("Viewer", "Genelge", new { path = g.Id })" target="_blank" class="genelge-name" title="@g.Title">
+                                                @g.Title
+                                            </a>
+                                            <div class="genelge-sub">
+                                                <span class="badge badge-light border">@(g.FolderTitle ?? "Genelge")</span>
+                                                <span class="text-muted"><i class="far fa-calendar-alt ml-2 mr-1"></i>@(g.FormattedDate ?? "Güncel")</span>
+                                                <span class="text-muted ml-1">@g.FormattedSize</span>
+                                                @if (g.IsConfidential)
+                                                {
+                                                    <span class="badge badge-danger ml-1"><i class="fas fa-lock mr-1"></i>Gizli</span>
+                                                }
+                                            </div>
+                                        </div>
+                                        <div class="genelge-action">
+                                            <a href="@Url.Action("Viewer", "Genelge", new { path = g.Id })" target="_blank" class="btn btn-xs btn-outline-info" title="İncele">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="hub-empty">
+                                    <i class="fas fa-folder-open"></i>
+                                    <p>Henüz listelenecek genelge bulunamadı.</p>
+                                </div>
+                            }
+                            <div class="hub-more text-right mt-2">
+                                <a href="@Url.Action("Index", "Genelge")" class="small font-weight-bold text-primary">
+                                    Tüm Genelgeleri ve Arşivi Görüntüle <i class="fas fa-arrow-right ml-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. HIZLI TAHDİT KODU SÖZLÜĞÜ SEKMESİ -->
+                    <div class="tab-pane fade" id="tab-tahdit" role="tabpanel">
+                        <div class="tahdit-widget">
+                            <div class="tahdit-search-wrap">
+                                <i class="fas fa-search tahdit-search-icon"></i>
+                                <input type="text" id="tahditQuickSearch" class="form-control tahdit-search-input" placeholder="Kod veya tanım ara (Örn: Ç-101, V-84, G-87, kaçak, ceza...)" autocomplete="off" />
+                            </div>
+                            <div class="tahdit-chips">
+                                <button type="button" class="tahdit-chip active" data-cat="Tumu">Tümü</button>
+                                <button type="button" class="tahdit-chip" data-cat="Ç">Ç Kodları</button>
+                                <button type="button" class="tahdit-chip" data-cat="G">G Kodları</button>
+                                <button type="button" class="tahdit-chip" data-cat="V">V Kodları</button>
+                                <button type="button" class="tahdit-chip" data-cat="N">N Kodları</button>
+                            </div>
+                            <div class="tahdit-results" id="tahditResultsList">
+                                @foreach (var tk in tahditCodes.Take(8))
+                                {
+                                    <div class="tahdit-item" data-code="@tk.Kod" data-cat="@tk.Kategori" onclick="showTahditByCode('@tk.Kod')">
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <span class="badge @tk.BadgeClass tahdit-badge">@tk.Kod</span>
+                                            <span class="tahdit-sure"><i class="fas fa-hourglass-half mr-1"></i>@tk.Sure</span>
+                                        </div>
+                                        <div class="tahdit-title">@tk.Baslik</div>
+                                        <div class="tahdit-preview text-muted small">@tk.Aciklama</div>
+                                    </div>
+                                }
+                            </div>
+                            <div class="hub-more d-flex justify-content-between align-items-center mt-2">
+                                <span class="small text-muted" id="tahditCountInfo">Toplam @tahditCodes.Count tahdit kodu kayıtlı</span>
+                                <a href="@Url.Action("Index", "Tahdit")" target="_blank" class="small font-weight-bold text-primary">
+                                    Detaylı Tahdit Modülü <i class="fas fa-external-link-alt ml-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
@@ -717,6 +892,113 @@
     </div>
 }
 
+@if (canManageDuyuru)
+{
+    <!-- YENİ DUYURU YAYINLAMA MODALI (Admin & Öğretmenler) -->
+    <div class="modal fade" id="modalAddDuyuru" tabindex="-1" role="dialog" aria-labelledby="modalAddDuyuruTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content shadow-lg border-0" style="border-radius:12px; overflow:hidden;">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title font-weight-bold" id="modalAddDuyuruTitle">
+                        <i class="fas fa-bullhorn mr-2"></i> Yeni Duyuru Yayınla
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Kapat">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body p-4">
+                    @Html.AntiForgeryToken()
+                    <div class="form-group">
+                        <label for="duyuruBaslik" class="font-weight-bold text-dark small text-uppercase">Duyuru Başlığı</label>
+                        <input type="text" id="duyuruBaslik" class="form-control" placeholder="Örn: 2026 Mali Harç Parametreleri Güncellendi" maxlength="250" required />
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label for="duyuruKategori" class="font-weight-bold text-dark small text-uppercase">Kategori</label>
+                            <select id="duyuruKategori" class="form-control custom-select">
+                                <option value="Genel" selected>Genel Duyuru</option>
+                                <option value="Mevzuat">Mevzuat / Genelge</option>
+                                <option value="Egitim">Eğitim / Sınav</option>
+                                <option value="Onemli">Önemli Bildirim</option>
+                                <option value="Acil">Acil Operasyonel</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label for="duyuruOncelik" class="font-weight-bold text-dark small text-uppercase">Öncelik Seviyesi</label>
+                            <select id="duyuruOncelik" class="form-control custom-select">
+                                <option value="1" selected>Normal</option>
+                                <option value="2">Yüksek / Önemli</option>
+                                <option value="3">Flaş / Acil (En Üstte)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group mb-0">
+                        <label for="duyuruIcerik" class="font-weight-bold text-dark small text-uppercase">Duyuru Metni / İçeriği</label>
+                        <textarea id="duyuruIcerik" class="form-control" rows="4" placeholder="Personele duyurulacak bilgileri buraya yazınız..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary px-3" data-dismiss="modal">İptal</button>
+                    <button type="button" id="btnSubmitDuyuru" class="btn btn-primary px-4 font-weight-bold" onclick="submitNewDuyuru()">
+                        <i class="fas fa-paper-plane mr-1"></i> Duyuruyu Yayınla
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- TAHDİT KODU DETAY MODALI -->
+<div class="modal fade" id="modalTahditDetail" tabindex="-1" role="dialog" aria-labelledby="modalTahditDetailTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content shadow-lg border-0" style="border-radius:12px; overflow:hidden;">
+            <div class="modal-header bg-dark text-white">
+                <div class="d-flex align-items-center gap-2">
+                    <span id="mTahditBadge" class="badge badge-warning font-weight-bold" style="font-size:15px; padding:6px 12px;">Ç-101</span>
+                    <h5 class="modal-title font-weight-bold ml-2" id="modalTahditDetailTitle">Tahdit Kodu Açıklaması</h5>
+                </div>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Kapat">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row mb-3 pb-3 border-bottom">
+                    <div class="col-md-6">
+                        <span class="text-muted small text-uppercase font-weight-bold">Kategori</span>
+                        <div id="mTahditKategori" class="font-weight-bold text-dark">Giriş Yasağı</div>
+                    </div>
+                    <div class="col-md-6">
+                        <span class="text-muted small text-uppercase font-weight-bold">Yasak / Tedbir Süresi</span>
+                        <div id="mTahditSure" class="font-weight-bold text-primary">3 Ay</div>
+                    </div>
+                </div>
+                <div class="mb-3 pb-3 border-bottom">
+                    <span class="text-muted small text-uppercase font-weight-bold">Tanım ve Açıklama</span>
+                    <div id="mTahditAciklama" class="mt-1 text-dark" style="line-height:1.5;"></div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="p-3 bg-light rounded border border-danger">
+                            <span class="badge badge-danger mb-2"><i class="fas fa-sign-in-alt mr-1"></i>GİRİŞTE YAPILACAK İŞLEM</span>
+                            <div id="mTahditGiris" class="small text-dark font-weight-bold"></div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="p-3 bg-light rounded border border-info">
+                            <span class="badge badge-info mb-2"><i class="fas fa-sign-out-alt mr-1"></i>ÇIKIŞTA YAPILACAK İŞLEM</span>
+                            <div id="mTahditCikis" class="small text-dark font-weight-bold"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light d-flex justify-content-between">
+                <span class="small text-muted"><i class="fas fa-shield-alt mr-1"></i>6458 sayılı YUKK ve EGM Hudut Kapıları Tahdit Prosedürü</span>
+                <button type="button" class="btn btn-secondary px-4 font-weight-bold" data-dismiss="modal">Kapat</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <div id="home-config"
          data-chart-url="@Url.Action("ChartData", "Grafik")"
@@ -730,4 +1012,167 @@
     <script src="@Url.Content("~/AdminTemplate/js/plugins/chartJs/Chart.min.js")"></script>
     <script src="@Url.Content("~/js/country-documents.js")?v=@DateTime.Now.Ticks"></script>
     <script src="@Url.Content("~/js/home-index.js")?v=@DateTime.Now.Ticks"></script>
+
+    <script>
+        // Tahdit Verileri ve Arama Sistemi
+        var allTahditData = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(tahditCodes));
+        var currentTahditCat = 'Tumu';
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return $('<div>').text(text).html();
+        }
+
+        function filterTahditList() {
+            var q = ($('#tahditQuickSearch').val() || '').trim().toLowerCase();
+            var filtered = allTahditData.filter(function(item) {
+                var catMatch = (currentTahditCat === 'Tumu') || 
+                               (item.Kategori && item.Kategori.indexOf(currentTahditCat) >= 0) ||
+                               (item.Kod && item.Kod.indexOf(currentTahditCat) === 0);
+                if (!catMatch) return false;
+                if (!q) return true;
+                return (item.Kod && item.Kod.toLowerCase().indexOf(q) >= 0) ||
+                       (item.Baslik && item.Baslik.toLowerCase().indexOf(q) >= 0) ||
+                       (item.Aciklama && item.Aciklama.toLowerCase().indexOf(q) >= 0) ||
+                       (item.GirisIslem && item.GirisIslem.toLowerCase().indexOf(q) >= 0) ||
+                       (item.CikisIslem && item.CikisIslem.toLowerCase().indexOf(q) >= 0);
+            });
+            renderTahditItems(filtered);
+        }
+
+        function renderTahditItems(items) {
+            var container = $('#tahditResultsList');
+            container.empty();
+            if (!items || items.length === 0) {
+                container.html('<div class="p-3 text-center text-muted small"><i class="fas fa-search mr-1"></i>Eşleşen tahdit kodu bulunamadı.</div>');
+                $('#tahditCountInfo').text('Eşleşen kod yok');
+                return;
+            }
+            $('#tahditCountInfo').text(items.length + ' tahdit kodu listelendi');
+            items.slice(0, 15).forEach(function(tk) {
+                var el = $('<div class="tahdit-item"></div>')
+                    .html('<div class="d-flex align-items-center justify-content-between">' +
+                          '<span class="badge ' + tk.BadgeClass + ' tahdit-badge">' + escapeHtml(tk.Kod) + '</span>' +
+                          '<span class="tahdit-sure"><i class="fas fa-hourglass-half mr-1"></i>' + escapeHtml(tk.Sure) + '</span>' +
+                          '</div>' +
+                          '<div class="tahdit-title">' + escapeHtml(tk.Baslik) + '</div>' +
+                          '<div class="tahdit-preview text-muted small">' + escapeHtml(tk.Aciklama || '') + '</div>')
+                    .on('click', function() {
+                        showTahditModal(tk);
+                    });
+                container.append(el);
+            });
+        }
+
+        function showTahditByCode(code) {
+            var match = allTahditData.find(function(x) { return x.Kod === code; });
+            if (match) {
+                showTahditModal(match);
+            }
+        }
+
+        function showTahditModal(tk) {
+            $('#mTahditBadge').attr('class', 'badge font-weight-bold ' + tk.BadgeClass).text(tk.Kod);
+            $('#modalTahditDetailTitle').text(tk.Baslik);
+            $('#mTahditKategori').text(tk.Kategori || 'Standart');
+            $('#mTahditSure').text(tk.Sure || 'Belirtilmemiş');
+            $('#mTahditAciklama').text(tk.Aciklama || 'Açıklama bulunmuyor.');
+            $('#mTahditGiris').text(tk.GirisIslem || 'Normal kontrol yapılır.');
+            $('#mTahditCikis').text(tk.CikisIslem || 'Normal kontrol yapılır.');
+            $('#modalTahditDetail').modal('show');
+        }
+
+        $(document).ready(function() {
+            $('#tahditQuickSearch').on('input', function() {
+                filterTahditList();
+            });
+
+            $('.tahdit-chip').on('click', function() {
+                $('.tahdit-chip').removeClass('active');
+                $(this).addClass('active');
+                currentTahditCat = $(this).data('cat');
+                filterTahditList();
+            });
+        });
+
+        // Duyuru Yayınlama Fonksiyonu
+        function submitNewDuyuru() {
+            var baslik = ($('#duyuruBaslik').val() || '').trim();
+            var kategori = $('#duyuruKategori').val();
+            var oncelik = parseInt($('#duyuruOncelik').val()) || 1;
+            var icerik = ($('#duyuruIcerik').val() || '').trim();
+            var token = $('input[name="__RequestVerificationToken"]').first().val();
+
+            if (baslik.length < 3) {
+                alert('Lütfen en az 3 karakterden oluşan bir başlık giriniz.');
+                $('#duyuruBaslik').focus();
+                return;
+            }
+            if (icerik.length < 5) {
+                alert('Lütfen en az 5 karakterden oluşan bir duyuru metni giriniz.');
+                $('#duyuruIcerik').focus();
+                return;
+            }
+
+            var btn = $('#btnSubmitDuyuru');
+            btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Yayınlanıyor...');
+
+            $.ajax({
+                url: '@Url.Action("AddDuyuru", "Home")',
+                type: 'POST',
+                data: {
+                    __RequestVerificationToken: token,
+                    baslik: baslik,
+                    kategori: kategori,
+                    oncelik: oncelik,
+                    icerik: icerik
+                },
+                success: function(res) {
+                    btn.prop('disabled', false).html('<i class="fas fa-paper-plane mr-1"></i> Duyuruyu Yayınla');
+                    if (res.success) {
+                        $('#modalAddDuyuru').modal('hide');
+                        alert(res.message);
+                        location.reload();
+                    } else {
+                        alert(res.message);
+                    }
+                },
+                error: function() {
+                    btn.prop('disabled', false).html('<i class="fas fa-paper-plane mr-1"></i> Duyuruyu Yayınla');
+                    alert('Duyuru eklenirken sunucu hatası oluştu.');
+                }
+            });
+        }
+
+        // Duyuru Silme Fonksiyonu
+        function deleteDuyuru(id) {
+            if (!confirm('Bu duyuruyu yayından kaldırmak istediğinize emin misiniz?')) {
+                return;
+            }
+            var token = $('input[name="__RequestVerificationToken"]').first().val();
+            $.ajax({
+                url: '@Url.Action("DeleteDuyuru", "Home")',
+                type: 'POST',
+                data: {
+                    __RequestVerificationToken: token,
+                    id: id
+                },
+                success: function(res) {
+                    if (res.success) {
+                        $('#duyuru-item-' + id).fadeOut(300, function() {
+                            $(this).remove();
+                            if ($('.duyuru-item').length === 0) {
+                                $('.duyuru-list').html('<div class="hub-empty"><i class="fas fa-bell-slash"></i><p>Şu anda aktif bir duyuru bulunmamaktadır.</p></div>');
+                            }
+                        });
+                    } else {
+                        alert(res.message);
+                    }
+                },
+                error: function() {
+                    alert('Duyuru silinirken hata oluştu.');
+                }
+            });
+        }
+    </script>
 }

@@ -100,6 +100,32 @@ namespace gzpegm.Controllers
                 // İnad odasında bekleyen yolcu hatırlatması (Kapı bazlı)
                 LoadInadRoomNotifications(user);
 
+                // Duyuru, Genelge ve Tahdit Bilgi Merkezi
+                try
+                {
+                    var duyuruService = new gzpegm.Services.DuyuruService();
+                    ViewBag.Duyurular = duyuruService.GetActiveDuyurular(8);
+                    ViewBag.CanManageDuyuru = gzpegm.Services.DuyuruService.CanManage(user);
+
+                    var genelgeService = new gzpegm.Services.GenelgeService();
+                    int uId = user?.fldId ?? 0;
+                    bool isMgr = (user != null && string.Equals(user.Role, "Admin", StringComparison.OrdinalIgnoreCase)) || (user != null && user.fldAuth != null && (user.fldAuth.Contains("2") || user.fldAuth.Contains("6")));
+                    bool isAdm = user != null && (string.Equals(user.Role, "Admin", StringComparison.OrdinalIgnoreCase) || (user.fldAuth != null && user.fldAuth.Contains("2")));
+                    var pSummary = genelgeService.GetPortalSummary(uId, isMgr, isAdm);
+                    ViewBag.RecentGenelgeler = pSummary?.RecentDocuments?.Take(5).ToList() ?? new List<gzpegm.Models.Genelge.GenelgeItem>();
+
+                    var tahditService = new gzpegm.Services.TahditSozlukService();
+                    ViewBag.TahditCodes = tahditService.GetAllCodes();
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Duyuru/Genelge yükleme hatası: {ex.Message}");
+                    ViewBag.Duyurular = new List<gzpegm.Models.DuyuruItem>();
+                    ViewBag.CanManageDuyuru = false;
+                    ViewBag.RecentGenelgeler = new List<gzpegm.Models.Genelge.GenelgeItem>();
+                    ViewBag.TahditCodes = new List<gzpegm.Models.TahditSozlukItem>();
+                }
+
                 // Cache ayarlarını yap
                 SetCachePolicy();
 
@@ -359,5 +385,68 @@ namespace gzpegm.Controllers
                 return Json(new { success = false, message = "Hata olustu: " + ex.Message });
             }
         }
+
+        #region Duyuru ve Tahdit Ajax Metodları
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public JsonResult AddDuyuru(string baslik, string icerik, string kategori, int oncelik = 1)
+        {
+            try
+            {
+                var user = getuserby();
+                if (user == null)
+                {
+                    return Json(new { success = false, message = "Oturum süresi dolmuş. Lütfen tekrar giriş yapınız." });
+                }
+
+                var service = new gzpegm.Services.DuyuruService();
+                bool ok = service.AddDuyuru(baslik, icerik, kategori, oncelik, user, out string err);
+                return Json(new { success = ok, message = ok ? "Duyuru başarıyla yayınlandı." : err });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Hata: " + ex.Message });
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public JsonResult DeleteDuyuru(int id)
+        {
+            try
+            {
+                var user = getuserby();
+                if (user == null)
+                {
+                    return Json(new { success = false, message = "Oturum süresi dolmuş. Lütfen tekrar giriş yapınız." });
+                }
+
+                var service = new gzpegm.Services.DuyuruService();
+                bool ok = service.DeleteDuyuru(id, user, out string err);
+                return Json(new { success = ok, message = ok ? "Duyuru başarıyla silindi." : err });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Hata: " + ex.Message });
+            }
+        }
+
+        [HttpGet]
+        public JsonResult SearchTahditAjax(string q, string cat)
+        {
+            try
+            {
+                var service = new gzpegm.Services.TahditSozlukService();
+                var results = service.Search(q, cat);
+                return Json(new { success = true, items = results }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Arama hatası: " + ex.Message }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        #endregion
     }
 }

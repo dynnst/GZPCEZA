@@ -7264,6 +7264,10 @@
     <Compile Include="Services\PCInfoService.cs" />
     <Compile Include="Controllers\PCInfoController.cs" />
     <Compile Include="Models\Genelge\GenelgeModels.cs" />
+    <Compile Include="Models\DuyuruModel.cs" />
+    <Compile Include="Models\TahditSozlukModel.cs" />
+    <Compile Include="Services\DuyuruService.cs" />
+    <Compile Include="Services\TahditSozlukService.cs" />
     <Compile Include="Services\GenelgeService.cs" />
     <Compile Include="Controllers\GenelgeController.cs" />
   </ItemGroup>
