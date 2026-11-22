@@ -41,18 +41,18 @@ BEGIN
     CREATE NONCLUSTERED INDEX IX_E_Duyuru_Aktif_Tarih ON dbo.E_Duyuru (Aktif, Tarih DESC);
 END
 
--- Tablo boÅŸsa baÅŸlangÄ±Ã§ operasyonel duyurularÄ± ekle
+-- Tablo boşsa başlangıç operasyonel duyuruları ekle
 IF (SELECT COUNT(*) FROM dbo.E_Duyuru WHERE Aktif = 1) = 0
 BEGIN
     INSERT INTO dbo.E_Duyuru (Baslik, Icerik, Kategori, Oncelik, OlusturanAd, OlusturanRol, Tarih, Aktif)
     VALUES 
-    (N'2026 YÄ±lÄ± Mali HarÃ§ ve Ä°dari Para CezasÄ± Tarifesi YÃ¼rÃ¼rlÃ¼ktedir',
-     N'2026 yÄ±lÄ± iÃ§in yeniden deÄŸerleme oranÄ± (%25,49) sonrasÄ±nda vize ve ikamet ihlali harÃ§larÄ± gÃ¼ncellenmiÅŸtir. 1-90 gÃ¼n gÃ¼nlÃ¼k harÃ§ 467,60 TL, defter bedeli 1.345,00 TL ve 5326 s.K. m.32 idari para cezasÄ± 1.854,00 TL olarak uygulanacaktÄ±r.',
-     N'Mevzuat', 3, N'Sistem YÃ¶neticisi', N'Sistem YÃ¶neticisi (Admin)', GETDATE(), 1),
+    (N'2026 Yılı Mali Harç ve İdari Para Cezası Tarifesi Yürürlüktedir',
+     N'2026 yılı için yeniden değerleme oranı (%25,49) sonrasında vize ve ikamet ihlali harçları güncellenmiştir. 1-90 gün günlük harç 467,60 TL, defter bedeli 1.345,00 TL ve 5326 s.K. m.32 idari para cezası 1.854,00 TL olarak uygulanacaktır.',
+     N'Mevzuat', 3, N'Sistem Yöneticisi', N'Sistem Yöneticisi (Admin)', GETDATE(), 1),
 
-    (N'Tahdit KodlarÄ± ve ÅžartlÄ± Vize (V-84) Ä°ÅŸlemleri Uygulama EsaslarÄ±',
-     N'Hudut kapÄ±larÄ±mÄ±zda yolcu giriÅŸ ve Ã§Ä±kÄ±ÅŸ iÅŸlemlerinde tahdit kodlarÄ±na iliÅŸkin ÅŸerhlerin hassasiyetle kontrol edilmesi, V-84 taahhÃ¼t belgelerinin eksiksiz tanzim edilmesi gerekmektedir.',
-     N'Genel', 2, N'EÄŸitim Birimi', N'EÄŸitim Birimi (Ã–ÄŸretmen)', DATEADD(MINUTE, -30, GETDATE()), 1);
+    (N'Tahdit Kodları ve Şartlı Vize (V-84) İşlemleri Uygulama Esasları',
+     N'Hudut kapılarımızda yolcu giriş ve çıkış işlemlerinde tahdit kodlarına ilişkin şerhlerin hassasiyetle kontrol edilmesi, V-84 taahhüt belgelerinin eksiksiz tanzim edilmesi gerekmektedir.',
+     N'Genel', 2, N'Eğitim Birimi', N'Eğitim Birimi (Öğretmen)', DATEADD(MINUTE, -30, GETDATE()), 1);
 END
 ";
                         context.Database.ExecuteSqlCommand(System.Data.Entity.TransactionalBehavior.DoNotEnsureTransaction, sql);
@@ -73,7 +73,7 @@ END
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine("Duyuru EnsureSchema hatasÄ±: " + ex.Message);
+                    System.Diagnostics.Debug.WriteLine("Duyuru EnsureSchema hatası: " + ex.Message);
                 }
             }
         }
@@ -90,7 +90,7 @@ END
             if (codes.Contains("2") || codes.Contains("6")) return true;
 
             var title = (user.fldTitle ?? "").ToLowerInvariant();
-            if (title.Contains("Ã¶ÄŸretmen") || title.Contains("ogretmen") || title.Contains("eÄŸitmen") || title.Contains("egitmen")) return true;
+            if (title.Contains("öğretmen") || title.Contains("ogretmen") || title.Contains("eğitmen") || title.Contains("egitmen")) return true;
 
             return false;
         }
@@ -127,19 +127,19 @@ ORDER BY Oncelik DESC, Tarih DESC";
             error = null;
             if (!CanManage(author))
             {
-                error = "Yetkisiz iÅŸlem: Duyuru ekleme yetkisi yalnÄ±zca YÃ¶neticiler (Admin) ve EÄŸitimcilere (Ã–ÄŸretmen) aittir.";
+                error = "Yetkisiz işlem: Duyuru ekleme yetkisi yalnızca Yöneticiler (Admin) ve Eğitimcilere (Öğretmen) aittir.";
                 return false;
             }
 
             if (string.IsNullOrWhiteSpace(baslik) || baslik.Trim().Length < 3)
             {
-                error = "Duyuru baÅŸlÄ±ÄŸÄ± en az 3 karakter olmalÄ±dÄ±r.";
+                error = "Duyuru başlığı en az 3 karakter olmalıdır.";
                 return false;
             }
 
             if (string.IsNullOrWhiteSpace(icerik) || icerik.Trim().Length < 5)
             {
-                error = "Duyuru iÃ§eriÄŸi en az 5 karakter olmalÄ±dÄ±r.";
+                error = "Duyuru içeriği en az 5 karakter olmalıdır.";
                 return false;
             }
 
@@ -150,14 +150,14 @@ ORDER BY Oncelik DESC, Tarih DESC";
                 var auth = (author.fldAuth ?? "").Trim();
                 var codes = auth.Split(new[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).ToList();
 
-                string roleLabel = "GÃ¶revli";
+                string roleLabel = "Görevli";
                 if (string.Equals(author.Role, "Admin", StringComparison.OrdinalIgnoreCase) || codes.Contains("2"))
                 {
-                    roleLabel = "Sistem YÃ¶neticisi (Admin)";
+                    roleLabel = "Sistem Yöneticisi (Admin)";
                 }
                 else if (codes.Contains("6") || string.Equals(author.Role, "Ogretmen", StringComparison.OrdinalIgnoreCase))
                 {
-                    roleLabel = "EÄŸitim Birimi (Ã–ÄŸretmen)";
+                    roleLabel = "Eğitim Birimi (Öğretmen)";
                 }
 
                 string authorName = $"{author.fldName} {author.fldLastName}".Trim();
@@ -183,7 +183,7 @@ VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6, @p7, GETDATE(), 1)";
             }
             catch (Exception ex)
             {
-                error = "Duyuru kaydedilirken veritabanÄ± hatasÄ± oluÅŸtu: " + ex.Message;
+                error = "Duyuru kaydedilirken veritabanı hatası oluştu: " + ex.Message;
                 return false;
             }
         }
@@ -193,7 +193,7 @@ VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6, @p7, GETDATE(), 1)";
             error = null;
             if (!CanManage(author))
             {
-                error = "Yetkisiz iÅŸlem: Duyuru silme yetkisi yalnÄ±zca YÃ¶neticiler (Admin) ve EÄŸitimcilere (Ã–ÄŸretmen) aittir.";
+                error = "Yetkisiz işlem: Duyuru silme yetkisi yalnızca Yöneticiler (Admin) ve Eğitimcilere (Öğretmen) aittir.";
                 return false;
             }
 
@@ -210,7 +210,7 @@ VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6, @p7, GETDATE(), 1)";
             }
             catch (Exception ex)
             {
-                error = "Duyuru silinirken veritabanÄ± hatasÄ± oluÅŸtu: " + ex.Message;
+                error = "Duyuru silinirken veritabanı hatası oluştu: " + ex.Message;
                 return false;
             }
         }
