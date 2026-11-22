@@ -977,32 +977,38 @@
 <!-- MODAL: Gizli Belge Erişim İzni Talebi                                      -->
 <!-- ========================================================================= -->
 <div class="modal fade" id="modalRequestAccess" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document" style="max-width: 720px; width: 95%;">
+        <div class="modal-content shadow-lg border-0" style="border-radius: 12px; overflow: hidden;">
             <form id="formRequestAccess">
                 @Html.AntiForgeryToken()
                 <input type="hidden" id="requestDocPath" name="path" value="" />
                 <input type="hidden" id="requestDocTitle" name="title" value="" />
 
-                <div class="modal-header bg-danger text-white py-2 px-3">
-                    <h5 class="modal-title font-weight-bold" style="font-size:16px;">
+                <div class="modal-header bg-danger text-white py-3 px-4 d-flex align-items-center justify-content-between">
+                    <h5 class="modal-title font-weight-bold mb-0" style="font-size: 16px;">
                         <i class="fas fa-lock mr-2"></i> Gizli Belge Erişim İzni Talebi
                     </h5>
-                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Kapat">
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Kapat" style="opacity: 0.9;">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
-                <div class="modal-body p-3">
-                    <div class="alert alert-warning py-2 mb-3" style="font-size:13px;">
-                        <i class="fas fa-exclamation-triangle mr-1"></i> Bu belge <strong>GİZLİ / HİZMETE ÖZEL</strong> olarak sınıflandırılmıştır. İnceleyebilmek için görev gerekçenizi belirterek yönetici onayına göndermelisiniz.
+                <div class="modal-body p-4">
+                    <div class="alert alert-warning py-2 px-3 mb-3 d-flex align-items-center" style="font-size: 13.5px; border-radius: 8px;">
+                        <i class="fas fa-exclamation-triangle fa-lg mr-2 text-warning"></i>
+                        <div>Bu belge <strong>GİZLİ / HİZMETE ÖZEL</strong> olarak sınıflandırılmıştır. İnceleyebilmek için görev gerekçenizi belirterek yönetici onayına göndermelisiniz.</div>
                     </div>
                     <div class="form-group mb-3">
-                        <label class="font-weight-bold text-dark">Talep Edilen Belge</label>
-                        <input type="text" id="displayRequestDocTitle" class="form-control" readonly />
+                        <label class="font-weight-bold text-dark mb-1">Talep Edilen Belge</label>
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text bg-light text-primary"><i class="fas fa-file-alt"></i></span>
+                            </div>
+                            <input type="text" id="displayRequestDocTitle" class="form-control font-weight-bold bg-light" readonly />
+                        </div>
                     </div>
                     <div class="form-group mb-3">
-                        <label class="font-weight-bold text-dark">Talep Edilen İzin Süresi</label>
-                        <select id="requestDuration" class="form-control font-weight-bold text-primary">
+                        <label class="font-weight-bold text-dark mb-1">Talep Edilen İzin Süresi</label>
+                        <select id="requestDuration" class="form-control font-weight-bold text-primary" style="height: 42px;">
                             <option value="24 Saat (1 Gün)" selected>24 Saat (1 Gün - Nöbet Süresince)</option>
                             <option value="3 Gün">3 Gün</option>
                             <option value="1 Hafta (7 Gün)">1 Hafta (7 Gün)</option>
@@ -1011,13 +1017,13 @@
                         </select>
                     </div>
                     <div class="form-group mb-3">
-                        <label class="font-weight-bold text-dark">Gereken Görev Gerekçesi / Notunuz</label>
-                        <textarea id="requestReason" name="reason" class="form-control" rows="3" placeholder="Örn: 18.11.2026 tarihli nöbette pasaport tahdit incelemesi amacıyla incelemem gerekmektedir." required></textarea>
+                        <label class="font-weight-bold text-dark mb-1">Gereken Görev Gerekçesi / Notunuz</label>
+                        <textarea id="requestReason" name="reason" class="form-control" rows="4" placeholder="Örn: Nöbette pasaport tahdit incelemesi amacıyla incelemem gerekmektedir." style="font-size: 13.5px;" required></textarea>
                     </div>
                 </div>
-                <div class="modal-footer py-2 px-3">
-                    <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal">İptal</button>
-                    <button type="submit" class="btn btn-sm btn-danger" id="btnSubmitAccessRequest">
+                <div class="modal-footer py-2 px-4 bg-light">
+                    <button type="button" class="btn btn-secondary px-3" data-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-danger font-weight-bold px-4" id="btnSubmitAccessRequest">
                         <i class="fas fa-paper-plane mr-1"></i> Talebi İlet
                     </button>
                 </div>
@@ -1032,87 +1038,238 @@
 @if (Model.CanManage)
 {
     <div class="modal fade" id="modalAccessRequests" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog modal-xl" role="document">
-            <div class="modal-content">
-                <div class="modal-header bg-dark text-white py-2 px-3">
-                    <h5 class="modal-title font-weight-bold" style="font-size:16px;">
-                        <i class="fas fa-user-shield text-warning mr-2"></i> Gizli Belge Erişim İzin Talepleri Yönetimi
-                    </h5>
-                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Kapat">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body p-3">
-                    @if (Model.AccessRequests == null || !Model.AccessRequests.Any())
-                    {
-                        <div class="alert alert-info text-center mb-0">
-                            <i class="fas fa-check-circle mr-2"></i> Şu anda incelenmeyi bekleyen herhangi bir gizli belge erişim talebi bulunmamaktadır.
+        <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 95vw; width: 95vw; margin: 15px auto;">
+            <div class="modal-content shadow-lg border-0" style="border-radius: 14px; overflow: hidden; max-height: 92vh; display: flex; flex-direction: column;">
+                <div class="modal-header bg-dark text-white py-3 px-4 d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <div class="mr-3 bg-warning text-dark rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 40px; height: 40px; font-size: 1.25rem;">
+                            <i class="fas fa-user-shield"></i>
                         </div>
-                    }
-                    else
-                    {
-                        <div class="table-responsive">
-                            <table class="table table-bordered table-striped table-hover mb-0" style="font-size:13px;">
-                                <thead class="thead-dark">
-                                    <tr>
-                                        <th>Personel</th>
-                                        <th>Sicil</th>
-                                        <th>Talep Edilen Belge</th>
-                                        <th>Tarih</th>
-                                        <th>Görev Gerekçesi</th>
-                                        <th style="width:230px;">İşlem</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var req in Model.AccessRequests)
-                                    {
-                                        <tr>
-                                            <td class="font-weight-bold">@req.UserName</td>
-                                            <td><span class="badge badge-light border">@req.UserSicil</span></td>
-                                            <td class="text-truncate" style="max-width:250px;" title="@req.ItemTitle">@req.ItemTitle</td>
-                                            <td>@req.FormattedRequestDate</td>
-                                            <td>@req.Reason</td>
-                                            <td>
-                                                <div class="btn-group btn-group-sm">
-                                                    <button type="button" class="btn btn-success font-weight-bold" onclick="reviewRequestAction(@req.Id, 'Onaylandi', 24)" title="24 Saatlik İzin Ver">
-                                                        <i class="fas fa-check mr-1"></i> 24 Saat
-                                                    </button>
-                                                    <button type="button" class="btn btn-success dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                                        <span class="sr-only">Diğer Süreler</span>
-                                                    </button>
-                                                    <div class="dropdown-menu dropdown-menu-right shadow">
-                                                        <h6 class="dropdown-header font-weight-bold text-dark"><i class="fas fa-clock mr-1 text-primary"></i> Onay Süresi Belirle</h6>
-                                                        <a class="dropdown-item" href="javascript:void(0)" onclick="reviewRequestAction(@req.Id, 'Onaylandi', 24)">
-                                                            <i class="fas fa-history mr-2 text-success"></i> 24 Saat (1 Gün)
-                                                        </a>
-                                                        <a class="dropdown-item" href="javascript:void(0)" onclick="reviewRequestAction(@req.Id, 'Onaylandi', 72)">
-                                                            <i class="fas fa-calendar-day mr-2 text-info"></i> 3 Gün (72 Saat)
-                                                        </a>
-                                                        <a class="dropdown-item" href="javascript:void(0)" onclick="reviewRequestAction(@req.Id, 'Onaylandi', 168)">
-                                                            <i class="fas fa-calendar-week mr-2 text-primary"></i> 1 Hafta (7 Gün)
-                                                        </a>
-                                                        <a class="dropdown-item" href="javascript:void(0)" onclick="reviewRequestAction(@req.Id, 'Onaylandi', 720)">
-                                                            <i class="fas fa-calendar-alt mr-2 text-secondary"></i> 1 Ay (30 Gün)
-                                                        </a>
-                                                        <div class="dropdown-divider"></div>
-                                                        <a class="dropdown-item" href="javascript:void(0)" onclick="reviewRequestAction(@req.Id, 'Onaylandi', null)">
-                                                            <i class="fas fa-infinity mr-2 text-warning"></i> Süresiz Onayla
-                                                        </a>
-                                                    </div>
-                                                </div>
-                                                <button type="button" class="btn btn-danger btn-sm ml-1" onclick="reviewRequestAction(@req.Id, 'Reddedildi', null)" title="Talebi Reddet">
-                                                    <i class="fas fa-times"></i>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
+                        <div>
+                            <h5 class="modal-title font-weight-bold mb-0 text-white" style="font-size: 18px; letter-spacing: 0.3px;">
+                                Gizli Belge Erişim İzin Talepleri Yönetimi
+                            </h5>
+                            <small class="text-white-50">Personelin gizli belgelere erişim başvuruları ve aktif onay izinleri kontrol masası</small>
                         </div>
-                    }
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <span class="badge badge-warning text-dark font-weight-bold mr-2 px-3 py-2" style="font-size: 13px;">
+                            <i class="fas fa-clock mr-1"></i> Bekleyen: @(Model.AccessRequests?.Count ?? 0)
+                        </span>
+                        <span class="badge badge-success font-weight-bold mr-3 px-3 py-2" style="font-size: 13px;">
+                            <i class="fas fa-check-circle mr-1"></i> Aktif İzinli: @(Model.ApprovedRequests?.Count ?? 0)
+                        </span>
+                        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Kapat" style="font-size: 28px; opacity: 0.9;">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
                 </div>
-                <div class="modal-footer py-2 px-3">
-                    <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal">Kapat</button>
+
+                <!-- Nav Tabs -->
+                <div class="bg-light px-4 pt-3 border-bottom">
+                    <ul class="nav nav-tabs border-bottom-0 font-weight-bold" id="accessRequestTabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active py-2 px-4" id="tab-pending-link" data-toggle="tab" href="#tab-pending" role="tab" style="font-size: 14px;">
+                                <i class="fas fa-hourglass-half mr-2 text-warning"></i> İnceleme Bekleyen Talepler
+                                <span class="badge badge-danger ml-2">@(Model.AccessRequests?.Count ?? 0)</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link py-2 px-4" id="tab-approved-link" data-toggle="tab" href="#tab-approved" role="tab" style="font-size: 14px;">
+                                <i class="fas fa-user-check mr-2 text-success"></i> Aktif ve Onaylanmış İzinler
+                                <span class="badge badge-success ml-2">@(Model.ApprovedRequests?.Count ?? 0)</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="modal-body p-4" style="overflow-y: auto; flex: 1 1 auto; background: #f8fafc;">
+                    <div class="tab-content" id="accessRequestTabContent">
+                        <!-- SEKME 1: BEKLEYEN TALEPLER -->
+                        <div class="tab-pane fade show active" id="tab-pending" role="tabpanel">
+                            @if (Model.AccessRequests == null || !Model.AccessRequests.Any())
+                            {
+                                <div class="card border-0 shadow-sm text-center py-5" style="border-radius: 10px;">
+                                    <div class="card-body">
+                                        <div class="text-success mb-3" style="font-size: 3rem;"><i class="fas fa-check-circle"></i></div>
+                                        <h5 class="font-weight-bold text-dark">Şu Anda Bekleyen Erişim Talebi Bulunmamaktadır</h5>
+                                        <p class="text-muted small mb-0">Personel gizli bir belgeyi açmak için talep gönderdiğinde burada listelenecektir.</p>
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="card border-0 shadow-sm" style="border-radius: 10px; overflow: hidden;">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover align-middle mb-0" style="font-size: 13.5px;">
+                                            <thead style="background: #1e293b; color: #fff;">
+                                                <tr>
+                                                    <th style="width: 170px;">Personel</th>
+                                                    <th style="width: 110px;">Sicil</th>
+                                                    <th style="min-width: 280px;">Talep Edilen Belge</th>
+                                                    <th style="width: 140px;">Talep Tarihi</th>
+                                                    <th style="min-width: 320px;">Gereken Görev Gerekçesi</th>
+                                                    <th style="width: 260px;" class="text-right">Karar / Onay İşlemi</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var req in Model.AccessRequests)
+                                                {
+                                                    <tr>
+                                                        <td class="font-weight-bold text-dark">
+                                                            <i class="fas fa-user mr-1 text-primary"></i> @req.UserName
+                                                        </td>
+                                                        <td>
+                                                            <span class="badge badge-light border text-dark font-weight-bold px-2 py-1">@req.UserSicil</span>
+                                                        </td>
+                                                        <td>
+                                                            <div class="d-flex align-items-center">
+                                                                <i class="fas fa-file-pdf text-danger fa-lg mr-2"></i>
+                                                                <div>
+                                                                    <div class="font-weight-bold text-dark" style="word-break: break-word;">@req.ItemTitle</div>
+                                                                    <small class="text-muted text-monospace">@req.ItemIdentifier</small>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td class="text-nowrap text-muted">
+                                                            <i class="far fa-clock mr-1 text-secondary"></i> @req.FormattedRequestDate
+                                                        </td>
+                                                        <td>
+                                                            <div style="background: #f1f5f9; border-left: 3px solid #3b82f6; padding: 6px 12px; border-radius: 4px; font-size: 13px; color: #1e293b; line-height: 1.45;">
+                                                                <i class="fas fa-comment-dots text-primary mr-1"></i> @req.Reason
+                                                            </div>
+                                                        </td>
+                                                        <td class="text-right text-nowrap">
+                                                            <div class="btn-group btn-group-sm shadow-sm mr-1">
+                                                                <button type="button" class="btn btn-success font-weight-bold px-2" onclick="reviewRequestAction(@req.Id, 'Onaylandi', 24)" title="24 Saatlik İzin Ver">
+                                                                    <i class="fas fa-check mr-1"></i> 24 Saat
+                                                                </button>
+                                                                <button type="button" class="btn btn-success dropdown-toggle dropdown-toggle-split px-2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                                    <span class="sr-only">Diğer Süreler</span>
+                                                                </button>
+                                                                <div class="dropdown-menu dropdown-menu-right shadow-lg border-0 py-2" style="border-radius: 8px;">
+                                                                    <h6 class="dropdown-header font-weight-bold text-dark"><i class="fas fa-clock mr-1 text-primary"></i> İzin Süresi Seçimi</h6>
+                                                                    <a class="dropdown-item py-2" href="javascript:void(0)" onclick="reviewRequestAction(@req.Id, 'Onaylandi', 24)">
+                                                                        <i class="fas fa-history mr-2 text-success"></i> 24 Saat (1 Gün - Nöbet)
+                                                                    </a>
+                                                                    <a class="dropdown-item py-2" href="javascript:void(0)" onclick="reviewRequestAction(@req.Id, 'Onaylandi', 72)">
+                                                                        <i class="fas fa-calendar-day mr-2 text-info"></i> 3 Gün (72 Saat)
+                                                                    </a>
+                                                                    <a class="dropdown-item py-2" href="javascript:void(0)" onclick="reviewRequestAction(@req.Id, 'Onaylandi', 168)">
+                                                                        <i class="fas fa-calendar-week mr-2 text-primary"></i> 1 Hafta (7 Gün)
+                                                                    </a>
+                                                                    <a class="dropdown-item py-2" href="javascript:void(0)" onclick="reviewRequestAction(@req.Id, 'Onaylandi', 720)">
+                                                                        <i class="fas fa-calendar-alt mr-2 text-secondary"></i> 1 Ay (30 Gün)
+                                                                    </a>
+                                                                    <div class="dropdown-divider"></div>
+                                                                    <a class="dropdown-item py-2 text-warning font-weight-bold" href="javascript:void(0)" onclick="reviewRequestAction(@req.Id, 'Onaylandi', null)">
+                                                                        <i class="fas fa-infinity mr-2"></i> Süresiz Onayla
+                                                                    </a>
+                                                                </div>
+                                                            </div>
+                                                            <button type="button" class="btn btn-danger btn-sm shadow-sm px-2 font-weight-bold" onclick="reviewRequestAction(@req.Id, 'Reddedildi', null)" title="Talebi Reddet">
+                                                                <i class="fas fa-times mr-1"></i> Reddet
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- SEKME 2: AKTİF ONAYLANMIŞ İZİNLER -->
+                        <div class="tab-pane fade" id="tab-approved" role="tabpanel">
+                            @if (Model.ApprovedRequests == null || !Model.ApprovedRequests.Any())
+                            {
+                                <div class="card border-0 shadow-sm text-center py-5" style="border-radius: 10px;">
+                                    <div class="card-body">
+                                        <div class="text-muted mb-3" style="font-size: 3rem;"><i class="fas fa-shield-alt"></i></div>
+                                        <h5 class="font-weight-bold text-dark">Şu Anda Aktif Onaylanmış Bir İzin Kaydı Bulunmamaktadır</h5>
+                                        <p class="text-muted small mb-0">Onaylanan tüm süreli ve süresiz erişim izinleri bu listede izlenebilir ve istendiğinde geri alınabilir.</p>
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="card border-0 shadow-sm" style="border-radius: 10px; overflow: hidden;">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover align-middle mb-0" style="font-size: 13.5px;">
+                                            <thead style="background: #1e293b; color: #fff;">
+                                                <tr>
+                                                    <th style="width: 170px;">Personel</th>
+                                                    <th style="width: 110px;">Sicil</th>
+                                                    <th style="min-width: 280px;">Erişilen Belge</th>
+                                                    <th style="width: 140px;">Talep Tarihi</th>
+                                                    <th style="width: 180px;">İzin Bitiş / Geçerlilik</th>
+                                                    <th style="min-width: 260px;">Gerekçe Notu</th>
+                                                    <th style="width: 140px;" class="text-right">Erişimi Kaldır</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var app in Model.ApprovedRequests)
+                                                {
+                                                    <tr>
+                                                        <td class="font-weight-bold text-dark">
+                                                            <i class="fas fa-user-check mr-1 text-success"></i> @app.UserName
+                                                        </td>
+                                                        <td>
+                                                            <span class="badge badge-light border text-dark font-weight-bold px-2 py-1">@app.UserSicil</span>
+                                                        </td>
+                                                        <td>
+                                                            <div class="d-flex align-items-center">
+                                                                <i class="fas fa-file-pdf text-danger fa-lg mr-2"></i>
+                                                                <div>
+                                                                    <div class="font-weight-bold text-dark" style="word-break: break-word;">@app.ItemTitle</div>
+                                                                    <small class="text-muted text-monospace">@app.ItemIdentifier</small>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td class="text-nowrap text-muted">
+                                                            @app.FormattedRequestDate
+                                                        </td>
+                                                        <td>
+                                                            @if (!app.ExpiryDate.HasValue)
+                                                            {
+                                                                <span class="badge badge-warning text-dark px-2 py-1 font-weight-bold">
+                                                                    <i class="fas fa-infinity mr-1"></i> Süresiz İzin
+                                                                </span>
+                                                            }
+                                                            else
+                                                            {
+                                                                <span class="badge badge-success px-2 py-1 font-weight-bold">
+                                                                    <i class="fas fa-clock mr-1"></i> @app.FormattedExpiryDate
+                                                                </span>
+                                                            }
+                                                        </td>
+                                                        <td>
+                                                            <div class="small text-muted" style="max-height: 48px; overflow-y: auto;">
+                                                                @app.Reason
+                                                            </div>
+                                                        </td>
+                                                        <td class="text-right text-nowrap">
+                                                            <button type="button" class="btn btn-outline-danger btn-sm shadow-sm font-weight-bold px-2" onclick="reviewRequestAction(@app.Id, 'Reddedildi', null)" title="Bu personelin belgeye erişim iznini iptal et">
+                                                                <i class="fas fa-ban mr-1"></i> İptal Et
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer py-2 px-4 bg-light d-flex align-items-center justify-content-between">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle mr-1 text-primary"></i> Yapılan onay veya ret işlemleri anında yürürlüğe girer; personel belgeyi DLP korumalı izleyicide anında görüntüleyebilir.
+                    </small>
+                    <button type="button" class="btn btn-secondary font-weight-bold px-4" data-dismiss="modal">Kapat</button>
                 </div>
             </div>
         </div>

@@ -1232,6 +1232,78 @@ namespace gzpegm.Services
 
         #region Gizli Belge & Erişim Talepleri (MSSQL Veritabanı)
 
+        private static bool _genelgeSchemaEnsured = false;
+        private static readonly object _genelgeSchemaLock = new object();
+
+        public static void EnsureSchema(GZPEGM1 db = null)
+        {
+            if (_genelgeSchemaEnsured) return;
+            lock (_genelgeSchemaLock)
+            {
+                if (_genelgeSchemaEnsured) return;
+                try
+                {
+                    Action<GZPEGM1> exec = (context) =>
+                    {
+                        var sql = @"
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'E_GenelgeGizli' AND schema_id = SCHEMA_ID('dbo'))
+BEGIN
+    CREATE TABLE [dbo].[E_GenelgeGizli]
+    (
+        [Id]               INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [ItemIdentifier]   NVARCHAR(300) NOT NULL UNIQUE,
+        [IsConfidential]   BIT NOT NULL DEFAULT 1,
+        [MarkedByUserId]   INT NULL,
+        [MarkedDate]       DATETIME NOT NULL DEFAULT GETDATE(),
+        [Note]             NVARCHAR(500) NULL
+    );
+END;
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'E_GenelgeTalep' AND schema_id = SCHEMA_ID('dbo'))
+BEGIN
+    CREATE TABLE [dbo].[E_GenelgeTalep]
+    (
+        [Id]               INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [ItemIdentifier]   NVARCHAR(300) NOT NULL,
+        [ItemTitle]        NVARCHAR(500) NOT NULL,
+        [UserId]           INT NOT NULL,
+        [UserSicil]        NVARCHAR(50) NULL,
+        [UserName]         NVARCHAR(150) NULL,
+        [RequestDate]      DATETIME NOT NULL DEFAULT GETDATE(),
+        [Reason]           NVARCHAR(1000) NULL,
+        [Status]           NVARCHAR(30) NOT NULL DEFAULT 'Bekliyor',
+        [ReviewedByUserId] INT NULL,
+        [ReviewDate]       DATETIME NULL,
+        [ExpiryDate]       DATETIME NULL,
+        [ReviewNote]       NVARCHAR(500) NULL
+    );
+
+    IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_GenelgeTalep_User')
+        CREATE INDEX [IX_GenelgeTalep_User] ON [dbo].[E_GenelgeTalep]([UserId], [ItemIdentifier], [Status]);
+
+    IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_GenelgeTalep_Status')
+        CREATE INDEX [IX_GenelgeTalep_Status] ON [dbo].[E_GenelgeTalep]([Status]);
+END;";
+                        context.Database.ExecuteSqlCommand(sql);
+                    };
+
+                    if (db != null)
+                    {
+                        exec(db);
+                    }
+                    else
+                    {
+                        using (var temp = new GZPEGM1())
+                        {
+                            exec(temp);
+                        }
+                    }
+                    _genelgeSchemaEnsured = true;
+                }
+                catch { }
+            }
+        }
+
         /// <summary>
         /// Veritabanındaki E_GenelgeGizli tablosundan yönetici tarafından açık (0) veya gizli (1) olarak işaretlenmiş kayıtları ve işaretleyen kullanıcıyı çeker.
         /// </summary>
@@ -1244,6 +1316,7 @@ namespace gzpegm.Services
             {
                 using (var db = new GZPEGM1())
                 {
+                    EnsureSchema(db);
                     var sql = @"SELECT g.ItemIdentifier, g.IsConfidential, g.MarkedByUserId,
                                        CASE WHEN u.fldAuth LIKE '%2%' OR u.Role = 'Admin' OR g.MarkedByUserId IS NULL THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END AS MarkedByAdmin,
                                        ISNULL(u.fldName + ' ' + u.fldLastName, 'Sistem Yöneticisi (Admin)') AS MarkedByUserName
@@ -1418,6 +1491,7 @@ namespace gzpegm.Services
             {
                 using (var db = new GZPEGM1())
                 {
+                    EnsureSchema(db);
                     var checkPending = db.Database.SqlQuery<int>(
                         "SELECT COUNT(*) FROM E_GenelgeTalep WHERE UserId = @p0 AND ItemIdentifier = @p1 AND Status = 'Bekliyor'",
                         userId, itemIdentifier).FirstOrDefault();
