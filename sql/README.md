@@ -23,6 +23,10 @@ Eğer şemayı ve verileri adım adım yüklemek isterseniz aşağıdaki sırala
 | **2** | `02_SEED_CORE_LOOKUP_DATA.sql` | Sınır kapıları (`E_Border`), harç/ceza tarifeleri (`E_AUH`), tahdit kodları (`E_TKOD`), defter/kur/form parametreleri ve yetkili kullanıcıları (`E_User`) yükler. |
 | **3** | `03_SEED_COUNTRY_VISA_REGIME.sql` | Tüm ülkelerin pasaport ve vize muafiyet/süre tanımlarını (`E_UVR`, 2.674 kayıt) yükler. |
 | **4** | `04_SEED_COURSES_AND_EXAMS.sql` | Eğitim ve sınav modülüne ait kursları, içerikleri, sınavları ve soru bankasını (`Courses`, `Exam`, `Question`, `QuestionOption`) yükler. |
+| **13** | `13_CREATE_GENELGE_GIZLI_VE_TALEP_TABLES.sql` | Gizli genelgeler (`E_GenelgeGizli`) ve personel erişim izin talep tablosunu (`E_GenelgeTalep`) oluşturur. |
+| **14** | `14_CREATE_CEZA_PARAMETRE_VE_GENELGE_SINIFLANDIRMA.sql` | Dinamik ceza, basamak ve ülke sınıflandırması tablosunu (`CezaParametre`) oluşturur. |
+| **15** | `15_CREATE_E_DUYURU_TABLE.sql` | Operasyonel duyuru paneli tablosunu (`E_Duyuru`) oluşturur ve indeksler. |
+| **TOPLU** | `CANLI_ORTAM_TOPLU_GUNCELLEME_2026.sql` | Canlı ortama son eklenen tüm modülleri (`E_Duyuru`, `E_GenelgeGizli`, `E_GenelgeTalep`, `CezaParametre`) tek tıkla ve güvenle yükler. |
 
 ---
 
