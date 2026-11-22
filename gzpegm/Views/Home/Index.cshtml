@@ -10,13 +10,22 @@
     // Harç (gün başı) değeri veritabanından çekilecek (E_TGVH.fldPrice)
     // Kullanmak için yeni GetCurrentPrice helper'ı kullanıyoruz (decimal parsing ile güvenli).
     string harcPerGunValue = "10";
+    decimal tgvhFiyati = 9376.40m;
+    decimal defterFiyati = 964m;
     try
     {
         var _tgvh = new gzpegm.Cont.tgvh();
         var price = _tgvh.GetCurrentPrice(10m);
         harcPerGunValue = price.ToString("0.##", CultureInfo.InvariantCulture);
+        if (price > 10m) tgvhFiyati = price;
+        var defterObj = _tgvh.GetDefter();
+        if (defterObj != null && decimal.TryParse(defterObj.fldPrice.ToString(), out decimal dPrice))
+        {
+            defterFiyati = dPrice;
+        }
     }
     catch { /* ignore DB errors, use default */ }
+    var v137Ceza = gzpegm.Services.CezaParametreService.GetParamString("V137_IDARI_CEZA", "20605");
 
     // Ülke listesi controller tarafında cache'lenerek hazırlanır.
     var uvrCountries = ViewBag.UvrCountries as IEnumerable<string> ?? new List<string>();
@@ -152,43 +161,42 @@
                 </button>
             </div>
         </div>
-        <aside class="home-profile-card" aria-label="Profil tanıtımı">
-            <div class="home-profile-head">
-                <img class="home-profile-avatar" src="@currentUserPicture" alt="@currentUserName" />
+        <aside class="home-status-panel shadow-sm" aria-label="Güncel Hudut Mali ve Yasal Parametreleri" style="background: rgba(255,255,255,0.95); border: 1px solid #cbd5e1; border-radius: 10px; padding: 18px;">
+            <div class="d-flex align-items-center justify-content-between pb-2 border-bottom mb-2">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-balance-scale text-primary mr-2" style="font-size: 1.15rem;"></i>
+                    <strong class="text-dark" style="font-size: 0.95rem; letter-spacing: 0.2px;">2026 Yürürlükteki Mali Tarife</strong>
+                </div>
+                <span class="badge badge-light border text-muted" style="font-size: 0.72rem; padding: 3px 6px;">Resmi Gazete</span>
+            </div>
+            <div class="home-status-row">
+                <i class="fas fa-passport" title="Tek Giriş Vize Harcı"></i>
                 <div>
-                    <h2 class="home-profile-name">@profileValue(currentUserName)</h2>
-                    <div class="home-profile-title">@profileValue(profileTitle)</div>
-                  
+                    <strong style="color: #0f172a; font-size: 1.05rem;">@tgvhFiyati.ToString("N2") TL</strong>
+                    <span style="color: #64748b;">Tek Giriş Vize Harcı (TGVH)</span>
                 </div>
             </div>
-            <div class="home-profile-grid">
-                <div class="home-profile-field"><span>Sicil</span><strong>@profileValue(profileSicil)</strong></div>
-                <div class="home-profile-field"><span>Telefon</span><strong>@profileValue(profilePhone)</strong></div>
-                <div class="home-profile-field"><span>E-Posta</span><strong>@profileValue(profileEmail)</strong></div>
-                <div class="home-profile-field"><span>Görev Yeri</span><strong>@profileValue(profileDeputy)</strong></div>
-                <div class="home-profile-field"><span>Hudut Kapısı</span><strong>@profileValue(profileBorder)</strong></div>
-                <div class="home-profile-field">
-                    <span>Yetkiler</span>
-                    @if (authDescriptionList.Any())
-                    {
-                        <div style="display:flex; flex-wrap:wrap; gap:4px; margin-top:4px;">
-                            @foreach (var authText in authDescriptionList)
-                            {
-                                <span class="badge" style="background:#eaf2f9; color:#1e425e; font-size:0.72rem; font-weight:600; padding:3px 6px; border:1px solid #c8dff1; border-radius:4px; text-transform:none; display:inline-flex; align-items:center; line-height:1.2;">
-                                    <i class="fas fa-shield-alt text-primary me-1" style="margin-right:3px; font-size:0.65rem;"></i>@authText
-                                </span>
-                            }
-                        </div>
-                    }
-                    else
-                    {
-                        <strong>Belirtilmemiş</strong>
-                    }
+            <div class="home-status-row">
+                <i class="fas fa-book" title="Defter Satış Bedeli"></i>
+                <div>
+                    <strong style="color: #0f172a; font-size: 1.05rem;">@defterFiyati.ToString("N2") TL</strong>
+                    <span style="color: #64748b;">İkamet İzni Defter Bedeli</span>
                 </div>
             </div>
-            <div class="home-profile-note">
-                <i class="fas fa-id-card"></i>
-                <span>Bu alan profil bilgilerini sadece tanıtım amaçlı gösterir; resim, şifre veya bilgi değiştirme işlemi içermez.</span>
+            <div class="home-status-row">
+                <i class="fas fa-user-shield text-danger" title="V-137 Terke Davet Süresi Aşımı İdari Para Cezası"></i>
+                <div>
+                    <strong class="text-danger" style="font-size: 1.05rem;">@(decimal.TryParse(v137Ceza, out decimal vCeza) ? vCeza.ToString("N2") + " TL" : v137Ceza + " TL")</strong>
+                    <span style="color: #64748b;">V-137 Terke Davet Cezası (YUKK m.102)</span>
+                </div>
+            </div>
+            <div class="d-flex align-items-center justify-content-between pt-2 border-top mt-2" style="font-size: 0.8rem; color: #64748b;">
+                <span class="text-truncate" style="max-width: 220px;" title="@profileBorder">
+                    <i class="fas fa-map-marker-alt text-primary mr-1"></i>@(profileBorder ?? "Hudut Kapısı")
+                </span>
+                <a href="@Url.Action("Index", "CezaParametre")" class="text-primary font-weight-bold" style="text-decoration: none;">
+                    Parametreler <i class="fas fa-arrow-right ml-1"></i>
+                </a>
             </div>
         </aside>
     </section>
