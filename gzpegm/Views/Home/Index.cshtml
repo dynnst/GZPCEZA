@@ -17,15 +17,32 @@
         var _tgvh = new gzpegm.Cont.tgvh();
         var price = _tgvh.GetCurrentPrice(10m);
         harcPerGunValue = price.ToString("0.##", CultureInfo.InvariantCulture);
-        if (price > 10m) tgvhFiyati = price;
-        var defterObj = _tgvh.GetDefter();
-        if (defterObj != null && decimal.TryParse(defterObj.fldPrice.ToString(), out decimal dPrice))
+        if (price > 10m)
         {
-            defterFiyati = dPrice;
+            tgvhFiyati = price;
+        }
+        var defterObj = _tgvh.GetDefter();
+        if (defterObj != null)
+        {
+            decimal dPrice = 0m;
+            if (decimal.TryParse(defterObj.fldPrice.ToString(), out dPrice))
+            {
+                defterFiyati = dPrice;
+            }
         }
     }
     catch { /* ignore DB errors, use default */ }
     var v137Ceza = gzpegm.Services.CezaParametreService.GetParamString("V137_IDARI_CEZA", "20605");
+    string v137CezaFormatted = "20.605,00 TL";
+    decimal vCezaVal = 0m;
+    if (decimal.TryParse(v137Ceza, out vCezaVal))
+    {
+        v137CezaFormatted = vCezaVal.ToString("N2") + " TL";
+    }
+    else if (!string.IsNullOrWhiteSpace(v137Ceza))
+    {
+        v137CezaFormatted = v137Ceza + " TL";
+    }
 
     // Ülke listesi controller tarafında cache'lenerek hazırlanır.
     var uvrCountries = ViewBag.UvrCountries as IEnumerable<string> ?? new List<string>();
@@ -186,7 +203,7 @@
             <div class="home-status-row">
                 <i class="fas fa-user-shield text-danger" title="V-137 Terke Davet Süresi Aşımı İdari Para Cezası"></i>
                 <div>
-                    <strong class="text-danger" style="font-size: 1.05rem;">@(decimal.TryParse(v137Ceza, out decimal vCeza) ? vCeza.ToString("N2") + " TL" : v137Ceza + " TL")</strong>
+                    <strong class="text-danger" style="font-size: 1.05rem;">@v137CezaFormatted</strong>
                     <span style="color: #64748b;">V-137 Terke Davet Cezası (YUKK m.102)</span>
                 </div>
             </div>
