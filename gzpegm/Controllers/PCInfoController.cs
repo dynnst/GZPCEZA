@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Web.Mvc;
@@ -27,7 +27,28 @@ namespace gzpegm.Controllers
             ViewBag.ActiveMode = mode; // "inspector", "scanner", "camera", "inventory"
 
             var model = _pcInfoService.GetComputerInfo(cleanTarget);
+            if (model != null)
+            {
+                Session["PCInfo_" + cleanTarget] = model;
+            }
             return View(model);
+        }
+
+        [HttpPost]
+        public ActionResult IndexPost(string target, string username, string password, string mode = "inspector")
+        {
+            string cleanTarget = string.IsNullOrWhiteSpace(target) ? "localhost" : target.Trim();
+            ViewBag.SelectedTarget = cleanTarget;
+            ViewBag.ActiveMode = mode;
+            ViewBag.AdminUsername = username;
+            ViewBag.AdminPassword = password;
+
+            var model = _pcInfoService.GetComputerInfo(cleanTarget, username, password);
+            if (model != null)
+            {
+                Session["PCInfo_" + cleanTarget] = model;
+            }
+            return View("Index", model);
         }
 
         [HttpPost]
@@ -35,19 +56,30 @@ namespace gzpegm.Controllers
         {
             string cleanTarget = string.IsNullOrWhiteSpace(target) ? "localhost" : target.Trim();
             var model = _pcInfoService.GetComputerInfo(cleanTarget, username, password);
+            if (model != null)
+            {
+                Session["PCInfo_" + cleanTarget] = model;
+            }
             return Json(model, JsonRequestBehavior.AllowGet);
         }
 
         [HttpPost]
         public ActionResult ScanNetwork(string range, int timeoutMs = 1000, int concurrency = 30)
         {
-            if (string.IsNullOrWhiteSpace(range))
+            try
             {
-                range = "10.7.202.1 - 10.7.202.100";
-            }
+                if (string.IsNullOrWhiteSpace(range))
+                {
+                    range = "10.7.202.1 - 10.7.202.100";
+                }
 
-            var results = _pcInfoService.ScanNetworkRange(range, timeoutMs, concurrency);
-            return Json(new { success = true, count = results.Count, devices = results }, JsonRequestBehavior.AllowGet);
+                var results = _pcInfoService.ScanNetworkRange(range, timeoutMs, concurrency);
+                return Json(new { success = true, count = results.Count, devices = results }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Ağ tarama hatası: " + ex.Message, count = 0, devices = new List<ScanItemResult>() }, JsonRequestBehavior.AllowGet);
+            }
         }
 
         [HttpPost]
@@ -60,6 +92,37 @@ namespace gzpegm.Controllers
 
             var camera = _pcInfoService.GetCameraInfo(ip.Trim(), username, password, port);
             return Json(camera, JsonRequestBehavior.AllowGet);
+        }
+
+        [HttpGet]
+        public ActionResult GetSnapshot(string ip, int port = 80, string user = "admin", string pass = "", int channel = 101)
+        {
+            if (string.IsNullOrWhiteSpace(ip))
+            {
+                return new HttpStatusCodeResult(400, "IP adresi gerekli.");
+            }
+
+            string errorLog;
+            byte[] imageBytes = _pcInfoService.GetCameraSnapshot(ip.Trim(), user, pass, port, channel, out errorLog);
+            if (imageBytes != null && imageBytes.Length > 200)
+            {
+                return File(imageBytes, "image/jpeg");
+            }
+
+            // Resim alınamazsa tarayıcıda kırık ikon çıkmaması için hata SVG'si üretip dön
+            string safeMsg = string.IsNullOrWhiteSpace(errorLog) ? "Kamera veya NVR'dan görüntü alınamadı." : errorLog.Replace("<", "&lt;").Replace(">", "&gt;").Replace("\"", "'");
+            if (safeMsg.Length > 200) safeMsg = safeMsg.Substring(0, 200) + "...";
+
+            string svg = @"<svg xmlns='http://www.w3.org/2000/svg' width='640' height='360' viewBox='0 0 640 360'>
+  <rect width='100%' height='100%' fill='#18181b'/>
+  <circle cx='320' cy='140' r='36' fill='#ef4444' opacity='0.2'/>
+  <path d='M320 120 v25 M320 155 v5' stroke='#ef4444' stroke-width='4' stroke-linecap='round'/>
+  <text x='320' y='210' fill='#f87171' font-size='16' font-family='Segoe UI, Arial, sans-serif' font-weight='bold' text-anchor='middle'>Kamera Görüntüsü Alınamadı</text>
+  <text x='320' y='235' fill='#94a3b8' font-size='12' font-family='Segoe UI, Arial, sans-serif' text-anchor='middle'>" + ip + @":" + port + @" (Kanal: " + channel + @")</text>
+  <text x='320' y='265' fill='#cbd5e1' font-size='11' font-family='Consolas, monospace' text-anchor='middle'>" + safeMsg + @"</text>
+</svg>";
+
+            return Content(svg, "image/svg+xml", Encoding.UTF8);
         }
 
         [HttpGet]
@@ -151,6 +214,17 @@ namespace gzpegm.Controllers
             return Json(new { success = true, count = devices.Count, data = devices }, JsonRequestBehavior.AllowGet);
         }
 
+        [HttpGet]
+        public ActionResult GetDeviceById(int id)
+        {
+            var device = _pcInfoService.GetDeviceById(id);
+            if (device == null)
+            {
+                return Json(new { success = false, message = "Cihaz bulunamadi." }, JsonRequestBehavior.AllowGet);
+            }
+            return Json(device, JsonRequestBehavior.AllowGet);
+        }
+
         [HttpPost]
         public ActionResult SaveDevice(DeviceEntity device)
         {
@@ -166,19 +240,45 @@ namespace gzpegm.Controllers
         }
 
         [HttpPost]
-        public ActionResult SaveCurrentToInventory(string target, string location, string assignedPerson, string notes, string assetTag, int category = 1)
+        public ActionResult SaveCurrentToInventory(string target, string location, string assignedPerson, string notes, string assetTag, int category = 1, string username = null, string password = null)
         {
             try
             {
                 string cleanTarget = string.IsNullOrWhiteSpace(target) ? "localhost" : target.Trim();
-                var model = _pcInfoService.GetComputerInfo(cleanTarget);
-                if (!model.IsOnline)
+
+                // 1. Önce Session'daki mevcut teftiş edilmiş modeli kontrol et (böylece 2. kez WMI/şifre sorgulamasına gerek kalmaz)
+                var model = Session["PCInfo_" + cleanTarget] as ComputerInfo;
+                if (model == null || !model.IsOnline)
                 {
-                    return Json(new { success = false, message = "Cihaza ulaşılamadığı için envantere kaydedilemedi." });
+                    model = _pcInfoService.GetComputerInfo(cleanTarget, username, password);
                 }
 
-                int id = _pcInfoService.SaveFromComputerInfo(model, location, assignedPerson, notes, assetTag, category);
-                return Json(new { success = true, id = id, message = $"'{model.ComputerName}' CEZA veritabanı envanterine kaydedildi." });
+                int id;
+                if (model != null && model.IsOnline)
+                {
+                    id = _pcInfoService.SaveFromComputerInfo(model, location, assignedPerson, notes, assetTag, category);
+                }
+                else
+                {
+                    // WMI veya ağ kısıtlı olsa dahi cihazı girilen bilgilerle başarıyla envantere ekle
+                    var fallbackDev = new DeviceEntity
+                    {
+                        Brand = "Windows İstemci PC",
+                        Model = "Ağ Terminali",
+                        SerialNumber = "IP:" + cleanTarget,
+                        IpAddress = cleanTarget,
+                        Location = location ?? "Hudut Kapısı / Gişe",
+                        AssignedPerson = assignedPerson,
+                        Category = category,
+                        Notes = notes,
+                        AssetTag = assetTag,
+                        Status = 1
+                    };
+                    id = _pcInfoService.SaveDevice(fallbackDev);
+                }
+
+                string compName = (model != null && !string.IsNullOrWhiteSpace(model.ComputerName)) ? model.ComputerName : cleanTarget;
+                return Json(new { success = true, id = id, message = $"'{compName}' CEZA veritabanı envanterine başarıyla kaydedildi." });
             }
             catch (Exception ex)
             {
@@ -218,10 +318,17 @@ namespace gzpegm.Controllers
         [HttpGet]
         public ActionResult ExportInventoryExcel(string search, int? category, int? status, string location)
         {
-            var devices = _pcInfoService.GetAllDevices(search, category, status, location);
-            var fileBytes = _pcInfoService.ExportInventoryToExcel(devices);
-            string fileName = $"CEZA_Donanim_Envanteri_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
-            return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+            try
+            {
+                var devices = _pcInfoService.GetAllDevices(search, category, status, location);
+                var fileBytes = _pcInfoService.ExportInventoryToExcel(devices);
+                string fileName = $"CEZA_Donanim_Envanteri_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+                return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+            }
+            catch (Exception ex)
+            {
+                return Content("Excel oluşturma hatası: " + ex.Message);
+            }
         }
 
         #endregion

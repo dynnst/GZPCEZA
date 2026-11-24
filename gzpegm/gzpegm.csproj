@@ -89,6 +89,10 @@
     <Reference Include="ClosedXML.Parser, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1d5f7376574c51ec, processorArchitecture=MSIL">
       <HintPath>..\packages\ClosedXML.Parser.2.0.0\lib\netstandard2.0\ClosedXML.Parser.dll</HintPath>
     </Reference>
+    <Reference Include="System.ValueTuple, Version=4.0.5.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.ValueTuple.4.6.1\lib\net47\System.ValueTuple.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="CryptoHelper, Version=3.0.2.0, Culture=neutral, PublicKeyToken=646ad3faa20406ba, processorArchitecture=MSIL">
       <HintPath>..\packages\CryptoHelper.3.0.2\lib\netstandard2.0\CryptoHelper.dll</HintPath>
     </Reference>
@@ -7270,9 +7274,19 @@
     <Compile Include="Services\TahditSozlukService.cs" />
     <Compile Include="Services\GenelgeService.cs" />
     <Compile Include="Controllers\GenelgeController.cs" />
+    <Compile Include="Models\SahtecilikLogItem.cs" />
+    <Compile Include="Services\SahtecilikLogService.cs" />
+    <Compile Include="Controllers\SahtecilikLogController.cs" />
+    <Compile Include="Models\AdminBriefingViewModel.cs" />
+    <Compile Include="Services\AdminBriefingService.cs" />
+    <Compile Include="Controllers\AdminBriefingController.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Views\web.config" />
+    <Content Include="Views\AdminBriefing\Index.cshtml" />
+    <Content Include="Views\SahtecilikLog\Index.cshtml" />
+    <Content Include="SQL_Scripts\Admin_Brifing_Sistemi.sql" />
+    <Content Include="SQL_Scripts\2026-11-23_Canliya_Gecis_Sahtecilik_ve_Admin_Brifing.sql" />
     <Content Include="Views\PCInfo\Index.cshtml" />
     <Content Include="Views\Genelge\Index.cshtml" />
     <Content Include="Views\Genelge\Viewer.cshtml" />

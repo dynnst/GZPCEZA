@@ -101,8 +101,18 @@
         background: #fee2e2;
         color: #b91c1c;
     }
+    .modal {
+        z-index: 100050 !important;
+    }
+    .modal-backdrop {
+        z-index: 100040 !important;
+    }
+    .modal-dialog {
+        z-index: 100051 !important;
+    }
 </style>
 
+<input type="hidden" id="_activeMode" value="@(ViewBag.ActiveMode ?? "inspector")" />
 <div class="pcinfo-header">
     <div class="d-flex justify-content-between align-items-center flex-wrap mb-3">
         <div>
@@ -114,7 +124,9 @@
             </p>
         </div>
         <div class="mt-2 mt-md-0 d-flex align-items-center">
-            @if (Model != null && Model.IsOnline)
+
+
+    @if (Model != null && Model.IsOnline)
             {
                 <span class="badge badge-soft-success p-2 mr-2"><i class="fas fa-check-circle"></i> Çevrimiçi</span>
             }
@@ -172,7 +184,7 @@
     <!-- SORGULAMA KARTI -->
     <div class="card mb-4 border">
         <div class="card-body">
-            <form method="get" action="@Url.Action("Index", "PCInfo")" id="pcQueryForm">
+            <form method="post" action="@Url.Action("IndexPost", "PCInfo")" id="pcQueryForm" onsubmit="return handleQueryFormSubmit(event)">
                 <div class="mb-3">
                     <span class="text-muted small font-weight-bold mr-2">Hızlı Seçim:</span>
                     <span class="preset-pill @(string.IsNullOrWhiteSpace(ViewBag.SelectedTarget) || ViewBag.SelectedTarget == "localhost" ? "active" : "")" onclick="setTarget('localhost')">
@@ -201,13 +213,10 @@
                         <button type="submit" id="btnSubmitQuery" class="btn btn-primary px-4 mr-2">
                             <i class="fas fa-search mr-1"></i> Donanımı Teftiş Et
                         </button>
-                        @if (Model != null && Model.IsOnline)
-                        {
-                            <button type="button" class="btn btn-warning text-dark font-weight-bold mr-2" onclick="openSaveInventoryModal()">
-                                <i class="fas fa-cloud-upload-alt mr-1"></i> Envantere Ekle
-                            </button>
-                        }
-                        <button type="button" class="btn btn-outline-secondary" data-toggle="collapse" data-target="#remoteCreds">
+                        <button type="button" class="btn btn-warning text-dark font-weight-bold mr-2" onclick="openSaveInventoryModal()" title="Bu hedefi CEZA Veritabanı envanterine kaydet">
+                            <i class="fas fa-cloud-upload-alt mr-1"></i> Envantere Ekle
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" data-toggle="collapse" data-target="#remoteCreds" title="Yönetici kullanıcı adı ve şifresi girmek için aç">
                             <i class="fas fa-key mr-1"></i> Uzak Giriş
                         </button>
                     </div>
@@ -220,11 +229,11 @@
                     <div class="row">
                         <div class="col-md-4 mb-2">
                             <label class="small font-weight-bold">Kullanıcı Adı (Opsiyonel):</label>
-                            <input type="text" name="username" class="form-control form-control-sm" placeholder="Domain\Kullanıcı veya Administrator" />
+                            <input type="text" name="username" class="form-control form-control-sm" value="@(ViewBag.AdminUsername ?? "")" placeholder="Domain\Kullanıcı veya Administrator" />
                         </div>
                         <div class="col-md-4 mb-2">
                             <label class="small font-weight-bold">Parola (Opsiyonel):</label>
-                            <input type="password" name="password" class="form-control form-control-sm" placeholder="••••••••" />
+                            <input type="password" name="password" class="form-control form-control-sm" value="@(ViewBag.AdminPassword ?? "")" placeholder="••••••••" />
                         </div>
                     </div>
                 </div>
@@ -244,6 +253,21 @@
                 2. Uzak makine ise 'Uzak Giriş Bilgileri' kısmına Yönetici hesabı girin.<br />
                 3. Windows Firewall üzerinde 'Windows Management Instrumentation (WMI)' kuralının açık olduğundan emin olun.
             </small>
+        </div>
+    }
+
+        @if (Model != null && Model.IsOnline && Model.SerialNumber != null && Model.SerialNumber.StartsWith("MAC:"))
+    {
+        <div class="alert alert-info border-0 shadow-sm mb-3 d-flex justify-content-between align-items-center flex-wrap">
+            <div>
+                <i class="fas fa-shield-alt text-primary mr-2"></i>
+                <strong>Otomatik Ağ & Donanım Tespiti Başarılı:</strong> Hedef cihaz çevrimiçi. WMI şifresi gerektirmeden Bilgisayar Adı (<strong>@Model.ComputerName</strong>), MAC Adresi ve Ağ Profili arka planda otomatik tespit edildi.
+            </div>
+            <div class="mt-2 mt-md-0">
+                <button type="button" class="btn btn-warning btn-sm text-dark font-weight-bold" onclick="openSaveInventoryModal()">
+                    <i class="fas fa-cloud-upload-alt mr-1"></i> Bu Cihazı Envantere Ekle
+                </button>
+            </div>
         </div>
     }
 
@@ -758,10 +782,27 @@
             <p class="text-muted small mb-0">Havalimanı / hudut kapısı IP bloğundaki Windows PC'leri, Hikvision kameraları ve ağ yazıcılarını otomatik tespit eder.</p>
         </div>
         <div class="card-body">
+            <!-- Hızlı IP Aralığı Seçim Butonları -->
+            <div class="mb-3 d-flex flex-wrap align-items-center">
+                <span class="small font-weight-bold text-muted mr-2"><i class="fas fa-filter mr-1"></i>Hızlı Aralık:</span>
+                <button type="button" class="btn btn-sm btn-outline-danger mr-1 mb-1 font-weight-bold" onclick="setScanRange('10.7.202.200 - 215')">
+                    <i class="fas fa-video mr-1"></i> Kameralar (.200 - .215)
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-primary mr-1 mb-1 font-weight-bold" onclick="setScanRange('10.7.202.100 - 150')">
+                    <i class="fas fa-desktop mr-1"></i> Gişe PC'leri (.100 - .150)
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-info mr-1 mb-1 font-weight-bold" onclick="setScanRange('10.7.202.70 - 80')">
+                    <i class="fas fa-server mr-1"></i> Sunucular (.70 - .80)
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-dark mb-1 font-weight-bold" onclick="setScanRange('10.7.202.1 - 254')">
+                    <i class="fas fa-network-wired mr-1"></i> Tüm Ağ (1 - 254)
+                </button>
+            </div>
+
             <div class="row align-items-end">
                 <div class="col-md-5 mb-2">
                     <label class="font-weight-bold small">Taranacak IP Aralığı veya CIDR:</label>
-                    <input type="text" id="scanRangeInput" class="form-control" value="10.7.202.1 - 10.7.202.100" placeholder="10.7.202.1 - 10.7.202.100 veya 10.7.202.0/24" />
+                    <input type="text" id="scanRangeInput" class="form-control" value="10.7.202.100 - 215" placeholder="10.7.202.200 - 215 veya 10.7.202.1 - 254" />
                 </div>
                 <div class="col-md-3 mb-2">
                     <label class="font-weight-bold small">Hassasiyet / Zaman Aşımı:</label>
@@ -828,17 +869,72 @@
             <p class="text-muted small mb-0">Kamera modeli, seri numarası, firmware sürümü, ISAPI ve RTSP canlı akış denetimi.</p>
         </div>
         <div class="card-body">
+            <!-- Hazır Sistem Kameraları ve NVR Hızlı Seçim -->
+            <div class="mb-3 p-2 bg-light rounded border">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="small font-weight-bold text-dark"><i class="fas fa-server text-danger mr-1"></i>Hazır NVR & Hudut Kapısı Kameraları:</span>
+                    <small class="text-muted">Tıklayarak IP ve Kanalı otomatik doldurabilirsiniz</small>
+                </div>
+                <div class="d-flex flex-wrap" style="gap: 5px;">
+                    <span class="preset-pill bg-danger text-white border-danger" onclick="selectPresetCam('10.7.202.200', 80, 101, 'Ana NVR (DS-7616NI-K2)')" title="16 Kanallı Kayıt Cihazı">
+                        <i class="fas fa-hdd mr-1"></i>NVR (10.7.202.200)
+                    </span>
+                    <span class="preset-pill" onclick="selectPresetCam('10.7.202.201', 80, 101, 'D1 - GIRIS ENGELLI')">D1: Giriş Engelli (.201)</span>
+                    <span class="preset-pill" onclick="selectPresetCam('10.7.202.202', 80, 201, 'D2 - GIRIS TURK')">D2: Giriş Türk (.202)</span>
+                    <span class="preset-pill" onclick="selectPresetCam('10.7.202.203', 80, 301, 'D3 - Giris 5')">D3: Giriş 5 (.203)</span>
+                    <span class="preset-pill" onclick="selectPresetCam('10.7.202.204', 80, 401, 'D4 - GIRIS 2')">D4: Giriş 2 (.204)</span>
+                    <span class="preset-pill" onclick="selectPresetCam('10.7.202.205', 80, 501, 'D5 - GIRIS 3')">D5: Giriş 3 (.205)</span>
+                    <span class="preset-pill" onclick="selectPresetCam('10.7.202.206', 80, 601, 'D6 - GIRIS 4')">D6: Giriş 4 (.206)</span>
+                    <span class="preset-pill" onclick="selectPresetCam('10.7.202.207', 80, 701, 'D7 - GIRIS 6')">D7: Giriş 6 (.207)</span>
+                    <span class="preset-pill" onclick="selectPresetCam('10.7.202.208', 80, 801, 'D8 - GIRIS 1')">D8: Giriş 1 (.208)</span>
+                    <span class="preset-pill" onclick="selectPresetCam('10.7.202.209', 80, 901, 'D9 - CIKIS 3')">D9: Çıkış 3 (.209)</span>
+                    <span class="preset-pill" onclick="selectPresetCam('10.7.202.210', 80, 1001, 'D10 - CIKIS TURK')">D10: Çıkış Türk (.210)</span>
+                    <span class="preset-pill" onclick="selectPresetCam('10.7.202.211', 80, 1101, 'D11 - CIKIS 1')">D11: Çıkış 1 (.211)</span>
+                    <span class="preset-pill" onclick="selectPresetCam('10.7.202.212', 80, 1201, 'D12 - Camera 01')">D12: Camera 01 (.212)</span>
+                    <span class="preset-pill" onclick="selectPresetCam('10.7.202.213', 80, 1301, 'D13 - CIKIS ENGELLI')">D13: Çıkış Engelli (.213)</span>
+                    <span class="preset-pill" onclick="selectPresetCam('10.7.202.214', 80, 1401, 'D14 - CIKIS 4')">D14: Çıkış 4 (.214)</span>
+                </div>
+            </div>
+
+            <!-- Kayıtlı Kameralar Hızlı Seçim -->
+            <div class="mb-3" id="savedCamerasRow" style="display:none;">
+                <span class="text-muted small font-weight-bold mr-2"><i class="fas fa-bookmark mr-1"></i>Son Bağlanılanlar:</span>
+                <span id="savedCamerasList"></span>
+                <button class="btn btn-sm btn-outline-danger ml-2 px-2 py-0" onclick="clearSavedCameras()" title="Kayıtlı hafızayı temizle">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+
             <div class="row align-items-end">
-                <div class="col-md-4 mb-2">
-                    <label class="font-weight-bold small">Kamera IP Adresi:</label>
-                    <input type="text" id="camIp" class="form-control" placeholder="Örn: 10.7.202.100" />
+                <div class="col-md-3 mb-2">
+                    <label class="font-weight-bold small">Kamera / NVR IP Adresi:</label>
+                    <input type="text" id="camIp" class="form-control" placeholder="Örn: 10.7.202.202 veya 10.7.202.200" />
                 </div>
                 <div class="col-md-2 mb-2">
+                    <label class="font-weight-bold small">Kanal (NVR için):</label>
+                    <select id="camChannel" class="form-control">
+                        <option value="101" selected>Kanal 1 (D1 - 101)</option>
+                        <option value="201">Kanal 2 (D2 - 201)</option>
+                        <option value="301">Kanal 3 (D3 - 301)</option>
+                        <option value="401">Kanal 4 (D4 - 401)</option>
+                        <option value="501">Kanal 5 (D5 - 501)</option>
+                        <option value="601">Kanal 6 (D6 - 601)</option>
+                        <option value="701">Kanal 7 (D7 - 701)</option>
+                        <option value="801">Kanal 8 (D8 - 801)</option>
+                        <option value="901">Kanal 9 (D9 - 901)</option>
+                        <option value="1001">Kanal 10 (D10 - 1001)</option>
+                        <option value="1101">Kanal 11 (D11 - 1101)</option>
+                        <option value="1201">Kanal 12 (D12 - 1201)</option>
+                        <option value="1301">Kanal 13 (D13 - 1301)</option>
+                        <option value="1401">Kanal 14 (D14 - 1401 / Çıkış 4)</option>
+                    </select>
+                </div>
+                <div class="col-md-1 mb-2">
                     <label class="font-weight-bold small">Port:</label>
                     <input type="number" id="camPort" class="form-control" value="80" />
                 </div>
                 <div class="col-md-2 mb-2">
-                    <label class="font-weight-bold small">Kullanıcı Adı:</label>
+                    <label class="font-weight-bold small">Kullanıcı:</label>
                     <input type="text" id="camUser" class="form-control" value="admin" />
                 </div>
                 <div class="col-md-2 mb-2">
@@ -846,7 +942,7 @@
                     <input type="password" id="camPass" class="form-control" placeholder="••••••••" />
                 </div>
                 <div class="col-md-2 mb-2">
-                    <button type="button" class="btn btn-danger w-100" onclick="queryHikCamera()">
+                    <button type="button" id="btnConnectCamera" class="btn btn-danger w-100 font-weight-bold" onclick="queryHikCamera()">
                         <i class="fas fa-plug mr-1"></i> Kameraya Bağlan
                     </button>
                 </div>
@@ -875,12 +971,34 @@
                     </table>
                 </div>
                 <div class="col-md-6 text-center">
-                    <div class="p-3 border rounded bg-light">
+                    <!-- Anlık Görüntü (Snapshot) Alanı -->
+                    <div id="camSnapshotArea" style="display:none;" class="mb-2">
+                        <div class="border rounded overflow-hidden" style="background:#000; min-height:180px; position:relative;">
+                            <img id="camSnapshot" src="" class="img-fluid" style="max-height:260px; width:100%; object-fit:contain;" alt="Anlık Görüntü" />
+                            <div id="camSnapshotOverlay" style="display:none; position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center;">
+                                <i class="fas fa-spinner fa-spin fa-2x text-white"></i>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-center mt-2 gap-2">
+                            <button class="btn btn-sm btn-outline-secondary mr-2" onclick="refreshSnapshot()" title="Yenile">
+                                <i class="fas fa-sync-alt mr-1"></i> Yenile
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary mr-2" id="btnAutoRefresh" onclick="toggleAutoRefresh()" title="Otomatik Yenileme (5 sn)">
+                                <i class="fas fa-clock mr-1"></i> Otomatik
+                            </button>
+                            <a id="btnDownloadSnapshot" href="#" class="btn btn-sm btn-outline-success" download="snapshot.jpg">
+                                <i class="fas fa-download mr-1"></i> İndir
+                            </a>
+                        </div>
+                        <small class="text-muted d-block mt-1" id="camSnapshotTime"></small>
+                    </div>
+                    <!-- Kamera hazır değilse placeholder -->
+                    <div id="camSnapshotPlaceholder" class="p-3 border rounded bg-light">
                         <i class="fas fa-video fa-4x text-muted mb-2"></i>
-                        <p class="font-weight-bold mb-1">RTSP Canlı Akış Bağlantısı Hazır</p>
-                        <p class="small text-muted mb-2">VLC Player veya CCTV İzleme Yazılımında URL'yi doğrudan oynatabilirsiniz.</p>
+                        <p class="font-weight-bold mb-1">Anlık Görüntü</p>
+                        <p class="small text-muted mb-2">Kameraya bağlandıktan sonra anlık görüntü burada görünecektir.</p>
                         <a id="btnOpenRtsp" href="#" class="btn btn-sm btn-outline-danger" target="_blank">
-                            <i class="fas fa-play mr-1"></i> Akışı Aç
+                            <i class="fas fa-play mr-1"></i> RTSP Akışı Aç
                         </a>
                     </div>
                 </div>
@@ -916,7 +1034,7 @@
             <div class="row align-items-end mb-3">
                 <div class="col-md-4 mb-2">
                     <label class="small font-weight-bold">Arama:</label>
-                    <input type="text" id="invSearch" class="form-control form-control-sm" placeholder="Marka, model, seri no, IP, gişe veya personel ara..." onkeyup="loadInventory()" />
+                    <input type="text" id="invSearch" class="form-control form-control-sm" placeholder="Marka, model, seri no, IP, gişe veya personel ara..." onkeyup="debouncedLoadInventory()" />
                 </div>
                 <div class="col-md-3 mb-2">
                     <label class="small font-weight-bold">Kategori:</label>
@@ -1017,6 +1135,88 @@
                 <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">İptal</button>
                 <button type="button" class="btn btn-success btn-sm" onclick="submitSaveCurrentInventory()">
                     <i class="fas fa-check mr-1"></i> CEZA Veritabanına Kaydet
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: YENİ CİHAZ KAYDET VE DÜZENLE -->
+<div class="modal fade" id="modalNewDevice" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content shadow border-0">
+            <div class="modal-header bg-primary text-white py-2">
+                <h5 class="modal-title font-weight-bold" id="ndModalTitle"><i class="fas fa-plus-circle mr-1"></i> Yeni Cihaz Kaydet</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body p-3">
+                <input type="hidden" id="ndDeviceId" value="0" />
+                <div class="row">
+                    <div class="col-md-6 mb-2">
+                        <label class="small font-weight-bold">Kategori:</label>
+                        <select id="ndCategory" class="form-control form-control-sm">
+                            <option value="1">Masaüstü Bilgisayar</option>
+                            <option value="2">Laptop (Dizüstü)</option>
+                            <option value="3">Monitör</option>
+                            <option value="4">IP Kamera</option>
+                            <option value="5">Pasaport / Optik Okuyucu</option>
+                            <option value="6">Parmak İzi / Biyometrik</option>
+                            <option value="7">Yazıcı / Tarayıcı</option>
+                            <option value="8">Kesintisiz Güç Kaynağı (UPS)</option>
+                            <option value="9">Switch / Ağ Cihazı</option>
+                            <option value="10">Sunucu</option>
+                            <option value="99">Diğer</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <label class="small font-weight-bold">Durum:</label>
+                        <select id="ndStatus" class="form-control form-control-sm">
+                            <option value="1">Kullanımda / Faal</option>
+                            <option value="2">Depoda / Yedek</option>
+                            <option value="3">Arızalı / Tamirde</option>
+                            <option value="4">Hurda / HEK</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <label class="small font-weight-bold">Marka:</label>
+                        <input type="text" id="ndBrand" class="form-control form-control-sm" placeholder="Örn: HP, Dell, Hikvision..." />
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <label class="small font-weight-bold">Model:</label>
+                        <input type="text" id="ndModel" class="form-control form-control-sm" placeholder="Örn: ProDesk 400 G6..." />
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <label class="small font-weight-bold">Seri Numarası:</label>
+                        <input type="text" id="ndSerial" class="form-control form-control-sm" placeholder="Seri numarası..." />
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <label class="small font-weight-bold">IP Adresi (Varsa):</label>
+                        <input type="text" id="ndIp" class="form-control form-control-sm" placeholder="Örn: 10.7.202.50" />
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <label class="small font-weight-bold">Demirbaş / Varlık No (Asset Tag):</label>
+                        <input type="text" id="ndAssetTag" class="form-control form-control-sm" placeholder="Örn: GZP-EGM-PC-01" />
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <label class="small font-weight-bold">Mevki / Gişe / Konum:</label>
+                        <input type="text" id="ndLocation" class="form-control form-control-sm" placeholder="Örn: 1. Giriş Gişe, Pasaport Şube..." />
+                    </div>
+                    <div class="col-md-12 mb-2">
+                        <label class="small font-weight-bold">Zimmetli Personel (Sicil veya İsim):</label>
+                        <input type="text" id="ndAssigned" class="form-control form-control-sm" placeholder="Örn: 245890 Ahmet Yılmaz" />
+                    </div>
+                    <div class="col-md-12 mb-2">
+                        <label class="small font-weight-bold">Notlar / Açıklama:</label>
+                        <textarea id="ndNotes" class="form-control form-control-sm" rows="2" placeholder="Cihaz durumu veya teknik detaylar..."></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">İptal</button>
+                <button type="button" id="btnSubmitNewDevice" class="btn btn-success btn-sm" onclick="submitNewDevice()">
+                    <i class="fas fa-check mr-1"></i> Kaydet
                 </button>
             </div>
         </div>
@@ -1155,353 +1355,835 @@ netsh advfirewall firewall set rule group="Remote Assistance" new enable=Yes</pr
     </div>
 </div>
 
+@section Scripts {
 <script>
-    function setTarget(target) {
-        document.getElementById('targetInput').value = target;
-        document.getElementById('pcQueryForm').submit();
+// ===================================================
+// GÜVENLİ MODAL YÖNETİCİSİ (Bootstrap + Vanilla JS Fallback)
+// ===================================================
+function showModalSafe(modalId) {
+    var el = document.getElementById(modalId);
+    if (!el) return;
+
+    // Porto Admin stacking context ve overflow sorununu kalıcı çözmek için modal elementini body'ye taşıyoruz
+    if (el.parentNode !== document.body) {
+        document.body.appendChild(el);
     }
+    el.style.zIndex = '100050';
 
-    function switchMainMode(mode) {
-        document.getElementById('btnModeInspector').classList.remove('active');
-        document.getElementById('btnModeScanner').classList.remove('active');
-        document.getElementById('btnModeCamera').classList.remove('active');
-        document.getElementById('btnModeInventory').classList.remove('active');
-
-        document.getElementById('sectionInspector').style.display = 'none';
-        document.getElementById('sectionScanner').style.display = 'none';
-        document.getElementById('sectionCamera').style.display = 'none';
-        document.getElementById('sectionInventory').style.display = 'none';
-
-        if (mode === 'scanner') {
-            document.getElementById('btnModeScanner').classList.add('active');
-            document.getElementById('sectionScanner').style.display = 'block';
-        } else if (mode === 'camera') {
-            document.getElementById('btnModeCamera').classList.add('active');
-            document.getElementById('sectionCamera').style.display = 'block';
-        } else if (mode === 'inventory') {
-            document.getElementById('btnModeInventory').classList.add('active');
-            document.getElementById('sectionInventory').style.display = 'block';
-            loadInventory();
-        } else {
-            document.getElementById('btnModeInspector').classList.add('active');
-            document.getElementById('sectionInspector').style.display = 'block';
-        }
-    }
-
-    function filterSoftware() {
-        var input = document.getElementById("softwareSearch");
-        var filter = input.value.toLowerCase();
-        var table = document.getElementById("softwareTable");
-        if (!table) return;
-        var tr = table.getElementsByTagName("tr");
-
-        for (var i = 1; i < tr.length; i++) {
-            var rowText = tr[i].textContent || tr[i].innerText;
-            tr[i].style.display = (rowText.toLowerCase().indexOf(filter) > -1) ? "" : "none";
-        }
-    }
-
-    // Modal Aç
-    function openSaveInventoryModal() {
-        $('#modalSaveCurrent').modal('show');
-    }
-
-    function submitSaveCurrentInventory() {
-        var target = '@(Model?.Target ?? "localhost")';
-        var assetTag = document.getElementById('modalAssetTag').value;
-        var category = document.getElementById('modalCategory').value;
-        var location = document.getElementById('modalLocation').value;
-        var assignedPerson = document.getElementById('modalAssignedPerson').value;
-        var notes = document.getElementById('modalNotes').value;
-
-        var body = new URLSearchParams();
-        body.append('target', target);
-        body.append('assetTag', assetTag);
-        body.append('category', category);
-        body.append('location', location);
-        body.append('assignedPerson', assignedPerson);
-        body.append('notes', notes);
-
-        fetch('@Url.Action("SaveCurrentToInventory", "PCInfo")', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: body.toString()
-        })
-        .then(function(res) { return res.json(); })
-        .then(function(data) {
-            $('#modalSaveCurrent').modal('hide');
-            if (data.success) {
-                alert(data.message || 'Cihaz başarıyla CEZA veritabanına kaydedildi!');
-            } else {
-                alert('Hata: ' + data.message);
-            }
-        })
-        .catch(function(err) {
-            alert('Hata oluştu: ' + err);
-        });
-    }
-
-    // Envanter Listesini Yükle (CEZA DB)
-    function loadInventory() {
-        var search = document.getElementById('invSearch').value;
-        var category = document.getElementById('invCategory').value;
-        var status = document.getElementById('invStatus').value;
-
-        var url = '@Url.Action("GetInventory", "PCInfo")?search=' + encodeURIComponent(search) +
-            '&category=' + encodeURIComponent(category) +
-            '&status=' + encodeURIComponent(status);
-
-        fetch(url)
-        .then(function(res) { return res.json(); })
-        .then(function(res) {
-            var tbody = document.getElementById('inventoryTableBody');
-            tbody.innerHTML = '';
-
-            if (res.data && res.data.length > 0) {
-                res.data.forEach(function(d) {
-                    var tr = document.createElement('tr');
-                    var catName = getCategoryName(d.Category);
-                    var statusBadge = getStatusBadge(d.Status);
-
-                    tr.innerHTML = '<td><strong>' + catName + '</strong>' + (d.AssetTag ? '<br><small class="text-muted">' + d.AssetTag + '</small>' : '') + '</td>' +
-                        '<td><strong>' + (d.Brand || '') + ' ' + (d.Model || '') + '</strong></td>' +
-                        '<td><code class="text-danger">' + (d.SerialNumber || '—') + '</code></td>' +
-                        '<td>' + (d.Location || '—') + (d.RoomNumber ? ' (Oda: ' + d.RoomNumber + ')' : '') + '</td>' +
-                        '<td>' + (d.AssignedPerson || '—') + '</td>' +
-                        '<td>' + statusBadge + '</td>' +
-                        '<td>' + (d.IpAddress ? '<code>' + d.IpAddress + '</code>' : '—') + '</td>' +
-                        '<td class="text-right">' +
-                            '<button class="btn btn-xs btn-primary mr-1" onclick="inspectDiscovered(\'' + (d.IpAddress || d.Model) + '\')"><i class="fas fa-search"></i></button>' +
-                            '<button class="btn btn-xs btn-danger" onclick="deleteInventoryItem(' + d.Id + ')"><i class="fas fa-trash"></i></button>' +
-                        '</td>';
-                    tbody.appendChild(tr);
-                });
-            } else {
-                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted p-4">CEZA veritabanında henüz kayıtlı envanter bulunmuyor. Teftiş ekranından veya Ağ Tarayıcısından cihazları kaydedebilirsiniz.</td></tr>';
-            }
-        })
-        .catch(function(err) {
-            document.getElementById('inventoryTableBody').innerHTML = '<tr><td colspan="8" class="text-center text-danger p-3">Veritabanından envanter yüklenirken hata: ' + err + '</td></tr>';
-        });
-    }
-
-    function deleteInventoryItem(id) {
-        if (!confirm('Bu envanter kaydını silmek istediğinize emin misiniz?')) return;
-
-        var body = new URLSearchParams();
-        body.append('id', id);
-
-        fetch('@Url.Action("DeleteInventoryDevice", "PCInfo")', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: body.toString()
-        })
-        .then(function(res) { return res.json(); })
-        .then(function(data) {
-            if (data.success) {
-                loadInventory();
-            } else {
-                alert('Silinemedi.');
-            }
-        });
-    }
-
-    function downloadInventoryExcel() {
-        var search = document.getElementById('invSearch').value;
-        var category = document.getElementById('invCategory').value;
-        var status = document.getElementById('invStatus').value;
-        window.location.href = '@Url.Action("ExportInventoryExcel", "PCInfo")?search=' + encodeURIComponent(search) + '&category=' + encodeURIComponent(category) + '&status=' + encodeURIComponent(status);
-    }
-
-    function getCategoryName(c) {
-        var cats = {
-            1: "Masaüstü PC", 2: "Laptop", 3: "Monitör", 4: "IP Kamera",
-            5: "Optik/Pasaport Okuyucu", 6: "Parmak İzi", 7: "Yazıcı",
-            8: "UPS", 9: "Ağ Cihazı", 10: "Sunucu"
-        };
-        return cats[c] || "Diğer Donanım";
-    }
-
-    function getStatusBadge(s) {
-        if (s === 1) return '<span class="badge badge-success">Faal</span>';
-        if (s === 2) return '<span class="badge badge-primary">Depoda</span>';
-        if (s === 3) return '<span class="badge badge-warning text-dark">Arızalı</span>';
-        if (s === 4) return '<span class="badge badge-danger">Hurda</span>';
-        return '<span class="badge badge-secondary">Bilinmiyor</span>';
-    }
-
-    // Akıllı Ağ Taraması
-    function runNetworkScan() {
-        var range = document.getElementById('scanRangeInput').value;
-        var timeout = document.getElementById('scanTimeout').value;
-        var btn = document.getElementById('btnStartScan');
-
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Taranıyor...';
-        document.getElementById('scanProgressBarArea').style.display = 'block';
-        document.getElementById('scanResultsCard').style.display = 'none';
-
-        var body = new URLSearchParams();
-        body.append('range', range);
-        body.append('timeoutMs', timeout);
-
-        fetch('@Url.Action("ScanNetwork", "PCInfo")', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: body.toString()
-        })
-        .then(function(res) { return res.json(); })
-        .then(function(data) {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-play mr-1"></i> Taramayı Başlat';
-            document.getElementById('scanProgressBarArea').style.display = 'none';
-            document.getElementById('scanResultsCard').style.display = 'block';
-
-            var tbody = document.getElementById('scanTableBody');
-            tbody.innerHTML = '';
-            document.getElementById('discoveredBadge').innerText = (data.count || 0) + ' Aktif Cihaz';
-
-            if (data.devices && data.devices.length > 0) {
-                data.devices.forEach(function(d) {
-                    var tr = document.createElement('tr');
-                    var inspectBtn = '<button class="btn btn-xs btn-primary mr-1" onclick="inspectDiscovered(\'' + d.IpAddress + '\')"><i class="fas fa-search"></i> İncele</button>';
-                    if (d.DeviceType === 1 || (d.OpenPorts && (d.OpenPorts.indexOf(3389) > -1 || d.OpenPorts.indexOf(135) > -1))) {
-                        inspectBtn += '<button class="btn btn-xs btn-success mr-1 text-white" onclick="openRemoteAssistModal(\'' + d.IpAddress + '\',\'' + (d.HostName || d.IpAddress) + '\')" title="Oturumu Kapatmadan Uzaktan Yardım / Gölgeleme"><i class="fas fa-hands-helping"></i> Uzak Yardım</button>';
-                        inspectBtn += '<a href="@Url.Action("ConnectRdp", "PCInfo")?ip=' + d.IpAddress + '" class="btn btn-xs btn-info mr-1 text-white" title="Standart RDP (Masaüstü Kilitlenir)"><i class="fas fa-desktop"></i> RDP</a>';
-                    }
-                    inspectBtn += '<button class="btn btn-xs btn-warning mr-1 text-dark" onclick="saveScanItemToInventory(\'' + d.IpAddress + '\',\'' + (d.HostName || '') + '\',' + d.DeviceType + ',\'' + (d.Details || '') + '\')"><i class="fas fa-plus"></i> Envantere Ekle</button>';
-                    if (d.DeviceType === 2) {
-                        inspectBtn += '<button class="btn btn-xs btn-danger" onclick="openDiscoveredCamera(\'' + d.IpAddress + '\')"><i class="fas fa-video"></i> Kamera</button>';
-                    }
-
-                    tr.innerHTML = '<td><i class="' + d.DeviceIcon + ' mr-2"></i> <strong>' + d.DeviceTypeDisplay + '</strong></td>' +
-                        '<td><code>' + d.IpAddress + '</code></td>' +
-                        '<td>' + (d.HostName || '—') + '</td>' +
-                        '<td><span class="badge badge-light border">' + d.ResponseTimeMs + ' ms</span></td>' +
-                        '<td><small class="text-muted">' + (d.Details || 'Online') + '</small></td>' +
-                        '<td class="text-right">' + inspectBtn + '</td>';
-                    tbody.appendChild(tr);
-                });
-            } else {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted p-3">Bu IP aralığında açık cihaz bulunamadı.</td></tr>';
-            }
-        })
-        .catch(function(err) {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-play mr-1"></i> Taramayı Başlat';
-            alert('Tarama sırasında hata oluştu: ' + err);
-        });
-    }
-
-    function saveScanItemToInventory(ip, hostname, deviceType, details) {
-        var loc = prompt('Bu cihaz için mevki / gişe / konum girin:', 'Hudut Kapısı');
-        if (loc === null) return;
-
-        var body = new URLSearchParams();
-        body.append('ip', ip);
-        body.append('hostname', hostname);
-        body.append('deviceType', deviceType);
-        body.append('location', loc);
-        body.append('details', details);
-
-        fetch('@Url.Action("SaveScanDeviceToInventory", "PCInfo")', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: body.toString()
-        })
-        .then(function(res) { return res.json(); })
-        .then(function(data) {
-            if (data.success) {
-                alert(data.message);
-            } else {
-                alert('Hata: ' + data.message);
-            }
-        });
-    }
-
-    function inspectDiscovered(ip) {
-        switchMainMode('inspector');
-        document.getElementById('targetInput').value = ip;
-        document.getElementById('pcQueryForm').submit();
-    }
-
-    function openDiscoveredCamera(ip) {
-        switchMainMode('camera');
-        document.getElementById('camIp').value = ip;
-        queryHikCamera();
-    }
-
-    // Hikvision Kamera Sorgulama
-    function queryHikCamera() {
-        var ip = document.getElementById('camIp').value;
-        var port = document.getElementById('camPort').value;
-        var user = document.getElementById('camUser').value;
-        var pass = document.getElementById('camPass').value;
-
-        if (!ip) {
-            alert('Lütfen kamera IP adresi girin.');
+    try {
+        if (window.jQuery && typeof window.jQuery.fn.modal === 'function') {
+            window.jQuery(el).modal('show');
+            setTimeout(function() {
+                var bds = document.querySelectorAll('.modal-backdrop');
+                for (var i = 0; i < bds.length; i++) bds[i].style.zIndex = '100040';
+            }, 25);
             return;
         }
+    } catch(e) {}
 
-        var body = new URLSearchParams();
-        body.append('ip', ip);
-        body.append('port', port);
-        body.append('username', user);
-        body.append('password', pass);
+    // Vanilla JS Fallback
+    el.classList.add('show');
+    el.style.display = 'block';
+    el.removeAttribute('aria-hidden');
+    el.setAttribute('aria-modal', 'true');
+    var bd = document.getElementById(modalId + '_backdrop');
+    if (!bd) {
+        bd = document.createElement('div');
+        bd.className = 'modal-backdrop fade show';
+        bd.id = modalId + '_backdrop';
+        bd.style.zIndex = '100040';
+        document.body.appendChild(bd);
+    }
+    document.body.classList.add('modal-open');
+}
 
-        fetch('@Url.Action("QueryCamera", "PCInfo")', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: body.toString()
-        })
-        .then(function(res) { return res.json(); })
-        .then(function(cam) {
-            document.getElementById('camResultCard').style.display = 'block';
-            document.getElementById('camDeviceNameHeader').innerText = cam.DeviceName || 'Hikvision IP Kamera';
-            document.getElementById('camModel').innerText = cam.Model || '—';
-            document.getElementById('camSerial').innerText = cam.SerialNumber || '—';
-            document.getElementById('camMac').innerText = cam.MacAddress || '—';
-            document.getElementById('camFirmware').innerText = cam.FirmwareVersion || '—';
-            document.getElementById('camRtspPort').innerText = cam.RtspPort;
-            document.getElementById('camRtspUrl').innerText = cam.RtspUrl;
-            document.getElementById('btnOpenRtsp').href = cam.RtspUrl;
+function hideModalSafe(modalId) {
+    var el = document.getElementById(modalId);
+    if (!el) return;
+    try {
+        if (window.jQuery && typeof window.jQuery.fn.modal === 'function') {
+            window.jQuery(el).modal('hide');
+        }
+    } catch(e) {}
+    el.classList.remove('show');
+    el.style.display = 'none';
+    el.setAttribute('aria-hidden', 'true');
+    el.removeAttribute('aria-modal');
+    var bd = document.getElementById(modalId + '_backdrop');
+    if (bd) bd.remove();
+    var bds = document.querySelectorAll('.modal-backdrop');
+    for (var i = 0; i < bds.length; i++) bds[i].remove();
+    document.body.classList.remove('modal-open');
+}
 
-            if (cam.IsOnline) {
-                document.getElementById('camOnlineBadge').className = 'badge badge-success float-right';
-                document.getElementById('camOnlineBadge').innerText = 'Bağlantı Başarılı';
-            } else {
-                document.getElementById('camOnlineBadge').className = 'badge badge-danger float-right';
-                document.getElementById('camOnlineBadge').innerText = 'Kameraya Ulaşılamadı';
-            }
-        })
-        .catch(function(err) {
-            alert('Kamera sorgulanamadı: ' + err);
+// Modal Kapatma Butonları (X ve İptal) için Güvenli Olay Dinleyici
+document.addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-dismiss="modal"]');
+    if (btn) {
+        var modal = btn.closest('.modal');
+        if (modal) hideModalSafe(modal.id);
+    }
+});
+
+// ===================================================
+// MOD ANAHTARLAMA
+// ===================================================
+function switchMainMode(mode) {
+    var modes = ['Inspector', 'Scanner', 'Camera', 'Inventory'];
+    modes.forEach(function(m) {
+        var btn = document.getElementById('btnMode' + m);
+        if (btn) btn.classList.remove('active');
+        var sec = document.getElementById('section' + m);
+        if (sec) sec.style.display = 'none';
+    });
+    var capMode = mode.charAt(0).toUpperCase() + mode.slice(1);
+    var activeBtn = document.getElementById('btnMode' + capMode);
+    if (activeBtn) activeBtn.classList.add('active');
+    var activeSec = document.getElementById('section' + capMode);
+    if (activeSec) activeSec.style.display = 'block';
+
+    var modeInput = document.getElementById('_activeMode');
+    if (modeInput) modeInput.value = mode;
+
+    if (mode === 'inventory') loadInventory();
+    if (mode === 'camera') renderSavedCameras();
+}
+
+// ===================================================
+// HEDEF SORGULAMA & YÖNETİCİ KİMLİK BİLGİSİ KAYDETME
+// ===================================================
+function setTarget(target) {
+    window.location.href = '@Url.Action("Index", "PCInfo")?target=' + encodeURIComponent(target);
+}
+
+function handleQueryFormSubmit(e) {
+    var userEl = document.querySelector('input[name="username"]');
+    var passEl = document.querySelector('input[name="password"]');
+    var user = userEl ? userEl.value.trim() : '';
+    var pass = passEl ? passEl.value : '';
+
+    if (user || pass) {
+        try {
+            localStorage.setItem('gzp_remoteAdminAuth', JSON.stringify({ user: user, pass: pass, savedAt: new Date().toISOString() }));
+        } catch(ex) {}
+    }
+
+    if (!pass) {
+        e.preventDefault();
+        window.location.href = '@Url.Action("Index", "PCInfo")?target=' + encodeURIComponent(document.getElementById('targetInput').value);
+        return false;
+    }
+    return true;
+}
+
+// ===================================================
+// YAZILIM ARAMA / FİLTRE
+// ===================================================
+function filterSoftware() {
+    var filter = (document.getElementById("softwareSearch") ? document.getElementById("softwareSearch").value : '').toLowerCase();
+    var table = document.getElementById("softwareTable");
+    if (!table) return;
+    var tr = table.getElementsByTagName("tr");
+    for (var i = 1; i < tr.length; i++) {
+        var rowText = tr[i].textContent || tr[i].innerText;
+        tr[i].style.display = (rowText.toLowerCase().indexOf(filter) > -1) ? "" : "none";
+    }
+}
+
+// ===================================================
+// MEVCUT BİLGİSAYARI ENVANTERE KAYDET
+// ===================================================
+function openSaveInventoryModal() {
+    var targetInput = document.getElementById('targetInput');
+    var targetVal = (targetInput ? targetInput.value.trim() : '') || 'localhost';
+    
+    var assetEl = document.getElementById('modalAssetTag');
+    if (assetEl && !assetEl.value) {
+        assetEl.value = 'GZP-' + targetVal.replace(/[^a-zA-Z0-9]/g, '_');
+    }
+    showModalSafe('modalSaveCurrent');
+}
+
+function submitSaveCurrentInventory() {
+    var btn = document.querySelector('#modalSaveCurrent .btn-success');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Kaydediliyor...';
+    }
+
+    var targetVal = (document.getElementById('targetInput') ? document.getElementById('targetInput').value : '') || 'localhost';
+    var userEl = document.querySelector('input[name="username"]');
+    var passEl = document.querySelector('input[name="password"]');
+    var user = userEl ? userEl.value : '';
+    var pass = passEl ? passEl.value : '';
+
+    if (!user && !pass) {
+        try {
+            var saved = JSON.parse(localStorage.getItem('gzp_remoteAdminAuth') || '{}');
+            user = saved.user || '';
+            pass = saved.pass || '';
+        } catch(e) {}
+    }
+
+    var assetTagEl = document.getElementById('modalAssetTag');
+    var categoryEl = document.getElementById('modalCategory');
+    var locationEl = document.getElementById('modalLocation');
+    var assignedEl = document.getElementById('modalAssignedPerson');
+    var notesEl = document.getElementById('modalNotes');
+
+    var body = new URLSearchParams();
+    body.append('target', targetVal);
+    body.append('assetTag', assetTagEl ? assetTagEl.value : '');
+    body.append('category', categoryEl ? categoryEl.value : '1');
+    body.append('location', locationEl ? locationEl.value : 'Hudut Kapısı / Gişe');
+    body.append('assignedPerson', assignedEl ? assignedEl.value : '');
+    body.append('notes', notesEl ? notesEl.value : '');
+    body.append('username', user);
+    body.append('password', pass);
+
+    fetch('@Url.Action("SaveCurrentToInventory", "PCInfo")', {
+        method: 'POST',
+        headers: { 
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: body.toString()
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-check mr-1"></i> CEZA Veritabanına Kaydet';
+        }
+        hideModalSafe('modalSaveCurrent');
+        if (data.success) {
+            showToast(data.message || 'Cihaz başarıyla CEZA veritabanına kaydedildi!');
+            if (typeof loadInventory === 'function') loadInventory();
+        } else {
+            alert('Hata: ' + data.message);
+        }
+    })
+    .catch(function(e) {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-check mr-1"></i> CEZA Veritabanına Kaydet';
+        }
+        alert('Kaydetme hatası: ' + e);
+    });
+}
+
+// ===================================================
+// ENVANTER — YÜKLE / SİL / İNDİR
+// ===================================================
+var _invTimer = null;
+function debouncedLoadInventory() {
+    clearTimeout(_invTimer);
+    _invTimer = setTimeout(loadInventory, 350);
+}
+
+function loadInventory() {
+    var searchEl = document.getElementById('invSearch');
+    var catEl = document.getElementById('invCategory');
+    var statusEl = document.getElementById('invStatus');
+    var search = searchEl ? searchEl.value : '';
+    var category = catEl ? catEl.value : '';
+    var status = statusEl ? statusEl.value : '';
+
+    var url = '@Url.Action("GetInventory", "PCInfo")?search=' + encodeURIComponent(search) + '&category=' + encodeURIComponent(category) + '&status=' + encodeURIComponent(status);
+    var tbody = document.getElementById('inventoryTableBody');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="text-center p-3 text-muted"><i class="fas fa-spinner fa-spin mr-1"></i> Yükleniyor...</td></tr>';
+
+    fetch(url, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+        if (!tbody) return;
+        tbody.innerHTML = '';
+        if (res.data && res.data.length > 0) {
+            res.data.forEach(function(d) {
+                var tr = document.createElement('tr');
+                tr.innerHTML =
+                    '<td><strong>' + getCategoryName(d.Category) + '</strong>' + (d.AssetTag ? '<br><small class="text-muted">' + escH(d.AssetTag) + '</small>' : '') + '</td>' +
+                    '<td><strong>' + escH((d.Brand || '') + ' ' + (d.Model || '')) + '</strong></td>' +
+                    '<td><code class="text-danger">' + escH(d.SerialNumber || '-') + '</code></td>' +
+                    '<td>' + escH(d.Location || '-') + (d.RoomNumber ? ' <small class="text-muted">(Oda: ' + escH(d.RoomNumber) + ')</small>' : '') + '</td>' +
+                    '<td>' + escH(d.AssignedPerson || '-') + '</td>' +
+                    '<td>' + getStatusBadge(d.Status) + '</td>' +
+                    '<td>' + (d.IpAddress ? '<code>' + escH(d.IpAddress) + '</code>' : '-') + '</td>' +
+                    '<td class="text-right text-nowrap">' +
+                        '<button class="btn btn-sm btn-primary mr-1 px-2 py-1" onclick="inspectDiscovered(\'' + escA(d.IpAddress || d.Model) + '\')" title="İncele"><i class="fas fa-search"></i></button>' +
+                        '<button class="btn btn-sm btn-warning text-dark mr-1 px-2 py-1" onclick="openEditDeviceModal(' + d.Id + ')" title="Düzenle"><i class="fas fa-edit"></i></button>' +
+                        '<button class="btn btn-sm btn-danger px-2 py-1" onclick="deleteInventoryItem(' + d.Id + ')" title="Sil"><i class="fas fa-trash"></i></button>' +
+                    '</td>';
+                tbody.appendChild(tr);
+            });
+        } else {
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted p-4"><i class="fas fa-inbox fa-2x d-block mb-2"></i>Kayıtlı envanter yok. "Yeni Cihaz Kaydet" veya "Envantere Ekle" butonunu kullanın.</td></tr>';
+        }
+    })
+    .catch(function(e) {
+        if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger p-3"><i class="fas fa-exclamation-triangle mr-1"></i>Envanter yüklenemedi: ' + e + '</td></tr>';
+    });
+}
+
+function deleteInventoryItem(id) {
+    if (!confirm('Bu kaydı silmek istediğinize emin misiniz?')) return;
+    var body = new URLSearchParams();
+    body.append('id', id);
+    fetch('@Url.Action("DeleteInventoryDevice", "PCInfo")', {
+        method: 'POST',
+        headers: { 
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: body.toString()
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        if (d.success) {
+            showToast('Kayıt silindi.');
+            loadInventory();
+        } else {
+            alert('Silinemedi: ' + (d.message || ''));
+        }
+    });
+}
+
+function downloadInventoryExcel() {
+    var search = (document.getElementById('invSearch') ? document.getElementById('invSearch').value : '');
+    var cat = (document.getElementById('invCategory') ? document.getElementById('invCategory').value : '');
+    var st = (document.getElementById('invStatus') ? document.getElementById('invStatus').value : '');
+    window.location.href = '@Url.Action("ExportInventoryExcel", "PCInfo")?search=' + encodeURIComponent(search) + '&category=' + encodeURIComponent(cat) + '&status=' + encodeURIComponent(st);
+}
+
+// ===================================================
+// YENİ / DÜZENLE CİHAZ MODALI
+// ===================================================
+function openNewDeviceModal() {
+    var devIdEl = document.getElementById('ndDeviceId');
+    if (devIdEl) devIdEl.value = '0';
+    var titleEl = document.getElementById('ndModalTitle');
+    if (titleEl) titleEl.innerText = 'Yeni Cihaz Kaydet';
+    ['ndCategory','ndBrand','ndModel','ndSerial','ndIp','ndLocation','ndAssigned','ndAssetTag','ndNotes'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+    var catEl = document.getElementById('ndCategory');
+    if (catEl) catEl.value = '1';
+    var stEl = document.getElementById('ndStatus');
+    if (stEl) stEl.value = '1';
+    showModalSafe('modalNewDevice');
+}
+
+function openEditDeviceModal(id) {
+    fetch('@Url.Action("GetDeviceById", "PCInfo")?id=' + id, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        if (!d || !d.Id) { alert('Kayıt bulunamadı.'); return; }
+        document.getElementById('ndDeviceId').value = d.Id;
+        document.getElementById('ndModalTitle').innerText = 'Cihaz Düzenle - #' + d.Id;
+        document.getElementById('ndCategory').value = d.Category || '1';
+        document.getElementById('ndBrand').value = d.Brand || '';
+        document.getElementById('ndModel').value = d.Model || '';
+        document.getElementById('ndSerial').value = d.SerialNumber || '';
+        document.getElementById('ndIp').value = d.IpAddress || '';
+        document.getElementById('ndLocation').value = d.Location || '';
+        document.getElementById('ndAssigned').value = d.AssignedPerson || '';
+        document.getElementById('ndStatus').value = d.Status || '1';
+        document.getElementById('ndAssetTag').value = d.AssetTag || '';
+        document.getElementById('ndNotes').value = d.Notes || '';
+        showModalSafe('modalNewDevice');
+    })
+    .catch(function(e) { alert('Kayıt yüklenemedi: ' + e); });
+}
+
+function submitNewDevice() {
+    var btn = document.getElementById('btnSubmitNewDevice');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Kaydediliyor...';
+    }
+    var device = {
+        Id: parseInt(document.getElementById('ndDeviceId').value) || 0,
+        Category: parseInt(document.getElementById('ndCategory').value),
+        Brand: document.getElementById('ndBrand').value,
+        Model: document.getElementById('ndModel').value,
+        SerialNumber: document.getElementById('ndSerial').value,
+        IpAddress: document.getElementById('ndIp').value,
+        Location: document.getElementById('ndLocation').value,
+        AssignedPerson: document.getElementById('ndAssigned').value,
+        Status: parseInt(document.getElementById('ndStatus').value),
+        AssetTag: document.getElementById('ndAssetTag').value,
+        Notes: document.getElementById('ndNotes').value
+    };
+    fetch('@Url.Action("SaveDevice", "PCInfo")', {
+        method: 'POST',
+        headers: { 
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify(device)
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-check mr-1"></i> Kaydet';
+        }
+        if (data.success) {
+            hideModalSafe('modalNewDevice');
+            showToast(data.id > 0 ? 'Kaydedildi! ID: ' + data.id : 'Güncellendi!');
+            loadInventory();
+        } else {
+            alert('Hata: ' + data.message);
+        }
+    })
+    .catch(function(e) {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-check mr-1"></i> Kaydet';
+        }
+        alert('Hata: ' + e);
+    });
+}
+
+// ===================================================
+// YARDIMCI BİÇİMLENDİRME FONKSİYONLARI
+// ===================================================
+function getCategoryName(c) {
+    var cats = {1:'Masaüstü PC',2:'Laptop',3:'Monitör',4:'IP Kamera',5:'Optik/Pasaport',6:'Parmak İzi',7:'Yazıcı',8:'UPS',9:'Ağ Cihazı',10:'Sunucu'};
+    return cats[c] || 'Diğer';
+}
+
+function getStatusBadge(s) {
+    if (s===1) return '<span class="badge badge-success">Faal</span>';
+    if (s===2) return '<span class="badge badge-primary">Depoda</span>';
+    if (s===3) return '<span class="badge badge-warning text-dark">Arızalı</span>';
+    if (s===4) return '<span class="badge badge-danger">Hurda</span>';
+    return '<span class="badge badge-secondary">?</span>';
+}
+
+function escH(s) {
+    if(!s) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function escA(s) {
+    return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+}
+
+function showToast(msg) {
+    var t = document.createElement('div');
+    t.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#1e293b;color:#fff;padding:12px 24px;border-radius:8px;z-index:99999;font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,.3);opacity:1;transition:opacity .3s;';
+    t.innerHTML = '<i class="fas fa-check-circle text-success mr-2"></i>' + escH(msg);
+    document.body.appendChild(t);
+    setTimeout(function() {
+        t.style.opacity = '0';
+        setTimeout(function(){ t.remove(); }, 300);
+    }, 2800);
+}
+
+// ===================================================
+// AKILLI AĞ TARAMASI
+// ===================================================
+function setScanRange(range) {
+    var rangeEl = document.getElementById('scanRangeInput');
+    if (rangeEl) rangeEl.value = range;
+    runNetworkScan();
+}
+
+function runNetworkScan() {
+    var rangeEl = document.getElementById('scanRangeInput');
+    var timeoutEl = document.getElementById('scanTimeout');
+    var range = rangeEl ? rangeEl.value.trim() : '10.7.202.100 - 215';
+    var timeout = timeoutEl ? timeoutEl.value : '1000';
+
+    var btn = document.getElementById('btnStartScan');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Taranıyor...';
+    }
+
+    var prog = document.getElementById('scanProgressBarArea');
+    if (prog) prog.style.display = 'block';
+    var resCard = document.getElementById('scanResultsCard');
+    if (resCard) resCard.style.display = 'none';
+
+    var body = new URLSearchParams();
+    body.append('range', range);
+    body.append('timeoutMs', timeout);
+
+    fetch('@Url.Action("ScanNetwork", "PCInfo")', {
+        method: 'POST',
+        headers: { 
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: body.toString()
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-play mr-1"></i> Taramayı Başlat';
+        }
+        if (prog) prog.style.display = 'none';
+        if (resCard) resCard.style.display = 'block';
+
+        var tbody = document.getElementById('scanTableBody');
+        if (tbody) tbody.innerHTML = '';
+
+        var badge = document.getElementById('discoveredBadge');
+        if (badge) badge.innerText = (data.count || 0) + ' Aktif Cihaz';
+
+        if (data.devices && data.devices.length > 0) {
+            data.devices.forEach(function(d) {
+                var tr = document.createElement('tr');
+                var btns = '<button class="btn btn-sm btn-primary mr-1 px-2 py-1" onclick="inspectDiscovered(\'' + escA(d.IpAddress) + '\')" title="İncele"><i class="fas fa-search"></i> İncele</button>';
+                if (d.DeviceType === 1 || (d.OpenPorts && (d.OpenPorts.indexOf(3389) > -1 || d.OpenPorts.indexOf(135) > -1))) {
+                    btns += '<button class="btn btn-sm btn-success mr-1 text-white px-2 py-1" onclick="openRemoteAssistModal(\'' + escA(d.IpAddress) + '\',\'' + escA(d.HostName || d.IpAddress) + '\')" title="Uzaktan Yardım"><i class="fas fa-hands-helping"></i> Uzak Yardım</button>';
+                    btns += '<a href="@Url.Action("ConnectRdp", "PCInfo")?ip=' + encodeURIComponent(d.IpAddress) + '" class="btn btn-sm btn-info mr-1 text-white px-2 py-1" title="RDP Bağlantısı"><i class="fas fa-desktop"></i> RDP</a>';
+                }
+                btns += '<button class="btn btn-sm btn-warning mr-1 text-dark px-2 py-1 font-weight-bold" onclick="openNewDeviceFromScan(\'' + escA(d.IpAddress) + '\',\'' + escA(d.HostName || '') + '\',' + d.DeviceType + ',\'' + escA(d.Details || '') + '\')" title="Envantere Kaydet"><i class="fas fa-plus"></i> Envantere Ekle</button>';
+                if (d.DeviceType === 2 || (d.OpenPorts && (d.OpenPorts.indexOf(554) > -1 || d.OpenPorts.indexOf(8000) > -1))) {
+                    btns += '<button class="btn btn-sm btn-danger px-2 py-1" onclick="openDiscoveredCamera(\'' + escA(d.IpAddress) + '\')" title="Kameraya Git"><i class="fas fa-video"></i> Kamera</button>';
+                }
+                tr.innerHTML = '<td><i class="' + escH(d.DeviceIcon) + ' mr-2"></i><strong>' + escH(d.DeviceTypeDisplay) + '</strong></td>' +
+                    '<td><code>' + escH(d.IpAddress) + '</code></td><td>' + escH(d.HostName || '-') + '</td>' +
+                    '<td><span class="badge badge-light border">' + d.ResponseTimeMs + ' ms</span></td>' +
+                    '<td><small class="text-muted">' + escH(d.Details || 'Online') + '</small></td>' +
+                    '<td class="text-right text-nowrap">' + btns + '</td>';
+                if (tbody) tbody.appendChild(tr);
+            });
+        } else {
+            if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted p-3"><i class="fas fa-info-circle mr-1"></i> Bu IP aralığında açık cihaz bulunamadı. Lütfen yukarıdaki "Kameralar" veya "Gişe PC\'leri" butonlarına tıklayarak tekrar deneyin.</td></tr>';
+        }
+    })
+    .catch(function(e) {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-play mr-1"></i> Taramayı Başlat';
+        }
+        if (prog) prog.style.display = 'none';
+        alert('Tarama hatası: ' + e);
+    });
+}
+
+function openNewDeviceFromScan(ip, hostname, deviceType, details) {
+    var devIdEl = document.getElementById('ndDeviceId');
+    if (devIdEl) devIdEl.value = '0';
+    var titleEl = document.getElementById('ndModalTitle');
+    if (titleEl) titleEl.innerText = 'Keşfedilen Cihazı Envantere Kaydet (' + ip + ')';
+    
+    // Kategori eşleme: 1:PC, 2:Kamera, 3:Yazıcı, 4:Switch
+    var catMap = { 1: 1, 2: 4, 3: 7, 4: 9, 0: 99 };
+    var cat = catMap[deviceType] || 1;
+
+    document.getElementById('ndCategory').value = cat;
+    document.getElementById('ndBrand').value = (deviceType === 2) ? 'Hikvision' : '';
+    document.getElementById('ndModel').value = hostname || '';
+    document.getElementById('ndSerial').value = 'IP:' + ip;
+    document.getElementById('ndIp').value = ip;
+    document.getElementById('ndLocation').value = 'Hudut Kapısı / Gişe';
+    document.getElementById('ndAssigned').value = '';
+    document.getElementById('ndStatus').value = '1';
+    document.getElementById('ndAssetTag').value = 'GZP-' + ip.replace(/\./g, '-');
+    document.getElementById('ndNotes').value = details || 'Ağ tarayıcısı ile otomatik keşfedildi.';
+
+    showModalSafe('modalNewDevice');
+}
+
+function saveScanItemToInventory(ip, hostname, deviceType, details) {
+    openNewDeviceFromScan(ip, hostname, deviceType, details);
+}
+
+function inspectDiscovered(ip) {
+    var f = document.createElement('form');
+    f.method = 'get';
+    f.action = '@Url.Action("Index", "PCInfo")';
+    var i = document.createElement('input');
+    i.type = 'hidden';
+    i.name = 'target';
+    i.value = ip;
+    f.appendChild(i);
+    document.body.appendChild(f);
+    f.submit();
+}
+
+function openDiscoveredCamera(ip) {
+    switchMainMode('camera');
+    var camIpEl = document.getElementById('camIp');
+    if (camIpEl) camIpEl.value = ip;
+    loadCameraCredentials(ip);
+    setTimeout(queryHikCamera, 100);
+}
+
+// ===================================================
+// HİKVİSION — KİMLİK BİLGİSİ YÖNETİMİ
+// ===================================================
+function saveCameraCredentials(ip, user, pass, port) {
+    try {
+        var creds = JSON.parse(localStorage.getItem('gzp_hikCamCreds') || '{}');
+        creds[ip] = { user: user, pass: pass, port: port || 80, savedAt: new Date().toISOString() };
+        localStorage.setItem('gzp_hikCamCreds', JSON.stringify(creds));
+        renderSavedCameras();
+    } catch(e) {}
+}
+
+function loadCameraCredentials(ip) {
+    try {
+        var creds = JSON.parse(localStorage.getItem('gzp_hikCamCreds') || '{}');
+        if (creds[ip]) {
+            var u = document.getElementById('camUser'); if (u) u.value = creds[ip].user || 'admin';
+            var p = document.getElementById('camPass'); if (p) p.value = creds[ip].pass || '';
+            var pt = document.getElementById('camPort'); if (pt) pt.value = creds[ip].port || 80;
+            return true;
+        }
+    } catch(e) {}
+    return false;
+}
+
+function renderSavedCameras() {
+    try {
+        var creds = JSON.parse(localStorage.getItem('gzp_hikCamCreds') || '{}');
+        var keys = Object.keys(creds);
+        var row = document.getElementById('savedCamerasRow');
+        var list = document.getElementById('savedCamerasList');
+        if (!row || !list) return;
+        if (keys.length === 0) { row.style.display = 'none'; return; }
+        row.style.display = 'block';
+        list.innerHTML = '';
+        keys.forEach(function(ip) {
+            var pill = document.createElement('span');
+            pill.className = 'preset-pill';
+            pill.innerHTML = '<i class="fas fa-video mr-1"></i>' + escH(ip);
+            pill.title = 'Kullanıcı: ' + escH(creds[ip].user || '');
+            pill.onclick = function() {
+                var cip = document.getElementById('camIp');
+                if (cip) cip.value = ip;
+                loadCameraCredentials(ip);
+            };
+            list.appendChild(pill);
         });
+    } catch(e) {}
+}
+
+function clearSavedCameras() {
+    if (!confirm('Kayıtlı tüm kamera kimlik bilgileri silinecek. Emin misiniz?')) return;
+    localStorage.removeItem('gzp_hikCamCreds');
+    renderSavedCameras();
+}
+
+// ===================================================
+// HİKVİSION — ANLIK GÖRÜNTÜ (SNAPSHOT)
+// ===================================================
+var _snapTimer = null, _autoRefresh = false, _camIp = '', _camUser = '', _camPass = '', _camPort = 80;
+
+function refreshSnapshot() {
+    if (!_camIp) return;
+    var snapEl = document.getElementById('camSnapshot');
+    var snapTimeEl = document.getElementById('camSnapshotTime');
+    var snapDl = document.getElementById('btnDownloadSnapshot');
+    var chEl = document.getElementById('camChannel');
+    var chVal = parseInt(chEl ? chEl.value : '101') || 101;
+    var url = '@Url.Action("GetSnapshot", "PCInfo")?ip=' + encodeURIComponent(_camIp) + '&port=' + _camPort
+        + '&user=' + encodeURIComponent(_camUser) + '&pass=' + encodeURIComponent(_camPass) + '&channel=' + chVal + '&t=' + Date.now();
+    if (snapEl) snapEl.src = url;
+    if (snapTimeEl) snapTimeEl.innerText = 'Son güncelleme: ' + new Date().toLocaleTimeString('tr-TR');
+    if (snapDl) snapDl.href = url;
+}
+
+function toggleAutoRefresh() {
+    var btn = document.getElementById('btnAutoRefresh');
+    _autoRefresh = !_autoRefresh;
+    if (_autoRefresh) {
+        if (btn) {
+            btn.className = 'btn btn-sm btn-primary text-white mr-2';
+            btn.innerHTML = '<i class="fas fa-stop mr-1"></i> Durdur';
+        }
+        _snapTimer = setInterval(refreshSnapshot, 5000);
+    } else {
+        if (btn) {
+            btn.className = 'btn btn-sm btn-outline-primary mr-2';
+            btn.innerHTML = '<i class="fas fa-clock mr-1"></i> Otomatik';
+        }
+        clearInterval(_snapTimer);
+    }
+}
+
+// ===================================================
+// HİKVİSION — KAMERA SORGULAMA
+// ===================================================
+function queryHikCamera() {
+    var ipEl = document.getElementById('camIp');
+    var ip = ipEl ? ipEl.value.trim() : '';
+    var port = parseInt(document.getElementById('camPort') ? document.getElementById('camPort').value : '80') || 80;
+    var user = document.getElementById('camUser') ? document.getElementById('camUser').value : 'admin';
+    var pass = document.getElementById('camPass') ? document.getElementById('camPass').value : '';
+
+    if (!ip) { alert('Lütfen kamera IP adresi girin.'); return; }
+    saveCameraCredentials(ip, user, pass, port);
+
+    var camBtn = document.getElementById('btnConnectCamera');
+    if (camBtn) {
+        camBtn.disabled = true;
+        camBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Bağlanıyor...';
     }
 
-    // Uzaktan Yardım & Gölgeleme Modalı Açma
-    function openRemoteAssistModal(ip, host) {
-        if (!ip) return;
-        document.getElementById('raModalSubTitle').innerText = 'Hedef: ' + ip + (host ? ' (' + host + ')' : '');
-        
-        // Bağlantı indirme linkleri
-        document.getElementById('btnLaunchMsra').href = '@Url.Action("ConnectAssist", "PCInfo")?ip=' + encodeURIComponent(ip) + '&mode=msra';
-        document.getElementById('btnLaunchShadow').href = '@Url.Action("ConnectAssist", "PCInfo")?ip=' + encodeURIComponent(ip) + '&mode=shadow';
-        document.getElementById('btnLaunchRdpClassic').href = '@Url.Action("ConnectRdp", "PCInfo")?ip=' + encodeURIComponent(ip);
+    var body = new URLSearchParams();
+    body.append('ip', ip);
+    body.append('port', port);
+    body.append('username', user);
+    body.append('password', pass);
 
-        // Kopyalama komutları
-        document.getElementById('cmdMsraText').value = 'msra.exe /offerRA ' + ip;
-        document.getElementById('cmdShadowText').value = 'mstsc.exe /v:' + ip + ' /shadow:1 /control';
+    fetch('@Url.Action("QueryCamera", "PCInfo")', {
+        method: 'POST',
+        headers: { 
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: body.toString()
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(cam) {
+        if (camBtn) {
+            camBtn.disabled = false;
+            camBtn.innerHTML = '<i class="fas fa-plug mr-1"></i> Kameraya Bağlan';
+        }
+        document.getElementById('camResultCard').style.display = 'block';
+        document.getElementById('camDeviceNameHeader').innerText = cam.DeviceName || 'Hikvision IP Kamera';
+        document.getElementById('camModel').innerText = cam.Model || '-';
+        document.getElementById('camSerial').innerText = cam.SerialNumber || '-';
+        document.getElementById('camMac').innerText = cam.MacAddress || '-';
+        document.getElementById('camFirmware').innerText = cam.FirmwareVersion || '-';
+        document.getElementById('camRtspPort').innerText = cam.RtspPort;
+        document.getElementById('camRtspUrl').innerText = cam.RtspUrl;
+        document.getElementById('btnOpenRtsp').href = cam.RtspUrl;
 
-        $('#modalRemoteAssist').modal('show');
+        if (cam.IsOnline) {
+            document.getElementById('camOnlineBadge').className = 'badge badge-success float-right';
+            document.getElementById('camOnlineBadge').innerText = 'Bağlantı Başarılı';
+            _camIp = ip; _camUser = user; _camPass = pass; _camPort = port;
+            document.getElementById('camSnapshotArea').style.display = 'block';
+            document.getElementById('camSnapshotPlaceholder').style.display = 'none';
+            refreshSnapshot();
+        } else {
+            document.getElementById('camOnlineBadge').className = 'badge badge-danger float-right';
+            document.getElementById('camOnlineBadge').innerText = 'Kameraya Ulaşılamadı';
+            document.getElementById('camSnapshotArea').style.display = 'none';
+            document.getElementById('camSnapshotPlaceholder').style.display = 'block';
+            if (_autoRefresh) toggleAutoRefresh();
+        }
+    })
+    .catch(function(e) {
+        if (camBtn) {
+            camBtn.disabled = false;
+            camBtn.innerHTML = '<i class="fas fa-plug mr-1"></i> Kameraya Bağlan';
+        }
+        alert('Kamera sorgulanamadı: ' + e);
+    });
+}
+
+function selectPresetCam(ip, port, channel, name) {
+    var cip = document.getElementById('camIp'); if (cip) cip.value = ip;
+    var cch = document.getElementById('camChannel'); if (cch) cch.value = channel;
+    var cport = document.getElementById('camPort'); if (cport) cport.value = port;
+    loadCameraCredentials(ip);
+    queryHikCamera();
+}
+
+// ===================================================
+// UZAKTAN YARDIM MODALI
+// ===================================================
+function openRemoteAssistModal(ip, host) {
+    if (!ip) return;
+    document.getElementById('raModalSubTitle').innerText = 'Hedef: ' + ip + (host ? ' (' + host + ')' : '');
+    document.getElementById('btnLaunchMsra').href = '@Url.Action("ConnectAssist", "PCInfo")?ip=' + encodeURIComponent(ip) + '&mode=msra';
+    document.getElementById('btnLaunchShadow').href = '@Url.Action("ConnectAssist", "PCInfo")?ip=' + encodeURIComponent(ip) + '&mode=shadow';
+    document.getElementById('btnLaunchRdpClassic').href = '@Url.Action("ConnectRdp", "PCInfo")?ip=' + encodeURIComponent(ip);
+    document.getElementById('cmdMsraText').value = 'msra.exe /offerRA ' + ip;
+    document.getElementById('cmdShadowText').value = 'mstsc.exe /v:' + ip + ' /shadow:1 /control';
+    showModalSafe('modalRemoteAssist');
+}
+
+// ===================================================
+// PANOYA KOPYALA
+// ===================================================
+function copyToClipboard(elementId) {
+    var el = document.getElementById(elementId);
+    if (!el) return;
+    el.select(); el.setSelectionRange(0, 99999);
+    var val = el.value;
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(val).then(function() { showToast('Panoya kopyalandı!'); })
+        .catch(function() { try { document.execCommand('copy'); showToast('Panoya kopyalandı!'); } catch(e) {} });
+    } else {
+        try { document.execCommand('copy'); showToast('Panoya kopyalandı!'); }
+        catch(e) { alert('Kopyalanamadı: ' + val); }
     }
+}
 
-    function copyToClipboard(elementId) {
-        var copyText = document.getElementById(elementId);
-        copyText.select();
-        copyText.setSelectionRange(0, 99999);
-        navigator.clipboard.writeText(copyText.value).then(function() {
-            alert('Komut panoya kopyalandı:\n' + copyText.value);
-        });
-    }
+// ===================================================
+// GLOBAL WINDOW NESNESİNE FONKSİYONLARI BAĞLAMA
+// ===================================================
+window.switchMainMode = switchMainMode;
+window.setTarget = setTarget;
+window.handleQueryFormSubmit = handleQueryFormSubmit;
+window.filterSoftware = filterSoftware;
+window.openSaveInventoryModal = openSaveInventoryModal;
+window.submitSaveCurrentInventory = submitSaveCurrentInventory;
+window.loadInventory = loadInventory;
+window.debouncedLoadInventory = debouncedLoadInventory;
+window.deleteInventoryItem = deleteInventoryItem;
+window.downloadInventoryExcel = downloadInventoryExcel;
+window.openNewDeviceModal = openNewDeviceModal;
+window.openEditDeviceModal = openEditDeviceModal;
+window.submitNewDevice = submitNewDevice;
+window.runNetworkScan = runNetworkScan;
+window.setScanRange = setScanRange;
+window.openNewDeviceFromScan = openNewDeviceFromScan;
+window.saveScanItemToInventory = saveScanItemToInventory;
+window.inspectDiscovered = inspectDiscovered;
+window.openDiscoveredCamera = openDiscoveredCamera;
+window.saveCameraCredentials = saveCameraCredentials;
+window.loadCameraCredentials = loadCameraCredentials;
+window.renderSavedCameras = renderSavedCameras;
+window.clearSavedCameras = clearSavedCameras;
+window.refreshSnapshot = refreshSnapshot;
+window.toggleAutoRefresh = toggleAutoRefresh;
+window.queryHikCamera = queryHikCamera;
+window.selectPresetCam = selectPresetCam;
+window.openRemoteAssistModal = openRemoteAssistModal;
+window.copyToClipboard = copyToClipboard;
+window.showModalSafe = showModalSafe;
+window.hideModalSafe = hideModalSafe;
+
+// ===================================================
+// SAYFA BAŞLATMA
+// ===================================================
+function initPCInfoPage() {
+    var modeEl = document.getElementById('_activeMode');
+    var activeMode = modeEl ? modeEl.value : 'inspector';
+    if (activeMode && activeMode !== 'inspector') switchMainMode(activeMode);
+
+    var btnCam = document.getElementById('btnModeCamera');
+    if (btnCam) btnCam.addEventListener('click', function() { setTimeout(renderSavedCameras, 50); });
+    if (activeMode === 'camera') renderSavedCameras();
+
+    var camIpEl = document.getElementById('camIp');
+    if (camIpEl) camIpEl.addEventListener('blur', function() { if (this.value.trim()) loadCameraCredentials(this.value.trim()); });
+
+    var camChEl = document.getElementById('camChannel');
+    if (camChEl) camChEl.addEventListener('change', function() { if (_camIp) refreshSnapshot(); });
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initPCInfoPage);
+} else {
+    initPCInfoPage();
+}
 </script>
+}

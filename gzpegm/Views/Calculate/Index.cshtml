@@ -934,6 +934,20 @@
                 refUrl += '?' + queryParams.join('&');
             }
 
+            // Güvenlik & Denetim Logu Kaydet (Arka planda)
+            try {
+                $.ajax({
+                    url: '@Url.Action("LogGecis", "SahtecilikLog")',
+                    type: 'POST',
+                    data: {
+                        kaynak: 'Hesaplama',
+                        ulke: country,
+                        hedefUrl: refUrl,
+                        detay: country ? ('Hesaplama ekranından [' + country + '] uyruklu yolcu için Sahtecilik Portalı açıldı.') : 'Hesaplama ekranından Sahtecilik Portalı açıldı.'
+                    }
+                });
+            } catch(logErr) {}
+
             window.open(refUrl, '_blank');
         }
         var sevkEtSahtecilik = openReferenceDocument;

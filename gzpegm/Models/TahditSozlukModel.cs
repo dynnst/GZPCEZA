@@ -2,6 +2,7 @@ namespace gzpegm.Models
 {
     public class TahditSozlukItem
     {
+        public int? Id { get; set; }
         public string Kod { get; set; }
         public string Baslik { get; set; }
         public string Kategori { get; set; }
@@ -10,6 +11,8 @@ namespace gzpegm.Models
         public string GirisIslem { get; set; }
         public string CikisIslem { get; set; }
         public string OnemDerecesi { get; set; } // 'Kritik', 'Yuksek', 'Standart', 'Bilgi'
+        public string TahditMedia { get; set; }
+        public bool IsFromDatabase { get; set; }
         public string BadgeClass
         {
             get

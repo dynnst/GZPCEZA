@@ -447,6 +447,32 @@ namespace gzpegm.Controllers
             }
         }
 
+        [HttpGet]
+        public ActionResult SahtecilikSSO(string country = null)
+        {
+            var user = getuserby();
+            string token = Request.Cookies["Token"]?.Value ?? "";
+            string host = Request.Url?.Host ?? "10.7.202.138";
+            bool isLocal = host == "localhost" || host == "127.0.0.1";
+            string baseUrl = isLocal ? "https://localhost:44324" : ($"{Request.Url?.Scheme ?? "http"}://{host}:8080");
+
+            string targetUrl = $"{baseUrl}/ReferenceDocument";
+            var query = new System.Collections.Generic.List<string>();
+            if (!string.IsNullOrWhiteSpace(country)) query.Add("country=" + HttpUtility.UrlEncode(country));
+            if (!string.IsNullOrWhiteSpace(token)) query.Add("ssoToken=" + HttpUtility.UrlEncode(token));
+            if (query.Count > 0) targetUrl += "?" + string.Join("&", query);
+
+            try
+            {
+                var logService = new gzpegm.Services.SahtecilikLogService();
+                string ip = Request.ServerVariables["HTTP_X_FORWARDED_FOR"] ?? Request.UserHostAddress ?? "127.0.0.1";
+                logService.LogGecis(user?.fldId, user?.fldSicil, user != null ? $"{user.fldName} {user.fldLastName}".Trim() : "Personel", user?.fldBorder, "Yardımcı", country, ip, targetUrl, "Yardımcı sayfasından Sahtecilik Portalı SSO ile açıldı.");
+            }
+            catch { }
+
+            return Redirect(targetUrl);
+        }
+
         #endregion
     }
 }

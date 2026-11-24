@@ -990,9 +990,20 @@
                         </div>
                     </div>
                 </div>
+                <div id="mTahditMediaContainer" class="mt-2 pt-3 border-top" style="display:none;">
+                    <span class="text-muted small text-uppercase font-weight-bold d-block mb-2">
+                        <i class="fas fa-paperclip mr-1 text-primary"></i>Ek Bilgi, Genelge &amp; Görsel İçerik
+                    </span>
+                    <div id="mTahditMediaContent" class="p-3 bg-light rounded border text-dark" style="max-height: 250px; overflow-y: auto;"></div>
+                </div>
             </div>
-            <div class="modal-footer bg-light d-flex justify-content-between">
-                <span class="small text-muted"><i class="fas fa-shield-alt mr-1"></i>6458 sayılı YUKK ve EGM Hudut Kapıları Tahdit Prosedürü</span>
+            <div class="modal-footer bg-light d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <span class="small text-muted mr-3"><i class="fas fa-shield-alt mr-1"></i>6458 sayılı YUKK &amp; Tahditler Veri Tabanı</span>
+                    <a id="mTahditGoDetail" href="@Url.Action("Index", "Tahdit")" target="_blank" class="btn btn-outline-primary btn-sm font-weight-bold" style="display:none;">
+                        <i class="fas fa-external-link-alt mr-1"></i> Tahditler Modülünde İncele
+                    </a>
+                </div>
                 <button type="button" class="btn btn-secondary px-4 font-weight-bold" data-dismiss="modal">Kapat</button>
             </div>
         </div>
@@ -1079,6 +1090,21 @@
             $('#mTahditAciklama').text(tk.Aciklama || 'Açıklama bulunmuyor.');
             $('#mTahditGiris').text(tk.GirisIslem || 'Normal kontrol yapılır.');
             $('#mTahditCikis').text(tk.CikisIslem || 'Normal kontrol yapılır.');
+
+            if (tk.TahditMedia && tk.TahditMedia.trim()) {
+                $('#mTahditMediaContent').html(tk.TahditMedia);
+                $('#mTahditMediaContainer').show();
+            } else {
+                $('#mTahditMediaContainer').hide();
+                $('#mTahditMediaContent').empty();
+            }
+
+            if (tk.Id) {
+                $('#mTahditGoDetail').show();
+            } else {
+                $('#mTahditGoDetail').hide();
+            }
+
             $('#modalTahditDetail').modal('show');
         }
 

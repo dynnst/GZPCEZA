@@ -444,6 +444,16 @@ namespace gzpegm.Services
                 CikisIslem = "10 günlük terk süresini aştıysa vize ihlal cezası uygulanır.",
                 OnemDerecesi = "Standart"
             },
+            new TahditSozlukItem {
+                Kod = "V-160",
+                Baslik = "Geçici Koruma Kapsamında Adres Tahkikatı Tahditi",
+                Kategori = "V Kodları (Vize / İkamet)",
+                Sure = "Tahkikat / İl Göç Kararı",
+                Aciklama = "Geçici koruma kapsamındaki yabancıların bildirdikleri adreste bulunamamaları üzerine gıyabında girilen tahdit kaydıdır. Yabancı daha önce ülkemizden yasal yollarla çıkış yapmış olmasına rağmen geçici koruma kaydı zamanında kapatılmadığı için konulmuş olabilir.",
+                GirisIslem = "Girişte idari para cezası UYGULANMAZ. Şahsın durumu tutanağa bağlanır ve kayıtlı olduğu İl Göç İdaresi Müdürlüğüne yönlendirilir.",
+                CikisIslem = "Yasal çıkış işlemlerine istinaden tahkikat kontrolü yapılır, ilgili genelge uyarınca işlem tesis edilir.",
+                OnemDerecesi = "Standart"
+            },
 
             // === N KODLARI (ÖN İZİN VE İDARİ BİLDİRİM) ===
             new TahditSozlukItem {
@@ -502,37 +512,154 @@ namespace gzpegm.Services
 
         public List<TahditSozlukItem> GetAllCodes()
         {
-            var list = new List<TahditSozlukItem>(_builtInCodes);
+            var list = new List<TahditSozlukItem>();
+            var processedCodes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            // Veritabanındaki özel TahditKod kayıtlarını da ekle
+            // 1. BİRİNCİL ÖNCELİK: Veritabanındaki aktif "Tahditler ve Yapılacaklar" (TahditKod) kayıtları
             try
             {
                 using (var db = new GZPEGM1())
                 {
-                    var dbCodes = db.TahditKod.Where(x => x.Aktif == true).ToList();
+                    var dbCodes = db.TahditKod.AsNoTracking().Where(x => x.Aktif).ToList();
                     foreach (var item in dbCodes)
                     {
                         if (string.IsNullOrWhiteSpace(item.Kod)) continue;
-                        if (!list.Any(x => string.Equals(x.Kod, item.Kod, StringComparison.OrdinalIgnoreCase)))
+                        var trimmedCode = item.Kod.Trim();
+                        if (processedCodes.Contains(trimmedCode)) continue;
+
+                        // Yerleşik kodlarda aynı kod varsa zenginleştirme / referans için alalım
+                        var builtInMatch = _builtInCodes.FirstOrDefault(x => string.Equals(x.Kod, trimmedCode, StringComparison.OrdinalIgnoreCase));
+
+                        // Ceza Süresi Formatı
+                        string sure;
+                        if (item.SureAy.HasValue && item.SureAy.Value > 0)
                         {
-                            list.Add(new TahditSozlukItem
-                            {
-                                Kod = item.Kod.Trim(),
-                                Baslik = item.Aciklama ?? (item.Kod + " Tahdit Kodu"),
-                                Kategori = "Kullanıcı / Sistem Tanımlı Kodlar",
-                                Sure = item.SureAy > 0 ? (item.SureAy + " Ay") : "Belirtilmemiş",
-                                Aciklama = item.Aciklama,
-                                GirisIslem = item.GirisGelirse ?? "Sistem kontrolü gereklidir.",
-                                CikisIslem = item.CikisGelirse ?? "Sistem kontrolü gereklidir.",
-                                OnemDerecesi = "Standart"
-                            });
+                            if (item.SureAy.Value >= 12 && item.SureAy.Value % 12 == 0)
+                                sure = $"{item.SureAy.Value / 12} Yıl ({item.SureAy.Value} Ay)";
+                            else
+                                sure = $"{item.SureAy.Value} Ay";
                         }
+                        else if (builtInMatch != null && !string.IsNullOrWhiteSpace(builtInMatch.Sure))
+                        {
+                            sure = builtInMatch.Sure;
+                        }
+                        else
+                        {
+                            sure = "Süresiz / Belirtilmemiş";
+                        }
+
+                        // Açıklama: Veritabanında girilen açıklama öncelikli
+                        string aciklama = !string.IsNullOrWhiteSpace(item.Aciklama) 
+                            ? item.Aciklama.Trim() 
+                            : (builtInMatch?.Aciklama ?? "Açıklama bulunmuyor.");
+
+                        // Başlık: Kısa kart başlığı
+                        string baslik;
+                        if (builtInMatch != null && !string.IsNullOrWhiteSpace(builtInMatch.Baslik))
+                        {
+                            baslik = builtInMatch.Baslik;
+                        }
+                        else if (!string.IsNullOrWhiteSpace(item.Aciklama))
+                        {
+                            baslik = item.Aciklama.Length > 70 
+                                ? item.Aciklama.Substring(0, 67).Trim() + "..." 
+                                : item.Aciklama.Trim();
+                        }
+                        else
+                        {
+                            baslik = trimmedCode + " Tahdit Kodu";
+                        }
+
+                        // Girişte Yapılacak İşlem (1. ÖNCELİK VERİTABANI!)
+                        string giris = !string.IsNullOrWhiteSpace(item.GirisGelirse)
+                            ? item.GirisGelirse.Trim()
+                            : (builtInMatch?.GirisIslem ?? "Sistem kontrolü gereklidir.");
+
+                        // Çıkışta Yapılacak İşlem (1. ÖNCELİK VERİTABANI!)
+                        string cikis = !string.IsNullOrWhiteSpace(item.CikisGelirse)
+                            ? item.CikisGelirse.Trim()
+                            : (builtInMatch?.CikisIslem ?? "Sistem kontrolü gereklidir.");
+
+                        string kategori = DetermineCategory(trimmedCode, builtInMatch?.Kategori);
+                        string onem = DetermineImportance(trimmedCode, builtInMatch?.OnemDerecesi);
+
+                        list.Add(new TahditSozlukItem
+                        {
+                            Id = item.Id,
+                            Kod = trimmedCode,
+                            Baslik = baslik,
+                            Kategori = kategori,
+                            Sure = sure,
+                            Aciklama = aciklama,
+                            GirisIslem = giris,
+                            CikisIslem = cikis,
+                            OnemDerecesi = onem,
+                            TahditMedia = item.TahditMedia,
+                            IsFromDatabase = true
+                        });
+
+                        processedCodes.Add(trimmedCode);
                     }
                 }
             }
-            catch { /* ignore DB errors */ }
+            catch
+            {
+                // Veritabanı bağlantı hatası durumunda yerleşik listeye devam et
+            }
 
-            return list;
+            // 2. İKİNCİL / TAMAMLAYICI KAYNAK: Veritabanında henüz tanımlanmamış yerleşik mevzuat kodları
+            foreach (var b in _builtInCodes)
+            {
+                if (!string.IsNullOrWhiteSpace(b.Kod) && !processedCodes.Contains(b.Kod.Trim()))
+                {
+                    list.Add(new TahditSozlukItem
+                    {
+                        Id = null,
+                        Kod = b.Kod.Trim(),
+                        Baslik = b.Baslik,
+                        Kategori = b.Kategori,
+                        Sure = b.Sure,
+                        Aciklama = b.Aciklama,
+                        GirisIslem = b.GirisIslem,
+                        CikisIslem = b.CikisIslem,
+                        OnemDerecesi = b.OnemDerecesi,
+                        TahditMedia = null,
+                        IsFromDatabase = false
+                    });
+                    processedCodes.Add(b.Kod.Trim());
+                }
+            }
+
+            // Standart kod sıralaması
+            return list.OrderBy(x => x.Kod).ToList();
+        }
+
+        private static string DetermineCategory(string kod, string defaultCategory = null)
+        {
+            if (!string.IsNullOrWhiteSpace(defaultCategory) && defaultCategory != "Kullanıcı / Sistem Tanımlı Kodlar")
+            {
+                return defaultCategory;
+            }
+
+            if (string.IsNullOrWhiteSpace(kod)) return "Diğer Kodlar";
+            var k = kod.Trim().ToUpperInvariant();
+            if (k.StartsWith("Ç-") || k.StartsWith("C-")) return "Ç Kodları (Giriş Yasağı)";
+            if (k.StartsWith("G-")) return "G Kodları (Güvenlik / Kamu Düzeni)";
+            if (k.StartsWith("V-")) return "V Kodları (İkamet & Vize Kısıtlamaları)";
+            if (k.StartsWith("N-")) return "N Kodları (Ön İzin / Özel Denetim)";
+            if (k.StartsWith("K")) return "K Kodları (Kaçakçılık)";
+            if (k.StartsWith("O-")) return "O Kodları (Uluslararası Güvenlik)";
+            return "Diğer Kodlar";
+        }
+
+        private static string DetermineImportance(string kod, string defaultImportance = null)
+        {
+            if (!string.IsNullOrWhiteSpace(defaultImportance)) return defaultImportance;
+            if (string.IsNullOrWhiteSpace(kod)) return "Standart";
+            var k = kod.Trim().ToUpperInvariant();
+            if (k.StartsWith("G-") || k.StartsWith("O-")) return "Kritik";
+            if (k.StartsWith("Ç-") || k.StartsWith("C-") || k.StartsWith("K")) return "Yuksek";
+            return "Standart";
         }
 
         public List<TahditSozlukItem> Search(string query, string category = null)
@@ -542,8 +669,8 @@ namespace gzpegm.Services
 
             if (!string.IsNullOrWhiteSpace(category) && category != "Tumu")
             {
-                filtered = filtered.Where(x => x.Kategori.IndexOf(category, StringComparison.OrdinalIgnoreCase) >= 0 ||
-                                               x.Kod.StartsWith(category, StringComparison.OrdinalIgnoreCase));
+                filtered = filtered.Where(x => (x.Kategori != null && x.Kategori.IndexOf(category, StringComparison.OrdinalIgnoreCase) >= 0) ||
+                                               (x.Kod != null && x.Kod.StartsWith(category, StringComparison.OrdinalIgnoreCase)));
             }
 
             if (!string.IsNullOrWhiteSpace(query))
