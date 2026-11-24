@@ -110,6 +110,166 @@
     .modal-dialog {
         z-index: 100051 !important;
     }
+
+    /* ======================================================== */
+    /* HIKVISION iVMS-4200 CCTV VIDEO WALL & MATRIX STYLES     */
+    /* ======================================================== */
+    .cctv-wall-wrapper {
+        background: #0b1120;
+        border: 1px solid #1e293b;
+        border-radius: 8px;
+        padding: 14px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+    .cctv-subnav-btn {
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 700;
+        padding: 7px 16px;
+        border-radius: 6px;
+        border: 1px solid #334155;
+        background: #1e293b;
+        color: #94a3b8;
+        transition: all .2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .cctv-subnav-btn:hover, .cctv-subnav-btn.active {
+        background: #dc2626;
+        color: #fff;
+        border-color: #ef4444;
+        box-shadow: 0 2px 8px rgba(220, 38, 38, 0.4);
+    }
+    .cctv-grid {
+        display: grid;
+        gap: 10px;
+        transition: all .2s ease;
+    }
+    .cctv-grid-16 {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    .cctv-grid-9 {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    .cctv-grid-4 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    @@media (max-width: 1400px) {
+        .cctv-grid-16 { grid-template-columns: repeat(3, 1fr); }
+    }
+    @@media (max-width: 992px) {
+        .cctv-grid-16, .cctv-grid-9 { grid-template-columns: repeat(2, 1fr); }
+    }
+    @@media (max-width: 576px) {
+        .cctv-grid-16, .cctv-grid-9, .cctv-grid-4 { grid-template-columns: 1fr; }
+    }
+    .cctv-tile {
+        background: #182234;
+        border: 1px solid #334155;
+        border-radius: 6px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+        position: relative;
+    }
+    .cctv-tile:hover {
+        border-color: #38bdf8;
+        box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
+    }
+    .cctv-tile-header {
+        background: #0f172a;
+        padding: 6px 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #1e293b;
+        font-size: 11.5px;
+        color: #e2e8f0;
+    }
+    .cctv-tile-body {
+        position: relative;
+        background: #000;
+        width: 100%;
+        padding-top: 56.25%; /* 16:9 Aspect Ratio */
+        overflow: hidden;
+        cursor: pointer;
+    }
+    .cctv-tile-body img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        background: #0a0a0c;
+    }
+    .cctv-tile-body .cctv-tile-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(15, 23, 42, 0.7);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        z-index: 5;
+    }
+    .cctv-tile:hover .cctv-tile-overlay {
+        display: flex;
+    }
+    .cctv-tile-footer {
+        background: #0f172a;
+        padding: 4px 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-top: 1px solid #1e293b;
+        font-size: 10.5px;
+        color: #94a3b8;
+    }
+    .cctv-live-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 10px;
+        font-weight: 700;
+        color: #4ade80;
+    }
+    .cctv-live-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background-color: #22c55e;
+        display: inline-block;
+        animation: cctvPulse 1.8s infinite;
+    }
+    @@keyframes cctvPulse {
+        0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+        70% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+    }
+    .cctv-single-display {
+        position: relative;
+        background: #000;
+        border-radius: 8px;
+        overflow: hidden;
+        width: 100%;
+        padding-top: 56.25%; /* 16:9 */
+        border: 2px solid #334155;
+    }
+    .cctv-single-display img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        background: #000;
+    }
 </style>
 
 <input type="hidden" id="_activeMode" value="@(ViewBag.ActiveMode ?? "inspector")" />
@@ -860,147 +1020,235 @@
 </div>
 
 <!-- ========================================== -->
-<!-- 3. BÖLÜM: HIKVISION IP KAMERA MERKEZİ      -->
+<!-- 3. BÖLÜM: HIKVISION IP KAMERA MERKEZİ (iVMS) -->
 <!-- ========================================== -->
 <div id="sectionCamera" style="display:none;">
     <div class="card mb-4 border">
-        <div class="card-header bg-white py-3">
-            <h4 class="font-weight-bold text-dark mb-1"><i class="fas fa-video text-danger mr-2"></i> Hikvision IP Kamera Yönetim Merkezi</h4>
-            <p class="text-muted small mb-0">Kamera modeli, seri numarası, firmware sürümü, ISAPI ve RTSP canlı akış denetimi.</p>
-        </div>
-        <div class="card-body">
-            <!-- Hazır Sistem Kameraları ve NVR Hızlı Seçim -->
-            <div class="mb-3 p-2 bg-light rounded border">
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                    <span class="small font-weight-bold text-dark"><i class="fas fa-server text-danger mr-1"></i>Hazır NVR & Hudut Kapısı Kameraları:</span>
-                    <small class="text-muted">Tıklayarak IP ve Kanalı otomatik doldurabilirsiniz</small>
-                </div>
-                <div class="d-flex flex-wrap" style="gap: 5px;">
-                    <span class="preset-pill bg-danger text-white border-danger" onclick="selectPresetCam('10.7.202.200', 80, 101, 'Ana NVR (DS-7616NI-K2)')" title="16 Kanallı Kayıt Cihazı">
-                        <i class="fas fa-hdd mr-1"></i>NVR (10.7.202.200)
-                    </span>
-                    <span class="preset-pill" onclick="selectPresetCam('10.7.202.201', 80, 101, 'D1 - GIRIS ENGELLI')">D1: Giriş Engelli (.201)</span>
-                    <span class="preset-pill" onclick="selectPresetCam('10.7.202.202', 80, 201, 'D2 - GIRIS TURK')">D2: Giriş Türk (.202)</span>
-                    <span class="preset-pill" onclick="selectPresetCam('10.7.202.203', 80, 301, 'D3 - Giris 5')">D3: Giriş 5 (.203)</span>
-                    <span class="preset-pill" onclick="selectPresetCam('10.7.202.204', 80, 401, 'D4 - GIRIS 2')">D4: Giriş 2 (.204)</span>
-                    <span class="preset-pill" onclick="selectPresetCam('10.7.202.205', 80, 501, 'D5 - GIRIS 3')">D5: Giriş 3 (.205)</span>
-                    <span class="preset-pill" onclick="selectPresetCam('10.7.202.206', 80, 601, 'D6 - GIRIS 4')">D6: Giriş 4 (.206)</span>
-                    <span class="preset-pill" onclick="selectPresetCam('10.7.202.207', 80, 701, 'D7 - GIRIS 6')">D7: Giriş 6 (.207)</span>
-                    <span class="preset-pill" onclick="selectPresetCam('10.7.202.208', 80, 801, 'D8 - GIRIS 1')">D8: Giriş 1 (.208)</span>
-                    <span class="preset-pill" onclick="selectPresetCam('10.7.202.209', 80, 901, 'D9 - CIKIS 3')">D9: Çıkış 3 (.209)</span>
-                    <span class="preset-pill" onclick="selectPresetCam('10.7.202.210', 80, 1001, 'D10 - CIKIS TURK')">D10: Çıkış Türk (.210)</span>
-                    <span class="preset-pill" onclick="selectPresetCam('10.7.202.211', 80, 1101, 'D11 - CIKIS 1')">D11: Çıkış 1 (.211)</span>
-                    <span class="preset-pill" onclick="selectPresetCam('10.7.202.212', 80, 1201, 'D12 - Camera 01')">D12: Camera 01 (.212)</span>
-                    <span class="preset-pill" onclick="selectPresetCam('10.7.202.213', 80, 1301, 'D13 - CIKIS ENGELLI')">D13: Çıkış Engelli (.213)</span>
-                    <span class="preset-pill" onclick="selectPresetCam('10.7.202.214', 80, 1401, 'D14 - CIKIS 4')">D14: Çıkış 4 (.214)</span>
-                </div>
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap">
+            <div>
+                <h4 class="font-weight-bold text-dark mb-1">
+                    <i class="fas fa-video text-danger mr-2"></i> Hikvision IP Kamera Yönetim Merkezi (iVMS-4200 Web Matrisi)
+                </h4>
+                <p class="text-muted small mb-0">
+                    Hudut kapısı 14 kamera eşzamanlı video duvarı (CCTV Matrix), tekil odak teftişi ve NVR ISAPI akış denetimi.
+                </p>
             </div>
-
-            <!-- Kayıtlı Kameralar Hızlı Seçim -->
-            <div class="mb-3" id="savedCamerasRow" style="display:none;">
-                <span class="text-muted small font-weight-bold mr-2"><i class="fas fa-bookmark mr-1"></i>Son Bağlanılanlar:</span>
-                <span id="savedCamerasList"></span>
-                <button class="btn btn-sm btn-outline-danger ml-2 px-2 py-0" onclick="clearSavedCameras()" title="Kayıtlı hafızayı temizle">
-                    <i class="fas fa-trash"></i>
+            <div class="mt-2 mt-md-0 d-flex gap-2">
+                <button type="button" class="cctv-subnav-btn active mr-2" id="btnCctvSubMatrix" onclick="switchCctvSubMode('matrix')">
+                    <i class="fas fa-th"></i> Çoklu İzleme (14'lü Matris)
+                </button>
+                <button type="button" class="cctv-subnav-btn" id="btnCctvSubSingle" onclick="switchCctvSubMode('single')">
+                    <i class="fas fa-search-plus"></i> Tekil İzleme (Fokus & Teftiş)
                 </button>
             </div>
-
-            <div class="row align-items-end">
-                <div class="col-md-3 mb-2">
-                    <label class="font-weight-bold small">Kamera / NVR IP Adresi:</label>
-                    <input type="text" id="camIp" class="form-control" placeholder="Örn: 10.7.202.202 veya 10.7.202.200" />
-                </div>
-                <div class="col-md-2 mb-2">
-                    <label class="font-weight-bold small">Kanal (NVR için):</label>
-                    <select id="camChannel" class="form-control">
-                        <option value="101" selected>Kanal 1 (D1 - 101)</option>
-                        <option value="201">Kanal 2 (D2 - 201)</option>
-                        <option value="301">Kanal 3 (D3 - 301)</option>
-                        <option value="401">Kanal 4 (D4 - 401)</option>
-                        <option value="501">Kanal 5 (D5 - 501)</option>
-                        <option value="601">Kanal 6 (D6 - 601)</option>
-                        <option value="701">Kanal 7 (D7 - 701)</option>
-                        <option value="801">Kanal 8 (D8 - 801)</option>
-                        <option value="901">Kanal 9 (D9 - 901)</option>
-                        <option value="1001">Kanal 10 (D10 - 1001)</option>
-                        <option value="1101">Kanal 11 (D11 - 1101)</option>
-                        <option value="1201">Kanal 12 (D12 - 1201)</option>
-                        <option value="1301">Kanal 13 (D13 - 1301)</option>
-                        <option value="1401">Kanal 14 (D14 - 1401 / Çıkış 4)</option>
-                    </select>
-                </div>
-                <div class="col-md-1 mb-2">
-                    <label class="font-weight-bold small">Port:</label>
-                    <input type="number" id="camPort" class="form-control" value="80" />
-                </div>
-                <div class="col-md-2 mb-2">
-                    <label class="font-weight-bold small">Kullanıcı:</label>
-                    <input type="text" id="camUser" class="form-control" value="admin" />
-                </div>
-                <div class="col-md-2 mb-2">
-                    <label class="font-weight-bold small">Parola:</label>
-                    <input type="password" id="camPass" class="form-control" placeholder="••••••••" />
-                </div>
-                <div class="col-md-2 mb-2">
-                    <button type="button" id="btnConnectCamera" class="btn btn-danger w-100 font-weight-bold" onclick="queryHikCamera()">
-                        <i class="fas fa-plug mr-1"></i> Kameraya Bağlan
+        </div>
+        <div class="card-body bg-light border-bottom py-2">
+            <!-- NVR ve Kamera Master Kimlik Bilgileri Barı -->
+            <div class="d-flex justify-content-between align-items-center flex-wrap" style="gap:10px;">
+                <div class="d-flex align-items-center flex-wrap" style="gap:8px;">
+                    <span class="small font-weight-bold text-dark"><i class="fas fa-server text-danger mr-1"></i>NVR & Akış Ayarları:</span>
+                    <input type="text" id="masterNvrIp" class="form-control form-control-sm d-inline-block" style="width:130px;" value="10.7.202.200" title="Kayıt Cihazı (NVR) IP" placeholder="NVR IP" />
+                    <input type="number" id="masterPort" class="form-control form-control-sm d-inline-block" style="width:70px;" value="80" title="HTTP Port" />
+                    <input type="text" id="masterUser" class="form-control form-control-sm d-inline-block" style="width:90px;" value="admin" title="Kullanıcı Adı" />
+                    <input type="password" id="masterPass" class="form-control form-control-sm d-inline-block" style="width:110px;" placeholder="Parola" title="Kamera / NVR Parolası" />
+                    <button type="button" class="btn btn-sm btn-danger font-weight-bold" onclick="applyMasterCredentials()" title="Parolayı hafızaya kaydet ve tüm 14 kameraya uygula">
+                        <i class="fas fa-key mr-1"></i> Kimliği Kaydet & Uygula
                     </button>
+                </div>
+                <div class="d-flex align-items-center">
+                    <span class="badge badge-dark px-2 py-1"><i class="fas fa-network-wired text-info mr-1"></i>14 Hudut Kapısı Kanalı Aktif</span>
                 </div>
             </div>
         </div>
-    </div>
+        <div class="card-body p-3" style="background:#0b1120;">
+            <!-- ========================================== -->
+            <!-- A) ÇOKLU İZLEME (14'LÜ MATRİS / CCTV WALL) -->
+            <!-- ========================================== -->
+            <div id="cctvMatrixContainer">
+                <!-- CCTV Araç Çubuğu (Toolbar) -->
+                <div class="d-flex justify-content-between align-items-center flex-wrap mb-3 p-2 rounded" style="background:#1e293b; border:1px solid #334155;">
+                    <!-- Sol: Matris Düzenleri ve Filtreler -->
+                    <div class="d-flex align-items-center flex-wrap mb-2 mb-md-0" style="gap:6px;">
+                        <span class="text-white-50 small mr-1 font-weight-bold"><i class="fas fa-border-all mr-1"></i>Düzen:</span>
+                        <button type="button" class="btn btn-sm btn-dark border border-secondary text-white font-weight-bold active" id="btnLayout16" onclick="setCctvLayout(4)">
+                            <i class="fas fa-th-large mr-1"></i> 4x4 (16 Ekran)
+                        </button>
+                        <button type="button" class="btn btn-sm btn-dark border border-secondary text-white-50" id="btnLayout9" onclick="setCctvLayout(3)">
+                            <i class="fas fa-th mr-1"></i> 3x3 (9 Ekran)
+                        </button>
+                        <button type="button" class="btn btn-sm btn-dark border border-secondary text-white-50 mr-3" id="btnLayout4" onclick="setCctvLayout(2)">
+                            <i class="fas fa-th-list mr-1"></i> 2x2 (4 Ekran)
+                        </button>
 
-    <!-- Kamera Sonuç Kartı -->
-    <div id="camResultCard" class="card border" style="display:none;">
-        <div class="card-header bg-light py-2">
-            <strong id="camDeviceNameHeader" class="text-dark">Kamera Bilgisi</strong>
-            <span class="badge badge-success float-right" id="camOnlineBadge">Bağlantı Başarılı</span>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <table class="table table-sm table-striped">
-                        <tbody>
-                            <tr><th style="width:40%;">Model:</th><td id="camModel">—</td></tr>
-                            <tr><th>Seri Numarası:</th><td id="camSerial" class="font-weight-bold text-danger">—</td></tr>
-                            <tr><th>MAC Adresi:</th><td id="camMac">—</td></tr>
-                            <tr><th>Firmware Sürümü:</th><td id="camFirmware">—</td></tr>
-                            <tr><th>RTSP Portu:</th><td id="camRtspPort">554</td></tr>
-                            <tr><th>RTSP Akış Adresi:</th><td><code id="camRtspUrl">—</code></td></tr>
-                        </tbody>
-                    </table>
+                        <div class="border-left border-secondary pl-2 ml-1 d-flex align-items-center" style="gap:5px;">
+                            <span class="text-white-50 small mr-1 font-weight-bold"><i class="fas fa-filter mr-1"></i>Filtre:</span>
+                            <button type="button" class="btn btn-sm btn-outline-light active" id="btnGroupAll" onclick="filterCctvGroup('all')">
+                                Tümü (14)
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-success" id="btnGroupEntry" onclick="filterCctvGroup('entry')">
+                                <i class="fas fa-sign-in-alt mr-1"></i> Giriş Kapısı (D1-D8)
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-warning" id="btnGroupExit" onclick="filterCctvGroup('exit')">
+                                <i class="fas fa-sign-out-alt mr-1"></i> Çıkış Kapısı (D9-D14)
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Sağ: Canlı Akış Kontrolleri -->
+                    <div class="d-flex align-items-center flex-wrap" style="gap:8px;">
+                        <span class="text-white-50 small">Yenileme:</span>
+                        <select id="cctvIntervalSelect" class="form-control form-control-sm bg-dark text-white border-secondary" style="width:90px;" onchange="changeCctvInterval(this.value)">
+                            <option value="2000">2 sn</option>
+                            <option value="3000" selected>3 sn</option>
+                            <option value="5000">5 sn</option>
+                            <option value="10000">10 sn</option>
+                        </select>
+                        <button type="button" class="btn btn-sm btn-success font-weight-bold" id="btnCctvAutoLive" onclick="toggleCctvMatrixAutoLive()">
+                            <i class="fas fa-play mr-1"></i> Canlı Akışı Başlat
+                        </button>
+                        <button type="button" class="btn btn-sm btn-secondary" onclick="refreshAllCctvSnapshots()" title="Tüm kameraların karesini hemen tazele">
+                            <i class="fas fa-sync-alt mr-1"></i> Tümünü Yenile
+                        </button>
+                    </div>
                 </div>
-                <div class="col-md-6 text-center">
-                    <!-- Anlık Görüntü (Snapshot) Alanı -->
-                    <div id="camSnapshotArea" style="display:none;" class="mb-2">
-                        <div class="border rounded overflow-hidden" style="background:#000; min-height:180px; position:relative;">
-                            <img id="camSnapshot" src="" class="img-fluid" style="max-height:260px; width:100%; object-fit:contain;" alt="Anlık Görüntü" />
-                            <div id="camSnapshotOverlay" style="display:none; position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center;">
-                                <i class="fas fa-spinner fa-spin fa-2x text-white"></i>
+
+                <!-- CCTV Matris Grid Konteyneri -->
+                <div class="cctv-wall-wrapper">
+                    <div id="cctvGrid" class="cctv-grid cctv-grid-16">
+                        <!-- JS Tarafından 14 Kamera Kartı Otomatik Doldurulacaktır -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- B) TEKİL İZLEME (FOKUS & DONANIM TEFTİŞİ) -->
+            <!-- ========================================== -->
+            <div id="cctvSingleContainer" style="display:none;">
+                <!-- Tekil İzleme Üst Menüsü -->
+                <div class="d-flex justify-content-between align-items-center flex-wrap mb-3 p-2 rounded" style="background:#1e293b; border:1px solid #334155;">
+                    <div class="d-flex align-items-center flex-wrap" style="gap:8px;">
+                        <button type="button" class="btn btn-sm btn-outline-light" onclick="switchCctvSubMode('matrix')">
+                            <i class="fas fa-arrow-left mr-1"></i> Çoklu Matrise (14 Ekran) Dön
+                        </button>
+                        <span class="badge badge-danger p-2" id="cctvSingleBadge" style="font-size:13px;">D1</span>
+                        <span class="text-white font-weight-bold h5 mb-0" id="cctvSingleTitle">Giriş Engelli (10.7.202.201)</span>
+                    </div>
+                    <div class="d-flex align-items-center flex-wrap" style="gap:6px;">
+                        <button type="button" class="btn btn-sm btn-dark border border-secondary text-white" onclick="navSingleCam(-1)">
+                            <i class="fas fa-chevron-left mr-1"></i> Önceki
+                        </button>
+                        <select id="cctvSingleCamSelect" class="form-control form-control-sm bg-dark text-white border-secondary" style="width:220px;" onchange="onSingleCamSelectChanged(this.value)">
+                            <!-- 14 Kamera seçenekleri JS ile doldurulur -->
+                        </select>
+                        <button type="button" class="btn btn-sm btn-dark border border-secondary text-white" onclick="navSingleCam(1)">
+                            Sonraki <i class="fas fa-chevron-right ml-1"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tekil İçerik Satırı -->
+                <div class="row">
+                    <!-- Sol Kolon: Büyük HD Ekran (16:9) -->
+                    <div class="col-lg-8 mb-3">
+                        <div class="cctv-single-display" id="cctvSingleDisplayWrapper">
+                            <img id="cctvSingleImg" src="" alt="Kamera Canlı Kare" />
+                            <div id="cctvSingleLoading" style="display:none; position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center;">
+                                <i class="fas fa-spinner fa-spin fa-3x text-white"></i>
                             </div>
                         </div>
-                        <div class="d-flex justify-content-center mt-2 gap-2">
-                            <button class="btn btn-sm btn-outline-secondary mr-2" onclick="refreshSnapshot()" title="Yenile">
-                                <i class="fas fa-sync-alt mr-1"></i> Yenile
-                            </button>
-                            <button class="btn btn-sm btn-outline-primary mr-2" id="btnAutoRefresh" onclick="toggleAutoRefresh()" title="Otomatik Yenileme (5 sn)">
-                                <i class="fas fa-clock mr-1"></i> Otomatik
-                            </button>
-                            <a id="btnDownloadSnapshot" href="#" class="btn btn-sm btn-outline-success" download="snapshot.jpg">
-                                <i class="fas fa-download mr-1"></i> İndir
-                            </a>
+
+                        <!-- Alt Buton Çubuğu -->
+                        <div class="d-flex justify-content-between align-items-center flex-wrap mt-2 p-2 rounded" style="background:#1e293b; border:1px solid #334155;">
+                            <div class="d-flex align-items-center flex-wrap" style="gap:6px;">
+                                <button type="button" class="btn btn-sm btn-outline-light" onclick="refreshSingleCamSnapshot()">
+                                    <i class="fas fa-sync-alt mr-1"></i> Kareyi Yenile
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-primary" id="btnSingleAutoLive" onclick="toggleSingleAutoLive()">
+                                    <i class="fas fa-clock mr-1"></i> Otomatik Yenile (3 sn)
+                                </button>
+                                <a id="btnSingleDownload" href="#" class="btn btn-sm btn-outline-success" download="snapshot.jpg">
+                                    <i class="fas fa-download mr-1"></i> HD Fotoğraf İndir
+                                </a>
+                                <a id="btnSingleRtsp" href="#" class="btn btn-sm btn-outline-danger" target="_blank" title="VLC veya harici oynatıcıda aç">
+                                    <i class="fas fa-play mr-1"></i> RTSP Aç
+                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-info" onclick="toggleFullscreenSingle()">
+                                    <i class="fas fa-expand mr-1"></i> Tam Ekran
+                                </button>
+                            </div>
+                            <div>
+                                <small class="text-white-50" id="cctvSingleTime"></small>
+                            </div>
                         </div>
-                        <small class="text-muted d-block mt-1" id="camSnapshotTime"></small>
                     </div>
-                    <!-- Kamera hazır değilse placeholder -->
-                    <div id="camSnapshotPlaceholder" class="p-3 border rounded bg-light">
-                        <i class="fas fa-video fa-4x text-muted mb-2"></i>
-                        <p class="font-weight-bold mb-1">Anlık Görüntü</p>
-                        <p class="small text-muted mb-2">Kameraya bağlandıktan sonra anlık görüntü burada görünecektir.</p>
-                        <a id="btnOpenRtsp" href="#" class="btn btn-sm btn-outline-danger" target="_blank">
-                            <i class="fas fa-play mr-1"></i> RTSP Akışı Aç
-                        </a>
+
+                    <!-- Sağ Kolon: Donanım Teftiş ve Teknik Özellikler Kartı -->
+                    <div class="col-lg-4 mb-3">
+                        <div class="card border" style="background:#1e293b; border-color:#334155 !important;">
+                            <div class="card-header py-2 d-flex justify-content-between align-items-center" style="background:#0f172a; border-bottom:1px solid #334155;">
+                                <span class="font-weight-bold text-white small"><i class="fas fa-info-circle text-info mr-1"></i>Kamera & NVR Donanım Bilgisi</span>
+                                <span class="badge badge-success" id="cctvSingleOnlineBadge">Çevrimiçi</span>
+                            </div>
+                            <div class="card-body p-3">
+                                <table class="table table-sm text-white small mb-3">
+                                    <tbody>
+                                        <tr><th style="width:40%; color:#94a3b8;">Kamera Adı:</th><td id="cctvSpecName" class="font-weight-bold text-info">—</td></tr>
+                                        <tr><th style="color:#94a3b8;">IP / Kanal:</th><td id="cctvSpecIpChannel">—</td></tr>
+                                        <tr><th style="color:#94a3b8;">Model:</th><td id="cctvSpecModel">—</td></tr>
+                                        <tr><th style="color:#94a3b8;">Seri Numarası:</th><td id="cctvSpecSerial" class="font-weight-bold text-danger">—</td></tr>
+                                        <tr><th style="color:#94a3b8;">MAC Adresi:</th><td id="cctvSpecMac">—</td></tr>
+                                        <tr><th style="color:#94a3b8;">Firmware:</th><td id="cctvSpecFirmware">—</td></tr>
+                                        <tr><th style="color:#94a3b8;">RTSP Akış URL:</th><td><code id="cctvSpecRtsp" style="color:#38bdf8; word-break:break-all; font-size:11px;">—</code></td></tr>
+                                    </tbody>
+                                </table>
+
+                                <button type="button" class="btn btn-danger btn-sm w-100 font-weight-bold mb-3" id="btnQuerySingleCam" onclick="queryFocusedCameraHardware()">
+                                    <i class="fas fa-microchip mr-1"></i> ISAPI Donanım Teftişi Yap
+                                </button>
+
+                                <!-- VLC Hızlı Yardım Kılavuzu -->
+                                <div class="p-2 rounded" style="background:#0f172a; border:1px solid #334155;">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <span class="small font-weight-bold text-warning"><i class="fas fa-play-circle mr-1"></i>VLC Media Player Kılavuzu:</span>
+                                        <button class="btn btn-xs btn-outline-light py-0 px-1" onclick="copyRtspUrl()" title="Kopyala">
+                                            <i class="fas fa-copy"></i> Kopyala
+                                        </button>
+                                    </div>
+                                    <p class="text-white-50 mb-1" style="font-size:11px;">
+                                        Kamerayı 25-30 FPS kesintisiz izlemek için VLC'de <strong>Ortam &gt; Ağ Akışı Aç</strong> diyerek aşağıdaki RTSP linkini yapıştırabilirsiniz:
+                                    </p>
+                                    <input type="text" id="rtspCopyInput" class="form-control form-control-sm bg-dark text-warning border-secondary" readonly style="font-size:11px;" value="" />
+                                </div>
+                            </div>
+                        </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Hızlı Kamera Butonları & Geçmiş Listesi (Alt Referans) -->
+            <div class="mt-3 p-2 rounded" style="background:#0f172a; border:1px solid #1e293b;">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="text-white-50 small font-weight-bold"><i class="fas fa-bookmark text-danger mr-1"></i>14 Hudut Kapısı Kanal Referans Tablosu:</span>
+                    <small class="text-muted">Tıklayarak kamerayı tekil fokus modunda açabilirsiniz</small>
+                </div>
+                <div class="d-flex flex-wrap" style="gap:5px;">
+                    <span class="preset-pill bg-danger text-white border-danger" onclick="focusCameraByPreset('10.7.202.200', 80, 101, 'Ana NVR (DS-7616NI-K2)', 'NVR')">
+                        <i class="fas fa-hdd mr-1"></i>NVR (10.7.202.200)
+                    </span>
+                    <span class="preset-pill" onclick="focusCameraByPreset('10.7.202.201', 80, 101, 'Giriş Engelli', 'D1')">D1: Giriş Engelli (.201)</span>
+                    <span class="preset-pill" onclick="focusCameraByPreset('10.7.202.202', 80, 201, 'Giriş Türk', 'D2')">D2: Giriş Türk (.202)</span>
+                    <span class="preset-pill" onclick="focusCameraByPreset('10.7.202.203', 80, 301, 'Giriş 5', 'D3')">D3: Giriş 5 (.203)</span>
+                    <span class="preset-pill" onclick="focusCameraByPreset('10.7.202.204', 80, 401, 'Giriş 2', 'D4')">D4: Giriş 2 (.204)</span>
+                    <span class="preset-pill" onclick="focusCameraByPreset('10.7.202.205', 80, 501, 'Giriş 3', 'D5')">D5: Giriş 3 (.205)</span>
+                    <span class="preset-pill" onclick="focusCameraByPreset('10.7.202.206', 80, 601, 'Giriş 4', 'D6')">D6: Giriş 4 (.206)</span>
+                    <span class="preset-pill" onclick="focusCameraByPreset('10.7.202.207', 80, 701, 'Giriş 6', 'D7')">D7: Giriş 6 (.207)</span>
+                    <span class="preset-pill" onclick="focusCameraByPreset('10.7.202.208', 80, 801, 'Giriş 1', 'D8')">D8: Giriş 1 (.208)</span>
+                    <span class="preset-pill" onclick="focusCameraByPreset('10.7.202.209', 80, 901, 'Çıkış 3', 'D9')">D9: Çıkış 3 (.209)</span>
+                    <span class="preset-pill" onclick="focusCameraByPreset('10.7.202.210', 80, 1001, 'Çıkış Türk', 'D10')">D10: Çıkış Türk (.210)</span>
+                    <span class="preset-pill" onclick="focusCameraByPreset('10.7.202.211', 80, 1101, 'Çıkış 1', 'D11')">D11: Çıkış 1 (.211)</span>
+                    <span class="preset-pill" onclick="focusCameraByPreset('10.7.202.212', 80, 1201, 'Camera 01', 'D12')">D12: Camera 01 (.212)</span>
+                    <span class="preset-pill" onclick="focusCameraByPreset('10.7.202.213', 80, 1301, 'Çıkış Engelli', 'D13')">D13: Çıkış Engelli (.213)</span>
+                    <span class="preset-pill" onclick="focusCameraByPreset('10.7.202.214', 80, 1401, 'Çıkış 4', 'D14')">D14: Çıkış 4 (.214)</span>
                 </div>
             </div>
         </div>
@@ -1446,7 +1694,7 @@ function switchMainMode(mode) {
     if (modeInput) modeInput.value = mode;
 
     if (mode === 'inventory') loadInventory();
-    if (mode === 'camera') renderSavedCameras();
+    if (mode === 'camera') initCctvSystem();
 }
 
 // ===================================================
@@ -1915,185 +2163,479 @@ function inspectDiscovered(ip) {
 
 function openDiscoveredCamera(ip) {
     switchMainMode('camera');
-    var camIpEl = document.getElementById('camIp');
-    if (camIpEl) camIpEl.value = ip;
-    loadCameraCredentials(ip);
-    setTimeout(queryHikCamera, 100);
+    focusCameraByPreset(ip, 80, 101, 'Kamera (' + ip + ')', 'CAM');
 }
 
 // ===================================================
-// HİKVİSION — KİMLİK BİLGİSİ YÖNETİMİ
+// HİKVİSION iVMS-4200 CCTV MATRİS VE TEKİL KAMERA MOTORU
 // ===================================================
-function saveCameraCredentials(ip, user, pass, port) {
-    try {
-        var creds = JSON.parse(localStorage.getItem('gzp_hikCamCreds') || '{}');
-        creds[ip] = { user: user, pass: pass, port: port || 80, savedAt: new Date().toISOString() };
-        localStorage.setItem('gzp_hikCamCreds', JSON.stringify(creds));
-        renderSavedCameras();
-    } catch(e) {}
-}
+var CCTV_CAMERAS = [
+    { id: 1, badge: 'D1', name: 'Giriş Engelli', ip: '10.7.202.201', channel: 101, group: 'entry' },
+    { id: 2, badge: 'D2', name: 'Giriş Türk', ip: '10.7.202.202', channel: 201, group: 'entry' },
+    { id: 3, badge: 'D3', name: 'Giriş 5', ip: '10.7.202.203', channel: 301, group: 'entry' },
+    { id: 4, badge: 'D4', name: 'Giriş 2', ip: '10.7.202.204', channel: 401, group: 'entry' },
+    { id: 5, badge: 'D5', name: 'Giriş 3', ip: '10.7.202.205', channel: 501, group: 'entry' },
+    { id: 6, badge: 'D6', name: 'Giriş 4', ip: '10.7.202.206', channel: 601, group: 'entry' },
+    { id: 7, badge: 'D7', name: 'Giriş 6', ip: '10.7.202.207', channel: 701, group: 'entry' },
+    { id: 8, badge: 'D8', name: 'Giriş 1', ip: '10.7.202.208', channel: 801, group: 'entry' },
+    { id: 9, badge: 'D9', name: 'Çıkış 3', ip: '10.7.202.209', channel: 901, group: 'exit' },
+    { id: 10, badge: 'D10', name: 'Çıkış Türk', ip: '10.7.202.210', channel: 1001, group: 'exit' },
+    { id: 11, badge: 'D11', name: 'Çıkış 1', ip: '10.7.202.211', channel: 1101, group: 'exit' },
+    { id: 12, badge: 'D12', name: 'Camera 01', ip: '10.7.202.212', channel: 1201, group: 'exit' },
+    { id: 13, badge: 'D13', name: 'Çıkış Engelli', ip: '10.7.202.213', channel: 1301, group: 'exit' },
+    { id: 14, badge: 'D14', name: 'Çıkış 4', ip: '10.7.202.214', channel: 1401, group: 'exit' }
+];
 
-function loadCameraCredentials(ip) {
+var _cctvActiveGroup = 'all';
+var _cctvLayout = 4;
+var _cctvSubMode = 'matrix';
+var _cctvMatrixTimer = null;
+var _cctvMatrixLiveRunning = false;
+var _cctvSingleTimer = null;
+var _cctvSingleLiveRunning = false;
+var _cctvInterval = 3000;
+var _cctvFocusedIndex = 0;
+var _cctvMasterCreds = {
+    nvrIp: '10.7.202.200',
+    port: 80,
+    user: 'admin',
+    pass: ''
+};
+
+function getCctvMasterCreds() {
     try {
-        var creds = JSON.parse(localStorage.getItem('gzp_hikCamCreds') || '{}');
-        if (creds[ip]) {
-            var u = document.getElementById('camUser'); if (u) u.value = creds[ip].user || 'admin';
-            var p = document.getElementById('camPass'); if (p) p.value = creds[ip].pass || '';
-            var pt = document.getElementById('camPort'); if (pt) pt.value = creds[ip].port || 80;
-            return true;
+        var saved = JSON.parse(localStorage.getItem('gzp_cctvMasterCreds') || '{}');
+        if (saved && saved.nvrIp) {
+            _cctvMasterCreds = Object.assign(_cctvMasterCreds, saved);
         }
     } catch(e) {}
-    return false;
+    var nvrEl = document.getElementById('masterNvrIp'); if (nvrEl && _cctvMasterCreds.nvrIp) nvrEl.value = _cctvMasterCreds.nvrIp;
+    var portEl = document.getElementById('masterPort'); if (portEl && _cctvMasterCreds.port) portEl.value = _cctvMasterCreds.port;
+    var userEl = document.getElementById('masterUser'); if (userEl && _cctvMasterCreds.user) userEl.value = _cctvMasterCreds.user;
+    var passEl = document.getElementById('masterPass'); if (passEl && _cctvMasterCreds.pass) passEl.value = _cctvMasterCreds.pass;
+    return _cctvMasterCreds;
 }
 
-function renderSavedCameras() {
-    try {
-        var creds = JSON.parse(localStorage.getItem('gzp_hikCamCreds') || '{}');
-        var keys = Object.keys(creds);
-        var row = document.getElementById('savedCamerasRow');
-        var list = document.getElementById('savedCamerasList');
-        if (!row || !list) return;
-        if (keys.length === 0) { row.style.display = 'none'; return; }
-        row.style.display = 'block';
-        list.innerHTML = '';
-        keys.forEach(function(ip) {
-            var pill = document.createElement('span');
-            pill.className = 'preset-pill';
-            pill.innerHTML = '<i class="fas fa-video mr-1"></i>' + escH(ip);
-            pill.title = 'Kullanıcı: ' + escH(creds[ip].user || '');
-            pill.onclick = function() {
-                var cip = document.getElementById('camIp');
-                if (cip) cip.value = ip;
-                loadCameraCredentials(ip);
-            };
-            list.appendChild(pill);
-        });
-    } catch(e) {}
+function applyMasterCredentials() {
+    var nvrEl = document.getElementById('masterNvrIp');
+    var portEl = document.getElementById('masterPort');
+    var userEl = document.getElementById('masterUser');
+    var passEl = document.getElementById('masterPass');
+
+    _cctvMasterCreds = {
+        nvrIp: nvrEl ? nvrEl.value.trim() : '10.7.202.200',
+        port: portEl ? parseInt(portEl.value) || 80 : 80,
+        user: userEl ? userEl.value.trim() : 'admin',
+        pass: passEl ? passEl.value : ''
+    };
+
+    localStorage.setItem('gzp_cctvMasterCreds', JSON.stringify(_cctvMasterCreds));
+    showToast('NVR ve kamera kimlik bilgileri başarıyla kaydedildi.');
+    
+    if (_cctvSubMode === 'matrix') {
+        refreshAllCctvSnapshots();
+    } else {
+        refreshSingleCamSnapshot();
+        queryFocusedCameraHardware();
+    }
 }
 
-function clearSavedCameras() {
-    if (!confirm('Kayıtlı tüm kamera kimlik bilgileri silinecek. Emin misiniz?')) return;
-    localStorage.removeItem('gzp_hikCamCreds');
-    renderSavedCameras();
+function buildSnapshotUrl(ip, channel) {
+    var creds = _cctvMasterCreds;
+    return '@Url.Action("GetSnapshot", "PCInfo")?ip=' + encodeURIComponent(ip) +
+           '&port=' + creds.port +
+           '&user=' + encodeURIComponent(creds.user) +
+           '&pass=' + encodeURIComponent(creds.pass) +
+           '&channel=' + channel +
+           '&t=' + Date.now();
 }
 
-// ===================================================
-// HİKVİSION — ANLIK GÖRÜNTÜ (SNAPSHOT)
-// ===================================================
-var _snapTimer = null, _autoRefresh = false, _camIp = '', _camUser = '', _camPass = '', _camPort = 80;
+function buildRtspUrl(cam) {
+    var creds = _cctvMasterCreds;
+    var auth = creds.user ? (encodeURIComponent(creds.user) + (creds.pass ? ':' + encodeURIComponent(creds.pass) : '') + '@@') : '';
+    return 'rtsp://' + auth + creds.nvrIp + ':554/Streaming/Channels/' + cam.channel;
+}
 
-function refreshSnapshot() {
-    if (!_camIp) return;
-    var snapEl = document.getElementById('camSnapshot');
-    var snapTimeEl = document.getElementById('camSnapshotTime');
-    var snapDl = document.getElementById('btnDownloadSnapshot');
-    var chEl = document.getElementById('camChannel');
-    var chVal = parseInt(chEl ? chEl.value : '101') || 101;
-    var url = '@Url.Action("GetSnapshot", "PCInfo")?ip=' + encodeURIComponent(_camIp) + '&port=' + _camPort
-        + '&user=' + encodeURIComponent(_camUser) + '&pass=' + encodeURIComponent(_camPass) + '&channel=' + chVal + '&t=' + Date.now();
+function switchCctvSubMode(mode) {
+    _cctvSubMode = mode;
+    var btnMat = document.getElementById('btnCctvSubMatrix');
+    var btnSng = document.getElementById('btnCctvSubSingle');
+    var matCont = document.getElementById('cctvMatrixContainer');
+    var sngCont = document.getElementById('cctvSingleContainer');
+
+    if (mode === 'matrix') {
+        if (btnMat) btnMat.classList.add('active');
+        if (btnSng) btnSng.classList.remove('active');
+        if (matCont) matCont.style.display = 'block';
+        if (sngCont) sngCont.style.display = 'none';
+        if (_cctvSingleLiveRunning) toggleSingleAutoLive();
+    } else {
+        if (btnMat) btnMat.classList.remove('active');
+        if (btnSng) btnSng.classList.add('active');
+        if (matCont) matCont.style.display = 'none';
+        if (sngCont) sngCont.style.display = 'block';
+        loadSingleCameraView(_cctvFocusedIndex);
+    }
+}
+
+function setCctvLayout(cols) {
+    _cctvLayout = cols;
+    var grid = document.getElementById('cctvGrid');
+    if (!grid) return;
+    grid.className = 'cctv-grid cctv-grid-' + (cols === 4 ? '16' : (cols === 3 ? '9' : '4'));
+
+    ['16', '9', '4'].forEach(function(l) {
+        var b = document.getElementById('btnLayout' + l);
+        if (b) {
+            if ((cols === 4 && l === '16') || (cols === 3 && l === '9') || (cols === 2 && l === '4')) {
+                b.className = 'btn btn-sm btn-dark border border-secondary text-white font-weight-bold active';
+            } else {
+                b.className = 'btn btn-sm btn-dark border border-secondary text-white-50';
+            }
+        }
+    });
+}
+
+function filterCctvGroup(group) {
+    _cctvActiveGroup = group;
+    ['All', 'Entry', 'Exit'].forEach(function(g) {
+        var b = document.getElementById('btnGroup' + g);
+        if (b) {
+            if (g.toLowerCase() === group) {
+                b.classList.add('active');
+            } else {
+                b.classList.remove('active');
+            }
+        }
+    });
+    renderCctvGrid();
+}
+
+function renderCctvGrid() {
+    var grid = document.getElementById('cctvGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    var filtered = CCTV_CAMERAS.filter(function(cam) {
+        if (_cctvActiveGroup === 'entry') return cam.group === 'entry';
+        if (_cctvActiveGroup === 'exit') return cam.group === 'exit';
+        return true;
+    });
+
+    filtered.forEach(function(cam) {
+        var originalIndex = CCTV_CAMERAS.findIndex(function(c) { return c.id === cam.id; });
+        var tile = document.createElement('div');
+        tile.className = 'cctv-tile';
+        tile.id = 'cctvTile_' + cam.id;
+
+        var snapUrl = buildSnapshotUrl(cam.ip, cam.channel);
+        var rtspUrl = buildRtspUrl(cam);
+
+        tile.innerHTML = 
+            '<div class="cctv-tile-header">' +
+                '<div>' +
+                    '<span class="badge badge-danger mr-1" style="font-size:10px;">' + escH(cam.badge) + '</span>' +
+                    '<strong class="text-white">' + escH(cam.name) + '</strong> ' +
+                    '<small class="text-white-50 ml-1">(' + escH(cam.ip) + ')</small>' +
+                '</div>' +
+                '<div class="cctv-live-badge">' +
+                    '<span class="cctv-live-dot"></span> CANLI' +
+                '</div>' +
+            '</div>' +
+            '<div class="cctv-tile-body" ondblclick="focusCameraByIndex(' + originalIndex + ')">' +
+                '<img id="cctvGridImg_' + cam.id + '" src="' + snapUrl + '" alt="' + escH(cam.name) + '" loading="lazy" />' +
+                '<div class="cctv-tile-overlay">' +
+                    '<button type="button" class="btn btn-sm btn-danger font-weight-bold" onclick="focusCameraByIndex(' + originalIndex + ')" title="Tekil Ekranda Büyüt">' +
+                        '<i class="fas fa-expand mr-1"></i> Büyüt (Fokus)' +
+                    '</button>' +
+                    '<button type="button" class="btn btn-sm btn-dark border border-secondary text-white" onclick="refreshGridTileSnapshot(' + cam.id + ')" title="Yenile">' +
+                        '<i class="fas fa-sync-alt"></i>' +
+                    '</button>' +
+                    '<a href="' + rtspUrl + '" class="btn btn-sm btn-outline-info text-white" target="_blank" title="RTSP Akışı Aç">' +
+                        '<i class="fas fa-play"></i>' +
+                    '</a>' +
+                '</div>' +
+            '</div>' +
+            '<div class="cctv-tile-footer">' +
+                '<span><i class="fas fa-video text-danger mr-1"></i>Kanal: ' + cam.channel + '</span>' +
+                '<span><small class="text-white-50" id="cctvGridTime_' + cam.id + '">' + new Date().toLocaleTimeString('tr-TR') + '</small></span>' +
+            '</div>';
+
+        grid.appendChild(tile);
+    });
+}
+
+function refreshGridTileSnapshot(camId) {
+    var cam = CCTV_CAMERAS.find(function(c) { return c.id === camId; });
+    if (!cam) return;
+    var img = document.getElementById('cctvGridImg_' + cam.id);
+    var timeEl = document.getElementById('cctvGridTime_' + cam.id);
+    if (img) {
+        img.src = buildSnapshotUrl(cam.ip, cam.channel);
+    }
+    if (timeEl) {
+        timeEl.innerText = new Date().toLocaleTimeString('tr-TR');
+    }
+}
+
+function refreshAllCctvSnapshots() {
+    var visible = CCTV_CAMERAS.filter(function(cam) {
+        if (_cctvActiveGroup === 'entry') return cam.group === 'entry';
+        if (_cctvActiveGroup === 'exit') return cam.group === 'exit';
+        return true;
+    });
+
+    visible.forEach(function(cam, i) {
+        setTimeout(function() {
+            refreshGridTileSnapshot(cam.id);
+        }, i * 90);
+    });
+}
+
+function toggleCctvMatrixAutoLive() {
+    var btn = document.getElementById('btnCctvAutoLive');
+    _cctvMatrixLiveRunning = !_cctvMatrixLiveRunning;
+
+    if (_cctvMatrixLiveRunning) {
+        if (btn) {
+            btn.className = 'btn btn-sm btn-danger font-weight-bold';
+            btn.innerHTML = '<i class="fas fa-stop mr-1"></i> Canlı Akışı Durdur';
+        }
+        refreshAllCctvSnapshots();
+        _cctvMatrixTimer = setInterval(refreshAllCctvSnapshots, _cctvInterval);
+    } else {
+        if (btn) {
+            btn.className = 'btn btn-sm btn-success font-weight-bold';
+            btn.innerHTML = '<i class="fas fa-play mr-1"></i> Canlı Akışı Başlat';
+        }
+        clearInterval(_cctvMatrixTimer);
+    }
+}
+
+function changeCctvInterval(val) {
+    _cctvInterval = parseInt(val) || 3000;
+    if (_cctvMatrixLiveRunning) {
+        clearInterval(_cctvMatrixTimer);
+        _cctvMatrixTimer = setInterval(refreshAllCctvSnapshots, _cctvInterval);
+    }
+    if (_cctvSingleLiveRunning) {
+        clearInterval(_cctvSingleTimer);
+        _cctvSingleTimer = setInterval(refreshSingleCamSnapshot, _cctvInterval);
+    }
+}
+
+// ----------------------------------------------------
+// TEKİL İZLEME (FOKUS & DONANIM TEFTİŞİ)
+// ----------------------------------------------------
+function populateSingleCamSelect() {
+    var sel = document.getElementById('cctvSingleCamSelect');
+    if (!sel) return;
+    sel.innerHTML = '';
+    CCTV_CAMERAS.forEach(function(cam, idx) {
+        var opt = document.createElement('option');
+        opt.value = idx;
+        opt.text = cam.badge + ': ' + cam.name + ' (' + cam.ip + ')';
+        sel.appendChild(opt);
+    });
+}
+
+function loadSingleCameraView(index) {
+    if (index < 0) index = CCTV_CAMERAS.length - 1;
+    if (index >= CCTV_CAMERAS.length) index = 0;
+    _cctvFocusedIndex = index;
+
+    var cam = CCTV_CAMERAS[index];
+    if (!cam) return;
+
+    var badgeEl = document.getElementById('cctvSingleBadge');
+    var titleEl = document.getElementById('cctvSingleTitle');
+    var selectEl = document.getElementById('cctvSingleCamSelect');
+    var specName = document.getElementById('cctvSpecName');
+    var specIpCh = document.getElementById('cctvSpecIpChannel');
+    var specRtsp = document.getElementById('cctvSpecRtsp');
+    var rtspInput = document.getElementById('rtspCopyInput');
+    var btnRtsp = document.getElementById('btnSingleRtsp');
+
+    if (badgeEl) badgeEl.innerText = cam.badge;
+    if (titleEl) titleEl.innerText = cam.name + ' (' + cam.ip + ')';
+    if (selectEl) selectEl.value = index;
+
+    if (specName) specName.innerText = cam.badge + ' - ' + cam.name;
+    if (specIpCh) specIpCh.innerText = 'IP: ' + cam.ip + ' | NVR Kanalı: ' + cam.channel;
+    
+    var rtspUrl = buildRtspUrl(cam);
+    if (specRtsp) specRtsp.innerText = rtspUrl;
+    if (rtspInput) rtspInput.value = rtspUrl;
+    if (btnRtsp) btnRtsp.href = rtspUrl;
+
+    refreshSingleCamSnapshot();
+    queryFocusedCameraHardware();
+}
+
+function onSingleCamSelectChanged(val) {
+    var idx = parseInt(val) || 0;
+    loadSingleCameraView(idx);
+}
+
+function navSingleCam(delta) {
+    loadSingleCameraView(_cctvFocusedIndex + delta);
+}
+
+function focusCameraByIndex(index) {
+    _cctvFocusedIndex = index;
+    switchCctvSubMode('single');
+    loadSingleCameraView(index);
+}
+
+function focusCameraByPreset(ip, port, channel, name, badge) {
+    var foundIdx = CCTV_CAMERAS.findIndex(function(c) { return c.ip === ip; });
+    if (foundIdx > -1) {
+        focusCameraByIndex(foundIdx);
+    } else {
+        switchCctvSubMode('single');
+        var badgeEl = document.getElementById('cctvSingleBadge');
+        var titleEl = document.getElementById('cctvSingleTitle');
+        if (badgeEl) badgeEl.innerText = badge || 'CAM';
+        if (titleEl) titleEl.innerText = name + ' (' + ip + ')';
+
+        var cam = { id: 99, badge: badge || 'CAM', name: name, ip: ip, channel: channel };
+        var rtspUrl = buildRtspUrl(cam);
+        document.getElementById('cctvSpecName').innerText = name;
+        document.getElementById('cctvSpecIpChannel').innerText = 'IP: ' + ip + ' | Kanal: ' + channel;
+        document.getElementById('cctvSpecRtsp').innerText = rtspUrl;
+        document.getElementById('rtspCopyInput').value = rtspUrl;
+        document.getElementById('btnSingleRtsp').href = rtspUrl;
+
+        var snapUrl = buildSnapshotUrl(ip, channel);
+        var sImg = document.getElementById('cctvSingleImg');
+        if (sImg) sImg.src = snapUrl;
+        queryFocusedCameraHardware(ip, port);
+    }
+}
+
+function refreshSingleCamSnapshot() {
+    var cam = CCTV_CAMERAS[_cctvFocusedIndex];
+    if (!cam) return;
+    var snapEl = document.getElementById('cctvSingleImg');
+    var timeEl = document.getElementById('cctvSingleTime');
+    var dlEl = document.getElementById('btnSingleDownload');
+    var url = buildSnapshotUrl(cam.ip, cam.channel);
+
     if (snapEl) snapEl.src = url;
-    if (snapTimeEl) snapTimeEl.innerText = 'Son güncelleme: ' + new Date().toLocaleTimeString('tr-TR');
-    if (snapDl) snapDl.href = url;
+    if (timeEl) timeEl.innerText = 'Son Kare: ' + new Date().toLocaleTimeString('tr-TR');
+    if (dlEl) dlEl.href = url;
 }
 
-function toggleAutoRefresh() {
-    var btn = document.getElementById('btnAutoRefresh');
-    _autoRefresh = !_autoRefresh;
-    if (_autoRefresh) {
+function toggleSingleAutoLive() {
+    var btn = document.getElementById('btnSingleAutoLive');
+    _cctvSingleLiveRunning = !_cctvSingleLiveRunning;
+
+    if (_cctvSingleLiveRunning) {
         if (btn) {
             btn.className = 'btn btn-sm btn-primary text-white mr-2';
             btn.innerHTML = '<i class="fas fa-stop mr-1"></i> Durdur';
         }
-        _snapTimer = setInterval(refreshSnapshot, 5000);
+        refreshSingleCamSnapshot();
+        _cctvSingleTimer = setInterval(refreshSingleCamSnapshot, _cctvInterval);
     } else {
         if (btn) {
             btn.className = 'btn btn-sm btn-outline-primary mr-2';
-            btn.innerHTML = '<i class="fas fa-clock mr-1"></i> Otomatik';
+            btn.innerHTML = '<i class="fas fa-clock mr-1"></i> Otomatik Yenile (' + (_cctvInterval/1000) + ' sn)';
         }
-        clearInterval(_snapTimer);
+        clearInterval(_cctvSingleTimer);
     }
 }
 
-// ===================================================
-// HİKVİSION — KAMERA SORGULAMA
-// ===================================================
-function queryHikCamera() {
-    var ipEl = document.getElementById('camIp');
-    var ip = ipEl ? ipEl.value.trim() : '';
-    var port = parseInt(document.getElementById('camPort') ? document.getElementById('camPort').value : '80') || 80;
-    var user = document.getElementById('camUser') ? document.getElementById('camUser').value : 'admin';
-    var pass = document.getElementById('camPass') ? document.getElementById('camPass').value : '';
+function queryFocusedCameraHardware(customIp, customPort) {
+    var cam = CCTV_CAMERAS[_cctvFocusedIndex];
+    var targetIp = customIp || (cam ? cam.ip : '10.7.202.201');
+    var targetPort = customPort || _cctvMasterCreds.port || 80;
+    var creds = _cctvMasterCreds;
 
-    if (!ip) { alert('Lütfen kamera IP adresi girin.'); return; }
-    saveCameraCredentials(ip, user, pass, port);
-
-    var camBtn = document.getElementById('btnConnectCamera');
-    if (camBtn) {
-        camBtn.disabled = true;
-        camBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Bağlanıyor...';
+    var btnQuery = document.getElementById('btnQuerySingleCam');
+    if (btnQuery) {
+        btnQuery.disabled = true;
+        btnQuery.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Teftiş Ediliyor...';
     }
 
     var body = new URLSearchParams();
-    body.append('ip', ip);
-    body.append('port', port);
-    body.append('username', user);
-    body.append('password', pass);
+    body.append('ip', targetIp);
+    body.append('port', targetPort);
+    body.append('username', creds.user || 'admin');
+    body.append('password', creds.pass || '');
 
     fetch('@Url.Action("QueryCamera", "PCInfo")', {
         method: 'POST',
-        headers: { 
+        headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
             'X-Requested-With': 'XMLHttpRequest'
         },
         body: body.toString()
     })
     .then(function(r) { return r.json(); })
-    .then(function(cam) {
-        if (camBtn) {
-            camBtn.disabled = false;
-            camBtn.innerHTML = '<i class="fas fa-plug mr-1"></i> Kameraya Bağlan';
+    .then(function(res) {
+        if (btnQuery) {
+            btnQuery.disabled = false;
+            btnQuery.innerHTML = '<i class="fas fa-microchip mr-1"></i> ISAPI Donanım Teftişi Yap';
         }
-        document.getElementById('camResultCard').style.display = 'block';
-        document.getElementById('camDeviceNameHeader').innerText = cam.DeviceName || 'Hikvision IP Kamera';
-        document.getElementById('camModel').innerText = cam.Model || '-';
-        document.getElementById('camSerial').innerText = cam.SerialNumber || '-';
-        document.getElementById('camMac').innerText = cam.MacAddress || '-';
-        document.getElementById('camFirmware').innerText = cam.FirmwareVersion || '-';
-        document.getElementById('camRtspPort').innerText = cam.RtspPort;
-        document.getElementById('camRtspUrl').innerText = cam.RtspUrl;
-        document.getElementById('btnOpenRtsp').href = cam.RtspUrl;
+        document.getElementById('cctvSpecModel').innerText = res.Model || '-';
+        document.getElementById('cctvSpecSerial').innerText = res.SerialNumber || '-';
+        document.getElementById('cctvSpecMac').innerText = res.MacAddress || '-';
+        document.getElementById('cctvSpecFirmware').innerText = res.FirmwareVersion || '-';
 
-        if (cam.IsOnline) {
-            document.getElementById('camOnlineBadge').className = 'badge badge-success float-right';
-            document.getElementById('camOnlineBadge').innerText = 'Bağlantı Başarılı';
-            _camIp = ip; _camUser = user; _camPass = pass; _camPort = port;
-            document.getElementById('camSnapshotArea').style.display = 'block';
-            document.getElementById('camSnapshotPlaceholder').style.display = 'none';
-            refreshSnapshot();
-        } else {
-            document.getElementById('camOnlineBadge').className = 'badge badge-danger float-right';
-            document.getElementById('camOnlineBadge').innerText = 'Kameraya Ulaşılamadı';
-            document.getElementById('camSnapshotArea').style.display = 'none';
-            document.getElementById('camSnapshotPlaceholder').style.display = 'block';
-            if (_autoRefresh) toggleAutoRefresh();
+        var badge = document.getElementById('cctvSingleOnlineBadge');
+        if (badge) {
+            if (res.IsOnline) {
+                badge.className = 'badge badge-success';
+                badge.innerText = 'Çevrimiçi (ISAPI Bağlantılı)';
+            } else {
+                badge.className = 'badge badge-danger';
+                badge.innerText = 'Kameraya Ulaşılamadı';
+            }
         }
     })
     .catch(function(e) {
-        if (camBtn) {
-            camBtn.disabled = false;
-            camBtn.innerHTML = '<i class="fas fa-plug mr-1"></i> Kameraya Bağlan';
+        if (btnQuery) {
+            btnQuery.disabled = false;
+            btnQuery.innerHTML = '<i class="fas fa-microchip mr-1"></i> ISAPI Donanım Teftişi Yap';
         }
-        alert('Kamera sorgulanamadı: ' + e);
     });
 }
 
-function selectPresetCam(ip, port, channel, name) {
-    var cip = document.getElementById('camIp'); if (cip) cip.value = ip;
-    var cch = document.getElementById('camChannel'); if (cch) cch.value = channel;
-    var cport = document.getElementById('camPort'); if (cport) cport.value = port;
-    loadCameraCredentials(ip);
-    queryHikCamera();
+function copyRtspUrl() {
+    copyToClipboard('rtspCopyInput');
 }
+
+function toggleFullscreenSingle() {
+    var elem = document.getElementById('cctvSingleDisplayWrapper');
+    if (!elem) return;
+    if (!document.fullscreenElement) {
+        if (elem.requestFullscreen) elem.requestFullscreen();
+        else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+        else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
+    } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+    }
+}
+
+function initCctvSystem() {
+    getCctvMasterCreds();
+    populateSingleCamSelect();
+    renderCctvGrid();
+}
+
+// Geriye Dönük Uyumluluk Fonksiyonları (Legacy Destek)
+function saveCameraCredentials(ip, user, pass, port) {
+    _cctvMasterCreds = { nvrIp: ip, port: port || 80, user: user || 'admin', pass: pass || '' };
+    localStorage.setItem('gzp_cctvMasterCreds', JSON.stringify(_cctvMasterCreds));
+}
+function loadCameraCredentials(ip) { getCctvMasterCreds(); return true; }
+function renderSavedCameras() { getCctvMasterCreds(); }
+function clearSavedCameras() { localStorage.removeItem('gzp_cctvMasterCreds'); }
+function refreshSnapshot() { refreshSingleCamSnapshot(); }
+function toggleAutoRefresh() { toggleSingleAutoLive(); }
+function queryHikCamera() { queryFocusedCameraHardware(); }
+function selectPresetCam(ip, port, channel, name) { focusCameraByPreset(ip, port, channel, name, 'CAM'); }
 
 // ===================================================
 // UZAKTAN YARDIM MODALI
@@ -2129,6 +2671,28 @@ function copyToClipboard(elementId) {
 // ===================================================
 // GLOBAL WINDOW NESNESİNE FONKSİYONLARI BAĞLAMA
 // ===================================================
+window.switchCctvSubMode = switchCctvSubMode;
+window.setCctvLayout = setCctvLayout;
+window.filterCctvGroup = filterCctvGroup;
+window.renderCctvGrid = renderCctvGrid;
+window.refreshGridTileSnapshot = refreshGridTileSnapshot;
+window.refreshAllCctvSnapshots = refreshAllCctvSnapshots;
+window.toggleCctvMatrixAutoLive = toggleCctvMatrixAutoLive;
+window.changeCctvInterval = changeCctvInterval;
+window.populateSingleCamSelect = populateSingleCamSelect;
+window.loadSingleCameraView = loadSingleCameraView;
+window.onSingleCamSelectChanged = onSingleCamSelectChanged;
+window.navSingleCam = navSingleCam;
+window.focusCameraByIndex = focusCameraByIndex;
+window.focusCameraByPreset = focusCameraByPreset;
+window.refreshSingleCamSnapshot = refreshSingleCamSnapshot;
+window.toggleSingleAutoLive = toggleSingleAutoLive;
+window.queryFocusedCameraHardware = queryFocusedCameraHardware;
+window.copyRtspUrl = copyRtspUrl;
+window.toggleFullscreenSingle = toggleFullscreenSingle;
+window.initCctvSystem = initCctvSystem;
+window.applyMasterCredentials = applyMasterCredentials;
+
 window.switchMainMode = switchMainMode;
 window.setTarget = setTarget;
 window.handleQueryFormSubmit = handleQueryFormSubmit;
@@ -2170,14 +2734,8 @@ function initPCInfoPage() {
     if (activeMode && activeMode !== 'inspector') switchMainMode(activeMode);
 
     var btnCam = document.getElementById('btnModeCamera');
-    if (btnCam) btnCam.addEventListener('click', function() { setTimeout(renderSavedCameras, 50); });
-    if (activeMode === 'camera') renderSavedCameras();
-
-    var camIpEl = document.getElementById('camIp');
-    if (camIpEl) camIpEl.addEventListener('blur', function() { if (this.value.trim()) loadCameraCredentials(this.value.trim()); });
-
-    var camChEl = document.getElementById('camChannel');
-    if (camChEl) camChEl.addEventListener('change', function() { if (_camIp) refreshSnapshot(); });
+    if (btnCam) btnCam.addEventListener('click', function() { setTimeout(initCctvSystem, 50); });
+    if (activeMode === 'camera') initCctvSystem();
 }
 
 if (document.readyState === 'loading') {
