@@ -24,7 +24,8 @@ namespace gzpegm.Controllers
         {
             string cleanTarget = string.IsNullOrWhiteSpace(target) ? "localhost" : target.Trim();
             ViewBag.SelectedTarget = cleanTarget;
-            ViewBag.ActiveMode = mode; // "inspector", "scanner", "camera", "inventory"
+            if (mode == "camera") mode = "inspector";
+            ViewBag.ActiveMode = mode; // "inspector", "scanner", "inventory"
 
             var model = _pcInfoService.GetComputerInfo(cleanTarget);
             if (model != null)
